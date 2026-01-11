@@ -498,9 +498,7 @@ class TestFromMemoryMode:
         def mock_open_in_editor(file_path: Path, editor: str) -> None:
             editor_calls.append(file_path)
 
-        monkeypatch.setattr(
-            "resume_as_code.commands.new.open_in_editor", mock_open_in_editor
-        )
+        monkeypatch.setattr("resume_as_code.commands.new.open_in_editor", mock_open_in_editor)
         monkeypatch.setenv("EDITOR", "vim")
 
         result = runner.invoke(

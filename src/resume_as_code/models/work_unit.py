@@ -247,6 +247,16 @@ class WorkUnit(BaseModel):
             raise ValueError("Each action must be at least 10 characters")
         return v
 
+    @field_validator("tags")
+    @classmethod
+    def normalize_tags(cls, v: list[str]) -> list[str]:
+        """Normalize tags to lowercase and strip whitespace.
+
+        Per Story 2.5, tags should be normalized for consistent
+        filtering and searching.
+        """
+        return [tag.lower().strip() for tag in v]
+
     @model_validator(mode="after")
     def validate_time_range(self) -> WorkUnit:
         """Ensure time_ended is after time_started if both are set."""

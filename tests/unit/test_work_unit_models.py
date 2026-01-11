@@ -415,9 +415,124 @@ class TestWeakVerbDetection:
         assert any("managed" in w.lower() for w in warnings)
 
 
-class TestExtraFieldsForbidden:
-    """Test that extra fields are rejected by all models."""
+class TestTagNormalization:
+    """Test tag normalization per Story 2.5 requirements."""
 
+    def test_tags_normalized_to_lowercase(self) -> None:
+        """Tags should be normalized to lowercase."""
+        wu = WorkUnit(
+            id="wu-2024-01-01-test",
+            title="Test work unit title",
+            problem=Problem(statement="This is the problem statement"),
+            actions=["Action taken here"],
+            outcome=Outcome(result="Result achieved"),
+            tags=["Python", "AWS", "Incident-Response"],
+        )
+        assert wu.tags == ["python", "aws", "incident-response"]
+
+    def test_tags_whitespace_stripped(self) -> None:
+        """Tags should have whitespace stripped."""
+        wu = WorkUnit(
+            id="wu-2024-01-01-test",
+            title="Test work unit title",
+            problem=Problem(statement="This is the problem statement"),
+            actions=["Action taken here"],
+            outcome=Outcome(result="Result achieved"),
+            tags=["  python  ", "aws ", " kubernetes"],
+        )
+        assert wu.tags == ["python", "aws", "kubernetes"]
+
+    def test_empty_tags_default(self) -> None:
+        """Empty tags list should be the default."""
+        wu = WorkUnit(
+            id="wu-2024-01-01-test",
+            title="Test work unit title",
+            problem=Problem(statement="This is the problem statement"),
+            actions=["Action taken here"],
+            outcome=Outcome(result="Result achieved"),
+        )
+        assert wu.tags == []
+
+
+class TestMetadataDefaults:
+    """Test metadata fields have sensible defaults per Story 2.5."""
+
+    def test_confidence_default_none(self) -> None:
+        """Confidence should default to None."""
+        wu = WorkUnit(
+            id="wu-2024-01-01-test",
+            title="Test work unit title",
+            problem=Problem(statement="This is the problem statement"),
+            actions=["Action taken here"],
+            outcome=Outcome(result="Result achieved"),
+        )
+        assert wu.confidence is None
+
+    def test_evidence_default_empty_list(self) -> None:
+        """Evidence should default to empty list."""
+        wu = WorkUnit(
+            id="wu-2024-01-01-test",
+            title="Test work unit title",
+            problem=Problem(statement="This is the problem statement"),
+            actions=["Action taken here"],
+            outcome=Outcome(result="Result achieved"),
+        )
+        assert wu.evidence == []
+
+    def test_all_metadata_fields_optional(self) -> None:
+        """All metadata fields (confidence, tags, evidence) should be optional."""
+        # Should not raise ValidationError
+        wu = WorkUnit(
+            id="wu-2024-01-01-test",
+            title="Test work unit title",
+            problem=Problem(statement="This is the problem statement"),
+            actions=["Action taken here"],
+            outcome=Outcome(result="Result achieved"),
+        )
+        assert wu.confidence is None
+        assert wu.tags == []
+        assert wu.evidence == []
+
+
+class TestMetadataValidation:
+    """Test metadata field validation per Story 2.5."""
+
+    def test_invalid_confidence_value_raises_error(self) -> None:
+        """Invalid confidence value should raise ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            WorkUnit(
+                id="wu-2024-01-01-test",
+                title="Test work unit title",
+                problem=Problem(statement="This is the problem statement"),
+                actions=["Action taken here"],
+                outcome=Outcome(result="Result achieved"),
+                confidence="super-high",  # Invalid value
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        # Check that error message helps user understand valid options
+        assert "confidence" in str(errors[0]["loc"]).lower() or errors[0]["loc"] == ("confidence",)
+
+    def test_invalid_evidence_url_raises_error(self) -> None:
+        """Invalid URL in evidence should raise ValidationError."""
+        with pytest.raises(ValidationError):
+            GitRepoEvidence(url="not-a-valid-url")
+
+    def test_valid_confidence_values_accepted(self) -> None:
+        """All valid confidence values should be accepted."""
+        for level in [WorkUnitConfidence.HIGH, WorkUnitConfidence.MEDIUM, WorkUnitConfidence.LOW]:
+            wu = WorkUnit(
+                id="wu-2024-01-01-test",
+                title="Test work unit title",
+                problem=Problem(statement="This is the problem statement"),
+                actions=["Action taken here"],
+                outcome=Outcome(result="Result achieved"),
+                confidence=level,
+            )
+            assert wu.confidence == level
+
+
+class TestExtraFieldsForbidden:
     def test_work_unit_rejects_extra_fields(self) -> None:
         """WorkUnit should reject extra fields not in schema."""
         with pytest.raises(ValidationError) as exc_info:

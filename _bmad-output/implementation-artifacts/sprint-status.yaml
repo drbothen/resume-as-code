@@ -59,7 +59,7 @@ development_status:
   2-2-archetype-templates: done
   2-3-create-work-unit-command: done
   2-4-quick-capture-mode: done
-  2-5-work-unit-metadata-evidence: ready-for-dev
+  2-5-work-unit-metadata-evidence: review
   epic-2-retrospective: optional
 
   # Epic 3: Work Unit Validation & Discovery
