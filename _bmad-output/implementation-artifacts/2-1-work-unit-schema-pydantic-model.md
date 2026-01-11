@@ -1,6 +1,6 @@
 # Story 2.1: Work Unit Schema & Pydantic Model
 
-Status: ready-for-dev
+Status: done
 
 > **Note:** This is an **enabling story** that provides infrastructure for user-facing stories 2.3-2.5. It does not deliver direct user value but is required for subsequent stories.
 
@@ -53,55 +53,55 @@ So that **all Work Units follow a consistent, validated format**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create JSON Schema file (AC: #1, #4, #5, #6, #7)
-  - [ ] 1.1: Create `schemas/work-unit.schema.json`
-  - [ ] 1.2: Define required fields: `id`, `title`, `problem`, `actions`, `outcome`
-  - [ ] 1.3: Define `problem` object with `statement` (required), `constraints`, `context`
-  - [ ] 1.4: Define `outcome` object with `result` (required), `quantified_impact`, `business_value`
-  - [ ] 1.5: Add optional time fields: `time_started`, `time_ended`
-  - [ ] 1.6: Add optional metadata: `skills_demonstrated`, `confidence`, `tags`, `evidence`
-  - [ ] 1.7: Add executive-level fields: `scope`, `impact_category`, `metrics`, `framing`
-  - [ ] 1.8: Add schema version field for future migrations
+- [x] Task 1: Create JSON Schema file (AC: #1, #4, #5, #6, #7)
+  - [x] 1.1: Create `schemas/work-unit.schema.json`
+  - [x] 1.2: Define required fields: `id`, `title`, `problem`, `actions`, `outcome`
+  - [x] 1.3: Define `problem` object with `statement` (required), `constraints`, `context`
+  - [x] 1.4: Define `outcome` object with `result` (required), `quantified_impact`, `business_value`
+  - [x] 1.5: Add optional time fields: `time_started`, `time_ended`
+  - [x] 1.6: Add optional metadata: `skills_demonstrated`, `confidence`, `tags`, `evidence`
+  - [x] 1.7: Add executive-level fields: `scope`, `impact_category`, `metrics`, `framing`
+  - [x] 1.8: Add schema version field for future migrations
 
-- [ ] Task 2: Create base Pydantic models (AC: #2, #3)
-  - [ ] 2.1: Create `src/resume_as_code/models/work_unit.py`
-  - [ ] 2.2: Implement `Problem` model with `statement`, `constraints`, `context`
-  - [ ] 2.3: Implement `Outcome` model with `result`, `quantified_impact`, `business_value`
-  - [ ] 2.4: Implement `WorkUnit` model with all required and optional fields
-  - [ ] 2.5: Add proper type hints using `|` union syntax
+- [x] Task 2: Create base Pydantic models (AC: #2, #3)
+  - [x] 2.1: Create `src/resume_as_code/models/work_unit.py`
+  - [x] 2.2: Implement `Problem` model with `statement`, `constraints`, `context`
+  - [x] 2.3: Implement `Outcome` model with `result`, `quantified_impact`, `business_value`
+  - [x] 2.4: Implement `WorkUnit` model with all required and optional fields
+  - [x] 2.5: Add proper type hints using `|` union syntax
 
-- [ ] Task 3: Implement evidence discriminated unions (AC: #8)
-  - [ ] 3.1: Create `EvidenceBase` model with `type` discriminator
-  - [ ] 3.2: Implement `GitRepoEvidence` with `url`, `branch`, `commit_sha`
-  - [ ] 3.3: Implement `MetricsEvidence` with `url`, `dashboard_name`, `metric_names`
-  - [ ] 3.4: Implement `DocumentEvidence` with `url`, `title`, `publication_date`
-  - [ ] 3.5: Implement `ArtifactEvidence` with `url`, `artifact_type`
-  - [ ] 3.6: Implement `OtherEvidence` with `url`, `description`
-  - [ ] 3.7: Create `Evidence` type alias using `Annotated[Union[...], Field(discriminator='type')]`
+- [x] Task 3: Implement evidence discriminated unions (AC: #8)
+  - [x] 3.1: Create `EvidenceBase` model with `type` discriminator
+  - [x] 3.2: Implement `GitRepoEvidence` with `url`, `branch`, `commit_sha`
+  - [x] 3.3: Implement `MetricsEvidence` with `url`, `dashboard_name`, `metric_names`
+  - [x] 3.4: Implement `DocumentEvidence` with `url`, `title`, `publication_date`
+  - [x] 3.5: Implement `ArtifactEvidence` with `url`, `artifact_type`
+  - [x] 3.6: Implement `OtherEvidence` with `url`, `description`
+  - [x] 3.7: Create `Evidence` type alias using `Annotated[Union[...], Field(discriminator='type')]`
 
-- [ ] Task 4: Implement executive-level fields (AC: #6)
-  - [ ] 4.1: Create `Scope` model with `budget_managed`, `team_size`, `revenue_influenced`, `geographic_reach`
-  - [ ] 4.2: Create `ImpactCategory` enum: `financial`, `operational`, `talent`, `customer`, `organizational`
-  - [ ] 4.3: Create `Metrics` model with `baseline`, `outcome`, `percentage_change`
-  - [ ] 4.4: Create `Framing` model with `action_verb`, `strategic_context`
+- [x] Task 4: Implement executive-level fields (AC: #6)
+  - [x] 4.1: Create `Scope` model with `budget_managed`, `team_size`, `revenue_influenced`, `geographic_reach`
+  - [x] 4.2: Create `ImpactCategory` enum: `financial`, `operational`, `talent`, `customer`, `organizational`
+  - [x] 4.3: Create `Metrics` model with `baseline`, `outcome`, `percentage_change`
+  - [x] 4.4: Create `Framing` model with `action_verb`, `strategic_context`
 
-- [ ] Task 5: Implement confidence fields (AC: #7)
-  - [ ] 5.1: Create `ConfidenceLevel` enum: `exact`, `estimated`, `approximate`, `order_of_magnitude`
-  - [ ] 5.2: Add `confidence` field to `Outcome.result`
-  - [ ] 5.3: Add `confidence_note` optional field
+- [x] Task 5: Implement confidence fields (AC: #7)
+  - [x] 5.1: Create `ConfidenceLevel` enum: `exact`, `estimated`, `approximate`, `order_of_magnitude`
+  - [x] 5.2: Add `confidence` field to `Outcome.result`
+  - [x] 5.3: Add `confidence_note` optional field
 
-- [ ] Task 6: Add field validators (AC: #2, #3)
-  - [ ] 6.1: Add `@field_validator` for action verb strength checking
-  - [ ] 6.2: Add `@model_validator(mode='after')` for cross-field validation
-  - [ ] 6.3: Validate URL format in evidence fields
-  - [ ] 6.4: Validate date formats in time fields
+- [x] Task 6: Add field validators (AC: #2, #3)
+  - [x] 6.1: Add `@field_validator` for action verb strength checking
+  - [x] 6.2: Add `@model_validator(mode='after')` for cross-field validation
+  - [x] 6.3: Validate URL format in evidence fields
+  - [x] 6.4: Validate date formats in time fields
 
-- [ ] Task 7: Code quality verification
-  - [ ] 7.1: Run `ruff check src tests --fix`
-  - [ ] 7.2: Run `ruff format src tests`
-  - [ ] 7.3: Run `mypy src --strict` with zero errors
-  - [ ] 7.4: Add comprehensive unit tests for model validation
-  - [ ] 7.5: Test JSON Schema validation matches Pydantic validation
+- [x] Task 7: Code quality verification
+  - [x] 7.1: Run `ruff check src tests --fix`
+  - [x] 7.2: Run `ruff format src tests`
+  - [x] 7.3: Run `mypy src --strict` with zero errors
+  - [x] 7.4: Add comprehensive unit tests for model validation
+  - [x] 7.5: Test JSON Schema validation matches Pydantic validation
 
 ## Dev Notes
 
@@ -668,11 +668,31 @@ mypy src --strict
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None
+
 ### Completion Notes List
 
+- Created JSON Schema at `schemas/work-unit.schema.json` with full Work Unit structure including required fields, optional metadata, executive-level fields, and discriminated union for evidence types
+- Implemented Pydantic models in `src/resume_as_code/models/work_unit.py` with proper type hints, field validators, and model validators
+- Evidence types use discriminated union pattern with `type` field as discriminator (GitRepoEvidence, MetricsEvidence, DocumentEvidence, ArtifactEvidence, OtherEvidence)
+- Added weak action verb detection via `get_weak_verb_warnings()` method per Content Strategy standards
+- Time range validation ensures `time_ended` is after `time_started`
+- All 8 Acceptance Criteria satisfied
+- 271 tests passing, including 58 new tests for Work Unit schema and models
+- Code quality verified: ruff check passes, mypy --strict passes with zero errors
+
 ### File List
+
+**New Files:**
+- `schemas/work-unit.schema.json` - JSON Schema for Work Unit validation
+- `src/resume_as_code/models/work_unit.py` - Pydantic models for Work Unit
+- `tests/unit/test_work_unit_schema.py` - Tests for JSON Schema structure (25 tests)
+- `tests/unit/test_work_unit_models.py` - Tests for Pydantic models (33 tests)
+
+**Modified Files:**
+- None
 
