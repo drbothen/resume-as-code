@@ -453,6 +453,54 @@ class TestTagNormalization:
         )
         assert wu.tags == []
 
+    def test_empty_string_tags_filtered(self) -> None:
+        """Empty string tags should be filtered out."""
+        wu = WorkUnit(
+            id="wu-2024-01-01-test",
+            title="Test work unit title",
+            problem=Problem(statement="This is the problem statement"),
+            actions=["Action taken here"],
+            outcome=Outcome(result="Result achieved"),
+            tags=["python", "", "aws"],
+        )
+        assert wu.tags == ["python", "aws"]
+
+    def test_whitespace_only_tags_filtered(self) -> None:
+        """Whitespace-only tags should be filtered out."""
+        wu = WorkUnit(
+            id="wu-2024-01-01-test",
+            title="Test work unit title",
+            problem=Problem(statement="This is the problem statement"),
+            actions=["Action taken here"],
+            outcome=Outcome(result="Result achieved"),
+            tags=["python", "   ", "aws"],
+        )
+        assert wu.tags == ["python", "aws"]
+
+    def test_duplicate_tags_deduplicated(self) -> None:
+        """Duplicate tags (case-insensitive) should be deduplicated."""
+        wu = WorkUnit(
+            id="wu-2024-01-01-test",
+            title="Test work unit title",
+            problem=Problem(statement="This is the problem statement"),
+            actions=["Action taken here"],
+            outcome=Outcome(result="Result achieved"),
+            tags=["python", "Python", "PYTHON", "aws", "AWS"],
+        )
+        assert wu.tags == ["python", "aws"]
+
+    def test_duplicate_tags_preserve_first_occurrence_order(self) -> None:
+        """Deduplication should preserve order of first occurrence."""
+        wu = WorkUnit(
+            id="wu-2024-01-01-test",
+            title="Test work unit title",
+            problem=Problem(statement="This is the problem statement"),
+            actions=["Action taken here"],
+            outcome=Outcome(result="Result achieved"),
+            tags=["AWS", "python", "aws", "kubernetes", "Python"],
+        )
+        assert wu.tags == ["aws", "python", "kubernetes"]
+
 
 class TestMetadataDefaults:
     """Test metadata fields have sensible defaults per Story 2.5."""

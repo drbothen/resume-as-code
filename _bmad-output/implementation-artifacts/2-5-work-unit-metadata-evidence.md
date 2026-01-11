@@ -1,6 +1,6 @@
 # Story 2.5: Work Unit Metadata & Evidence
 
-Status: review
+Status: done
 
 ## Story
 
@@ -65,7 +65,7 @@ So that **I can indicate certainty and provide proof of my claims**.
   - [x] 5.2: Run `ruff format src tests`
   - [x] 5.3: Run `mypy src --strict` with zero errors
   - [x] 5.4: Add unit tests for metadata validation
-  - [x] 5.5: Add integration tests for evidence URL validation
+  - [x] 5.5: Add unit tests for evidence URL validation
 
 ## Dev Notes
 
@@ -236,7 +236,7 @@ All types share: `url` (required), `description` (optional)
 
 ### Testing Requirements
 
-**`tests/unit/test_work_unit_metadata.py`:**
+**`tests/unit/test_work_unit_models.py`:**
 
 ```python
 """Tests for Work Unit metadata validation."""
@@ -386,19 +386,21 @@ N/A - Implementation completed without issues.
 
 - **Story 2.1 Pre-implementation:** JSON Schema and Pydantic models were already implemented in Story 2.1, including `confidence`, `tags`, `evidence` fields with discriminated union evidence types.
 - **Story 2.2 Pre-implementation:** Archetype templates already contain metadata examples (confidence, tags, evidence) from Story 2.2.
-- **Tag Normalization:** Added `normalize_tags` field validator to WorkUnit model per AC requirements - normalizes tags to lowercase and strips whitespace.
-- **Tests Added:** 9 new tests in `test_work_unit_models.py`:
-  - `TestTagNormalization`: 3 tests for lowercase normalization, whitespace stripping, and default empty list
+- **Tag Normalization:** Added `normalize_tags` field validator to WorkUnit model per AC requirements - normalizes tags to lowercase, strips whitespace, filters empty strings, and deduplicates.
+- **Tests Added:** 13 tests in `test_work_unit_models.py`:
+  - `TestTagNormalization`: 7 tests for lowercase normalization, whitespace stripping, default empty list, empty string filtering, whitespace-only filtering, deduplication, and order preservation
   - `TestMetadataDefaults`: 3 tests for confidence default (None), evidence default (empty list), and all fields optional
   - `TestMetadataValidation`: 3 tests for invalid confidence, invalid URL, and valid confidence values
-- **Code Quality:** All 382 tests pass, mypy --strict passes, ruff check/format passes.
+- **Code Quality:** All tests pass, mypy --strict passes, ruff check/format passes.
+- **Code Review Remediation (2026-01-11):** Fixed tag normalization to filter empty strings and deduplicate; added 4 edge case tests.
 
 ### File List
 
-- `src/resume_as_code/models/work_unit.py` - Added `normalize_tags` field validator
-- `tests/unit/test_work_unit_models.py` - Added 9 new tests (TestTagNormalization, TestMetadataDefaults, TestMetadataValidation)
+- `src/resume_as_code/models/work_unit.py` - Added `normalize_tags` field validator (updated to filter empty/deduplicate)
+- `tests/unit/test_work_unit_models.py` - Added 13 tests (TestTagNormalization: 7, TestMetadataDefaults: 3, TestMetadataValidation: 3)
 
 ### Change Log
 
 - 2026-01-11: Implemented Story 2.5 - Added tag normalization validator and comprehensive metadata tests
+- 2026-01-11: Code Review Remediation - Fixed normalize_tags to filter empty strings and deduplicate; added 4 edge case tests
 

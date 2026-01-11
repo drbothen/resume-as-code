@@ -250,12 +250,20 @@ class WorkUnit(BaseModel):
     @field_validator("tags")
     @classmethod
     def normalize_tags(cls, v: list[str]) -> list[str]:
-        """Normalize tags to lowercase and strip whitespace.
+        """Normalize tags to lowercase, strip whitespace, remove empty/duplicates.
 
         Per Story 2.5, tags should be normalized for consistent
-        filtering and searching.
+        filtering and searching. Empty strings and duplicates are removed
+        to ensure clean, filterable tag lists.
         """
-        return [tag.lower().strip() for tag in v]
+        seen: set[str] = set()
+        result: list[str] = []
+        for tag in v:
+            normalized = tag.lower().strip()
+            if normalized and normalized not in seen:
+                seen.add(normalized)
+                result.append(normalized)
+        return result
 
     @model_validator(mode="after")
     def validate_time_range(self) -> WorkUnit:
