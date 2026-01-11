@@ -121,6 +121,8 @@ Based on resume best practices, these verbs should be flagged with alternatives:
 | did | executed, delivered, accomplished, achieved |
 | made | produced, generated, crafted, designed |
 | got | secured, acquired, obtained, earned |
+| used | leveraged, utilized, applied, employed |
+| assisted | supported, enabled, contributed to, facilitated |
 
 ### Validation Message Mapping
 
@@ -197,9 +199,8 @@ def get_enum_values(field_path: str) -> list[str] | None:
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
-
-from resume_as_code.models.errors import StructuredError
+from dataclasses import dataclass, field
+from typing import Any
 
 
 # Weak verbs with strong alternatives
@@ -229,10 +230,10 @@ class ContentWarning:
     message: str
     path: str
     suggestion: str
-    severity: str = "warning"  # warning or info
+    severity: str = field(default="warning")  # warning or info
 
 
-def validate_content_quality(work_unit: dict, file_path: str) -> list[ContentWarning]:
+def validate_content_quality(work_unit: dict[str, Any], file_path: str) -> list[ContentWarning]:
     """Validate content quality of a Work Unit.
 
     Returns warnings (not errors) for content improvements.
@@ -250,23 +251,25 @@ def validate_content_quality(work_unit: dict, file_path: str) -> list[ContentWar
         # Check for weak verbs
         action_lower = action.lower()
         for weak_verb, alternatives in WEAK_VERBS.items():
-            if re.search(rf"\b{weak_verb}\b", action_lower):
+            if re.search(rf"\b{re.escape(weak_verb)}\b", action_lower):
                 warnings.append(
                     ContentWarning(
                         code="WEAK_ACTION_VERB",
-                        message=f"Action {i+1} uses weak verb '{weak_verb}'",
+                        message=f"Action {i + 1} uses weak verb '{weak_verb}'",
                         path=f"{file_path}:actions[{i}]",
                         suggestion=f"Consider stronger verbs: {', '.join(alternatives[:3])}",
                     )
                 )
 
-        # Track verb usage for repetition
-        first_word = action.split()[0].lower() if action.split() else ""
-        verb_usage[first_word] = verb_usage.get(first_word, 0) + 1
+        # Track verb usage for repetition (first word of action)
+        words = action.split()
+        if words:
+            first_word = words[0].lower()
+            verb_usage[first_word] = verb_usage.get(first_word, 0) + 1
 
     # Check for verb repetition
     for verb, count in verb_usage.items():
-        if count > 1 and verb not in ("the", "a", "an"):
+        if count > 1 and verb not in ("the", "a", "an", "to", "and", "or", "for", "with", "of"):
             warnings.append(
                 ContentWarning(
                     code="VERB_REPETITION",
@@ -278,22 +281,23 @@ def validate_content_quality(work_unit: dict, file_path: str) -> list[ContentWar
 
     # Check outcome for quantification
     outcome = work_unit.get("outcome", {})
-    result = outcome.get("result", "")
-    if result and not _has_quantification(result):
-        warnings.append(
-            ContentWarning(
-                code="MISSING_QUANTIFICATION",
-                message="Outcome result lacks quantification",
-                path=f"{file_path}:outcome.result",
-                suggestion="Add metrics (%, $, time saved, etc.) to strengthen impact",
-                severity="info",
+    if isinstance(outcome, dict):
+        result = outcome.get("result", "")
+        if result and isinstance(result, str) and not _has_quantification(result):
+            warnings.append(
+                ContentWarning(
+                    code="MISSING_QUANTIFICATION",
+                    message="Outcome result lacks quantification",
+                    path=f"{file_path}:outcome.result",
+                    suggestion="Add metrics (%, $, time saved, etc.) to strengthen impact",
+                    severity="info",
+                )
             )
-        )
 
     return warnings
 
 
-def validate_content_density(work_unit: dict, file_path: str) -> list[ContentWarning]:
+def validate_content_density(work_unit: dict[str, Any], file_path: str) -> list[ContentWarning]:
     """Validate content density (character counts, etc.)."""
     warnings: list[ContentWarning] = []
 
@@ -307,7 +311,7 @@ def validate_content_density(work_unit: dict, file_path: str) -> list[ContentWar
             warnings.append(
                 ContentWarning(
                     code="BULLET_TOO_SHORT",
-                    message=f"Action {i+1} is {char_count} chars (min: {BULLET_CHAR_MIN})",
+                    message=f"Action {i + 1} is {char_count} chars (min: {BULLET_CHAR_MIN})",
                     path=f"{file_path}:actions[{i}]",
                     suggestion="Expand with more detail about impact or method",
                 )
@@ -316,7 +320,7 @@ def validate_content_density(work_unit: dict, file_path: str) -> list[ContentWar
             warnings.append(
                 ContentWarning(
                     code="BULLET_TOO_LONG",
-                    message=f"Action {i+1} is {char_count} chars (max: {BULLET_CHAR_MAX})",
+                    message=f"Action {i + 1} is {char_count} chars (max: {BULLET_CHAR_MAX})",
                     path=f"{file_path}:actions[{i}]",
                     suggestion="Consider splitting into multiple focused bullets",
                 )
@@ -326,20 +330,28 @@ def validate_content_density(work_unit: dict, file_path: str) -> list[ContentWar
 
 
 def _has_quantification(text: str) -> bool:
-    """Check if text contains quantification."""
-    # Look for numbers, percentages, currency
+    """Check if text contains quantification.
+
+    Looks for:
+    - Percentages (40%)
+    - Currency ($50,000)
+    - Multipliers (3x)
+    - Time units (30 min, 5 hours)
+    - Abbreviations (50K, 2M)
+    - Impact words with metrics (reduced by X, improved X%)
+    """
     patterns = [
-        r"\d+%",           # Percentages
-        r"\$[\d,]+",       # Currency
-        r"\d+x",           # Multipliers
-        r"\d+ ?(ms|sec|min|hour|day)",  # Time
-        r"\d+K|\d+M|\d+B",  # Abbreviations
-        r"reduced|increased|improved|saved|generated",  # Impact words
+        r"\d+%",  # Percentages
+        r"\$[\d,]+",  # Currency
+        r"\d+x",  # Multipliers
+        r"\d+\s*(?:ms|secs?|mins?|hours?|days?)",  # Time (with plurals)
+        r"\d+[KMB]",  # Abbreviations
+        # Impact words must be near numbers/metrics to count as quantification
+        r"(?:reduced|increased|improved|saved|generated)\s+(?:by\s+)?\d",
+        # Or just any number that looks metric-like
+        r"\b\d+(?:\.\d+)?\s*(?:%|x|\$|K|M|B|ms|sec|min|hour|day)\b",
     ]
-    for pattern in patterns:
-        if re.search(pattern, text, re.IGNORECASE):
-            return True
-    return False
+    return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
 ```
 
 ### Enhanced Validate Command
@@ -628,11 +640,29 @@ rm work-units/wu-missing.yaml work-units/wu-bad-enum.yaml work-units/wu-weak.yam
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+- Code review remediation: Fixed time pattern regex, added exclusion words, added edge case tests
+
 ### Completion Notes List
 
+- All acceptance criteria implemented and tested
+- Code review identified 9 issues, all remediated
+
 ### File List
+
+**Created:**
+- `src/resume_as_code/services/content_validator.py` - Content quality and density validation
+- `src/resume_as_code/utils/validation_messages.py` - Field-specific error message mappings
+- `tests/unit/test_content_validator.py` - Unit tests for content validation (34 tests)
+- `tests/unit/test_validation_messages.py` - Unit tests for message mappings (19 tests)
+
+**Modified:**
+- `src/resume_as_code/commands/validate.py` - Added --content-quality and --content-density flags, Rich Tree/Panel output
+- `src/resume_as_code/services/validator.py` - Enhanced error suggestions using validation_messages
+- `src/resume_as_code/utils/console.py` - Added json_output() function
+- `tests/unit/test_validator.py` - Added tests for contextual suggestions
+- `tests/integration/test_validate_command.py` - Added 9 tests for content validation flags
 

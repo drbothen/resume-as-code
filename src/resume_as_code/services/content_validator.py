@@ -77,7 +77,7 @@ def validate_content_quality(work_unit: dict[str, Any], file_path: str) -> list[
 
     # Check for verb repetition
     for verb, count in verb_usage.items():
-        if count > 1 and verb not in ("the", "a", "an", "to", "and", "or"):
+        if count > 1 and verb not in ("the", "a", "an", "to", "and", "or", "for", "with", "of"):
             warnings.append(
                 ContentWarning(
                     code="VERB_REPETITION",
@@ -157,7 +157,7 @@ def _has_quantification(text: str) -> bool:
         r"\d+%",  # Percentages
         r"\$[\d,]+",  # Currency
         r"\d+x",  # Multipliers
-        r"\d+\s*(?:ms|sec|min|hour|day)",  # Time
+        r"\d+\s*(?:ms|secs?|mins?|hours?|days?)",  # Time (with plurals)
         r"\d+[KMB]",  # Abbreviations
         # Impact words must be near numbers/metrics to count as quantification
         r"(?:reduced|increased|improved|saved|generated)\s+(?:by\s+)?\d",

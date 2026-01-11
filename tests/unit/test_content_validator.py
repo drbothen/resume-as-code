@@ -146,6 +146,21 @@ class TestContentQuality:
         warnings = validate_content_quality(work_unit, "test.yaml")
         assert not any(w.code == "MISSING_QUANTIFICATION" for w in warnings)
 
+    def test_accepts_time_quantification_plurals(self) -> None:
+        """Should recognize plural time units (hours, days, mins, secs)."""
+        test_cases = [
+            "Saved 5 hours per week on manual tasks",
+            "Reduced build time by 10 mins",
+            "Improved response time by 200 secs",
+            "Completed project 3 days ahead of schedule",
+        ]
+        for result_text in test_cases:
+            work_unit = {"outcome": {"result": result_text}}
+            warnings = validate_content_quality(work_unit, "test.yaml")
+            assert not any(w.code == "MISSING_QUANTIFICATION" for w in warnings), (
+                f"Failed to detect quantification in: {result_text}"
+            )
+
     def test_accepts_impact_words_with_metrics(self) -> None:
         """Should accept impact words with metrics like 'reduced by 50%'."""
         work_unit = {
@@ -190,6 +205,13 @@ class TestContentQuality:
         work_unit: dict[str, object] = {}
         warnings = validate_content_quality(work_unit, "test.yaml")
         assert not any(w.code == "WEAK_ACTION_VERB" for w in warnings)
+
+    def test_handles_empty_outcome_object(self) -> None:
+        """Should handle empty outcome object without error."""
+        work_unit: dict[str, object] = {"outcome": {}}
+        warnings = validate_content_quality(work_unit, "test.yaml")
+        # Empty outcome should not trigger quantification warning (no result to check)
+        assert not any(w.code == "MISSING_QUANTIFICATION" for w in warnings)
 
     def test_handles_non_string_actions(self) -> None:
         """Should skip non-string action items."""
