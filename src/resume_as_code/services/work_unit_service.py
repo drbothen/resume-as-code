@@ -63,6 +63,15 @@ def get_work_units_dir(base_dir: Path | None = None) -> Path:
     return base_dir
 
 
+def _escape_yaml_string(value: str) -> str:
+    """Escape a string value for safe YAML double-quoted insertion.
+
+    Escapes backslashes and double quotes to prevent YAML syntax errors.
+    """
+    # Escape backslashes first, then double quotes
+    return value.replace("\\", "\\\\").replace('"', '\\"')
+
+
 def create_work_unit_file(
     archetype: str,
     work_unit_id: str,
@@ -89,9 +98,12 @@ def create_work_unit_file(
     )
 
     # Replace title placeholder if present
+    # Escape special characters to prevent YAML syntax errors
+    escaped_title = _escape_yaml_string(title)
+    # Use a lambda to prevent re.sub from interpreting backslashes in replacement
     content = re.sub(
         r'title:\s*"[^"]*"',
-        f'title: "{title}"',
+        lambda _: f'title: "{escaped_title}"',
         content,
         count=1,
     )

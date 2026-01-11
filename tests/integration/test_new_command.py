@@ -161,6 +161,87 @@ class TestNewWorkUnitCommand:
         assert result.output.strip() == ""
 
 
+class TestNewWorkUnitInteractive:
+    """Tests for interactive mode prompts."""
+
+    def test_interactive_archetype_selection(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should allow interactive archetype selection via numbered menu."""
+        monkeypatch.chdir(tmp_path)
+
+        # Input "2" to select second archetype, then provide title
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--title", "Test Project", "--no-edit"],
+            input="2\n",  # Select archetype #2
+        )
+
+        assert result.exit_code == 0
+        assert "Select an archetype:" in result.output
+        files = list((tmp_path / "work-units").glob("*.yaml"))
+        assert len(files) == 1
+
+    def test_interactive_archetype_default_selection(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should use default archetype when Enter pressed with no input."""
+        monkeypatch.chdir(tmp_path)
+
+        # Press Enter to accept default (greenfield)
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--title", "Default Test", "--no-edit"],
+            input="\n",  # Accept default
+        )
+
+        assert result.exit_code == 0
+        files = list((tmp_path / "work-units").glob("*.yaml"))
+        assert len(files) == 1
+        content = files[0].read_text()
+        # Greenfield template has time_started field
+        assert "time_started:" in content
+
+    def test_interactive_title_prompt(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should prompt for title when not provided."""
+        monkeypatch.chdir(tmp_path)
+
+        # Input: accept default archetype, then provide title
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--archetype", "greenfield", "--no-edit"],
+            input="My Interactive Title\n",
+        )
+
+        assert result.exit_code == 0
+        assert "Work Unit title" in result.output
+        files = list((tmp_path / "work-units").glob("*.yaml"))
+        assert len(files) == 1
+        content = files[0].read_text()
+        assert "My Interactive Title" in content
+
+    def test_full_interactive_flow(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should handle full interactive flow (archetype + title)."""
+        monkeypatch.chdir(tmp_path)
+
+        # Input: select archetype #1, then provide title
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--no-edit"],
+            input="1\nFully Interactive Project\n",
+        )
+
+        assert result.exit_code == 0
+        assert "Select an archetype:" in result.output
+        files = list((tmp_path / "work-units").glob("*.yaml"))
+        assert len(files) == 1
+        assert "fully-interactive-project" in files[0].name
+
+
 class TestNewWorkUnitArchetypes:
     """Test different archetype templates."""
 

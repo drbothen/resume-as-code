@@ -1,6 +1,6 @@
 # Story 2.3: Create Work Unit Command
 
-Status: review
+Status: done
 
 ## Story
 
@@ -196,7 +196,7 @@ def new_work_unit(
                 "archetype": archetype,
             },
         )
-        print(response.to_json())
+        click.echo(response.to_json())
     elif not ctx.obj.quiet:
         success(f"Created Work Unit: {work_unit_id}")
         info(f"File: {file_path}")
@@ -590,6 +590,7 @@ N/A - No issues encountered during implementation.
 - src/resume_as_code/services/work_unit_service.py
 - src/resume_as_code/utils/editor.py
 - tests/unit/test_work_unit_service.py
+- tests/unit/test_editor.py (added in code review)
 - tests/integration/test_new_command.py
 
 **Modified Files:**
@@ -598,4 +599,5 @@ N/A - No issues encountered during implementation.
 ### Change Log
 
 - 2026-01-11: Story 2.3 implemented - `resume new work-unit` command with full archetype scaffolding, editor integration, and non-interactive support
+- 2026-01-11: Code review completed - Fixed 8 issues (5 MEDIUM, 3 LOW). Added YAML string escaping for special chars, unit tests for editor utility, interactive mode tests, explicit subprocess timeout. Coverage improved 70% → 92%.
 

@@ -34,12 +34,13 @@ def open_in_editor(path: Path, editor: str) -> None:
         editor: Editor command (e.g., "code", "vim", "nano")
     """
     # Handle editors that need special flags
+    # timeout=None explicitly documents that we wait indefinitely for editor
     if editor in ("code", "code-insiders"):
         # VS Code: use --wait to block until closed
-        subprocess.run([editor, "--wait", str(path)], check=False)
+        subprocess.run([editor, "--wait", str(path)], check=False, timeout=None)
     elif editor in ("subl", "sublime"):
         # Sublime: use --wait
-        subprocess.run([editor, "--wait", str(path)], check=False)
+        subprocess.run([editor, "--wait", str(path)], check=False, timeout=None)
     else:
         # Default: just open the file
-        subprocess.run([editor, str(path)], check=False)
+        subprocess.run([editor, str(path)], check=False, timeout=None)

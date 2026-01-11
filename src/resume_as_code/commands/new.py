@@ -13,7 +13,7 @@ from resume_as_code.services.work_unit_service import (
     create_work_unit_file,
     generate_id,
 )
-from resume_as_code.utils.console import console, info, success
+from resume_as_code.utils.console import console, info, success, warning
 from resume_as_code.utils.editor import get_editor, open_in_editor
 from resume_as_code.utils.errors import handle_errors
 
@@ -22,6 +22,7 @@ def _get_archetype_choices() -> list[str]:
     """Get available archetype choices for the CLI option."""
     archetypes = list_archetypes()
     if not archetypes:
+        warning("No archetypes found; using 'greenfield' as fallback")
         return ["greenfield"]  # Fallback default
     return archetypes
 
