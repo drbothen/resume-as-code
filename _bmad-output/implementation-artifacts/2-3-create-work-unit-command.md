@@ -1,6 +1,6 @@
 # Story 2.3: Create Work Unit Command
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -37,44 +37,44 @@ So that **I can capture accomplishments quickly while they're fresh**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create new command module (AC: #1, #2)
-  - [ ] 1.1: Create `src/resume_as_code/commands/new.py`
-  - [ ] 1.2: Implement `resume new` command group
-  - [ ] 1.3: Implement `resume new work-unit` subcommand
-  - [ ] 1.4: Add `--archetype` option with archetype choices
-  - [ ] 1.5: Add `--title` option for specifying title upfront
+- [x] Task 1: Create new command module (AC: #1, #2)
+  - [x] 1.1: Create `src/resume_as_code/commands/new.py`
+  - [x] 1.2: Implement `resume new` command group
+  - [x] 1.3: Implement `resume new work-unit` subcommand
+  - [x] 1.4: Add `--archetype` option with archetype choices
+  - [x] 1.5: Add `--title` option for specifying title upfront
 
-- [ ] Task 2: Create work unit service (AC: #3, #4)
-  - [ ] 2.1: Create `src/resume_as_code/services/work_unit_service.py`
-  - [ ] 2.2: Implement `generate_id(title: str, date: date)` function
-  - [ ] 2.3: Implement `generate_slug(title: str)` function
-  - [ ] 2.4: Implement `get_work_units_dir()` function
-  - [ ] 2.5: Implement `create_work_unit_file(archetype: str, title: str)` function
-  - [ ] 2.6: Handle directory creation if not exists
+- [x] Task 2: Create work unit service (AC: #3, #4)
+  - [x] 2.1: Create `src/resume_as_code/services/work_unit_service.py`
+  - [x] 2.2: Implement `generate_id(title: str, date: date)` function
+  - [x] 2.3: Implement `generate_slug(title: str)` function
+  - [x] 2.4: Implement `get_work_units_dir()` function
+  - [x] 2.5: Implement `create_work_unit_file(archetype: str, title: str)` function
+  - [x] 2.6: Handle directory creation if not exists
 
-- [ ] Task 3: Implement editor integration (AC: #5)
-  - [ ] 3.1: Create `src/resume_as_code/utils/editor.py`
-  - [ ] 3.2: Implement `get_editor()` to check $VISUAL, $EDITOR, config
-  - [ ] 3.3: Implement `open_in_editor(path: Path)` function
-  - [ ] 3.4: Handle missing editor gracefully with helpful message
+- [x] Task 3: Implement editor integration (AC: #5)
+  - [x] 3.1: Create `src/resume_as_code/utils/editor.py`
+  - [x] 3.2: Implement `get_editor()` to check $VISUAL, $EDITOR, config
+  - [x] 3.3: Implement `open_in_editor(path: Path)` function
+  - [x] 3.4: Handle missing editor gracefully with helpful message
 
-- [ ] Task 4: Implement archetype selection (AC: #1, #2)
-  - [ ] 4.1: If `--archetype` not provided, show selection menu
-  - [ ] 4.2: List available archetypes with descriptions
-  - [ ] 4.3: Default to "greenfield" if no selection made
-  - [ ] 4.4: Support `--archetype` flag to skip selection
+- [x] Task 4: Implement archetype selection (AC: #1, #2)
+  - [x] 4.1: If `--archetype` not provided, show selection menu
+  - [x] 4.2: List available archetypes with descriptions
+  - [x] 4.3: Default to "greenfield" if no selection made
+  - [x] 4.4: Support `--archetype` flag to skip selection
 
-- [ ] Task 5: Wire command into CLI (AC: #1)
-  - [ ] 5.1: Register `new` command group in `cli.py`
-  - [ ] 5.2: Add command help text
-  - [ ] 5.3: Support `--json` output mode
+- [x] Task 5: Wire command into CLI (AC: #1)
+  - [x] 5.1: Register `new` command group in `cli.py`
+  - [x] 5.2: Add command help text
+  - [x] 5.3: Support `--json` output mode
 
-- [ ] Task 6: Code quality verification
-  - [ ] 6.1: Run `ruff check src tests --fix`
-  - [ ] 6.2: Run `ruff format src tests`
-  - [ ] 6.3: Run `mypy src --strict` with zero errors
-  - [ ] 6.4: Add unit tests for slug generation
-  - [ ] 6.5: Add integration tests for command
+- [x] Task 6: Code quality verification
+  - [x] 6.1: Run `ruff check src tests --fix`
+  - [x] 6.2: Run `ruff format src tests`
+  - [x] 6.3: Run `mypy src --strict` with zero errors
+  - [x] 6.4: Add unit tests for slug generation
+  - [x] 6.5: Add integration tests for command
 
 ## Dev Notes
 
@@ -560,11 +560,42 @@ pytest tests/unit/test_work_unit_service.py tests/integration/test_new_command.p
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A - No issues encountered during implementation.
+
 ### Completion Notes List
 
+- Implemented `resume new work-unit` command with full archetype and title options
+- Created work_unit_service.py with slug generation (handles unicode, special chars, truncation)
+- Created editor.py utility with support for VS Code, Sublime, and standard editors
+- All 5 acceptance criteria satisfied:
+  - AC#1: Interactive archetype selection with numbered menu
+  - AC#2: `--archetype` flag bypasses prompt
+  - AC#3: Slug derived from title (lowercase, hyphenated)
+  - AC#4: work-units directory auto-created if missing
+  - AC#5: Editor integration with $VISUAL/$EDITOR fallback and helpful message
+- Non-interactive mode supported via `--archetype` + `--title` flags (FR38)
+- JSON output mode supported via `--json` flag
+- Quiet mode supported via `--quiet` flag
+- 331 tests pass including 11 unit tests for slug/id generation and 10 integration tests for command
+- All code passes ruff check, ruff format, and mypy --strict
+
 ### File List
+
+**New Files:**
+- src/resume_as_code/commands/new.py
+- src/resume_as_code/services/work_unit_service.py
+- src/resume_as_code/utils/editor.py
+- tests/unit/test_work_unit_service.py
+- tests/integration/test_new_command.py
+
+**Modified Files:**
+- src/resume_as_code/cli.py (added new_group registration)
+
+### Change Log
+
+- 2026-01-11: Story 2.3 implemented - `resume new work-unit` command with full archetype scaffolding, editor integration, and non-interactive support
 

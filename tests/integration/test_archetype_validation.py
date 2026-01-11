@@ -150,16 +150,12 @@ class TestArchetypeSchemaValidation:
         # Verify problem has required subfields
         problem_schema = work_unit_schema["properties"]["problem"]
         for field in problem_schema.get("required", []):
-            assert field in data["problem"], (
-                f"Archetype '{archetype_name}' missing problem.{field}"
-            )
+            assert field in data["problem"], f"Archetype '{archetype_name}' missing problem.{field}"
 
         # Verify outcome has required subfields
         outcome_schema = work_unit_schema["properties"]["outcome"]
         for field in outcome_schema.get("required", []):
-            assert field in data["outcome"], (
-                f"Archetype '{archetype_name}' missing outcome.{field}"
-            )
+            assert field in data["outcome"], f"Archetype '{archetype_name}' missing outcome.{field}"
 
 
 class TestExecutiveArchetypeFields:
@@ -172,17 +168,13 @@ class TestExecutiveArchetypeFields:
     def test_executive_archetypes_have_scope(self, archetype_name: str) -> None:
         """Executive archetypes should have scope section."""
         data = load_archetype_data(archetype_name)
-        assert "scope" in data, (
-            f"Executive archetype '{archetype_name}' missing scope section"
-        )
+        assert "scope" in data, f"Executive archetype '{archetype_name}' missing scope section"
 
     @pytest.mark.parametrize(
         "archetype_name",
         ["transformation", "cultural", "strategic"],
     )
-    def test_executive_archetypes_have_impact_category(
-        self, archetype_name: str
-    ) -> None:
+    def test_executive_archetypes_have_impact_category(self, archetype_name: str) -> None:
         """Executive archetypes should have impact_category."""
         data = load_archetype_data(archetype_name)
         assert "impact_category" in data, (
