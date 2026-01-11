@@ -69,7 +69,7 @@ development_status:
   3-1-validate-command-schema-validation: done
   3-2-actionable-validation-feedback: done
   3-3-list-command-filtering: done
-  epic-3-retrospective: optional
+  epic-3-retrospective: done
 
   # Epic 4: Resume Planning & Explainability
   # Goal: Users can run `resume plan` and see exactly what will be included/excluded with reasons
