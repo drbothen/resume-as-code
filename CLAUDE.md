@@ -109,6 +109,24 @@ Create a PR to merge into `develop` (not `main`).
 
 ---
 
+## Package Management (uv)
+
+This project uses **uv** for dependency management. Always prefix Python commands with `uv run`:
+
+```bash
+uv run pytest                      # Run tests
+uv run pytest tests/unit/ -v       # Run specific tests
+uv run ruff check src tests --fix  # Lint with auto-fix
+uv run ruff format src tests       # Format code
+uv run mypy src --strict           # Type check
+uv run python -c "..."             # Run Python code
+uv run resume --help               # Run the CLI
+```
+
+**Do NOT use bare `python`, `pytest`, `ruff`, or `mypy` commands** - they won't have access to the project's virtual environment.
+
+---
+
 ## Resume CLI Reference
 
 CLI tool for git-native resume generation from structured Work Units.
