@@ -56,7 +56,7 @@ development_status:
   # FRs Covered: FR1, FR2, FR3, FR4, FR5, FR9, FR10, FR11
   epic-2: in-progress
   2-1-work-unit-schema-pydantic-model: done
-  2-2-archetype-templates: ready-for-dev
+  2-2-archetype-templates: review
   2-3-create-work-unit-command: ready-for-dev
   2-4-quick-capture-mode: ready-for-dev
   2-5-work-unit-metadata-evidence: ready-for-dev

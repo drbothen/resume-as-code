@@ -233,7 +233,7 @@ class TestSchemaAndPydanticConsistency:
         import jsonschema
         from pydantic import ValidationError as PydanticValidationError
 
-        from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit
+        from resume_as_code.models.work_unit import Problem, WorkUnit
 
         # Missing 'outcome' field
         invalid_data = {

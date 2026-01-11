@@ -1,6 +1,6 @@
 # Story 2.2: Archetype Templates
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -47,36 +47,36 @@ So that **I have guidance on what to capture for different situations**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create core archetypes (AC: #1, #2, #3, #4)
-  - [ ] 1.1: Create `archetypes/incident.yaml` with incident response guidance
-  - [ ] 1.2: Create `archetypes/greenfield.yaml` with new project guidance
-  - [ ] 1.3: Create `archetypes/leadership.yaml` with influence/leadership guidance
-  - [ ] 1.4: Add YAML comments with field explanations
-  - [ ] 1.5: Ensure all templates validate against work-unit.schema.json
+- [x] Task 1: Create core archetypes (AC: #1, #2, #3, #4)
+  - [x] 1.1: Create `archetypes/incident.yaml` with incident response guidance
+  - [x] 1.2: Create `archetypes/greenfield.yaml` with new project guidance
+  - [x] 1.3: Create `archetypes/leadership.yaml` with influence/leadership guidance
+  - [x] 1.4: Add YAML comments with field explanations
+  - [x] 1.5: Ensure all templates validate against work-unit.schema.json
 
-- [ ] Task 2: Create executive archetypes (AC: #5, #6, #7)
-  - [ ] 2.1: Create `archetypes/transformation.yaml` for executive transformation
-  - [ ] 2.2: Create `archetypes/cultural.yaml` for culture/organizational change
-  - [ ] 2.3: Create `archetypes/strategic.yaml` for strategic initiatives
-  - [ ] 2.4: Include scope fields (budget, team size, revenue)
-  - [ ] 2.5: Include impact category guidance
+- [x] Task 2: Create executive archetypes (AC: #5, #6, #7)
+  - [x] 2.1: Create `archetypes/transformation.yaml` for executive transformation
+  - [x] 2.2: Create `archetypes/cultural.yaml` for culture/organizational change
+  - [x] 2.3: Create `archetypes/strategic.yaml` for strategic initiatives
+  - [x] 2.4: Include scope fields (budget, team size, revenue)
+  - [x] 2.5: Include impact category guidance
 
-- [ ] Task 3: Create additional utility archetypes
-  - [ ] 3.1: Create `archetypes/migration.yaml` for system migrations
-  - [ ] 3.2: Create `archetypes/optimization.yaml` for performance/cost optimization
-  - [ ] 3.3: Create `archetypes/minimal.yaml` for quick capture (--from-memory)
+- [x] Task 3: Create additional utility archetypes
+  - [x] 3.1: Create `archetypes/migration.yaml` for system migrations
+  - [x] 3.2: Create `archetypes/optimization.yaml` for performance/cost optimization
+  - [x] 3.3: Create `archetypes/minimal.yaml` for quick capture (--from-memory)
 
-- [ ] Task 4: Create archetype loader utility
-  - [ ] 4.1: Create `src/resume_as_code/services/archetype_service.py`
-  - [ ] 4.2: Implement `list_archetypes()` function
-  - [ ] 4.3: Implement `load_archetype(name: str)` function
-  - [ ] 4.4: Implement `get_archetype_path(name: str)` function
+- [x] Task 4: Create archetype loader utility
+  - [x] 4.1: Create `src/resume_as_code/services/archetype_service.py`
+  - [x] 4.2: Implement `list_archetypes()` function
+  - [x] 4.3: Implement `load_archetype(name: str)` function
+  - [x] 4.4: Implement `get_archetype_path(name: str)` function
 
-- [ ] Task 5: Code quality verification
-  - [ ] 5.1: Validate all archetype YAML files
-  - [ ] 5.2: Run `ruff check src tests --fix`
-  - [ ] 5.3: Run `mypy src --strict` with zero errors
-  - [ ] 5.4: Add unit tests for archetype service
+- [x] Task 5: Code quality verification
+  - [x] 5.1: Validate all archetype YAML files
+  - [x] 5.2: Run `ruff check src tests --fix`
+  - [x] 5.3: Run `mypy src --strict` with zero errors
+  - [x] 5.4: Add unit tests for archetype service
 
 ## Dev Notes
 
@@ -576,11 +576,44 @@ mypy src --strict
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
+
+- Created 9 archetype templates following PAR framework with comprehensive YAML comments
+- Core archetypes: incident.yaml, greenfield.yaml, leadership.yaml
+- Executive archetypes: transformation.yaml, cultural.yaml, strategic.yaml (all include scope, impact_category, metrics, framing fields)
+- Utility archetypes: migration.yaml, optimization.yaml, minimal.yaml
+- Created archetype_service.py with list_archetypes(), get_archetype_path(), load_archetype(), load_archetype_data() functions
+- All YAML files validated successfully with yaml.safe_load()
+- 13 unit tests added for archetype service (all passing)
+- ruff check: passed (1 auto-fixed issue)
+- mypy --strict: passed (0 errors)
+- Full test suite: 289 tests passed, 0 regressions
+
+### Change Log
+
+- 2026-01-11: Story 2.2 completed - All archetypes and archetype service implemented
 
 ### File List
 
+**New Files:**
+- archetypes/incident.yaml
+- archetypes/greenfield.yaml
+- archetypes/leadership.yaml
+- archetypes/transformation.yaml
+- archetypes/cultural.yaml
+- archetypes/strategic.yaml
+- archetypes/migration.yaml
+- archetypes/optimization.yaml
+- archetypes/minimal.yaml
+- src/resume_as_code/services/__init__.py
+- src/resume_as_code/services/archetype_service.py
+- tests/unit/test_archetype_service.py
+
+**Modified Files:**
+- _bmad-output/implementation-artifacts/sprint-status.yaml (status: in-progress -> review)

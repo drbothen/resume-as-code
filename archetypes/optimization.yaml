@@ -1,0 +1,91 @@
+# Performance/Cost Optimization Work Unit Template
+# =================================================
+# Use this archetype for: performance tuning, cost reduction, efficiency improvements,
+# resource optimization, latency reduction
+#
+# PAR Framework Focus:
+# - Problem: What was underperforming or costing too much?
+# - Action: How did you analyze and optimize?
+# - Result: What improvement was achieved?
+
+schema_version: "1.0.0"
+
+# ID Format: wu-YYYY-MM-DD-slug
+id: "wu-YYYY-MM-DD-optimization-slug"
+
+# Title: Lead with what was optimized and the improvement
+# Examples:
+# - "Optimized API latency reducing p99 from 500ms to 50ms"
+# - "Reduced cloud costs by 40% through resource rightsizing"
+title: "Optimized [SYSTEM/METRIC] achieving [QUANTIFIED IMPROVEMENT]"
+
+# Problem Section - What needed optimization?
+problem:
+  # Statement: What was the performance or cost problem?
+  statement: |
+    [SYSTEM] exhibited [PROBLEM: slow performance, high cost, resource waste].
+    Current state: [SPECIFIC METRIC] was [VALUE], impacting [USERS/BUSINESS].
+
+  # Constraints: What made optimization challenging?
+  constraints:
+    - "Production system: [Can't take offline for testing]"
+    - "Limited visibility: [Incomplete metrics or monitoring]"
+    - "Dependencies: [Other systems rely on this]"
+
+  # Context: Why optimization was prioritized
+  context: |
+    [Business impact: user experience, costs, SLA compliance]
+
+# Actions: Optimization approach
+# Strong verbs: analyzed, profiled, optimized, eliminated, streamlined
+actions:
+  - "Profiled [SYSTEM]: [How you identified bottlenecks or waste]"
+  - "Analyzed [ROOT CAUSES]: [What was causing the problem]"
+  - "Implemented [OPTIMIZATIONS]: [Specific changes made]"
+  - "Validated [IMPROVEMENTS]: [How you measured success]"
+  - "Documented [FINDINGS]: [Knowledge captured for future]"
+
+# Outcome Section - Optimization results
+outcome:
+  # Result: Quantify the improvement
+  result: |
+    Achieved [QUANTIFIED IMPROVEMENT] in [METRIC].
+
+  # Quantified Impact: Before/after comparison
+  quantified_impact: "[X% improvement / $Y cost savings / Z latency reduction]"
+
+  # Business Value: Impact on users or business
+  business_value: |
+    [User experience improvement, cost savings realized, capacity unlocked]
+
+# Time Tracking
+time_started: "YYYY-MM-DD"
+time_ended: "YYYY-MM-DD"
+
+# Skills Demonstrated
+skills_demonstrated:
+  - name: "Performance Analysis"
+  - name: "[Technology Expertise]"
+  - name: "Problem Solving"
+
+# Confidence
+confidence: high
+
+# Tags
+tags:
+  - optimization
+  - performance
+  - "[technology]"
+
+# Metrics: Before/after comparison (critical for optimization stories)
+metrics:
+  baseline: "[Before: latency, cost, resource usage]"
+  outcome: "[After: improved metrics]"
+  percentage_change: 0  # Improvement percentage
+
+# Evidence
+evidence:
+  - type: metrics
+    url: "https://[monitoring-dashboard]"
+    dashboard_name: "Performance Dashboard"
+    description: "Before/after performance metrics"

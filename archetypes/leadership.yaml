@@ -1,0 +1,98 @@
+# Leadership & Influence Work Unit Template
+# ==========================================
+# Use this archetype for: cross-team initiatives, mentoring, culture change, process improvements
+#
+# PAR Framework Focus:
+# - Problem: What organizational challenge needed leadership?
+# - Action: How did you influence, align, or lead others?
+# - Result: What organizational outcome was achieved?
+
+schema_version: "1.0.0"
+
+# ID Format: wu-YYYY-MM-DD-slug
+id: "wu-YYYY-MM-DD-leadership-slug"
+
+# Title: Lead with influence verb and scope
+# Examples:
+# - "Championed engineering excellence program across 5 teams"
+# - "Unified deployment practices organization-wide"
+title: "[ACTION VERB] [INITIATIVE] across [SCOPE]"
+
+# Problem Section - What organizational challenge existed?
+problem:
+  # Statement: What challenge required leadership vs just execution?
+  statement: |
+    [ORGANIZATION/TEAM] faced [CHALLENGE] impacting [OUTCOME METRIC].
+
+  # Constraints: Stakeholder and change management challenges
+  constraints:
+    - "Stakeholder complexity: [Who needed to be aligned]"
+    - "Change resistance: [What obstacles existed]"
+    - "Resource constraints: [Limited time/budget/authority]"
+
+  # Context: Why leadership was needed
+  context: |
+    [Why did this require leadership rather than just execution?
+     What made influence critical to success?]
+
+# Actions: How did YOU lead and influence? Use leadership verbs.
+# Strong verbs: championed, cultivated, mentored, mobilized, unified, aligned
+actions:
+  - "Aligned [STAKEHOLDERS]: [How you built consensus]"
+  - "Designed [PROGRAM/PROCESS]: [What you created or improved]"
+  - "Coached [TEAMS/INDIVIDUALS]: [How you developed others]"
+  - "Measured [METRICS]: [How you tracked and demonstrated progress]"
+  - "Scaled [INITIATIVE]: [How you expanded impact]"
+
+# Outcome Section - What organizational change was achieved?
+outcome:
+  # Result: Quantify organizational impact
+  result: |
+    Achieved [ORGANIZATIONAL OUTCOME] affecting [SCOPE].
+
+  # Quantified Impact: Measurable change
+  quantified_impact: "[X teams adopted / Y% improvement / Z people developed]"
+
+  # Business Value: Long-term organizational value
+  business_value: |
+    [Lasting impact: What changed permanently? What capability was built?]
+
+# Time Tracking (leadership initiatives often span longer periods)
+time_started: "YYYY-MM-DD"
+time_ended: "YYYY-MM-DD"
+
+# Skills Demonstrated - Leadership-specific skills
+skills_demonstrated:
+  - name: "Stakeholder Management"
+  - name: "Change Leadership"
+  - name: "Coaching & Mentoring"
+  - name: "[Domain-specific skill]"
+
+# Confidence
+confidence: high
+
+# Tags
+tags:
+  - leadership
+  - "[initiative-type]"
+  - "[domain]"
+
+# Scope: Executive-level fields for quantifying leadership reach
+scope:
+  team_size: 0  # Number of people influenced/led
+  # budget_managed: "$X"  # If you managed budget
+  # geographic_reach: "Global/Regional/National"
+
+# Impact Category: Type of organizational impact
+# Values: financial | operational | talent | customer | organizational
+impact_category:
+  - organizational
+  # - talent
+  # - operational
+
+# Evidence
+evidence:
+  - type: document
+    url: "https://[documentation-url]"
+    title: "Initiative Documentation"
+    description: "Program design or results documentation"

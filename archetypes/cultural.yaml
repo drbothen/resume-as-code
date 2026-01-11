@@ -1,0 +1,107 @@
+# Cultural & Organizational Leadership Work Unit Template
+# ========================================================
+# Use this archetype for: culture change, talent development, organizational leadership
+#
+# Focus on "soft" accomplishments that drive organizational health
+# Emphasizes people development and organizational capability building
+
+schema_version: "1.0.0"
+
+# ID Format: wu-YYYY-MM-DD-slug
+id: "wu-YYYY-MM-DD-cultural-slug"
+
+# Title: Emphasize organizational/people impact
+# Examples:
+# - "Cultivated high-performance engineering culture reducing attrition by 30%"
+# - "Developed leadership pipeline promoting 12 engineers to senior roles"
+title: "[ACTION VERB] [CULTURAL INITIATIVE] achieving [PEOPLE OUTCOME]"
+
+# Problem Section - Organizational/people challenge
+problem:
+  # Statement: Frame the cultural or talent challenge
+  statement: |
+    [ORGANIZATION] faced [CULTURAL/TALENT CHALLENGE] impacting [OUTCOME].
+    [SYMPTOMS]: Low engagement, high attrition, skill gaps, etc.
+
+  # Constraints: Cultural change is hard
+  constraints:
+    - "Entrenched behaviors: [Existing culture patterns]"
+    - "Skepticism: [Resistance to change]"
+    - "Measurement difficulty: [Hard to quantify culture]"
+
+  # Context: Why culture change was strategic
+  context: |
+    [Connection to business outcomes: retention, performance, innovation]
+
+# Actions: Culture and talent leadership
+# Strong verbs: cultivated, developed, mentored, inspired, championed
+actions:
+  - "Assessed [CURRENT STATE]: [How you diagnosed the cultural situation]"
+  - "Designed [INITIATIVE]: [Programs, rituals, or processes created]"
+  - "Modeled [BEHAVIORS]: [How you demonstrated desired culture]"
+  - "Developed [PEOPLE]: [Coaching, mentoring, training provided]"
+  - "Measured [OUTCOMES]: [How you tracked cultural health]"
+
+# Outcome Section - People and organizational outcomes
+outcome:
+  # Result: Quantify the cultural/organizational change
+  result: |
+    Achieved [CULTURAL OUTCOME] with [QUANTIFIED PEOPLE IMPACT].
+
+  # Quantified Impact: Use people metrics
+  # Examples: retention, engagement scores, promotions, skill development
+  quantified_impact: "[X% improvement in retention / Y promotions / Z engagement score increase]"
+
+  # Business Value: Connect culture to business outcomes
+  business_value: |
+    [How improved culture drove business results: productivity, innovation, quality]
+
+# Time Tracking
+time_started: "YYYY-MM-DD"
+time_ended: "YYYY-MM-DD"
+
+# Skills Demonstrated - People leadership skills
+skills_demonstrated:
+  - name: "Talent Development"
+  - name: "Cultural Leadership"
+  - name: "Coaching & Mentoring"
+  - name: "Organizational Design"
+
+# Confidence
+confidence: high
+
+# Tags
+tags:
+  - cultural
+  - talent
+  - leadership
+  - "[initiative-type]"
+
+# Scope: People leadership reach
+scope:
+  team_size: 0                    # People you influenced/developed
+  # budget_managed: "$X"          # If relevant
+  geographic_reach: "Regional"    # Scope of cultural impact
+
+# Impact Category: Talent and organizational focus
+impact_category:
+  - talent
+  - organizational
+
+# Metrics: Cultural health metrics
+metrics:
+  baseline: "[Before: engagement score, attrition rate, etc.]"
+  outcome: "[After: improved metrics]"
+  percentage_change: 0
+
+# Framing
+framing:
+  action_verb: "Cultivated"
+  strategic_context: "[How culture initiative connected to business strategy]"
+
+# Evidence
+evidence:
+  - type: document
+    url: "https://[engagement-survey-url]"
+    title: "Engagement Survey Results"
+    description: "Before/after culture metrics"

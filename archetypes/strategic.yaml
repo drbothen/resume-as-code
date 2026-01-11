@@ -1,0 +1,105 @@
+# Strategic Repositioning Work Unit Template
+# ===========================================
+# Use this archetype for: market positioning, competitive analysis, business model innovation
+#
+# Focus on strategic thinking and business development accomplishments
+# Designed for roles requiring business acumen and market insight
+
+schema_version: "1.0.0"
+
+# ID Format: wu-YYYY-MM-DD-slug
+id: "wu-YYYY-MM-DD-strategic-slug"
+
+# Title: Lead with strategic outcome
+# Examples:
+# - "Repositioned product line capturing 15% new market share"
+# - "Developed partnership strategy generating $20M pipeline"
+title: "[ACTION VERB] [STRATEGIC INITIATIVE] achieving [BUSINESS OUTCOME]"
+
+# Problem Section - Strategic/market challenge
+problem:
+  # Statement: Frame the market or competitive challenge
+  statement: |
+    [ORGANIZATION] needed to [STRATEGIC OBJECTIVE] due to [MARKET PRESSURE].
+    Competitive landscape showed [THREAT/OPPORTUNITY].
+
+  # Constraints: Strategic execution challenges
+  constraints:
+    - "Market dynamics: [Competitive pressures]"
+    - "Resource constraints: [Budget, time, talent]"
+    - "Stakeholder alignment: [Internal politics or priorities]"
+
+  # Context: Business strategy context
+  context: |
+    [Board/executive priorities and market conditions driving this initiative]
+
+# Actions: Strategic leadership actions
+# Strong verbs: positioned, developed, analyzed, partnered, launched
+actions:
+  - "Analyzed [MARKET/COMPETITION]: [Research and insights gathered]"
+  - "Developed [STRATEGY]: [Strategic framework or approach created]"
+  - "Aligned [STAKEHOLDERS]: [How you built executive consensus]"
+  - "Executed [INITIATIVE]: [How strategy was implemented]"
+  - "Measured [RESULTS]: [How success was tracked]"
+
+# Outcome Section - Business/market outcomes
+outcome:
+  # Result: Quantify the strategic impact
+  result: |
+    Achieved [STRATEGIC OUTCOME] delivering [QUANTIFIED BUSINESS IMPACT].
+
+  # Quantified Impact: Use business metrics
+  quantified_impact: "[X% market share / $YM revenue / Z customer acquisition]"
+
+  # Business Value: Long-term strategic value
+  business_value: |
+    [Sustainable competitive advantage or market position created]
+
+# Time Tracking
+time_started: "YYYY-MM-DD"
+time_ended: "YYYY-MM-DD"
+
+# Skills Demonstrated - Strategic skills
+skills_demonstrated:
+  - name: "Strategic Planning"
+  - name: "Market Analysis"
+  - name: "Business Development"
+  - name: "[Domain Expertise]"
+
+# Confidence
+confidence: high
+
+# Tags
+tags:
+  - strategic
+  - business-development
+  - "[market-type]"
+
+# Scope: Business impact scope
+scope:
+  revenue_influenced: "$XM"       # Revenue impacted
+  # budget_managed: "$X"          # Budget controlled
+  geographic_reach: "National"    # Market scope
+
+# Impact Category: Business-focused
+impact_category:
+  - financial
+  - customer
+
+# Metrics: Business performance metrics
+metrics:
+  baseline: "[Before: market position, revenue, share]"
+  outcome: "[After: improved position]"
+  percentage_change: 0
+
+# Framing
+framing:
+  action_verb: "Positioned"
+  strategic_context: "[How this connected to long-term business strategy]"
+
+# Evidence
+evidence:
+  - type: document
+    url: "https://[strategy-document-url]"
+    title: "Strategic Plan"
+    description: "Strategy document or market analysis"
