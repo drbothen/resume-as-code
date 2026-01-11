@@ -1,6 +1,6 @@
 # Story 1.1: Project Scaffolding & CLI Skeleton
 
-Status: review
+Status: done
 
 ## Story
 
@@ -319,3 +319,4 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 | Date | Change | Author |
 |------|--------|--------|
 | 2026-01-10 | Initial implementation - project scaffolding and CLI skeleton | Dev Agent (Amelia) |
+| 2026-01-10 | Code review fixes: .gitignore, test assertions, py.typed marker | Dev Agent (Amelia) |

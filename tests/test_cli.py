@@ -28,6 +28,8 @@ def test_cli_no_args_shows_help(cli_runner: CliRunner) -> None:
     """Test that running with no args shows help (click group behavior)."""
     result = cli_runner.invoke(main, [])
     assert result.exit_code == 0
+    assert "Resume as Code" in result.output
+    assert "Options:" in result.output
 
 
 def test_version_matches_expected() -> None:

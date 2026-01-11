@@ -24,3 +24,9 @@ venv/
 output/
 dist/
 *.pdf
+
+# Resume cache (embedding cache)
+.resume-cache/
+
+# Python packaging
+*.egg-info/
