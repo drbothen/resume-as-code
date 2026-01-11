@@ -45,6 +45,11 @@ def new_group() -> None:
     help="Work Unit title (used to generate ID slug)",
 )
 @click.option(
+    "--from-memory",
+    is_flag=True,
+    help="Quick capture mode with minimal template",
+)
+@click.option(
     "--no-edit",
     is_flag=True,
     help="Don't open editor after creation",
@@ -55,18 +60,29 @@ def new_work_unit(
     ctx: click.Context,
     archetype: str | None,
     title: str | None,
+    from_memory: bool,
     no_edit: bool,
 ) -> None:
     """Create a new Work Unit from an archetype template."""
     config = get_config()
 
-    # Select archetype (interactive if not provided)
-    if archetype is None:
-        archetype = _select_archetype_interactive(ctx)
+    # Quick capture mode - use minimal archetype, skip archetype selection
+    if from_memory:
+        if archetype is not None and archetype != "minimal" and not ctx.obj.quiet:
+            warning(f"--from-memory overrides --archetype={archetype}, using 'minimal'")
+        archetype = "minimal"
+        if title is None and not ctx.obj.json_output and not ctx.obj.quiet:
+            title = click.prompt("Quick title")
+        elif title is None:
+            title = "quick-capture"
+    else:
+        # Select archetype (interactive if not provided)
+        if archetype is None:
+            archetype = _select_archetype_interactive(ctx)
 
-    # Get title (interactive if not provided)
-    if title is None:
-        title = _prompt_title_interactive(ctx)
+        # Get title (interactive if not provided)
+        if title is None:
+            title = _prompt_title_interactive(ctx)
 
     # Generate ID and create file
     work_unit_id = generate_id(title, date.today())

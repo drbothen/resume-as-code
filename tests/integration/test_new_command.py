@@ -302,3 +302,236 @@ class TestNewWorkUnitArchetypes:
         files = list((tmp_path / "work-units").glob("*.yaml"))
         content = files[0].read_text()
         assert "scope:" in content
+
+
+class TestFromMemoryMode:
+    """Tests for --from-memory quick capture mode (Story 2.4)."""
+
+    def test_from_memory_uses_minimal_archetype(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--from-memory should use minimal archetype (AC #1)."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--from-memory", "--title", "Quick win", "--no-edit"],
+        )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        files = list((tmp_path / "work-units").glob("*.yaml"))
+        assert len(files) == 1
+        content = files[0].read_text()
+        # Minimal archetype has confidence: medium
+        assert "confidence: medium" in content
+
+    def test_from_memory_essential_fields_only(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--from-memory should scaffold only essential fields (AC #2)."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--from-memory", "--title", "Quick win", "--no-edit"],
+        )
+
+        assert result.exit_code == 0
+        files = list((tmp_path / "work-units").glob("*.yaml"))
+        content = files[0].read_text()
+
+        # Essential fields should be present
+        assert "title:" in content
+        assert "problem:" in content
+        assert "statement:" in content
+        assert "actions:" in content
+        assert "outcome:" in content
+        assert "result:" in content
+
+        # Optional fields should be commented out
+        assert "# time_started:" in content
+        assert "# time_ended:" in content
+        assert "# skills_demonstrated:" in content
+        assert "# evidence:" in content
+
+    def test_from_memory_prefills_title(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--from-memory --title should pre-fill the title (AC #3)."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--from-memory", "--title", "Quick win", "--no-edit"],
+        )
+
+        assert result.exit_code == 0
+        files = list((tmp_path / "work-units").glob("*.yaml"))
+        content = files[0].read_text()
+        assert 'title: "Quick win"' in content
+
+    def test_from_memory_skips_archetype_prompt(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--from-memory should skip archetype selection (AC #1)."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--from-memory", "--title", "Quick win", "--no-edit"],
+        )
+
+        assert result.exit_code == 0
+        # Should NOT show archetype selection prompt
+        assert "Select an archetype:" not in result.output
+
+    def test_from_memory_no_prompts_with_title(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--from-memory --title should open editor immediately without prompts (AC #3)."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--from-memory", "--title", "Quick win", "--no-edit"],
+        )
+
+        assert result.exit_code == 0
+        # Should NOT prompt for anything
+        assert "Work Unit title" not in result.output
+        assert "Select an archetype:" not in result.output
+
+    def test_from_memory_without_title_prompts_for_title(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--from-memory without --title should prompt for quick title."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--from-memory", "--no-edit"],
+            input="My quick note\n",
+        )
+
+        assert result.exit_code == 0
+        assert "Quick title" in result.output
+        files = list((tmp_path / "work-units").glob("*.yaml"))
+        content = files[0].read_text()
+        assert "My quick note" in content
+
+    def test_from_memory_json_mode(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--from-memory should work with --json mode."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(
+            main,
+            ["--json", "new", "work-unit", "--from-memory", "--title", "Quick win"],
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["status"] == "success"
+        assert data["data"]["archetype"] == "minimal"
+        assert "quick-win" in data["data"]["id"]
+
+    def test_from_memory_ignores_archetype_flag(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--from-memory should override --archetype flag."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(
+            main,
+            [
+                "new",
+                "work-unit",
+                "--from-memory",
+                "--archetype",
+                "incident",
+                "--title",
+                "Quick win",
+                "--no-edit",
+            ],
+        )
+
+        assert result.exit_code == 0
+        files = list((tmp_path / "work-units").glob("*.yaml"))
+        content = files[0].read_text()
+        # Should use minimal, not incident
+        assert "confidence: medium" in content
+
+    def test_from_memory_warns_when_archetype_overridden(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--from-memory should warn user when --archetype is overridden."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(
+            main,
+            [
+                "new",
+                "work-unit",
+                "--from-memory",
+                "--archetype",
+                "incident",
+                "--title",
+                "Quick win",
+                "--no-edit",
+            ],
+        )
+
+        assert result.exit_code == 0
+        # Should show warning about override
+        assert "--from-memory overrides --archetype=incident" in result.output
+
+    def test_from_memory_opens_editor_by_default(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--from-memory --title should attempt to open editor (AC #3)."""
+        monkeypatch.chdir(tmp_path)
+
+        # Track if open_in_editor was called
+        editor_calls: list[Path] = []
+
+        def mock_open_in_editor(file_path: Path, editor: str) -> None:
+            editor_calls.append(file_path)
+
+        monkeypatch.setattr(
+            "resume_as_code.commands.new.open_in_editor", mock_open_in_editor
+        )
+        monkeypatch.setenv("EDITOR", "vim")
+
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--from-memory", "--title", "Quick win"],
+        )
+
+        assert result.exit_code == 0
+        # Editor should have been called (AC #3: editor opens immediately)
+        assert len(editor_calls) == 1
+        assert "quick-win" in str(editor_calls[0])
+
+    def test_from_memory_missing_archetype_error(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--from-memory should fail gracefully if minimal archetype is missing."""
+        monkeypatch.chdir(tmp_path)
+
+        # Mock load_archetype to simulate missing file
+        def mock_load_archetype(name: str) -> str:
+            raise FileNotFoundError(f"Archetype not found: {name}")
+
+        monkeypatch.setattr(
+            "resume_as_code.services.work_unit_service.load_archetype",
+            mock_load_archetype,
+        )
+
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--from-memory", "--title", "Quick win", "--no-edit"],
+        )
+
+        # Should fail with error, not crash
+        assert result.exit_code != 0

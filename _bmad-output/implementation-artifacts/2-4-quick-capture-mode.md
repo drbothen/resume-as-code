@@ -1,6 +1,6 @@
 # Story 2.4: Quick Capture Mode
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -27,24 +27,25 @@ So that **friction doesn't stop me from capturing important work**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add --from-memory flag (AC: #1, #2, #3)
-  - [ ] 1.1: Update `commands/new.py` with `--from-memory` flag
-  - [ ] 1.2: Skip archetype selection when `--from-memory` is set
-  - [ ] 1.3: Use "minimal" archetype template
+- [x] Task 1: Add --from-memory flag (AC: #1, #2, #3)
+  - [x] 1.1: Update `commands/new.py` with `--from-memory` flag
+  - [x] 1.2: Skip archetype selection when `--from-memory` is set
+  - [x] 1.3: Use "minimal" archetype template
 
-- [ ] Task 2: Create minimal archetype (AC: #2)
-  - [ ] 2.1: Ensure `archetypes/minimal.yaml` has essential fields only
-  - [ ] 2.2: Comment out optional fields
-  - [ ] 2.3: Pre-set confidence to "medium"
+- [x] Task 2: Verify minimal archetype (AC: #2) - *Pre-existed from Story 2.2*
+  - [x] 2.1: Verified `archetypes/minimal.yaml` has essential fields only
+  - [x] 2.2: Verified optional fields are commented out
+  - [x] 2.3: Verified confidence pre-set to "medium"
+  - *Note: No changes needed - archetype created in Story 2.2*
 
-- [ ] Task 3: Update work unit service (AC: #1, #2)
-  - [ ] 3.1: Add parameter to set confidence level
-  - [ ] 3.2: Handle minimal template specifically
+- [N/A] Task 3: ~~Update work unit service~~ - *Not needed*
+  - Confidence is set via template, not code parameter
+  - Minimal template handled identically to other archetypes
 
-- [ ] Task 4: Code quality verification
-  - [ ] 4.1: Run `ruff check src tests --fix`
-  - [ ] 4.2: Run `mypy src --strict` with zero errors
-  - [ ] 4.3: Add tests for --from-memory flag
+- [x] Task 4: Code quality verification
+  - [x] 4.1: Run `ruff check src tests --fix`
+  - [x] 4.2: Run `mypy src --strict` with zero errors
+  - [x] 4.3: Add tests for --from-memory flag
 
 ## Dev Notes
 
@@ -102,7 +103,7 @@ def new_work_unit(
     # Quick capture mode
     if from_memory:
         archetype = "minimal"
-        if title is None and not ctx.obj.json_output:
+        if title is None and not ctx.obj.json_output and not ctx.obj.quiet:
             title = click.prompt("Quick title")
         elif title is None:
             title = "quick-capture"
@@ -175,11 +176,37 @@ cat work-units/wu-*.yaml | grep "confidence: medium"
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A - No debug issues encountered.
+
 ### Completion Notes List
 
+- Implemented `--from-memory` flag in `commands/new.py` that uses the minimal archetype and skips interactive archetype selection
+- When `--from-memory` is used without `--title`, prompts for "Quick title" instead of "Work Unit title"
+- When `--from-memory` is used in JSON/quiet mode without title, defaults to "quick-capture"
+- The minimal archetype (`archetypes/minimal.yaml`) was already present from Story 2.2 with correct structure (essential fields only, optional fields commented out, confidence: medium)
+- Added 8 comprehensive tests covering all acceptance criteria
+- All 370 tests pass, ruff check passes, mypy strict passes
+
+### Code Review Fixes (2026-01-11)
+
+- **C1/C2 Fixed**: Updated Tasks 2 & 3 to reflect reality (archetype pre-existed, no service changes needed)
+- **M2 Fixed**: Added warning when `--from-memory` overrides `--archetype` flag
+- **M3 Fixed**: Updated Dev Notes code example to include `and not ctx.obj.quiet` check
+- **M1 Fixed**: Added test `test_from_memory_opens_editor_by_default` to verify AC #3 editor opening
+- **L1 Fixed**: Added test `test_from_memory_missing_archetype_error` for edge case handling
+- All 373 tests pass, ruff check passes, mypy strict passes
+
 ### File List
+
+- src/resume_as_code/commands/new.py (modified: added --from-memory flag and quick capture logic)
+- tests/integration/test_new_command.py (modified: added TestFromMemoryMode class with 8 tests)
+
+### Change Log
+
+- 2026-01-11: Implemented Story 2.4 Quick Capture Mode - added --from-memory flag for minimal template quick capture
+- 2026-01-11: Code review fixes - added archetype override warning, 3 new tests, fixed story documentation
 
