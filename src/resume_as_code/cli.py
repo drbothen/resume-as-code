@@ -2,41 +2,17 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import click
 
 from resume_as_code import __version__
+
+# Import Context and pass_context from context module for backwards compatibility
+from resume_as_code.context import Context, pass_context
 from resume_as_code.utils.console import configure_output, err_console
+from resume_as_code.utils.errors import handle_errors
 
-if TYPE_CHECKING:
-    from resume_as_code.models.config import ResumeConfig
-
-
-class Context:
-    """Click context object for storing global options and configuration."""
-
-    def __init__(self) -> None:
-        self.json_output: bool = False
-        self.verbose: bool = False
-        self.quiet: bool = False
-        self._config: ResumeConfig | None = None
-
-    @property
-    def config(self) -> ResumeConfig:
-        """Get the effective configuration, loading it lazily if needed."""
-        if self._config is None:
-            from resume_as_code.config import get_config
-
-            self._config = get_config()
-        return self._config
-
-    def set_config(self, config: ResumeConfig) -> None:
-        """Set the configuration (used for testing or CLI overrides)."""
-        self._config = config
-
-
-pass_context = click.make_pass_decorator(Context, ensure=True)
+# Re-export for backwards compatibility
+__all__ = ["Context", "main", "pass_context"]
 
 
 @click.group(invoke_without_command=True)
@@ -45,8 +21,14 @@ pass_context = click.make_pass_decorator(Context, ensure=True)
 @click.option("-v", "--verbose", is_flag=True, help="Show verbose debug output")
 @click.option("-q", "--quiet", is_flag=True, help="Suppress all output, exit code only")
 @click.pass_context
+@handle_errors
 def main(ctx: click.Context, json_output: bool, verbose: bool, quiet: bool) -> None:
-    """Resume as Code - CLI tool for git-native resume generation."""
+    """Resume as Code - CLI tool for git-native resume generation.
+
+    All commands are designed for non-interactive operation, suitable for
+    CI/CD pipelines and AI agent automation. No interactive prompts are used;
+    all required input must come from flags, environment variables, or config files.
+    """
     ctx.ensure_object(Context)
     ctx.obj.json_output = json_output
     ctx.obj.verbose = verbose
@@ -68,9 +50,11 @@ def main(ctx: click.Context, json_output: bool, verbose: bool, quiet: bool) -> N
 def _register_commands() -> None:
     """Register all CLI commands."""
     from resume_as_code.commands.config_cmd import config_command
+    from resume_as_code.commands.test_errors import test_errors
     from resume_as_code.commands.test_output import test_output
 
     main.add_command(config_command)
+    main.add_command(test_errors)
     main.add_command(test_output)
 
 

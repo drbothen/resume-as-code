@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from rich.console import Console
 
 if TYPE_CHECKING:
-    from resume_as_code.cli import Context
+    from resume_as_code.context import Context
 
 # Singleton console instances
 console = Console()  # stdout - for results only

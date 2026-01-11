@@ -6,7 +6,7 @@ from pathlib import Path
 
 import click
 
-from resume_as_code.cli import Context, pass_context
+from resume_as_code.context import Context, pass_context
 from resume_as_code.models.output import JSONResponse
 from resume_as_code.utils.console import (
     OutputMode,

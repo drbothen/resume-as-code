@@ -15,6 +15,7 @@ from resume_as_code.utils.console import (
     verbose_path,
     warning,
 )
+from resume_as_code.utils.errors import handle_errors
 
 __all__ = [
     "OutputMode",
@@ -23,6 +24,7 @@ __all__ = [
     "err_console",
     "error",
     "get_output_mode",
+    "handle_errors",
     "info",
     "reset_output_mode",
     "set_verbose_enabled",

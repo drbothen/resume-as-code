@@ -1,6 +1,6 @@
 # Story 1.4: Error Handling & Exit Codes
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -56,50 +56,50 @@ So that **I can handle failures programmatically**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create exception hierarchy (AC: #1-#6)
-  - [ ] 1.1: Create `src/resume_as_code/models/errors.py`
-  - [ ] 1.2: Implement `ResumeError` base exception with `exit_code` attribute
-  - [ ] 1.3: Implement `UserError` (exit code 1)
-  - [ ] 1.4: Implement `ConfigurationError` (exit code 2)
-  - [ ] 1.5: Implement `ValidationError` (exit code 3)
-  - [ ] 1.6: Implement `NotFoundError` (exit code 4)
-  - [ ] 1.7: Implement `RuntimeSystemError` (exit code 5)
+- [x] Task 1: Create exception hierarchy (AC: #1-#6)
+  - [x] 1.1: Create `src/resume_as_code/models/errors.py`
+  - [x] 1.2: Implement `ResumeError` base exception with `exit_code` attribute
+  - [x] 1.3: Implement `UserError` (exit code 1)
+  - [x] 1.4: Implement `ConfigurationError` (exit code 2)
+  - [x] 1.5: Implement `ValidationError` (exit code 3)
+  - [x] 1.6: Implement `NotFoundError` (exit code 4)
+  - [x] 1.7: Implement `RuntimeSystemError` (exit code 5)
 
-- [ ] Task 2: Create structured error model (AC: #7, #8)
-  - [ ] 2.1: Create `StructuredError` dataclass/model in `models/errors.py`
-  - [ ] 2.2: Add fields: `code`, `message`, `path`, `suggestion`, `recoverable`
-  - [ ] 2.3: Add `to_dict()` method for JSON serialization
-  - [ ] 2.4: Add factory methods on exceptions to create StructuredError
+- [x] Task 2: Create structured error model (AC: #7, #8)
+  - [x] 2.1: Create `StructuredError` dataclass/model in `models/errors.py`
+  - [x] 2.2: Add fields: `code`, `message`, `path`, `suggestion`, `recoverable`
+  - [x] 2.3: Add `to_dict()` method for JSON serialization
+  - [x] 2.4: Add factory methods on exceptions to create StructuredError
 
-- [ ] Task 3: Implement CLI error handling (AC: #1-#6)
-  - [ ] 3.1: Create error handler decorator/function in `utils/errors.py`
-  - [ ] 3.2: Catch exceptions at CLI level in `cli.py`
-  - [ ] 3.3: Format errors appropriately based on output mode (Rich/JSON/quiet)
-  - [ ] 3.4: Ensure correct exit codes are returned
+- [x] Task 3: Implement CLI error handling (AC: #1-#6)
+  - [x] 3.1: Create error handler decorator/function in `utils/errors.py`
+  - [x] 3.2: Catch exceptions at CLI level in `cli.py`
+  - [x] 3.3: Format errors appropriately based on output mode (Rich/JSON/quiet)
+  - [x] 3.4: Ensure correct exit codes are returned
 
-- [ ] Task 4: Integrate with JSON output (AC: #7)
-  - [ ] 4.1: Update `JSONResponse` model to include `errors` array
-  - [ ] 4.2: Populate errors array with `StructuredError` objects on failure
-  - [ ] 4.3: Set `status: "error"` when errors exist
+- [x] Task 4: Integrate with JSON output (AC: #7)
+  - [x] 4.1: Update `JSONResponse` model to include `errors` array
+  - [x] 4.2: Populate errors array with `StructuredError` objects on failure
+  - [x] 4.3: Set `status: "error"` when errors exist
 
-- [ ] Task 5: Create test command for error verification
-  - [ ] 5.1: Add `resume test-errors` command (temporary)
-  - [ ] 5.2: Trigger each error type to verify exit codes
-  - [ ] 5.3: Verify JSON error structure
-  - [ ] 5.4: Verify recoverable flag behavior
+- [x] Task 5: Create test command for error verification
+  - [x] 5.1: Add `resume test-errors` command (temporary)
+  - [x] 5.2: Trigger each error type to verify exit codes
+  - [x] 5.3: Verify JSON error structure
+  - [x] 5.4: Verify recoverable flag behavior
 
-- [ ] Task 6: Ensure non-interactive operation (AC: #9)
-  - [ ] 6.1: Audit all commands for interactive prompts
-  - [ ] 6.2: Replace prompts with required flags or sensible defaults
-  - [ ] 6.3: Document non-interactive usage in help text
+- [x] Task 6: Ensure non-interactive operation (AC: #9)
+  - [x] 6.1: Audit all commands for interactive prompts
+  - [x] 6.2: Replace prompts with required flags or sensible defaults
+  - [x] 6.3: Document non-interactive usage in help text
 
-- [ ] Task 7: Code quality verification
-  - [ ] 7.1: Run `ruff check src tests --fix`
-  - [ ] 7.2: Run `ruff format src tests`
-  - [ ] 7.3: Run `mypy src --strict` with zero errors
-  - [ ] 7.4: Add unit tests for exception hierarchy
-  - [ ] 7.5: Add unit tests for structured error formatting
-  - [ ] 7.6: Add integration tests for exit codes
+- [x] Task 7: Code quality verification
+  - [x] 7.1: Run `ruff check src tests --fix`
+  - [x] 7.2: Run `ruff format src tests`
+  - [x] 7.3: Run `mypy src --strict` with zero errors
+  - [x] 7.4: Add unit tests for exception hierarchy
+  - [x] 7.5: Add unit tests for structured error formatting
+  - [x] 7.6: Add integration tests for exit codes
 
 ## Dev Notes
 
@@ -126,6 +126,8 @@ This story REQUIRES:
 | 3 | `ValidationError` | Schema validation failed | Work unit missing required field |
 | 4 | `NotFoundError` | Work unit file not found | `resume validate missing.yaml` |
 | 5 | `RuntimeSystemError` | File I/O error, network failure | Permission denied |
+
+**Known Limitation:** Click's built-in `UsageError` also uses exit code 2 for invalid CLI arguments (wrong flags, missing required args). When exit code 2 is returned, consumers should check the error message or JSON `errors[].code` field to distinguish between Click usage errors and `ConfigurationError`.
 
 ### Exception Hierarchy
 
@@ -221,7 +223,7 @@ class NotFoundError(ResumeError):
     """Resource (file, work unit) not found."""
 
     exit_code = 4
-    error_code = "NOT_FOUND"
+    error_code = "NOT_FOUND_ERROR"
     recoverable = True  # User can create file and retry
 
 
@@ -603,11 +605,45 @@ pytest tests/unit/test_errors.py tests/integration/test_exit_codes.py
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- Task 1: Created exception hierarchy with 6 exception classes (ResumeError, UserError, ConfigurationError, ValidationError, NotFoundError, RuntimeSystemError) and StructuredError dataclass. All 35 unit tests pass.
+- Task 2: StructuredError dataclass already implemented in Task 1 with all fields (code, message, path, suggestion, recoverable), to_dict() method, and to_structured() factory method on exceptions.
+- Task 3: Implemented @handle_errors decorator in utils/errors.py, applied to cli.py main group. Formats errors appropriately for Rich/JSON/quiet modes. All 18 error handling tests pass.
+- Task 4: JSON integration already complete - JSONResponse model already has errors array, handle_errors populates it with StructuredError objects on failure with status: "error".
+- Task 5: Created `resume test-errors` command that triggers each error type with --type flag. Supports --recoverable/--not-recoverable override. All 12 tests pass.
+- Task 6: Audited all commands - no interactive prompts found. Added non-interactive documentation to CLI help. All 4 non-interactive tests pass.
+- Task 7: Code quality verified - ruff check fixed 8 issues, ruff format reformatted 1 file, mypy strict passes with 0 errors. All 213 tests pass.
+
+### Code Review Fixes (2026-01-11)
+
+- Issue 1: Added exports for error classes to `models/__init__.py` and `handle_errors` to `utils/__init__.py`
+- Issue 2: Fixed circular import by extracting `Context` class to new `context.py` module; added exports to `commands/__init__.py`
+- Issue 3: Filled in agent model placeholder (Claude Opus 4.5)
+- Issue 4: Documented exit code 2 conflict with Click in module docstring and story file
+- Issue 5: Added documentation that recoverable errors should include suggestions
+- Issue 6: Fixed --quiet/--json precedence - quiet mode now correctly takes precedence (consistent with warning message)
+- Issue 7: Standardized error code naming - changed NOT_FOUND to NOT_FOUND_ERROR for consistency
+
 ### File List
+
+- `src/resume_as_code/models/errors.py` (NEW)
+- `src/resume_as_code/models/__init__.py` (MODIFIED - added error exports)
+- `tests/unit/test_errors.py` (NEW)
+- `src/resume_as_code/utils/errors.py` (NEW)
+- `src/resume_as_code/utils/__init__.py` (MODIFIED - added handle_errors export)
+- `src/resume_as_code/context.py` (NEW - extracted Context class to fix circular imports)
+- `src/resume_as_code/cli.py` (MODIFIED - added @handle_errors decorator, imports Context from context.py)
+- `src/resume_as_code/commands/__init__.py` (MODIFIED - added test_errors export)
+- `src/resume_as_code/commands/test_output.py` (MODIFIED - imports Context from context.py)
+- `tests/unit/test_error_handling.py` (NEW)
+- `tests/integration/__init__.py` (NEW)
+- `tests/integration/test_exit_codes.py` (NEW)
+- `src/resume_as_code/commands/test_errors.py` (NEW)
+- `tests/unit/test_test_errors_cmd.py` (NEW)
+- `tests/integration/test_non_interactive.py` (NEW)
 
