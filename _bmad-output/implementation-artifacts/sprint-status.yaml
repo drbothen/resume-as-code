@@ -49,7 +49,7 @@ development_status:
   1-3-configuration-hierarchy: done
   1-4-error-handling-exit-codes: done
   1-5-ai-agent-context-documentation: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   # Epic 2: Work Unit Creation & Capture
   # Goal: Users can capture Work Units right after accomplishments happen (Journey 1: "The Capture")
