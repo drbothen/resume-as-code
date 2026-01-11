@@ -1,0 +1,278 @@
+# Story 4.6: Plan Persistence
+
+Status: ready-for-dev
+
+## Story
+
+As a **user**,
+I want **to save my plan and reload it later**,
+So that **I can review, modify, and use it for resume generation**.
+
+## Acceptance Criteria
+
+1. **Given** I run `resume plan --jd file.txt --output plan.yaml`
+   **When** the command completes
+   **Then** the plan is saved to `plan.yaml`
+   **And** the file contains: JD hash, selected Work Units, scores, timestamp
+
+2. **Given** a saved plan file exists
+   **When** I run `resume plan --load plan.yaml`
+   **Then** the plan is displayed without re-running ranking
+
+3. **Given** I modify a Work Unit after saving a plan
+   **When** I re-run `resume plan --jd file.txt`
+   **Then** new rankings reflect the modifications
+   **And** the original plan file is unchanged
+
+4. **Given** I run `resume build --plan plan.yaml`
+   **When** the build executes
+   **Then** it uses the selections from the saved plan (Epic 5)
+
+5. **Given** a plan is saved
+   **When** I inspect the YAML file
+   **Then** it is human-readable and could be manually edited if needed
+
+## Tasks / Subtasks
+
+- [ ] Task 1: Create Plan model (AC: #1, #5)
+  - [ ] 1.1: Create `src/resume_as_code/models/plan.py`
+  - [ ] 1.2: Define `SavedPlan` Pydantic model
+  - [ ] 1.3: Include JD hash for change detection
+  - [ ] 1.4: Include selected Work Unit IDs and scores
+  - [ ] 1.5: Include timestamp and metadata
+
+- [ ] Task 2: Implement plan saving (AC: #1)
+  - [ ] 2.1: Add `--output` option to plan command
+  - [ ] 2.2: Serialize plan to YAML
+  - [ ] 2.3: Include human-readable comments
+  - [ ] 2.4: Calculate and store JD hash
+
+- [ ] Task 3: Implement plan loading (AC: #2)
+  - [ ] 3.1: Add `--load` option to plan command
+  - [ ] 3.2: Load and display saved plan
+  - [ ] 3.3: Skip ranking when loading
+  - [ ] 3.4: Warn if Work Units have changed
+
+- [ ] Task 4: JD hash for change detection (AC: #3)
+  - [ ] 4.1: Compute SHA256 hash of JD content
+  - [ ] 4.2: Store in plan file
+  - [ ] 4.3: Compare on load to detect changes
+
+- [ ] Task 5: Code quality verification
+  - [ ] 5.1: Run `ruff check src tests --fix`
+  - [ ] 5.2: Run `mypy src --strict` with zero errors
+  - [ ] 5.3: Add tests for plan persistence
+
+## Dev Notes
+
+### Architecture Compliance
+
+Saved plans enable the `resume build --plan` workflow in Epic 5.
+
+**Source:** [epics.md#Story 4.6](_bmad-output/planning-artifacts/epics.md)
+
+### Dependencies
+
+This story REQUIRES:
+- Story 4.3 (Plan Command) - Base plan functionality
+
+This story ENABLES:
+- Story 5.4 (Build Command) - Build from saved plan
+
+### Plan Model
+
+**`src/resume_as_code/models/plan.py`:**
+
+```python
+"""Saved plan model for plan persistence."""
+
+from __future__ import annotations
+
+import hashlib
+from datetime import datetime
+from pathlib import Path
+
+from pydantic import BaseModel, Field
+from ruamel.yaml import YAML
+
+
+class SelectedWorkUnit(BaseModel):
+    """A Work Unit selected in the plan."""
+
+    id: str
+    title: str
+    score: float
+    match_reasons: list[str] = Field(default_factory=list)
+
+
+class SavedPlan(BaseModel):
+    """Persisted plan for resume generation."""
+
+    version: str = "1.0.0"
+    created_at: datetime = Field(default_factory=datetime.now)
+
+    # JD information
+    jd_hash: str = Field(..., description="SHA256 hash of JD content")
+    jd_title: str | None = None
+    jd_path: str | None = None
+
+    # Selections
+    selected_work_units: list[SelectedWorkUnit]
+    selection_count: int
+
+    # Metadata
+    top_k: int = 8
+    ranker_version: str = "hybrid-rrf-v1"
+
+    @classmethod
+    def from_ranking(
+        cls,
+        ranking_output,
+        jd,
+        jd_path: Path | None = None,
+        top_k: int = 8,
+    ) -> "SavedPlan":
+        """Create a SavedPlan from ranking output."""
+        selected = ranking_output.results[:top_k]
+
+        return cls(
+            jd_hash=cls._hash_jd(jd.raw_text),
+            jd_title=jd.title,
+            jd_path=str(jd_path) if jd_path else None,
+            selected_work_units=[
+                SelectedWorkUnit(
+                    id=r.work_unit_id,
+                    title=r.work_unit.get("title", ""),
+                    score=r.score,
+                    match_reasons=r.match_reasons,
+                )
+                for r in selected
+            ],
+            selection_count=len(selected),
+            top_k=top_k,
+        )
+
+    @staticmethod
+    def _hash_jd(content: str) -> str:
+        """Compute SHA256 hash of JD content."""
+        return hashlib.sha256(content.encode()).hexdigest()[:16]
+
+    def save(self, path: Path) -> None:
+        """Save plan to YAML file."""
+        yaml = YAML()
+        yaml.default_flow_style = False
+
+        data = self.model_dump(mode="json")
+
+        # Add header comment
+        with open(path, "w") as f:
+            f.write("# Resume Plan - Generated by resume-as-code\n")
+            f.write(f"# Created: {self.created_at.isoformat()}\n")
+            f.write("# Use with: resume build --plan <this-file>\n\n")
+            yaml.dump(data, f)
+
+    @classmethod
+    def load(cls, path: Path) -> "SavedPlan":
+        """Load plan from YAML file."""
+        yaml = YAML()
+        with open(path) as f:
+            data = yaml.load(f)
+        return cls.model_validate(data)
+```
+
+### Updated Plan Command
+
+```python
+@click.command("plan")
+@click.option("--jd", "-j", "jd_path", type=click.Path(exists=True, path_type=Path))
+@click.option("--output", "-o", "output_path", type=click.Path(path_type=Path),
+              help="Save plan to file")
+@click.option("--load", "-l", "load_path", type=click.Path(exists=True, path_type=Path),
+              help="Load and display saved plan")
+@click.option("--top", "-t", default=8)
+@click.pass_context
+@handle_errors
+def plan_command(ctx, jd_path, output_path, load_path, top):
+    """Preview or load a resume plan."""
+
+    if load_path:
+        # Load existing plan
+        plan = SavedPlan.load(load_path)
+        _display_saved_plan(plan)
+        return
+
+    if not jd_path:
+        raise click.UsageError("Either --jd or --load is required")
+
+    # Generate new plan
+    # ... existing ranking logic ...
+
+    # Save if requested
+    if output_path:
+        plan = SavedPlan.from_ranking(ranking, jd, jd_path, top)
+        plan.save(output_path)
+        success(f"Plan saved to: {output_path}")
+```
+
+### Example Saved Plan File
+
+```yaml
+# Resume Plan - Generated by resume-as-code
+# Created: 2026-01-10T14:30:00
+# Use with: resume build --plan <this-file>
+
+version: "1.0.0"
+created_at: "2026-01-10T14:30:00"
+
+jd_hash: "a1b2c3d4e5f67890"
+jd_title: "Senior Software Engineer"
+jd_path: "jobs/senior-engineer.txt"
+
+selected_work_units:
+  - id: "wu-2026-01-05-python-api"
+    title: "Built Python REST API"
+    score: 0.87
+    match_reasons:
+      - "Skills: python, aws, api"
+      - "Keywords: scalable, microservices"
+
+  - id: "wu-2025-08-20-kubernetes"
+    title: "Kubernetes Migration"
+    score: 0.72
+    match_reasons:
+      - "Skills: kubernetes, docker"
+
+selection_count: 8
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+```
+
+### Verification Commands
+
+```bash
+# Save plan
+resume plan --jd sample-jd.txt --output my-plan.yaml
+
+# Load and display plan
+resume plan --load my-plan.yaml
+
+# Use plan for build (Epic 5)
+resume build --plan my-plan.yaml
+```
+
+### References
+
+- [Source: epics.md#Story 4.6](_bmad-output/planning-artifacts/epics.md)
+
+## Dev Agent Record
+
+### Agent Model Used
+
+{{agent_model_name_version}}
+
+### Debug Log References
+
+### Completion Notes List
+
+### File List
+

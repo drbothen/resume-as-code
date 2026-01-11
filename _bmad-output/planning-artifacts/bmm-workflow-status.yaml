@@ -41,6 +41,40 @@ workflow_status:
         command: "/bmad:bmm:workflows:research"
         note: "Technical/competitive analysis"
         completed: "2026-01-09"
+        # Research Tracking Index (64 items tracked)
+        tracking_index: "_bmad-output/planning-artifacts/research/research-backlog-tracking.md"
+        # Additional Research Files (created during validation & gap-filling)
+        additional_research:
+          - path: "_bmad-output/planning-artifacts/research/research-backlog-2026-01-09.md"
+            description: "Initial research backlog"
+            completed: "2026-01-09"
+          - path: "_bmad-output/planning-artifacts/research/technical-rust-vs-python-resume-cli-2026-01-09.md"
+            description: "Language decision analysis"
+            completed: "2026-01-09"
+          - path: "_bmad-output/planning-artifacts/research/planning-validation-audit-2026-01-10.md"
+            description: "Validation audit identifying research gaps"
+            completed: "2026-01-10"
+          - path: "_bmad-output/planning-artifacts/research/executive-resume-content-strategy-research-2026-01-10.md"
+            description: "Executive resume best practices (RB-059 to RB-062)"
+            completed: "2026-01-10"
+          - path: "_bmad-output/planning-artifacts/research/hybrid-search-implementation-research-2026-01-10.md"
+            description: "RRF fusion, e5 model, cache strategy (RB-047, RB-048, RB-050)"
+            completed: "2026-01-10"
+          - path: "_bmad-output/planning-artifacts/research/schema-and-embeddings-research-2026-01-10.md"
+            description: "Schema validation, field-specific embeddings (RB-049, RB-063)"
+            completed: "2026-01-10"
+          - path: "_bmad-output/planning-artifacts/research/ats-keyword-and-resume-length-research-2026-01-10.md"
+            description: "ATS optimization, resume length (RB-051, RB-052)"
+            completed: "2026-01-10"
+          - path: "_bmad-output/planning-artifacts/research/claude-code-cli-friendliness-research-2026-01-10.md"
+            description: "AI agent CLI integration patterns (RB-064)"
+            completed: "2026-01-10"
+        # Research Summary
+        research_stats:
+          total_items: 64
+          complete_integrated: 52
+          post_mvp_deferred: 11
+          pending: 0
 
       product-brief:
         status: "_bmad-output/planning-artifacts/product-brief-resume-2026-01-09.md"
@@ -55,10 +89,11 @@ workflow_status:
     required: true
     workflows:
       prd:
-        status: "required"
+        status: "_bmad-output/planning-artifacts/prd.md"
         agent: "pm"
         command: "/bmad:bmm:workflows:create-prd"
         output: "Product Requirements Document with FRs and NFRs"
+        completed: "2026-01-09"
 
       create-ux-design:
         status: "conditional"
@@ -73,28 +108,32 @@ workflow_status:
     required: true
     workflows:
       create-architecture:
-        status: "required"
+        status: "_bmad-output/planning-artifacts/architecture.md"
         agent: "architect"
         command: "/bmad:bmm:workflows:create-architecture"
         output: "System architecture document"
+        completed: "2026-01-10"
 
       create-epics-and-stories:
-        status: "required"
+        status: "_bmad-output/planning-artifacts/epics.md"
         agent: "pm"
         command: "/bmad:bmm:workflows:create-epics-and-stories"
         note: "Break down PRD into implementable epics and stories"
+        completed: "2026-01-10"
 
       test-design:
-        status: "optional"
+        status: "_bmad-output/test-design-system.md"
         agent: "tea"
         command: "/bmad:bmm:workflows:test-design"
         output: "System-level testability review"
+        completed: "2026-01-10"
 
       implementation-readiness:
-        status: "required"
+        status: "_bmad-output/planning-artifacts/implementation-readiness-report-2026-01-10.md"
         agent: "architect"
         command: "/bmad:bmm:workflows:implementation-readiness"
         note: "Validates PRD + Architecture + Epics + UX"
+        completed: "2026-01-10"
 
   # Phase 4: Implementation
   phase_4_implementation:
@@ -102,7 +141,8 @@ workflow_status:
     required: true
     workflows:
       sprint-planning:
-        status: "required"
+        status: "_bmad-output/implementation-artifacts/sprint-status.yaml"
         agent: "sm"
         command: "/bmad:bmm:workflows:sprint-planning"
         note: "Creates sprint plan - subsequent work tracked in sprint-status.yaml"
+        completed: "2026-01-10"

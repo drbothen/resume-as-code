@@ -1,0 +1,97 @@
+# generated: 2026-01-10
+# project: resume
+# project_key: resume-as-code
+# tracking_system: file-system
+# story_location: "_bmad-output/implementation-artifacts"
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog -> in-progress: Automatically when first story is created (via create-story)
+#   - in-progress -> done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-01-10
+project: resume
+project_key: resume-as-code
+tracking_system: file-system
+story_location: "_bmad-output/implementation-artifacts"
+
+development_status:
+  # Epic 1: Project Foundation & Developer Experience
+  # Goal: A working CLI tool with help, error handling, and configuration infrastructure
+  # FRs Covered: FR28, FR29, FR30, FR34, FR35, FR36, FR37, FR38
+  epic-1: in-progress
+  1-1-project-scaffolding-cli-skeleton: ready-for-dev
+  1-2-rich-console-output-formatting: ready-for-dev
+  1-3-configuration-hierarchy: ready-for-dev
+  1-4-error-handling-exit-codes: ready-for-dev
+  1-5-ai-agent-context-documentation: ready-for-dev
+  epic-1-retrospective: optional
+
+  # Epic 2: Work Unit Creation & Capture
+  # Goal: Users can capture Work Units right after accomplishments happen (Journey 1: "The Capture")
+  # FRs Covered: FR1, FR2, FR3, FR4, FR5, FR9, FR10, FR11
+  epic-2: in-progress
+  2-1-work-unit-schema-pydantic-model: ready-for-dev
+  2-2-archetype-templates: ready-for-dev
+  2-3-create-work-unit-command: ready-for-dev
+  2-4-quick-capture-mode: ready-for-dev
+  2-5-work-unit-metadata-evidence: ready-for-dev
+  epic-2-retrospective: optional
+
+  # Epic 3: Work Unit Validation & Discovery
+  # Goal: Users can validate their Work Units and browse their collection with confidence
+  # FRs Covered: FR6, FR7, FR8
+  epic-3: in-progress
+  3-1-validate-command-schema-validation: ready-for-dev
+  3-2-actionable-validation-feedback: ready-for-dev
+  3-3-list-command-filtering: ready-for-dev
+  epic-3-retrospective: optional
+
+  # Epic 4: Resume Planning & Explainability
+  # Goal: Users can run `resume plan` and see exactly what will be included/excluded with reasons
+  # FRs Covered: FR12, FR13, FR14, FR15, FR16, FR17, FR18, FR19
+  epic-4: in-progress
+  4-1-job-description-parser: ready-for-dev
+  4-1-5-embedding-service-cache: ready-for-dev
+  4-2-bm25-ranking-engine: ready-for-dev
+  4-3-plan-command-selection-display: ready-for-dev
+  4-4-exclusion-reasoning: ready-for-dev
+  4-5-skill-coverage-gap-analysis: ready-for-dev
+  4-6-plan-persistence: ready-for-dev
+  epic-4-retrospective: optional
+
+  # Epic 5: Resume Generation & Output
+  # Goal: Users can generate tailored PDF and DOCX resumes with full provenance
+  # FRs Covered: FR20, FR21, FR22, FR23, FR24, FR25, FR26, FR27, FR31, FR32, FR33
+  epic-5: in-progress
+  5-1-resume-data-model-template-system: ready-for-dev
+  5-2-pdf-provider-weasyprint: ready-for-dev
+  5-3-docx-provider-python-docx: ready-for-dev
+  5-4-build-command: ready-for-dev
+  5-5-manifest-provenance: ready-for-dev
+  5-6-output-configuration: ready-for-dev
+  epic-5-retrospective: optional
