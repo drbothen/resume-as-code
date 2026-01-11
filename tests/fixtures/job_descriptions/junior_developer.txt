@@ -1,0 +1,21 @@
+Junior Software Developer
+
+We are seeking an entry-level developer to join our growing engineering team.
+
+What you'll do:
+1. Write clean, maintainable code
+2. Participate in code reviews
+3. Learn from senior engineers
+4. Help maintain documentation
+
+What we're looking for:
+* Bachelor's degree in Computer Science or related field
+* Basic knowledge of Python or JavaScript
+* Understanding of Git version control
+* Strong communication skills
+* Eagerness to learn
+
+Bonus points:
+* Internship experience
+* Personal projects on GitHub
+* Knowledge of React or Vue

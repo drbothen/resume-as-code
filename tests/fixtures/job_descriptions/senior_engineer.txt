@@ -1,0 +1,34 @@
+Senior Software Engineer - Platform Team
+
+Company: TechCorp Inc.
+Location: San Francisco, CA (Remote OK)
+
+About the Role:
+We're looking for a Senior Software Engineer to join our platform team. You'll be working on our core infrastructure, building scalable microservices that power millions of users.
+
+Responsibilities:
+- Design and implement scalable backend services
+- Mentor junior engineers and conduct code reviews
+- Collaborate with product and design teams
+- Drive technical decisions and architecture improvements
+
+Requirements:
+- 5+ years of experience in software development
+- Strong proficiency in Python and Go
+- Experience with Docker and Kubernetes
+- AWS or GCP cloud experience
+- CI/CD pipeline experience (Jenkins, GitHub Actions)
+- Strong understanding of microservices architecture
+- Experience with PostgreSQL or similar databases
+
+Nice to Have:
+- Experience with Terraform for infrastructure as code
+- Knowledge of machine learning and ML pipelines
+- GraphQL API design experience
+- Previous startup experience
+
+Benefits:
+- Competitive salary and equity
+- Health, dental, and vision insurance
+- Unlimited PTO
+- Learning and development budget

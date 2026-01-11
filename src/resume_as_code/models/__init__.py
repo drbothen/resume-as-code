@@ -10,6 +10,11 @@ from resume_as_code.models.errors import (
     UserError,
     ValidationError,
 )
+from resume_as_code.models.job_description import (
+    ExperienceLevel,
+    JobDescription,
+    Requirement,
+)
 from resume_as_code.models.output import FORMAT_VERSION, JSONResponse
 from resume_as_code.models.work_unit import (
     STRONG_VERBS,
@@ -38,6 +43,7 @@ __all__ = [
     "ConfigSource",
     "ConfigurationError",
     "ConfidenceLevel",
+    "ExperienceLevel",
     "DocumentEvidence",
     "Evidence",
     "EvidenceType",
@@ -45,6 +51,7 @@ __all__ = [
     "Framing",
     "GitRepoEvidence",
     "ImpactCategory",
+    "JobDescription",
     "JSONResponse",
     "Metrics",
     "MetricsEvidence",
@@ -52,6 +59,7 @@ __all__ = [
     "OtherEvidence",
     "Outcome",
     "Problem",
+    "Requirement",
     "ResumeConfig",
     "ResumeError",
     "RuntimeSystemError",

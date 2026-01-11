@@ -257,9 +257,7 @@ class TestListCommandMultipleFilters:
         _create_work_unit(work_units / "wu-a.yaml", "wu-2026-01-01-a", "Python Only", ["python"])
 
         # Filter by python AND java (impossible match)
-        result = cli_runner.invoke(
-            main, ["list", "--filter", "tag:python", "--filter", "tag:java"]
-        )
+        result = cli_runner.invoke(main, ["list", "--filter", "tag:python", "--filter", "tag:java"])
 
         assert result.exit_code == 0
         assert "0 Work Unit(s)" in result.output

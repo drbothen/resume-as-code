@@ -1,6 +1,6 @@
 # Story 4.1: Job Description Parser
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -32,47 +32,47 @@ So that **the ranking algorithm has clean data to work with**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create JobDescription model (AC: #1, #3)
-  - [ ] 1.1: Create `src/resume_as_code/models/job_description.py`
-  - [ ] 1.2: Define `JobDescription` Pydantic model with fields
-  - [ ] 1.3: Add `raw_text` field for original content
-  - [ ] 1.4: Add `skills` list field for extracted skills
-  - [ ] 1.5: Add `requirements` list for key requirements
-  - [ ] 1.6: Add `experience_level` field (entry, mid, senior, staff, lead, principal)
-  - [ ] 1.7: Add `title` field for job title
+- [x] Task 1: Create JobDescription model (AC: #1, #3)
+  - [x] 1.1: Create `src/resume_as_code/models/job_description.py`
+  - [x] 1.2: Define `JobDescription` Pydantic model with fields
+  - [x] 1.3: Add `raw_text` field for original content
+  - [x] 1.4: Add `skills` list field for extracted skills
+  - [x] 1.5: Add `requirements` list for key requirements
+  - [x] 1.6: Add `experience_level` field (entry, mid, senior, staff, lead, principal)
+  - [x] 1.7: Add `title` field for job title
 
-- [ ] Task 2: Create JD parser service (AC: #1, #2, #3)
-  - [ ] 2.1: Create `src/resume_as_code/services/jd_parser.py`
-  - [ ] 2.2: Implement `parse_jd_file(path: Path) -> JobDescription`
-  - [ ] 2.3: Implement `parse_jd_text(text: str) -> JobDescription`
-  - [ ] 2.4: Handle various file encodings gracefully
-  - [ ] 2.5: Extract sections from common JD structures
+- [x] Task 2: Create JD parser service (AC: #1, #2, #3)
+  - [x] 2.1: Create `src/resume_as_code/services/jd_parser.py`
+  - [x] 2.2: Implement `parse_jd_file(path: Path) -> JobDescription`
+  - [x] 2.3: Implement `parse_jd_text(text: str) -> JobDescription`
+  - [x] 2.4: Handle various file encodings gracefully
+  - [x] 2.5: Extract sections from common JD structures
 
-- [ ] Task 3: Implement skill extraction (AC: #1, #4)
-  - [ ] 3.1: Create skill keyword list (common technologies)
-  - [ ] 3.2: Implement regex-based skill extraction
-  - [ ] 3.3: Implement skill normalization mapping
-  - [ ] 3.4: Handle skill variations and abbreviations
+- [x] Task 3: Implement skill extraction (AC: #1, #4)
+  - [x] 3.1: Create skill keyword list (common technologies)
+  - [x] 3.2: Implement regex-based skill extraction
+  - [x] 3.3: Implement skill normalization mapping
+  - [x] 3.4: Handle skill variations and abbreviations
 
-- [ ] Task 4: Implement experience level detection (AC: #1)
-  - [ ] 4.1: Define experience level indicators
-  - [ ] 4.2: Detect level from job title
-  - [ ] 4.3: Detect level from requirements section
-  - [ ] 4.4: Handle ambiguous cases (default to "mid")
+- [x] Task 4: Implement experience level detection (AC: #1)
+  - [x] 4.1: Define experience level indicators
+  - [x] 4.2: Detect level from job title
+  - [x] 4.3: Detect level from requirements section
+  - [x] 4.4: Handle ambiguous cases (default to "mid")
 
-- [ ] Task 5: Implement requirements extraction (AC: #1, #2)
-  - [ ] 5.1: Detect common requirement patterns
-  - [ ] 5.2: Extract bullet points and numbered lists
-  - [ ] 5.3: Separate "required" vs "nice-to-have" where indicated
-  - [ ] 5.4: Clean and normalize extracted text
+- [x] Task 5: Implement requirements extraction (AC: #1, #2)
+  - [x] 5.1: Detect common requirement patterns
+  - [x] 5.2: Extract bullet points and numbered lists
+  - [x] 5.3: Separate "required" vs "nice-to-have" where indicated
+  - [x] 5.4: Clean and normalize extracted text
 
-- [ ] Task 6: Code quality verification
-  - [ ] 6.1: Run `ruff check src tests --fix`
-  - [ ] 6.2: Run `ruff format src tests`
-  - [ ] 6.3: Run `mypy src --strict` with zero errors
-  - [ ] 6.4: Add unit tests for skill extraction
-  - [ ] 6.5: Add unit tests for experience level detection
-  - [ ] 6.6: Add integration tests with sample JD files
+- [x] Task 6: Code quality verification
+  - [x] 6.1: Run `ruff check src tests --fix`
+  - [x] 6.2: Run `ruff format src tests`
+  - [x] 6.3: Run `mypy src --strict` with zero errors
+  - [x] 6.4: Add unit tests for skill extraction
+  - [x] 6.5: Add unit tests for experience level detection
+  - [x] 6.6: Add integration tests with sample JD files
 
 ## Dev Notes
 
@@ -103,7 +103,6 @@ This story ENABLES:
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -188,13 +187,20 @@ import re
 from collections import Counter
 from pathlib import Path
 
+from resume_as_code.models.errors import NotFoundError
 from resume_as_code.models.job_description import (
     ExperienceLevel,
     JobDescription,
     Requirement,
 )
-from resume_as_code.models.errors import NotFoundError
 
+# Parser configuration constants
+MAX_TITLE_LENGTH = 100  # Skip lines longer than this when detecting title
+MAX_TITLE_SEARCH_LINES = 5  # Only check first N lines for title
+MIN_REQUIREMENT_LENGTH = 10  # Skip requirements shorter than this
+MIN_KEYWORD_LENGTH = 3  # Minimum word length for keyword extraction
+MIN_KEYWORD_FREQUENCY = 2  # Minimum occurrences to include as keyword
+MAX_KEYWORDS = 20  # Maximum keywords to return
 
 # Skill normalization mapping
 SKILL_NORMALIZATIONS: dict[str, str] = {
@@ -640,11 +646,45 @@ rm sample-jd.txt
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None
+
 ### Completion Notes List
 
+- Created JobDescription Pydantic model with ExperienceLevel enum and Requirement model
+- Implemented jd_parser.py service with parse_jd_file() and parse_jd_text() functions
+- Skill extraction with 100+ common tech skills and normalization mapping (k8s → kubernetes, etc.)
+- Experience level detection from job title and body text
+- Requirements extraction with bullet/numbered list parsing and nice-to-have detection
+- Years of experience extraction from common patterns
+- Keyword extraction for ranking purposes
+- Full test coverage with 68 total tests (8 model + 40 unit + 20 integration)
+- All code quality checks pass: ruff, mypy --strict
+
+**Code Review Fixes (2026-01-11):**
+- Added 7 edge case unit tests for title extraction (_extract_title)
+- Added 2 file encoding tests (cp1252, binary fallback)
+- Added 20 integration tests with 3 sample JD fixture files
+- Replaced 6 magic numbers with named constants (MAX_TITLE_LENGTH, etc.)
+- Updated File List to include all changed files
+
 ### File List
+
+**New Files:**
+- src/resume_as_code/models/job_description.py
+- src/resume_as_code/services/jd_parser.py
+- tests/unit/test_job_description.py
+- tests/unit/test_jd_parser.py
+- tests/integration/test_jd_parser_integration.py
+- tests/fixtures/job_descriptions/senior_engineer.txt
+- tests/fixtures/job_descriptions/junior_developer.txt
+- tests/fixtures/job_descriptions/staff_engineer_markdown.md
+
+**Modified Files:**
+- src/resume_as_code/models/__init__.py (added exports)
+- src/resume_as_code/services/__init__.py (added exports)
+- tests/integration/test_list_command.py (formatting fix)
 
