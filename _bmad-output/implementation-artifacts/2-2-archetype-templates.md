@@ -444,7 +444,7 @@ def list_archetypes() -> list[str]:
     """List available archetype names."""
     if not ARCHETYPES_DIR.exists():
         return []
-    return [p.stem for p in ARCHETYPES_DIR.glob("*.yaml")]
+    return sorted([p.stem for p in ARCHETYPES_DIR.glob("*.yaml")])
 
 
 def get_archetype_path(name: str) -> Path:
@@ -591,13 +591,15 @@ N/A
 - Created archetype_service.py with list_archetypes(), get_archetype_path(), load_archetype(), load_archetype_data() functions
 - All YAML files validated successfully with yaml.safe_load()
 - 13 unit tests added for archetype service (all passing)
-- ruff check: passed (1 auto-fixed issue)
+- 21 integration tests added for archetype schema validation (all passing)
+- ruff check: passed
 - mypy --strict: passed (0 errors)
-- Full test suite: 289 tests passed, 0 regressions
+- Full test suite: 310 tests passed, 0 regressions
 
 ### Change Log
 
 - 2026-01-11: Story 2.2 completed - All archetypes and archetype service implemented
+- 2026-01-11: Code review remediation - Added integration tests, fixed documentation, standardized placeholders
 
 ### File List
 
@@ -614,6 +616,10 @@ N/A
 - src/resume_as_code/services/__init__.py
 - src/resume_as_code/services/archetype_service.py
 - tests/unit/test_archetype_service.py
+- tests/integration/test_archetype_validation.py
 
 **Modified Files:**
 - _bmad-output/implementation-artifacts/sprint-status.yaml (status: in-progress -> review)
+- tests/unit/test_work_unit_schema.py (removed unused Outcome import)
+- tests/conftest.py (added work_unit_schema fixture)
+- archetypes/minimal.yaml (standardized date placeholder format)

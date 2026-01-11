@@ -35,8 +35,8 @@ tags: []
 # Fill in these details later for full story:
 # ============================================
 
-# time_started: YYYY-MM-DD
-# time_ended: YYYY-MM-DD
+# time_started: "YYYY-MM-DD"
+# time_ended: "YYYY-MM-DD"
 
 # skills_demonstrated:
 #   - name: "[Skill name]"
