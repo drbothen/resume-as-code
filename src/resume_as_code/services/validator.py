@@ -10,6 +10,13 @@ import jsonschema  # type: ignore[import-untyped]
 from ruamel.yaml import YAML
 
 from resume_as_code.models.errors import StructuredError
+from resume_as_code.utils.validation_messages import (
+    get_suggestion_for_field,
+    get_type_example,
+)
+
+# Maximum number of errors to report per file (prevents overwhelming output)
+MAX_ERRORS_PER_FILE = 20
 
 
 @dataclass
@@ -101,7 +108,13 @@ def validate_file(path: Path) -> ValidationResult:
     if not errors:
         return ValidationResult(file_path=path, valid=True)
 
-    structured_errors = [_convert_schema_error(err, path) for err in errors]
+    # Sort errors by field path for consistent output
+    sorted_errors = sorted(errors, key=lambda e: ".".join(str(p) for p in e.absolute_path))
+
+    # Convert to structured errors, limiting to MAX_ERRORS_PER_FILE
+    structured_errors = [
+        _convert_schema_error(err, path) for err in sorted_errors[:MAX_ERRORS_PER_FILE]
+    ]
 
     return ValidationResult(
         file_path=path,
@@ -158,14 +171,28 @@ def _convert_schema_error(
 
 
 def _generate_suggestion(error: jsonschema.ValidationError) -> str:
-    """Generate a helpful suggestion for the error."""
+    """Generate a helpful suggestion for the error.
+
+    Uses contextual suggestions from validation_messages module to provide
+    field-specific, actionable guidance for fixing validation errors.
+    """
+    # Build field path from absolute_path for contextual lookup
+    field_path = ".".join(str(p) for p in error.absolute_path) if error.absolute_path else ""
+
     if error.validator == "required":
         # Extract missing field name from message
         try:
             missing = error.message.split("'")[1]
-            return f"Add the required field '{missing}' to your Work Unit"
+            # Build full path for contextual suggestion lookup
+            full_path = f"{field_path}.{missing}" if field_path else missing
+            suggestion = get_suggestion_for_field(full_path)
+            return suggestion
         except IndexError:
-            return "Add the missing required field to your Work Unit"
+            return (
+                get_suggestion_for_field(field_path)
+                if field_path
+                else ("Add the missing required field to your Work Unit")
+            )
 
     if error.validator == "enum":
         valid_values = ", ".join(str(v) for v in error.validator_value)
@@ -173,7 +200,8 @@ def _generate_suggestion(error: jsonschema.ValidationError) -> str:
 
     if error.validator == "type":
         expected = error.validator_value
-        return f"Expected type '{expected}'"
+        example = get_type_example(expected)
+        return f"Expected type '{expected}' (e.g., {example})"
 
     if error.validator == "minLength":
         return f"Value must be at least {error.validator_value} characters"

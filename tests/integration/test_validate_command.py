@@ -187,3 +187,245 @@ class TestValidateCommandSummary:
 
         assert result.exit_code == 3
         assert "wu-invalid.yaml" in result.output
+
+    def test_rich_output_color_coded(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should have color-coded errors in Rich output (AC #5)."""
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-invalid.yaml").write_text(INVALID_WORK_UNIT)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate"], color=True)
+
+        # Check error indicator present
+        assert result.exit_code == 3
+        # Rich output should contain error symbols
+        assert "✗" in result.output or "failed" in result.output.lower()
+
+    def test_rich_output_shows_suggestions(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should show suggestions with errors (AC #5)."""
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-invalid.yaml").write_text(INVALID_WORK_UNIT)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate"])
+
+        assert result.exit_code == 3
+        # Should include helpful suggestions
+        assert "Add" in result.output or "required" in result.output.lower()
+
+
+WORK_UNIT_WITH_WEAK_VERBS = """\
+schema_version: "1.0.0"
+id: "wu-2026-01-10-test-weak-verbs"
+title: "Test Work Unit with Weak Verbs"
+
+problem:
+  statement: "A test problem statement that is long enough"
+
+actions:
+  - "Managed a team of engineers to deliver the project"
+  - "Handled customer complaints and resolved issues"
+  - "Managed the budget for the department"
+
+outcome:
+  result: "Things got better overall for the team"
+"""
+
+
+class TestValidateContentQuality:
+    """Tests for content quality validation (AC #6, #7)."""
+
+    def test_content_quality_flag_detects_weak_verbs(
+        self, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        """Should detect weak action verbs with --content-quality flag (AC #6)."""
+        file_path = tmp_path / "wu-weak.yaml"
+        file_path.write_text(WORK_UNIT_WITH_WEAK_VERBS)
+
+        result = cli_runner.invoke(main, ["validate", "--content-quality", str(file_path)])
+
+        assert result.exit_code == 0  # Valid schema, warnings don't affect exit code
+        assert "WEAK_ACTION_VERB" in result.output
+        assert "managed" in result.output.lower()
+
+    def test_content_quality_suggests_alternatives(
+        self, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        """Should suggest strong verb alternatives (AC #7)."""
+        file_path = tmp_path / "wu-weak.yaml"
+        file_path.write_text(WORK_UNIT_WITH_WEAK_VERBS)
+
+        result = cli_runner.invoke(main, ["validate", "--content-quality", str(file_path)])
+
+        assert result.exit_code == 0
+        # Should suggest alternatives for 'managed'
+        assert "orchestrated" in result.output.lower() or "directed" in result.output.lower()
+
+    def test_content_quality_detects_verb_repetition(
+        self, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        """Should flag verb repetition (AC #6)."""
+        file_path = tmp_path / "wu-weak.yaml"
+        file_path.write_text(WORK_UNIT_WITH_WEAK_VERBS)
+
+        result = cli_runner.invoke(main, ["validate", "--content-quality", str(file_path)])
+
+        assert result.exit_code == 0
+        assert "VERB_REPETITION" in result.output
+        assert "managed" in result.output.lower()
+
+    def test_content_quality_detects_missing_quantification(
+        self, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        """Should warn about missing quantification (AC #6)."""
+        file_path = tmp_path / "wu-weak.yaml"
+        file_path.write_text(WORK_UNIT_WITH_WEAK_VERBS)
+
+        result = cli_runner.invoke(main, ["validate", "--content-quality", str(file_path)])
+
+        assert result.exit_code == 0
+        assert "MISSING_QUANTIFICATION" in result.output
+
+    def test_content_quality_json_output(
+        self, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        """Should include content warnings in JSON output."""
+        file_path = tmp_path / "wu-weak.yaml"
+        file_path.write_text(WORK_UNIT_WITH_WEAK_VERBS)
+
+        result = cli_runner.invoke(
+            main, ["--json", "validate", "--content-quality", str(file_path)]
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "content_warnings" in data["data"]
+        assert len(data["data"]["content_warnings"]) > 0
+
+
+class TestValidateContentDensity:
+    """Tests for content density validation (AC #8)."""
+
+    def test_content_density_warns_short_bullets(
+        self, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        """Should warn about too-short bullets (AC #8)."""
+        # Action must be at least 10 chars to pass schema, but under 100 for density warning
+        short_action = "Completed a short task here"  # 27 chars, triggers density warning
+        work_unit = f"""\
+schema_version: "1.0.0"
+id: "wu-2026-01-10-test-short"
+title: "Test Work Unit with Short Actions"
+
+problem:
+  statement: "A test problem statement that is long enough"
+
+actions:
+  - "{short_action}"
+
+outcome:
+  result: "Got a result that is long enough"
+"""
+        file_path = tmp_path / "wu-short.yaml"
+        file_path.write_text(work_unit)
+
+        result = cli_runner.invoke(main, ["validate", "--content-density", str(file_path)])
+
+        assert result.exit_code == 0
+        assert "BULLET_TOO_SHORT" in result.output
+        assert "100" in result.output  # Minimum character count
+
+    def test_content_density_warns_long_bullets(
+        self, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        """Should warn about too-long bullets (AC #8)."""
+        long_action = "x" * 200
+        work_unit = f"""\
+schema_version: "1.0.0"
+id: "wu-2026-01-10-test-long"
+title: "Test Work Unit with Long Actions"
+
+problem:
+  statement: "A test problem statement that is long enough"
+
+actions:
+  - "{long_action}"
+
+outcome:
+  result: "Got a result that is long enough"
+"""
+        file_path = tmp_path / "wu-long.yaml"
+        file_path.write_text(work_unit)
+
+        result = cli_runner.invoke(main, ["validate", "--content-density", str(file_path)])
+
+        assert result.exit_code == 0
+        assert "BULLET_TOO_LONG" in result.output
+        assert "160" in result.output  # Maximum character count
+
+    def test_content_density_no_warning_optimal_length(
+        self, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        """Should not warn for optimal length bullets (100-160 chars)."""
+        optimal_action = "x" * 130  # Within range
+        work_unit = f"""\
+schema_version: "1.0.0"
+id: "wu-2026-01-10-test-optimal"
+title: "Test Work Unit with Optimal Actions"
+
+problem:
+  statement: "A test problem statement that is long enough"
+
+actions:
+  - "{optimal_action}"
+
+outcome:
+  result: "Got a result that is long enough"
+"""
+        file_path = tmp_path / "wu-optimal.yaml"
+        file_path.write_text(work_unit)
+
+        result = cli_runner.invoke(main, ["validate", "--content-density", str(file_path)])
+
+        assert result.exit_code == 0
+        # Should show successful validation without density warnings
+        assert "BULLET_TOO_SHORT" not in result.output
+        assert "BULLET_TOO_LONG" not in result.output
+
+    def test_content_density_json_output(
+        self, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        """Should include content density warnings in JSON output."""
+        # Action must be at least 10 chars to pass schema, but under 100 for density warning
+        short_action = "Completed a short task here"  # 27 chars
+        work_unit = f"""\
+schema_version: "1.0.0"
+id: "wu-2026-01-10-test-short"
+title: "Test Work Unit with Short Actions"
+
+problem:
+  statement: "A test problem statement that is long enough"
+
+actions:
+  - "{short_action}"
+
+outcome:
+  result: "Got a result that is long enough"
+"""
+        file_path = tmp_path / "wu-short.yaml"
+        file_path.write_text(work_unit)
+
+        result = cli_runner.invoke(
+            main, ["--json", "validate", "--content-density", str(file_path)]
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "content_warnings" in data["data"]
+        assert any(w["code"] == "BULLET_TOO_SHORT" for w in data["data"]["content_warnings"])

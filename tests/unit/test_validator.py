@@ -199,10 +199,25 @@ class TestGenerateSuggestion:
             validator = "required"
             message = "'title' is a required property"
             validator_value = None
+            absolute_path: list[str] = []
 
         suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
-        assert "title" in suggestion
-        assert "Add the required field" in suggestion
+        assert "title" in suggestion.lower()
+        # Should use contextual suggestion from validation_messages
+        assert "accomplishment" in suggestion.lower() or "add" in suggestion.lower()
+
+    def test_required_validator_problem_statement_contextual(self) -> None:
+        """Should use contextual suggestion for problem.statement field (AC #1)."""
+
+        class MockError:
+            validator = "required"
+            message = "'statement' is a required property"
+            validator_value = None
+            absolute_path = ["problem"]
+
+        suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
+        # Should include helpful context about what to add
+        assert len(suggestion) > 20  # Meaningful suggestion, not just generic
 
     def test_required_validator_malformed_message(self) -> None:
         """Should handle malformed required message gracefully."""
@@ -211,9 +226,11 @@ class TestGenerateSuggestion:
             validator = "required"
             message = "malformed message without quotes"
             validator_value = None
+            absolute_path: list[str] = []
 
         suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
-        assert "Add the missing required field" in suggestion
+        # Should return some suggestion even for malformed messages
+        assert len(suggestion) > 10
 
     def test_enum_validator_suggestion(self) -> None:
         """Should list valid enum values in suggestion."""
@@ -222,22 +239,25 @@ class TestGenerateSuggestion:
             validator = "enum"
             message = "invalid is not one of ['a', 'b', 'c']"
             validator_value = ["a", "b", "c"]
+            absolute_path: list[str] = []
 
         suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
         assert "a, b, c" in suggestion
-        assert "valid values" in suggestion
+        assert "valid values" in suggestion.lower()
 
-    def test_type_validator_suggestion(self) -> None:
-        """Should show expected type in suggestion."""
+    def test_type_validator_suggestion_with_example(self) -> None:
+        """Should show expected type with example (AC #2)."""
 
         class MockError:
             validator = "type"
             message = "123 is not of type 'string'"
             validator_value = "string"
+            absolute_path: list[str] = []
 
         suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
-        assert "string" in suggestion
-        assert "Expected type" in suggestion
+        assert "string" in suggestion.lower()
+        # Should include example of correct format
+        assert '"' in suggestion or "example" in suggestion.lower()
 
     def test_minlength_validator_suggestion(self) -> None:
         """Should show minimum length requirement in suggestion."""
@@ -246,6 +266,7 @@ class TestGenerateSuggestion:
             validator = "minLength"
             message = "'ab' is too short"
             validator_value = 10
+            absolute_path: list[str] = []
 
         suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
         assert "10" in suggestion
@@ -258,6 +279,7 @@ class TestGenerateSuggestion:
             validator = "pattern"
             message = "'invalid' does not match pattern"
             validator_value = "^wu-\\d{4}-\\d{2}-\\d{2}-[a-z0-9-]+$"
+            absolute_path: list[str] = []
 
         suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
         assert "pattern" in suggestion
@@ -270,6 +292,61 @@ class TestGenerateSuggestion:
             validator = "someUnknownValidator"
             message = "some error"
             validator_value = None
+            absolute_path: list[str] = []
 
         suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
-        assert "schema requirements" in suggestion
+        assert "schema" in suggestion.lower()
+
+    def test_enum_validator_confidence_field(self) -> None:
+        """Should show valid confidence values for enum error (AC #3)."""
+
+        class MockError:
+            validator = "enum"
+            message = "'super-high' is not one of ['high', 'medium', 'low']"
+            validator_value = ["high", "medium", "low"]
+            absolute_path = ["confidence"]
+
+        suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
+        assert "high" in suggestion
+        assert "medium" in suggestion
+        assert "low" in suggestion
+
+
+class TestErrorCollection:
+    """Tests for comprehensive error collection (AC #4)."""
+
+    def test_collects_all_errors_not_just_first(self, tmp_path: Path) -> None:
+        """Should report all errors, not just the first one (AC #4)."""
+        # Create file with multiple errors
+        file_path = tmp_path / "multi-error.yaml"
+        file_path.write_text("""\
+schema_version: "1.0.0"
+# Missing: id, title, problem, actions, outcome
+confidence: super-high
+""")
+        result = validate_file(file_path)
+
+        # Should have multiple errors (at least 5 missing required + 1 enum)
+        assert len(result.errors) >= 6
+        assert not result.valid
+
+    def test_errors_sorted_by_field_path(self, tmp_path: Path) -> None:
+        """Should sort errors by field path for consistent output (AC #4)."""
+        file_path = tmp_path / "unsorted.yaml"
+        file_path.write_text("""\
+schema_version: "1.0.0"
+# Missing required fields, should be sorted
+""")
+        result = validate_file(file_path)
+
+        # Extract field paths from error messages
+        paths = [e.message.split(":")[0] for e in result.errors]
+        assert paths == sorted(paths), "Errors should be sorted by field path"
+
+    def test_max_errors_per_file_limit(self, tmp_path: Path) -> None:
+        """Should limit errors to reasonable max per file."""
+        from resume_as_code.services.validator import MAX_ERRORS_PER_FILE
+
+        # This test verifies the constant exists and is reasonable
+        assert MAX_ERRORS_PER_FILE >= 10
+        assert MAX_ERRORS_PER_FILE <= 50

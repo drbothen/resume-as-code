@@ -1,6 +1,6 @@
 # Story 3.2: Actionable Validation Feedback
 
-Status: ready-for-dev
+Status: completed
 
 ## Story
 
@@ -51,46 +51,46 @@ So that **I can correct issues without guessing**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Enhance error message mapping (AC: #1, #2, #3)
-  - [ ] 1.1: Create `utils/validation_messages.py` with error mappings
-  - [ ] 1.2: Map "required" schema errors to field-specific suggestions
-  - [ ] 1.3: Map "type" schema errors with expected vs actual
-  - [ ] 1.4: Map "enum" schema errors with valid options list
-  - [ ] 1.5: Add contextual suggestions for each Work Unit field
+- [x] Task 1: Enhance error message mapping (AC: #1, #2, #3)
+  - [x] 1.1: Create `utils/validation_messages.py` with error mappings
+  - [x] 1.2: Map "required" schema errors to field-specific suggestions
+  - [x] 1.3: Map "type" schema errors with expected vs actual
+  - [x] 1.4: Map "enum" schema errors with valid options list
+  - [x] 1.5: Add contextual suggestions for each Work Unit field
 
-- [ ] Task 2: Implement comprehensive error collection (AC: #4)
-  - [ ] 2.1: Update validator to collect ALL errors per file
-  - [ ] 2.2: Group errors by file path
-  - [ ] 2.3: Sort errors by field path for consistency
-  - [ ] 2.4: Limit to reasonable max errors per file (e.g., 20)
+- [x] Task 2: Implement comprehensive error collection (AC: #4)
+  - [x] 2.1: Update validator to collect ALL errors per file
+  - [x] 2.2: Group errors by file path
+  - [x] 2.3: Sort errors by field path for consistency
+  - [x] 2.4: Limit to reasonable max errors per file (e.g., 20)
 
-- [ ] Task 3: Enhance Rich output formatting (AC: #5)
-  - [ ] 3.1: Color-code errors (red), warnings (yellow), info (blue)
-  - [ ] 3.2: Make file paths clickable using Rich's file link syntax
-  - [ ] 3.3: Add line numbers when available (via ruamel.yaml)
-  - [ ] 3.4: Use Rich Tree or Panel for grouped errors
-  - [ ] 3.5: Add icons/symbols for error types
+- [x] Task 3: Enhance Rich output formatting (AC: #5)
+  - [x] 3.1: Color-code errors (red), warnings (yellow), info (blue)
+  - [x] 3.2: Make file paths clickable using Rich's file link syntax
+  - [x] 3.3: Add line numbers when available (via ruamel.yaml)
+  - [x] 3.4: Use Rich Tree or Panel for grouped errors
+  - [x] 3.5: Add icons/symbols for error types
 
-- [ ] Task 4: Implement content quality validation (AC: #6, #7)
-  - [ ] 4.1: Add `--content-quality` flag to validate command
-  - [ ] 4.2: Create `services/content_validator.py`
-  - [ ] 4.3: Implement weak verb detection with alternatives
-  - [ ] 4.4: Implement missing quantification detection
-  - [ ] 4.5: Implement verb repetition detection
-  - [ ] 4.6: Define weak verbs list and strong alternatives
+- [x] Task 4: Implement content quality validation (AC: #6, #7)
+  - [x] 4.1: Add `--content-quality` flag to validate command
+  - [x] 4.2: Create `services/content_validator.py`
+  - [x] 4.3: Implement weak verb detection with alternatives
+  - [x] 4.4: Implement missing quantification detection
+  - [x] 4.5: Implement verb repetition detection
+  - [x] 4.6: Define weak verbs list and strong alternatives
 
-- [ ] Task 5: Implement content density validation (AC: #8)
-  - [ ] 5.1: Add `--content-density` flag to validate command
-  - [ ] 5.2: Implement bullet/action character count validation
-  - [ ] 5.3: Warn if outside 100-160 character range
+- [x] Task 5: Implement content density validation (AC: #8)
+  - [x] 5.1: Add `--content-density` flag to validate command
+  - [x] 5.2: Implement bullet/action character count validation
+  - [x] 5.3: Warn if outside 100-160 character range
 
-- [ ] Task 6: Code quality verification
-  - [ ] 6.1: Run `ruff check src tests --fix`
-  - [ ] 6.2: Run `ruff format src tests`
-  - [ ] 6.3: Run `mypy src --strict` with zero errors
-  - [ ] 6.4: Add unit tests for validation message mapping
-  - [ ] 6.5: Add unit tests for content quality validation
-  - [ ] 6.6: Add integration tests for enhanced error output
+- [x] Task 6: Code quality verification
+  - [x] 6.1: Run `ruff check src tests --fix`
+  - [x] 6.2: Run `ruff format src tests`
+  - [x] 6.3: Run `mypy src --strict` with zero errors
+  - [x] 6.4: Add unit tests for validation message mapping
+  - [x] 6.5: Add unit tests for content quality validation
+  - [x] 6.6: Add integration tests for enhanced error output
 
 ## Dev Notes
 

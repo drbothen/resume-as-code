@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 console = Console()  # stdout - for results only
 err_console = Console(stderr=True)  # stderr - for progress/status/errors
 
+
 # Module-level output mode tracking (set by CLI before command execution)
 _current_mode: OutputMode | None = None
 _verbose_enabled: bool = False
@@ -108,3 +109,17 @@ def verbose_path(path: str | Path, action: str = "Accessing") -> None:
     """
     if _verbose_enabled and _should_output_stderr():
         err_console.print(f"[dim]{action}: {path}[/dim]")
+
+
+def json_output(json_string: str) -> None:
+    """Output raw JSON string without any formatting or wrapping.
+
+    Use this for JSON mode output to ensure valid JSON that can be parsed
+    by downstream tools. Bypasses Rich to avoid line wrapping issues.
+
+    Args:
+        json_string: A valid JSON string to output.
+    """
+    import click
+
+    click.echo(json_string)
