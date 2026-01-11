@@ -9,6 +9,7 @@ import pytest
 from resume_as_code.services.validator import (
     ValidationResult,
     ValidationSummary,
+    _generate_suggestion,
     load_schema,
     validate_directory,
     validate_file,
@@ -186,3 +187,89 @@ class TestValidationSummary:
         assert summary.valid_count == 2
         assert summary.invalid_count == 1
         assert summary.total_count == 3
+
+
+class TestGenerateSuggestion:
+    """Tests for _generate_suggestion function."""
+
+    def test_required_validator_suggestion(self) -> None:
+        """Should generate suggestion for missing required field."""
+
+        class MockError:
+            validator = "required"
+            message = "'title' is a required property"
+            validator_value = None
+
+        suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
+        assert "title" in suggestion
+        assert "Add the required field" in suggestion
+
+    def test_required_validator_malformed_message(self) -> None:
+        """Should handle malformed required message gracefully."""
+
+        class MockError:
+            validator = "required"
+            message = "malformed message without quotes"
+            validator_value = None
+
+        suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
+        assert "Add the missing required field" in suggestion
+
+    def test_enum_validator_suggestion(self) -> None:
+        """Should list valid enum values in suggestion."""
+
+        class MockError:
+            validator = "enum"
+            message = "invalid is not one of ['a', 'b', 'c']"
+            validator_value = ["a", "b", "c"]
+
+        suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
+        assert "a, b, c" in suggestion
+        assert "valid values" in suggestion
+
+    def test_type_validator_suggestion(self) -> None:
+        """Should show expected type in suggestion."""
+
+        class MockError:
+            validator = "type"
+            message = "123 is not of type 'string'"
+            validator_value = "string"
+
+        suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
+        assert "string" in suggestion
+        assert "Expected type" in suggestion
+
+    def test_minlength_validator_suggestion(self) -> None:
+        """Should show minimum length requirement in suggestion."""
+
+        class MockError:
+            validator = "minLength"
+            message = "'ab' is too short"
+            validator_value = 10
+
+        suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
+        assert "10" in suggestion
+        assert "at least" in suggestion
+
+    def test_pattern_validator_suggestion(self) -> None:
+        """Should show pattern in suggestion."""
+
+        class MockError:
+            validator = "pattern"
+            message = "'invalid' does not match pattern"
+            validator_value = "^wu-\\d{4}-\\d{2}-\\d{2}-[a-z0-9-]+$"
+
+        suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
+        assert "pattern" in suggestion
+        assert "wu-" in suggestion
+
+    def test_unknown_validator_suggestion(self) -> None:
+        """Should return generic suggestion for unknown validators."""
+
+        class MockError:
+            validator = "someUnknownValidator"
+            message = "some error"
+            validator_value = None
+
+        suggestion = _generate_suggestion(MockError())  # type: ignore[arg-type]
+        assert "schema requirements" in suggestion

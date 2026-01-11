@@ -65,17 +65,12 @@ def validate_command(ctx: click.Context, path: Path | None) -> None:
     # Output results and handle exit code
     if ctx.obj.json_output:
         _output_json(summary)
-        # In JSON mode, exit directly to avoid double JSON output from error handler
-        if summary.invalid_count > 0:
-            sys.exit(ValidationError.exit_code)
     else:
         _output_rich(summary)
-        # In Rich mode, raise exception to let error handler format the error
-        if summary.invalid_count > 0:
-            raise ValidationError(
-                message=f"{summary.invalid_count} Work Unit(s) failed validation",
-                path=str(path),
-            )
+
+    # Exit with appropriate code (avoid raising exception to prevent duplicate output)
+    if summary.invalid_count > 0:
+        sys.exit(ValidationError.exit_code)
 
 
 def _output_json(summary: ValidationSummary) -> None:

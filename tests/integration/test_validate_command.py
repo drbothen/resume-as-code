@@ -95,12 +95,11 @@ class TestValidateCommandErrors:
 
         assert result.exit_code == 3
 
-    def test_validate_nonexistent_path_exit_code_4(self, cli_runner: CliRunner) -> None:
-        """Should exit 4 when path doesn't exist (NotFoundError)."""
+    def test_validate_nonexistent_path_click_error(self, cli_runner: CliRunner) -> None:
+        """Should exit 2 when path doesn't exist (Click validation)."""
         result = cli_runner.invoke(main, ["validate", "/nonexistent/path.yaml"])
 
-        # Click's Path(exists=True) returns exit code 2 for nonexistent paths
-        # This is expected Click behavior
+        # Click's Path(exists=True) validates before command runs, returns exit code 2
         assert result.exit_code == 2
 
 
