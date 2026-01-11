@@ -292,9 +292,7 @@ class TestValidateContentQuality:
         assert result.exit_code == 0
         assert "MISSING_QUANTIFICATION" in result.output
 
-    def test_content_quality_json_output(
-        self, tmp_path: Path, cli_runner: CliRunner
-    ) -> None:
+    def test_content_quality_json_output(self, tmp_path: Path, cli_runner: CliRunner) -> None:
         """Should include content warnings in JSON output."""
         file_path = tmp_path / "wu-weak.yaml"
         file_path.write_text(WORK_UNIT_WITH_WEAK_VERBS)
@@ -398,9 +396,7 @@ outcome:
         assert "BULLET_TOO_SHORT" not in result.output
         assert "BULLET_TOO_LONG" not in result.output
 
-    def test_content_density_json_output(
-        self, tmp_path: Path, cli_runner: CliRunner
-    ) -> None:
+    def test_content_density_json_output(self, tmp_path: Path, cli_runner: CliRunner) -> None:
         """Should include content density warnings in JSON output."""
         # Action must be at least 10 chars to pass schema, but under 100 for density warning
         short_action = "Completed a short task here"  # 27 chars

@@ -280,9 +280,7 @@ class TestContentDensity:
         optimal_action = "x" * 130  # Within 100-160 range
         work_unit = {"actions": [optimal_action]}
         warnings = validate_content_density(work_unit, "test.yaml")
-        assert not any(
-            w.code in ("BULLET_TOO_SHORT", "BULLET_TOO_LONG") for w in warnings
-        )
+        assert not any(w.code in ("BULLET_TOO_SHORT", "BULLET_TOO_LONG") for w in warnings)
 
     def test_boundary_min_length_no_warning(self) -> None:
         """Should not warn for exactly minimum length bullet."""
@@ -315,9 +313,7 @@ class TestContentDensity:
         }
         warnings = validate_content_density(work_unit, "test.yaml")
         # Should not crash, valid string should not trigger warning
-        assert not any(
-            w.code in ("BULLET_TOO_SHORT", "BULLET_TOO_LONG") for w in warnings
-        )
+        assert not any(w.code in ("BULLET_TOO_SHORT", "BULLET_TOO_LONG") for w in warnings)
 
     def test_bullet_char_constants_reasonable(self) -> None:
         """Bullet character constants should be reasonable values."""

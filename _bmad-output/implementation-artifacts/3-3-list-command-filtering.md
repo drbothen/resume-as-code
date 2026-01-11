@@ -1,6 +1,6 @@
 # Story 3.3: List Command & Filtering
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -41,46 +41,46 @@ So that **I can find specific accomplishments quickly**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create list command module (AC: #1, #2)
-  - [ ] 1.1: Create `src/resume_as_code/commands/list_cmd.py` (avoid `list` keyword)
-  - [ ] 1.2: Implement `resume list` command with Click
-  - [ ] 1.3: Register command in `cli.py`
-  - [ ] 1.4: Load all Work Units from configured directory
+- [x] Task 1: Create list command module (AC: #1, #2)
+  - [x] 1.1: Create `src/resume_as_code/commands/list_cmd.py` (avoid `list` keyword)
+  - [x] 1.2: Implement `resume list` command with Click
+  - [x] 1.3: Register command in `cli.py`
+  - [x] 1.4: Load all Work Units from configured directory
 
-- [ ] Task 2: Implement table output (AC: #1)
-  - [ ] 2.1: Create Rich Table with columns: ID, Title, Date, Confidence, Tags
-  - [ ] 2.2: Truncate long titles (max 40 chars)
-  - [ ] 2.3: Truncate tags list (show first 3 + "...")
-  - [ ] 2.4: Extract date from Work Unit ID
+- [x] Task 2: Implement table output (AC: #1)
+  - [x] 2.1: Create Rich Table with columns: ID, Title, Date, Confidence, Tags
+  - [x] 2.2: Truncate long titles (max 40 chars)
+  - [x] 2.3: Truncate tags list (show first 3 + "...")
+  - [x] 2.4: Extract date from Work Unit ID
 
-- [ ] Task 3: Implement JSON output (AC: #2)
-  - [ ] 3.1: Add `--json` flag support (via global flag)
-  - [ ] 3.2: Output Work Unit summaries as JSON array
-  - [ ] 3.3: Include all fields in JSON (no truncation)
+- [x] Task 3: Implement JSON output (AC: #2)
+  - [x] 3.1: Add `--json` flag support (via global flag)
+  - [x] 3.2: Output Work Unit summaries as JSON array
+  - [x] 3.3: Include all fields in JSON (no truncation)
 
-- [ ] Task 4: Implement filtering (AC: #3, #4, #5)
-  - [ ] 4.1: Add `--filter` option accepting filter string
-  - [ ] 4.2: Parse `tag:<value>` filter syntax
-  - [ ] 4.3: Parse `confidence:<value>` filter syntax
-  - [ ] 4.4: Implement free-text search across ID, title, date
-  - [ ] 4.5: Support multiple filters (AND logic)
+- [x] Task 4: Implement filtering (AC: #3, #4, #5)
+  - [x] 4.1: Add `--filter` option accepting filter string
+  - [x] 4.2: Parse `tag:<value>` filter syntax
+  - [x] 4.3: Parse `confidence:<value>` filter syntax
+  - [x] 4.4: Implement free-text search across ID, title, date
+  - [x] 4.5: Support multiple filters (AND logic)
 
-- [ ] Task 5: Implement sorting (AC: #7)
-  - [ ] 5.1: Add `--sort` option with choices: date, title, confidence
-  - [ ] 5.2: Add `--reverse` flag for ascending order
-  - [ ] 5.3: Default to date descending (newest first)
+- [x] Task 5: Implement sorting (AC: #7)
+  - [x] 5.1: Add `--sort` option with choices: date, title, confidence
+  - [x] 5.2: Add `--reverse` flag for ascending order
+  - [x] 5.3: Default to date descending (newest first)
 
-- [ ] Task 6: Handle empty state (AC: #6)
-  - [ ] 6.1: Detect when no Work Units exist
-  - [ ] 6.2: Display helpful message with `resume new work-unit` suggestion
-  - [ ] 6.3: Return empty array in JSON mode
+- [x] Task 6: Handle empty state (AC: #6)
+  - [x] 6.1: Detect when no Work Units exist
+  - [x] 6.2: Display helpful message with `resume new work-unit` suggestion
+  - [x] 6.3: Return empty array in JSON mode
 
-- [ ] Task 7: Code quality verification
-  - [ ] 7.1: Run `ruff check src tests --fix`
-  - [ ] 7.2: Run `ruff format src tests`
-  - [ ] 7.3: Run `mypy src --strict` with zero errors
-  - [ ] 7.4: Add unit tests for filtering logic
-  - [ ] 7.5: Add integration tests for list command
+- [x] Task 7: Code quality verification
+  - [x] 7.1: Run `ruff check src tests --fix`
+  - [x] 7.2: Run `ruff format src tests`
+  - [x] 7.3: Run `mypy src --strict` with zero errors
+  - [x] 7.4: Add unit tests for filtering logic
+  - [x] 7.5: Add integration tests for list command
 
 ## Dev Notes
 
@@ -100,6 +100,15 @@ This story REQUIRES:
 - Story 2.5 (Metadata & Evidence) - Confidence and tags fields
 
 ### Command Implementation
+
+> **Note:** The sample code below was planning guidance. See the actual implementation at
+> `src/resume_as_code/commands/list_cmd.py` for the final, reviewed version which includes:
+> - Multiple filter support with AND logic (`--filter` is repeatable)
+> - Named sort key functions (not lambdas, per ruff E731)
+> - Proper type hints with `tuple[str, ...]` for filter args
+
+<details>
+<summary>Original planning sample (outdated - click to expand)</summary>
 
 **`src/resume_as_code/commands/list_cmd.py`:**
 
@@ -667,6 +676,8 @@ mypy src --strict
 pytest tests/unit/test_list_filtering.py tests/integration/test_list_command.py -v
 ```
 
+</details>
+
 ### References
 
 - [Source: epics.md#Story 3.3](_bmad-output/planning-artifacts/epics.md)
@@ -677,11 +688,47 @@ pytest tests/unit/test_list_filtering.py tests/integration/test_list_command.py 
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+- Initial implementation completed following red-green-refactor cycle
+- All 42 list command tests passing (27 unit + 15 integration) after code review fixes
+- Full regression suite passing
+
 ### Completion Notes List
 
+- Created `src/resume_as_code/commands/list_cmd.py` with full list command implementation
+- Implemented Rich table output with columns: ID, Title, Date, Confidence, Tags
+- Implemented JSON output via global `--json` flag with `JSONResponse` model
+- Implemented filtering with `--filter` option supporting:
+  - `tag:<value>` - filter by tag (case-insensitive)
+  - `confidence:<value>` - filter by confidence level (case-insensitive)
+  - Free text search across ID, title, date fields
+  - Multiple `--filter` options with AND logic (all filters must match)
+- Implemented sorting with `--sort` option (date, title, confidence)
+- Implemented `--reverse` flag for ascending order
+- Default sort is date descending (newest first)
+- Empty state displays helpful message with `resume new work-unit` suggestion
+- JSON mode returns empty array with count: 0 for empty state
+- All code passes ruff linting and mypy strict type checking
+- Tests cover all 7 acceptance criteria
+
 ### File List
+
+**New files:**
+- src/resume_as_code/commands/list_cmd.py
+- tests/unit/test_list_filtering.py
+- tests/integration/test_list_command.py
+
+**Modified files:**
+- src/resume_as_code/cli.py (registered list_command)
+- src/resume_as_code/commands/validate.py (ruff formatting)
+- tests/integration/test_validate_command.py (ruff formatting)
+- tests/unit/test_content_validator.py (ruff formatting)
+
+## Change Log
+
+- 2026-01-11: Code review fixes - added multiple filter AND logic (Task 4.5), edge case tests
+- 2026-01-11: Implemented Story 3.3 - List Command & Filtering (all ACs satisfied)
 

@@ -65,10 +65,10 @@ development_status:
   # Epic 3: Work Unit Validation & Discovery
   # Goal: Users can validate their Work Units and browse their collection with confidence
   # FRs Covered: FR6, FR7, FR8
-  epic-3: in-progress
+  epic-3: done
   3-1-validate-command-schema-validation: done
   3-2-actionable-validation-feedback: done
-  3-3-list-command-filtering: ready-for-dev
+  3-3-list-command-filtering: done
   epic-3-retrospective: optional
 
   # Epic 4: Resume Planning & Explainability

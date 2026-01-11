@@ -94,13 +94,9 @@ def validate_command(
                 data = _load_yaml(result.file_path)
                 if data is not None:
                     if content_quality:
-                        all_warnings.extend(
-                            validate_content_quality(data, str(result.file_path))
-                        )
+                        all_warnings.extend(validate_content_quality(data, str(result.file_path)))
                     if content_density:
-                        all_warnings.extend(
-                            validate_content_density(data, str(result.file_path))
-                        )
+                        all_warnings.extend(validate_content_density(data, str(result.file_path)))
 
     # Output results and handle exit code
     if ctx.obj.json_output:
@@ -129,9 +125,7 @@ def _load_yaml(file_path: Path) -> dict[str, Any] | None:
         return None
 
 
-def _output_json(
-    summary: ValidationSummary, warnings: list[ContentWarning] | None = None
-) -> None:
+def _output_json(summary: ValidationSummary, warnings: list[ContentWarning] | None = None) -> None:
     """Output validation results as JSON."""
     data: dict[str, Any] = {
         "valid_count": summary.valid_count,
