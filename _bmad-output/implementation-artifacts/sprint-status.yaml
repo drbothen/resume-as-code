@@ -47,8 +47,8 @@ development_status:
   1-1-project-scaffolding-cli-skeleton: done
   1-2-rich-console-output-formatting: done
   1-3-configuration-hierarchy: done
-  1-4-error-handling-exit-codes: ready-for-dev
-  1-5-ai-agent-context-documentation: ready-for-dev
+  1-4-error-handling-exit-codes: review
+  1-5-ai-agent-context-documentation: done
   epic-1-retrospective: optional
 
   # Epic 2: Work Unit Creation & Capture

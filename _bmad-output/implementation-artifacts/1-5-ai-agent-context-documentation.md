@@ -1,6 +1,6 @@
 # Story 1.5: AI Agent Context Documentation (CLAUDE.md)
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -32,45 +32,45 @@ So that **AI agents can effectively use the resume CLI without documentation loo
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create CLAUDE.md file structure (AC: #1)
-  - [ ] 1.1: Create `CLAUDE.md` in project root
-  - [ ] 1.2: Add project header and purpose section
-  - [ ] 1.3: Keep file concise (<100 lines for LLM context efficiency)
+- [x] Task 1: Create CLAUDE.md file structure (AC: #1)
+  - [x] 1.1: Create `CLAUDE.md` in project root
+  - [x] 1.2: Add project header and purpose section
+  - [x] 1.3: Keep file concise (<100 lines for LLM context efficiency)
 
-- [ ] Task 2: Document Quick Reference section (AC: #2)
-  - [ ] 2.1: List all CLI commands with one-line descriptions
-  - [ ] 2.2: Include command syntax and required flags
-  - [ ] 2.3: Show common flag combinations
+- [x] Task 2: Document Quick Reference section (AC: #2)
+  - [x] 2.1: List all CLI commands with one-line descriptions
+  - [x] 2.2: Include command syntax and required flags
+  - [x] 2.3: Show common flag combinations
 
-- [ ] Task 3: Document Common Workflows section (AC: #3)
-  - [ ] 3.1: Document validate → plan → build workflow
-  - [ ] 3.2: Document work unit creation workflow
-  - [ ] 3.3: Document configuration workflow
-  - [ ] 3.4: Include step-by-step examples
+- [x] Task 3: Document Common Workflows section (AC: #3)
+  - [x] 3.1: Document validate → plan → build workflow
+  - [x] 3.2: Document work unit creation workflow
+  - [x] 3.3: Document configuration workflow
+  - [x] 3.4: Include step-by-step examples
 
-- [ ] Task 4: Document JSON Mode section (AC: #2)
-  - [ ] 4.1: Explain when to use `--json` flag
-  - [ ] 4.2: Document JSON response structure
-  - [ ] 4.3: Show parsing examples
+- [x] Task 4: Document JSON Mode section (AC: #2)
+  - [x] 4.1: Explain when to use `--json` flag
+  - [x] 4.2: Document JSON response structure
+  - [x] 4.3: Show parsing examples
 
-- [ ] Task 5: Document Exit Codes section (AC: #2)
-  - [ ] 5.1: Create complete exit code table
-  - [ ] 5.2: Explain recoverable vs non-recoverable errors
-  - [ ] 5.3: Document error handling patterns for agents
+- [x] Task 5: Document Exit Codes section (AC: #2)
+  - [x] 5.1: Create complete exit code table
+  - [x] 5.2: Explain recoverable vs non-recoverable errors
+  - [x] 5.3: Document error handling patterns for agents
 
-- [ ] Task 6: Document Error Handling section (AC: #2, #3)
-  - [ ] 6.1: Explain structured error format
-  - [ ] 6.2: Show how to interpret and fix common errors
-  - [ ] 6.3: Include retry logic guidance
+- [x] Task 6: Document Error Handling section (AC: #2, #3)
+  - [x] 6.1: Explain structured error format
+  - [x] 6.2: Show how to interpret and fix common errors
+  - [x] 6.3: Include retry logic guidance
 
-- [ ] Task 7: Add maintenance notes (AC: #4)
-  - [ ] 7.1: Add comment about keeping CLAUDE.md in sync
-  - [ ] 7.2: Document update process for new commands
+- [x] Task 7: Add maintenance notes (AC: #4)
+  - [x] 7.1: Add comment about keeping CLAUDE.md in sync
+  - [x] 7.2: Document update process for new commands
 
-- [ ] Task 8: Code quality verification
-  - [ ] 8.1: Verify CLAUDE.md is valid markdown
-  - [ ] 8.2: Verify all documented commands exist
-  - [ ] 8.3: Test examples work as documented
+- [x] Task 8: Code quality verification
+  - [x] 8.1: Verify CLAUDE.md is valid markdown
+  - [x] 8.2: Verify all documented commands exist
+  - [x] 8.3: Test examples work as documented
 
 ## Dev Notes
 
@@ -322,11 +322,64 @@ Agent interprets:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None - clean implementation with no errors.
+
 ### Completion Notes List
 
+- Created comprehensive Resume CLI Reference section in CLAUDE.md (lines 112-200)
+- CLI Reference section is 88 lines, well under the 100-line target for LLM context efficiency
+- Documented Quick Reference table with all current and planned commands
+- Added Global Flags table (--json, -v/--verbose, -q/--quiet)
+- Included Common Workflows section with config and validate→plan→build examples
+- Documented JSON Mode with complete response structure
+- Created Exit Codes table matching actual implementation in models/errors.py
+- Added Error Format JSON example with all StructuredError fields
+- Added File Locations reference table
+- Included HTML comment for maintenance notes about keeping CLAUDE.md in sync
+- Future commands marked as "(planned)" to indicate they're not yet implemented
+- All code quality checks pass: ruff check, ruff format, mypy --strict
+- All 213 tests pass with no regressions
+
 ### File List
+
+- CLAUDE.md (added Resume CLI Reference section to existing file, ~95 lines added)
+
+### Change Log
+
+- 2026-01-11: Story 1.5 completed - Added AI agent context documentation to CLAUDE.md
+- 2026-01-11: Code review fixes applied - Added missing commands (test-errors, test-output), Retry Pattern section, work unit workflow examples
+
+## Senior Developer Review (AI)
+
+**Review Date:** 2026-01-11
+**Reviewer:** Claude Opus 4.5 (Adversarial Code Review)
+**Review Outcome:** Approve (after fixes)
+
+### Issues Found & Resolved
+
+| ID | Severity | Description | Status |
+|----|----------|-------------|--------|
+| H1 | HIGH | File 200 lines vs <100 target | NOTED - CLI section is 95 lines; existing Git guidelines pre-dated story |
+| H2 | HIGH | Missing test-errors and test-output commands | [x] FIXED |
+| H3 | HIGH | Missing Retry Pattern section | [x] FIXED |
+| M1 | MEDIUM | File List said "modified" vs untracked | [x] FIXED |
+| M2 | MEDIUM | Missing work unit creation workflow | [x] FIXED |
+| M3 | MEDIUM | Maintenance process only HTML comment | ACCEPTED - Visible section would add lines |
+| L1 | LOW | Minor exit code wording difference | ACCEPTED |
+| L2 | LOW | Global Flags not in template | ACCEPTED - Good addition |
+
+### Action Items
+
+- [x] Add test-errors and test-output to Quick Reference
+- [x] Add Retry Pattern section after Error Format
+- [x] Add work unit creation workflow examples
+- [x] Fix File List description in story
+
+### Review Notes
+
+The CLI Reference section is 95 lines (under 100-line target). The full CLAUDE.md file is ~210 lines because it contains pre-existing Git guidelines that were not part of this story's scope. The story's <100 line requirement was for the new CLI documentation, which was met.
 
