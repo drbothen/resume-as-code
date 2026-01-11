@@ -1,6 +1,6 @@
 # Story 1.2: Rich Console & Output Formatting
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -45,45 +45,45 @@ So that **I can read output easily and pipe to other tools when needed**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create console utility module (AC: #1, #6)
-  - [ ] 1.1: Create `src/resume_as_code/utils/__init__.py`
-  - [ ] 1.2: Create `src/resume_as_code/utils/console.py` with Rich Console singletons
-  - [ ] 1.3: Implement `console` (stdout) for results
-  - [ ] 1.4: Implement `err_console` (stderr) for progress/status/errors
-  - [ ] 1.5: Create helper functions: `success()`, `warning()`, `error()`, `info()`
+- [x] Task 1: Create console utility module (AC: #1, #6)
+  - [x] 1.1: Create `src/resume_as_code/utils/__init__.py`
+  - [x] 1.2: Create `src/resume_as_code/utils/console.py` with Rich Console singletons
+  - [x] 1.3: Implement `console` (stdout) for results
+  - [x] 1.4: Implement `err_console` (stderr) for progress/status/errors
+  - [x] 1.5: Create helper functions: `success()`, `warning()`, `error()`, `info()`
 
-- [ ] Task 2: Create JSON output models (AC: #2)
-  - [ ] 2.1: Create `src/resume_as_code/models/output.py` with Pydantic models
-  - [ ] 2.2: Implement `JSONResponse` model with required fields
-  - [ ] 2.3: Implement `format_version: "1.0.0"` constant
-  - [ ] 2.4: Create `to_json()` helper for consistent JSON serialization
+- [x] Task 2: Create JSON output models (AC: #2)
+  - [x] 2.1: Create `src/resume_as_code/models/output.py` with Pydantic models
+  - [x] 2.2: Implement `JSONResponse` model with required fields
+  - [x] 2.3: Implement `format_version: "1.0.0"` constant
+  - [x] 2.4: Create `to_json()` helper for consistent JSON serialization
 
-- [ ] Task 3: Add global CLI flags (AC: #2, #3, #4, #5)
-  - [ ] 3.1: Add `--json` flag to main CLI group in `cli.py`
-  - [ ] 3.2: Add `--verbose` / `-v` flag to main CLI group
-  - [ ] 3.3: Add `--quiet` / `-q` flag to main CLI group
-  - [ ] 3.4: Store flags in Click context for subcommand access
-  - [ ] 3.5: Ensure mutual exclusivity: `--json` and `--quiet` suppress Rich output
+- [x] Task 3: Add global CLI flags (AC: #2, #3, #4, #5)
+  - [x] 3.1: Add `--json` flag to main CLI group in `cli.py`
+  - [x] 3.2: Add `--verbose` / `-v` flag to main CLI group
+  - [x] 3.3: Add `--quiet` / `-q` flag to main CLI group
+  - [x] 3.4: Store flags in Click context for subcommand access
+  - [x] 3.5: Ensure mutual exclusivity: `--json` and `--quiet` suppress Rich output
 
-- [ ] Task 4: Implement output mode switching (AC: #1, #2, #5)
-  - [ ] 4.1: Create `OutputMode` enum: `rich`, `json`, `quiet`
-  - [ ] 4.2: Create `get_output_mode()` function to read from Click context
-  - [ ] 4.3: Update console helpers to respect output mode
-  - [ ] 4.4: Suppress Rich output when `--json` or `--quiet` is active
+- [x] Task 4: Implement output mode switching (AC: #1, #2, #5)
+  - [x] 4.1: Create `OutputMode` enum: `rich`, `json`, `quiet`
+  - [x] 4.2: Create `get_output_mode()` function to read from Click context
+  - [x] 4.3: Update console helpers to respect output mode
+  - [x] 4.4: Suppress Rich output when `--json` or `--quiet` is active
 
-- [ ] Task 5: Create test command for verification (AC: #1-#6)
-  - [ ] 5.1: Add temporary `resume test-output` command
-  - [ ] 5.2: Demonstrate success, warning, error, and info messages
-  - [ ] 5.3: Verify JSON output structure
-  - [ ] 5.4: Verify stdout/stderr separation
-  - [ ] 5.5: Remove test command after verification (or keep for dev)
+- [x] Task 5: Create test command for verification (AC: #1-#6)
+  - [x] 5.1: Add temporary `resume test-output` command
+  - [x] 5.2: Demonstrate success, warning, error, and info messages
+  - [x] 5.3: Verify JSON output structure
+  - [x] 5.4: Verify stdout/stderr separation
+  - [x] 5.5: Remove test command after verification (or keep for dev)
 
-- [ ] Task 6: Code quality verification
-  - [ ] 6.1: Run `ruff check src tests --fix`
-  - [ ] 6.2: Run `ruff format src tests`
-  - [ ] 6.3: Run `mypy src --strict` with zero errors
-  - [ ] 6.4: Add unit tests for console utilities
-  - [ ] 6.5: Add unit tests for JSON output models
+- [x] Task 6: Code quality verification
+  - [x] 6.1: Run `ruff check src tests --fix`
+  - [x] 6.2: Run `ruff format src tests`
+  - [x] 6.3: Run `mypy src --strict` with zero errors
+  - [x] 6.4: Add unit tests for console utilities
+  - [x] 6.5: Add unit tests for JSON output models
 
 ## Dev Notes
 
@@ -376,11 +376,53 @@ pytest tests/unit/test_console.py tests/unit/test_output_models.py
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None
+
 ### Completion Notes List
 
+- Implemented Rich console utilities with stdout/stderr separation (AC #1, #6)
+- Created JSONResponse Pydantic model with format_version 1.0.0 (AC #2)
+- Added global CLI flags: --json, --verbose/-v, --quiet/-q (AC #2, #3, #4, #5)
+- Implemented OutputMode enum and get_output_mode() for mode switching
+- Created test-output command demonstrating all output modes
+- All 69 tests pass, ruff check passes, mypy --strict passes with zero errors
+- Added pytest configuration to pyproject.toml for proper test discovery
+
+**Code Review Fixes (2026-01-11):**
+- Added verbose_path() helper for file path logging (fixes AC #3 violation)
+- Console helpers now respect output mode (suppress output in JSON/quiet modes)
+- Added configure_output() for centralized mode configuration
+- Added reset_output_mode() and set_verbose_enabled() for testing
+- Added flag conflict warning when --json and --quiet are both used
+- Added proper exports to commands/__init__.py
+- Improved test assertion for error symbol verification
+- Added comprehensive tests for output mode suppression behavior
+
 ### File List
+
+**New Files:**
+- src/resume_as_code/utils/__init__.py
+- src/resume_as_code/utils/console.py
+- src/resume_as_code/models/__init__.py
+- src/resume_as_code/models/output.py
+- src/resume_as_code/commands/__init__.py
+- src/resume_as_code/commands/test_output.py
+- tests/unit/__init__.py
+- tests/unit/test_console.py
+- tests/unit/test_output_models.py
+- tests/unit/test_output_mode.py
+
+**Modified Files:**
+- src/resume_as_code/cli.py (added Context class, global flags, command registration, configure_output call, flag conflict warning)
+- tests/test_cli.py (added global flags, test-output command tests, verbose mode tests, conflict warning test)
+- pyproject.toml (added pytest configuration)
+
+## Change Log
+
+- 2026-01-10: Implemented Story 1.2 - Rich Console & Output Formatting
+- 2026-01-11: Code review fixes - AC #3 compliance, output mode suppression, flag conflict warning
 
