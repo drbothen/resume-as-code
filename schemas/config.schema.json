@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resume-as-code.dev/schemas/config.schema.json",
+  "title": "Resume as Code Configuration",
+  "description": "Configuration schema for Resume as Code CLI tool",
+  "type": "object",
+  "properties": {
+    "output_dir": {
+      "type": "string",
+      "description": "Directory for generated resume files",
+      "default": "./dist"
+    },
+    "default_format": {
+      "type": "string",
+      "enum": ["pdf", "docx", "both"],
+      "description": "Default output format for resume generation",
+      "default": "both"
+    },
+    "default_template": {
+      "type": "string",
+      "description": "Default template to use for resume generation",
+      "default": "modern"
+    },
+    "work_units_dir": {
+      "type": "string",
+      "description": "Directory containing work unit YAML files",
+      "default": "./work-units"
+    },
+    "scoring_weights": {
+      "type": "object",
+      "description": "Weights for the ranking algorithm",
+      "properties": {
+        "title_weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Weight for job title matching",
+          "default": 1.0
+        },
+        "skills_weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Weight for skills matching",
+          "default": 1.0
+        },
+        "experience_weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Weight for experience relevance",
+          "default": 1.0
+        }
+      },
+      "additionalProperties": false
+    },
+    "default_top_k": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50,
+      "description": "Default number of work units to include in resume",
+      "default": 8
+    },
+    "editor": {
+      "type": ["string", "null"],
+      "description": "Editor to use for work unit creation. Falls back to $EDITOR if not set."
+    }
+  },
+  "additionalProperties": false
+}

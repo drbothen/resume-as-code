@@ -1,6 +1,6 @@
 # Story 1.3: Configuration Hierarchy
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -36,42 +36,42 @@ So that **I can set project defaults and override them when needed**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create configuration Pydantic models (AC: #1-#5)
-  - [ ] 1.1: Create `src/resume_as_code/models/config.py`
-  - [ ] 1.2: Implement `ResumeConfig` model with all configurable fields
-  - [ ] 1.3: Define sensible defaults for all fields
-  - [ ] 1.4: Add field validators for path and enum fields
+- [x] Task 1: Create configuration Pydantic models (AC: #1-#5)
+  - [x] 1.1: Create `src/resume_as_code/models/config.py`
+  - [x] 1.2: Implement `ResumeConfig` model with all configurable fields
+  - [x] 1.3: Define sensible defaults for all fields
+  - [x] 1.4: Add field validators for path and enum fields
 
-- [ ] Task 2: Create configuration loader (AC: #1-#5)
-  - [ ] 2.1: Create `src/resume_as_code/config.py` (module-level loader)
-  - [ ] 2.2: Implement `load_user_config()` from `~/.config/resume-as-code/config.yaml`
-  - [ ] 2.3: Implement `load_project_config()` from `.resume.yaml`
-  - [ ] 2.4: Implement `load_env_config()` from `RESUME_*` environment variables
-  - [ ] 2.5: Implement `merge_configs()` with correct precedence
-  - [ ] 2.6: Implement `get_config()` singleton accessor
+- [x] Task 2: Create configuration loader (AC: #1-#5)
+  - [x] 2.1: Create `src/resume_as_code/config.py` (module-level loader)
+  - [x] 2.2: Implement `load_user_config()` from `~/.config/resume-as-code/config.yaml`
+  - [x] 2.3: Implement `load_project_config()` from `.resume.yaml`
+  - [x] 2.4: Implement `load_env_config()` from `RESUME_*` environment variables
+  - [x] 2.5: Implement `merge_configs()` with correct precedence
+  - [x] 2.6: Implement `get_config()` singleton accessor
 
-- [ ] Task 3: Create config schema file (AC: #1)
-  - [ ] 3.1: Create `schemas/config.schema.json` for validation
-  - [ ] 3.2: Document all configurable fields in schema
+- [x] Task 3: Create config schema file (AC: #1)
+  - [x] 3.1: Create `schemas/config.schema.json` for validation
+  - [x] 3.2: Document all configurable fields in schema
 
-- [ ] Task 4: Implement `resume config` command (AC: #6)
-  - [ ] 4.1: Create `src/resume_as_code/commands/config_cmd.py`
-  - [ ] 4.2: Implement `resume config` to show effective config
-  - [ ] 4.3: Show source of each value (default/user/project/env/cli)
-  - [ ] 4.4: Support `--json` output mode
-  - [ ] 4.5: Register command in `cli.py`
+- [x] Task 4: Implement `resume config` command (AC: #6)
+  - [x] 4.1: Create `src/resume_as_code/commands/config_cmd.py`
+  - [x] 4.2: Implement `resume config` to show effective config
+  - [x] 4.3: Show source of each value (default/user/project/env/cli)
+  - [x] 4.4: Support `--json` output mode
+  - [x] 4.5: Register command in `cli.py`
 
-- [ ] Task 5: Wire configuration into CLI (AC: #4)
-  - [ ] 5.1: Load config at CLI startup in `cli.py`
-  - [ ] 5.2: Pass config through Click context
-  - [ ] 5.3: Ensure CLI flags can override config values
+- [x] Task 5: Wire configuration into CLI (AC: #4)
+  - [x] 5.1: Load config at CLI startup in `cli.py`
+  - [x] 5.2: Pass config through Click context
+  - [x] 5.3: Ensure CLI flags can override config values
 
-- [ ] Task 6: Code quality verification
-  - [ ] 6.1: Run `ruff check src tests --fix`
-  - [ ] 6.2: Run `ruff format src tests`
-  - [ ] 6.3: Run `mypy src --strict` with zero errors
-  - [ ] 6.4: Add unit tests for config loading and merging
-  - [ ] 6.5: Add integration tests for `resume config` command
+- [x] Task 6: Code quality verification
+  - [x] 6.1: Run `ruff check src tests --fix`
+  - [x] 6.2: Run `ruff format src tests`
+  - [x] 6.3: Run `mypy src --strict` with zero errors
+  - [x] 6.4: Add unit tests for config loading and merging
+  - [x] 6.5: Add integration tests for `resume config` command
 
 ## Dev Notes
 
@@ -152,7 +152,7 @@ class ResumeConfig(BaseModel):
 class ConfigSource(BaseModel):
     """Tracks the source of each config value."""
 
-    value: str | int | float | bool | dict | list | None
+    value: str | int | float | bool | dict[str, object] | list[object] | None
     source: Literal["default", "user", "project", "env", "cli"]
     path: str | None = None  # File path if from file
 ```
@@ -319,7 +319,7 @@ from __future__ import annotations
 import click
 from rich.table import Table
 
-from resume_as_code.config import get_config, get_config_sources
+from resume_as_code.config import get_config, get_config_sources, reset_config
 from resume_as_code.models.output import JSONResponse
 from resume_as_code.utils.console import console
 
@@ -328,6 +328,9 @@ from resume_as_code.utils.console import console
 @click.pass_context
 def config_command(ctx: click.Context) -> None:
     """Display current effective configuration with sources."""
+    # Reset config to ensure fresh load with current environment
+    reset_config()
+
     config = get_config()
     sources = get_config_sources()
 
@@ -340,7 +343,7 @@ def config_command(ctx: click.Context) -> None:
                 "sources": {k: v.model_dump() for k, v in sources.items()},
             },
         )
-        print(response.to_json())
+        click.echo(response.to_json())
         return
 
     if ctx.obj.quiet:
@@ -355,7 +358,7 @@ def config_command(ctx: click.Context) -> None:
     config_dict = config.model_dump()
     for key, value in config_dict.items():
         source = sources.get(key)
-        source_str = source.source if source else "unknown"
+        source_str: str = source.source if source else "unknown"
         if source and source.path:
             source_str = f"{source.source} ({source.path})"
         table.add_row(key, str(value), source_str)
@@ -558,11 +561,50 @@ pytest tests/unit/test_config.py
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None
+
 ### Completion Notes List
 
+- Implemented `ResumeConfig`, `ScoringWeights`, and `ConfigSource` Pydantic models with full type hints and field validators
+- Created configuration loader with 5-level precedence: CLI > env > project > user > defaults
+- Implemented `resume config` command showing effective configuration with Rich table output and JSON mode
+- Added config to CLI context for lazy-loaded access by all commands
+- Created JSON Schema for config validation at `schemas/config.schema.json`
+- Added `ConfigError` exception class for user-friendly error handling on malformed YAML
+- All 144 tests pass with zero regressions
+- mypy --strict passes with no errors
+- ruff check/format passes with no issues
+
+### Code Review Fixes Applied
+
+- H1: Added `uv.lock` to File List for traceability
+- M1: Updated `ConfigSource.value` type annotation in story template to match implementation (`dict[str, object] | list[object]`)
+- M2: Updated story template to use `click.echo()` instead of `print()`
+- M3: Added `reset_config()` call to story template
+- M4: Added `ConfigError` exception and test for malformed YAML handling
+- L1: Added 12 unit tests for `_serialize_value()` function
+- L2: Refactored tests to use `monkeypatch.chdir()` instead of `os.chdir()` for safer test isolation
+
 ### File List
+
+**New Files:**
+- `src/resume_as_code/models/config.py` - Configuration Pydantic models
+- `src/resume_as_code/config.py` - Configuration loader with precedence hierarchy
+- `src/resume_as_code/commands/config_cmd.py` - resume config command
+- `schemas/config.schema.json` - JSON Schema for config validation
+- `tests/unit/test_config_models.py` - Unit tests for config models (22 tests)
+- `tests/unit/test_config_loader.py` - Unit tests for config loader (39 tests, includes _serialize_value and malformed YAML)
+- `tests/unit/test_config_cmd.py` - Unit tests for config command (6 tests)
+- `tests/test_config_integration.py` - Integration tests for config with CLI (8 tests)
+
+**Modified Files:**
+- `src/resume_as_code/models/__init__.py` - Added config model exports
+- `src/resume_as_code/commands/__init__.py` - Added config_command export
+- `src/resume_as_code/cli.py` - Added config to Context, registered config command
+- `pyproject.toml` - Added types-PyYAML dev dependency
+- `uv.lock` - Updated lockfile for types-PyYAML dependency
 
