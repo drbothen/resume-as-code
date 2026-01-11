@@ -1,6 +1,6 @@
 # Story 3.1: Validate Command & Schema Validation
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -39,44 +39,44 @@ So that **I catch errors before they cause problems during resume generation**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create validate command module (AC: #1, #2, #3)
-  - [ ] 1.1: Create `src/resume_as_code/commands/validate.py`
-  - [ ] 1.2: Implement `resume validate` command with Click
-  - [ ] 1.3: Add optional `path` argument (file or directory)
-  - [ ] 1.4: Default to `work-units/` directory if no path provided
-  - [ ] 1.5: Register command in `cli.py`
+- [x] Task 1: Create validate command module (AC: #1, #2, #3)
+  - [x] 1.1: Create `src/resume_as_code/commands/validate.py`
+  - [x] 1.2: Implement `resume validate` command with Click
+  - [x] 1.3: Add optional `path` argument (file or directory)
+  - [x] 1.4: Default to `work-units/` directory if no path provided
+  - [x] 1.5: Register command in `cli.py`
 
-- [ ] Task 2: Create validator service (AC: #1, #2, #3)
-  - [ ] 2.1: Create `src/resume_as_code/services/validator.py`
-  - [ ] 2.2: Implement `load_schema()` to load JSON Schema from `schemas/`
-  - [ ] 2.3: Implement `validate_file(path: Path) -> ValidationResult`
-  - [ ] 2.4: Implement `validate_directory(path: Path) -> list[ValidationResult]`
-  - [ ] 2.5: Use `jsonschema` library for validation
-  - [ ] 2.6: Parse YAML with `ruamel.yaml` to preserve line numbers
+- [x] Task 2: Create validator service (AC: #1, #2, #3)
+  - [x] 2.1: Create `src/resume_as_code/services/validator.py`
+  - [x] 2.2: Implement `load_schema()` to load JSON Schema from `schemas/`
+  - [x] 2.3: Implement `validate_file(path: Path) -> ValidationResult`
+  - [x] 2.4: Implement `validate_directory(path: Path) -> list[ValidationResult]`
+  - [x] 2.5: Use `jsonschema` library for validation
+  - [x] 2.6: Parse YAML with `ruamel.yaml` to preserve line numbers
 
-- [ ] Task 3: Implement validation result model (AC: #4, #5, #6)
-  - [ ] 3.1: Create `ValidationResult` dataclass with file_path, valid, errors
-  - [ ] 3.2: Create `ValidationSummary` with valid_count, invalid_count, results
-  - [ ] 3.3: Implement JSON serialization for results
+- [x] Task 3: Implement validation result model (AC: #4, #5, #6)
+  - [x] 3.1: Create `ValidationResult` dataclass with file_path, valid, errors
+  - [x] 3.2: Create `ValidationSummary` with valid_count, invalid_count, results
+  - [x] 3.3: Implement JSON serialization for results
 
-- [ ] Task 4: Implement output formatting (AC: #4, #5, #6)
-  - [ ] 4.1: Display Rich-formatted success message when all valid
-  - [ ] 4.2: Display Rich-formatted error list when invalid
-  - [ ] 4.3: Implement `--json` output mode
-  - [ ] 4.4: Show summary counts (X passed, Y failed)
+- [x] Task 4: Implement output formatting (AC: #4, #5, #6)
+  - [x] 4.1: Display Rich-formatted success message when all valid
+  - [x] 4.2: Display Rich-formatted error list when invalid
+  - [x] 4.3: Implement `--json` output mode
+  - [x] 4.4: Show summary counts (X passed, Y failed)
 
-- [ ] Task 5: Handle exit codes (AC: #4, #5)
-  - [ ] 5.1: Return exit code 0 when all Work Units valid
-  - [ ] 5.2: Return exit code 3 (ValidationError) when any invalid
-  - [ ] 5.3: Return exit code 4 (NotFoundError) when path doesn't exist
+- [x] Task 5: Handle exit codes (AC: #4, #5)
+  - [x] 5.1: Return exit code 0 when all Work Units valid
+  - [x] 5.2: Return exit code 3 (ValidationError) when any invalid
+  - [x] 5.3: Return exit code 4 (NotFoundError) when path doesn't exist
 
-- [ ] Task 6: Code quality verification
-  - [ ] 6.1: Run `ruff check src tests --fix`
-  - [ ] 6.2: Run `ruff format src tests`
-  - [ ] 6.3: Run `mypy src --strict` with zero errors
-  - [ ] 6.4: Add unit tests for validator service
-  - [ ] 6.5: Add integration tests for validate command
-  - [ ] 6.6: Verify NFR3: validation completes within 1 second
+- [x] Task 6: Code quality verification
+  - [x] 6.1: Run `ruff check src tests --fix`
+  - [x] 6.2: Run `ruff format src tests`
+  - [x] 6.3: Run `mypy src --strict` with zero errors
+  - [x] 6.4: Add unit tests for validator service
+  - [x] 6.5: Add integration tests for validate command
+  - [x] 6.6: Verify NFR3: validation completes within 1 second
 
 ## Dev Notes
 
@@ -619,11 +619,33 @@ rm work-units/wu-invalid.yaml
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A - Implementation completed without debugging issues.
+
 ### Completion Notes List
 
+- Implemented `resume validate` command following red-green-refactor TDD cycle
+- Created validator service with `ValidationResult` and `ValidationSummary` dataclasses
+- Used `jsonschema.Draft202012Validator` (matches schema's draft/2020-12/schema)
+- Added type ignore for jsonschema import (no types-jsonschema stubs available)
+- JSON mode exits directly via `sys.exit()` to avoid double JSON output from error handler
+- Rich mode raises `ValidationError` for consistent error formatting
+- All 6 acceptance criteria verified through 23 dedicated tests (12 unit + 11 integration)
+- NFR3 verified: validation completes in ~0.237s (well under 1s requirement)
+- Full test suite passes: 409 tests, 0 failures
+- Code quality verified: ruff and mypy --strict pass with zero errors
+
 ### File List
+
+**Created:**
+- src/resume_as_code/commands/validate.py
+- src/resume_as_code/services/validator.py
+- tests/unit/test_validator.py
+- tests/integration/test_validate_command.py
+
+**Modified:**
+- src/resume_as_code/cli.py (added validate_command registration)
 
