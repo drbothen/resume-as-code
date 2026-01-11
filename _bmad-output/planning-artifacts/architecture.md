@@ -377,8 +377,11 @@ mkdir resume-as-code && cd resume-as-code
 # Initialize with uv (recommended)
 uv init --lib --python 3.10
 
-# Or with pip/venv
+# Or with pip/venv (alternative)
 python -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]"
+
+# Recommended development setup
+uv sync --all-extras
 ```
 
 **Note:** Project initialization using these commands should be the first implementation story.
@@ -644,8 +647,8 @@ pipx install resume-as-code
 # Alternative
 pip install resume-as-code
 
-# Development
-pip install -e ".[dev]"
+# Development (uv recommended)
+uv sync --all-extras
 ```
 
 ### 3.7 Configuration Hierarchy
@@ -1194,10 +1197,10 @@ work-units/*.yaml
 
 **Local Development:**
 ```bash
-pip install -e ".[dev]"    # Editable install
-pytest                      # Run tests
-ruff check . --fix          # Lint and fix
-mypy src                    # Type check
+uv sync --all-extras        # Install dependencies
+uv run pytest               # Run tests
+uv run ruff check . --fix   # Lint and fix
+uv run mypy src             # Type check
 ```
 
 **Pre-commit Hooks:**
