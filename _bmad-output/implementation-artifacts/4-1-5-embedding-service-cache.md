@@ -1,6 +1,6 @@
 # Story 4.1.5: Embedding Service & Cache
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -50,45 +50,45 @@ So that **semantic search is fast and embeddings remain valid across model updat
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create EmbeddingService class (AC: #1, #2, #3)
-  - [ ] 1.1: Create `src/resume_as_code/services/embedder.py`
-  - [ ] 1.2: Implement model loading with sentence-transformers
-  - [ ] 1.3: Implement model hash computation
-  - [ ] 1.4: Implement `embed(text: str) -> np.ndarray`
-  - [ ] 1.5: Implement `embed_batch(texts: list[str]) -> np.ndarray`
+- [x] Task 1: Create EmbeddingService class (AC: #1, #2, #3)
+  - [x] 1.1: Create `src/resume_as_code/services/embedder.py`
+  - [x] 1.2: Implement model loading with sentence-transformers
+  - [x] 1.3: Implement model hash computation
+  - [x] 1.4: Implement `embed(text: str) -> np.ndarray`
+  - [x] 1.5: Implement `embed_batch(texts: list[str]) -> np.ndarray`
 
-- [ ] Task 2: Implement embedding cache (AC: #2, #3, #6, #7)
-  - [ ] 2.1: Create `src/resume_as_code/services/embedding_cache.py`
-  - [ ] 2.2: Implement SQLite database setup
-  - [ ] 2.3: Implement cache key generation (SHA256)
-  - [ ] 2.4: Implement `get(text: str) -> np.ndarray | None`
-  - [ ] 2.5: Implement `put(text: str, embedding: np.ndarray)`
-  - [ ] 2.6: Implement gzip compression for embeddings
+- [x] Task 2: Implement embedding cache (AC: #2, #3, #6, #7)
+  - [x] 2.1: Create `src/resume_as_code/services/embedding_cache.py`
+  - [x] 2.2: Implement SQLite database setup
+  - [x] 2.3: Implement cache key generation (SHA256)
+  - [x] 2.4: Implement `get(text: str) -> np.ndarray | None`
+  - [x] 2.5: Implement `put(text: str, embedding: np.ndarray)`
+  - [x] 2.6: Implement gzip compression for embeddings
 
-- [ ] Task 3: Implement model hash computation (AC: #1, #4)
-  - [ ] 3.1: Compute hash from model weights
-  - [ ] 3.2: Store hash in cache metadata
-  - [ ] 3.3: Validate hash on cache retrieval
-  - [ ] 3.4: Handle model updates gracefully
+- [x] Task 3: Implement model hash computation (AC: #1, #4)
+  - [x] 3.1: Compute hash from model weights
+  - [x] 3.2: Store hash in cache metadata
+  - [x] 3.3: Validate hash on cache retrieval
+  - [x] 3.4: Handle model updates gracefully
 
-- [ ] Task 4: Implement instruction prefixes (AC: #1)
-  - [ ] 4.1: Add `embed_query(text: str)` for Work Units
-  - [ ] 4.2: Add `embed_passage(text: str)` for JDs
-  - [ ] 4.3: Apply correct prefix per embedding type
+- [x] Task 4: Implement instruction prefixes (AC: #1)
+  - [x] 4.1: Add `embed_query(text: str)` for Work Units
+  - [x] 4.2: Add `embed_passage(text: str)` for JDs
+  - [x] 4.3: Apply correct prefix per embedding type
 
-- [ ] Task 5: Create cache clear command (AC: #5)
-  - [ ] 5.1: Create `src/resume_as_code/commands/cache.py`
-  - [ ] 5.2: Implement `resume cache clear` command
-  - [ ] 5.3: Clear stale entries by model hash
-  - [ ] 5.4: Display count of cleared entries
+- [x] Task 5: Create cache clear command (AC: #5)
+  - [x] 5.1: Create `src/resume_as_code/commands/cache.py`
+  - [x] 5.2: Implement `resume cache clear` command
+  - [x] 5.3: Clear stale entries by model hash
+  - [x] 5.4: Display count of cleared entries
 
-- [ ] Task 6: Code quality verification
-  - [ ] 6.1: Run `ruff check src tests --fix`
-  - [ ] 6.2: Run `ruff format src tests`
-  - [ ] 6.3: Run `mypy src --strict` with zero errors
-  - [ ] 6.4: Add unit tests for cache operations
-  - [ ] 6.5: Add unit tests for model hash computation
-  - [ ] 6.6: Add performance test for cache retrieval (<10ms)
+- [x] Task 6: Code quality verification
+  - [x] 6.1: Run `ruff check src tests --fix`
+  - [x] 6.2: Run `ruff format src tests`
+  - [x] 6.3: Run `mypy src --strict` with zero errors
+  - [x] 6.4: Add unit tests for cache operations
+  - [x] 6.5: Add unit tests for model hash computation
+  - [x] 6.6: Add performance test for cache retrieval (<10ms)
 
 ## Dev Notes
 
@@ -127,11 +127,12 @@ Failing to use these prefixes significantly degrades retrieval quality.
 ```
 .resume-cache/
 ├── intfloat_multilingual-e5-large-instruct/
-│   ├── cache.db              # SQLite database
-│   └── metadata.json         # Model version, hash, entry count
+│   └── cache.db              # SQLite database (stores embeddings + metadata)
 └── sentence-transformers_all-MiniLM-L6-v2/
-    └── ...
+    └── cache.db
 ```
+
+> **Note:** Metadata (model hash, entry count, timestamps) is stored within the SQLite `embeddings` table rather than a separate JSON file.
 
 ### EmbeddingService Implementation
 
@@ -725,11 +726,41 @@ pytest tests/unit/test_embedding_cache.py -v
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
+
+- Implemented EmbeddingService with lazy model loading and automatic fallback to smaller model
+- Model hash computed from first 10 layers' weights (sampled bytes) using SHA256 truncated to 16 chars
+- EmbeddingCache uses SQLite for indexing with gzip-compressed pickle serialization
+- Cache key format: SHA256(model_hash + "::" + normalized_text) where normalized = lowercase + stripped
+- E5 instruction prefixes applied: "query: " for Work Units, "passage: " for Job Descriptions
+- Cache retrieval verified under 10ms per acceptance criteria
+- All 653 tests passing, ruff and mypy --strict clean
+
+### Code Review Fixes (2026-01-11)
+
+**Issues Found & Fixed:**
+- **H1:** Fixed empty batch crash - `embed_batch([])` now returns empty array gracefully
+- **M1:** Added `@handle_errors` decorator to cache commands for consistent error handling
+- **M2:** Updated documentation to reflect SQLite-based metadata storage (removed incorrect `metadata.json` reference)
+- **M3:** Added 4 edge case tests for empty batch, empty string, long text, and single-item batch
+- **L1:** Changed broad `except Exception:` to specific exceptions (`OSError`, `RuntimeError`, `ValueError`, `gzip.BadGzipFile`, `pickle.UnpicklingError`, `EOFError`)
+- **L2:** Reverted unrelated `jd_parser.py` formatting change
 
 ### File List
 
+**New Files:**
+- `src/resume_as_code/services/embedder.py` - EmbeddingService class with caching and model versioning
+- `src/resume_as_code/services/embedding_cache.py` - SQLite-based embedding cache with gzip compression
+- `src/resume_as_code/commands/cache.py` - CLI commands for cache management (clear, stats)
+- `tests/unit/test_embedding_service.py` - 22 unit tests for EmbeddingService (including edge cases)
+- `tests/unit/test_embedding_cache.py` - 22 unit tests for EmbeddingCache
+- `tests/unit/test_cache_cmd.py` - 8 unit tests for cache CLI commands
+
+**Modified Files:**
+- `src/resume_as_code/cli.py` - Added cache_group registration

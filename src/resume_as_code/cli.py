@@ -49,6 +49,7 @@ def main(ctx: click.Context, json_output: bool, verbose: bool, quiet: bool) -> N
 
 def _register_commands() -> None:
     """Register all CLI commands."""
+    from resume_as_code.commands.cache import cache_group
     from resume_as_code.commands.config_cmd import config_command
     from resume_as_code.commands.list_cmd import list_command
     from resume_as_code.commands.new import new_group
@@ -56,6 +57,7 @@ def _register_commands() -> None:
     from resume_as_code.commands.test_output import test_output
     from resume_as_code.commands.validate import validate_command
 
+    main.add_command(cache_group)
     main.add_command(config_command)
     main.add_command(list_command)
     main.add_command(new_group)

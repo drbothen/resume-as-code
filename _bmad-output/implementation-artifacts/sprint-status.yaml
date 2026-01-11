@@ -76,7 +76,7 @@ development_status:
   # FRs Covered: FR12, FR13, FR14, FR15, FR16, FR17, FR18, FR19
   epic-4: in-progress
   4-1-job-description-parser: done
-  4-1-5-embedding-service-cache: ready-for-dev
+  4-1-5-embedding-service-cache: done
   4-2-bm25-ranking-engine: ready-for-dev
   4-3-plan-command-selection-display: ready-for-dev
   4-4-exclusion-reasoning: ready-for-dev
