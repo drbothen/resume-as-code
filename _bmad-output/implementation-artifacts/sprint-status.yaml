@@ -100,7 +100,12 @@ development_status:
   # Goal: Generate professional executive-level resumes with complete contact info, certifications, curated skills
   # Gap Analysis: E2E testing revealed "Your Name" placeholder, missing certs, skill dump, no education
   # Architecture Decision (2026-01-12): Normalized positions model per deep research on resume data standards
-  # FRs Covered: FR39, FR40, FR41, FR42, FR43, FR44, FR45, FR46, FR47, FR48
+  # FRs Covered: FR39-FR48 (original), FR49-FR53 (CTO template expansion)
+  # FR49: Career Highlights section (CTO/hybrid format)
+  # FR50: Board & Advisory Roles section
+  # FR51: Publications & Speaking section
+  # FR52: Enhanced scope indicators (P&L, revenue, geography)
+  # FR53: CTO resume template variant
   epic-6: in-progress
   6-1-profile-configuration-contact-info: done
   6-2-certifications-model-storage: ready-for-dev
@@ -114,4 +119,9 @@ development_status:
   6-10-claude-md-documentation-update: ready-for-dev
   6-11-certification-management-commands: ready-for-dev
   6-12-education-management-commands: ready-for-dev
+  6-13-career-highlights-section: ready-for-dev  # CTO hybrid format - FR49
+  6-14-board-advisory-roles: ready-for-dev  # Governance experience - FR50
+  6-15-publications-speaking: ready-for-dev  # Thought leadership - FR51
+  6-16-enhanced-scope-indicators: ready-for-dev  # P&L, revenue, geography - FR52
+  6-17-cto-resume-template: ready-for-dev  # CTO template variant - FR53
   epic-6-retrospective: optional
