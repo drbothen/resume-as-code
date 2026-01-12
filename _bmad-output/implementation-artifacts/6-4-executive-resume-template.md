@@ -52,6 +52,12 @@ So that **my resume meets industry standards for leadership roles**.
 
 ## Tasks / Subtasks
 
+- [ ] Task 0: Preserve existing executive template (Conflict Resolution)
+  - [ ] 0.1: Rename `executive.html` to `executive-classic.html`
+  - [ ] 0.2: Rename `executive.css` to `executive-classic.css`
+  - [ ] 0.3: Update CSS link in `executive-classic.html`
+  - [ ] 0.4: Register `executive-classic` in template provider
+
 - [ ] Task 1: Create executive HTML template (AC: #1, #2)
   - [ ] 1.1: Create `templates/executive.html` with semantic structure
   - [ ] 1.2: Add header section (name, title, contact line)
@@ -429,6 +435,28 @@ class ExperienceEntry:
     scope: str | None  # Formatted scope line
 ```
 
+### Conflict Resolution: Existing executive.css
+
+**Issue:** An `executive.css` already exists with serif styling (Georgia), 0.6in/0.7in margins, and double-border header treatment. Story 6.4 specifies sans-serif (Calibri), 1-inch margins, and research-validated modern executive styling.
+
+**Resolution:**
+1. **Rename existing template** to `executive-classic.html/css` - preserves traditional serif styling for finance/law sectors
+2. **Create new executive template** per Story 6.4 spec and CSS styling research
+3. **Update template registry** to include both: `executive` (new, default) and `executive-classic` (serif variant)
+
+**Rationale:** Research confirms serif fonts signal tradition/stability (finance, law, government) while sans-serif signals modernity/innovation (tech, startups). Both variants have valid use cases.
+
+**Key Differences:**
+
+| Aspect | executive-classic (existing) | executive (new) |
+|--------|------------------------------|-----------------|
+| Font | Georgia (serif) | Calibri/Arial (sans-serif) |
+| Margins | 0.6in/0.7in | 1 inch |
+| Header | Double border, uppercase | Single border, centered |
+| Text color | #1a1a2e | #1a1a1a |
+| Accent | #2a5298 | #2c3e50 |
+| Target sector | Finance, Law, Government | Tech, Healthcare, General |
+
 ### Dependencies
 
 This story REQUIRES:
@@ -557,6 +585,7 @@ uv run resume build --jd examples/job-description.txt --template executive
 - [Architecture: Content Strategy Standards](_bmad-output/planning-artifacts/architecture.md#1.4)
 - [Architecture: Executive Templates](_bmad-output/planning-artifacts/architecture.md#2.3)
 - [Related: Story 5.1 Resume Data Model](_bmad-output/implementation-artifacts/5-1-resume-data-model-template-system.md)
+- **[CSS Styling Research](_bmad-output/planning-artifacts/research/technical-executive-resume-css-styling-research-2026-01-12.md)** - Contains production-ready CSS, python-docx mappings, and implementation checklist
 
 ## Dev Agent Record
 
