@@ -1,0 +1,224 @@
+=======================================================
+Senior Industrial Cybersecurity Platform Engineer
+=======================================================
+
+Location: Remote
+
+Department: Security & Risk Consulting - Digital Solutions
+
+Reports to: Section Manager - DevOps & Platform Engineering
+
+Years of Experience: 8-10 years
+
+Level Range: 12-13
+
+Base Salary Range: $100,000 - $200,000 - Based on Head Quarters Location
+
+Bonus Range: 0-45% - Based on Performance
+
+Employ Stock Ownership Plan: 0-13% - Based on Performance
+
+Employee Type: Full Time
+
+Job Summary
+-----------
+
+A Senior Platform Engineer is responsible for designing, developing, and implementing cloud-hybrid and
+on-prem solutions while overseeing their maintenance and upkeep. This individual leads the design, implementation, and
+management of complex cloud-hybrid and on-prem infrastructure and network systems, collaborating with
+cross-functional teams to deploy enterprise and software solutions. Ensuring security and compliance of all systems and
+network infrastructure, they manage and resolve complex technical issues and mentor and train junior engineers.
+Additionally, this role involves developing and maintaining software applications using Python and monitoring
+and analyzing security alerts to prevent data breaches and other security incidents. The Senior Platform Engineer
+must be available to participate in on-call rotations, including nights, weekends, and holidays.
+
+Key Responsibilities
+--------------------
+
+*  Design, manage and automate cloud-hybrid and on-prem platforms.
+*  Build and maintain CI/CD pipelines and infrastructure as code using modern tools.
+*  Collaborate with cross-functional teams to design and deploy enterprise and software solutions.
+*  Manage security configuration, compliance reporting and hardening of systems, services and infrastructure.
+*  Prototype, automate and document the deployment of applications, platforms and infrastructure.
+*  Mentor and train junior engineers in cloud-hybrid/on-prem architectures, solutions, and network technologies.
+*  Develop, implement and maintain security systems and policies to protect the organization's information and systems
+   from unauthorized access, theft, and damage.
+*  Monitor and analyze security alerts, assess security threats, and respond to security incidents to prevent data
+   breaches and other security incidents.
+*  Respond to infrastructure and platform incidents, participating in a shared on-call rotation.
+
+
+Qualifications and Experience
+-----------------------------
+
+*  Minimum of 8 years of experience in cloud-hybrid/on-prem infrastructure and network systems design,
+   implementation and management.
+*  Expertise in automation scripts and infrastructure management.
+*  Strong knowledge of security systems and policies, and experience in vulnerability management and remediation.
+*  Proficient with Python or Go and with declarative infrastructure techniques.
+*  Experience in leading and mentoring junior engineers.
+*  Ability to manage complex technical issues and resolve system outages.
+*  Ability to design and deploy enterprise and software solutions in collaboration with cross-functional teams.
+*  Ability to maintain and document cloud-hybrid/on-prem infrastructure and network systems.
+*  Availability to participate in on-call rotations, including nights, weekends, and holidays.
+*  Strong analytical skills to monitor and analyze security alerts and assess security threats.
+*  Ability to respond to security incidents and provide remediation guidance.
+*  Understanding of the unique characteristics and challenges of securing Industrial Control Systems.
+
+Education and Training
+----------------------
+
+Required:
+
+- Bachelor's degree in Computer Science, Information Technology, Cybersecurity, or related technical field; or equivalent work experience in lieu of degree
+
+- One or more industry-recognized certifications: CISSP, CEH, Security+, CCSP, CISM, AWS/Azure/GCP professional certification, or similar
+
+Preferred:
+
+- Master's degree in Cybersecurity, Information Security, or related field
+
+- Industrial cybersecurity certifications such as GIAC ICS Security (GICS), ISA/IEC 62443 Cybersecurity Expert, or ISACA CISM
+
+Skills and Competencies
+-----------------------
+
+- Advanced knowledge of security architecture and implementation for AWS, Azure, and/or Google platforms
+
+- Proficiency with DevOps tools and practices (CI/CD pipelines, containerization)
+
+- Experience with Infrastructure as Code (IaC) tools
+
+- Expertise in security controls, compliance frameworks, and threat modeling
+
+- Experience with security automation and orchestration tools
+
+- Knowledge of ICS/SCADA security principles and best practices
+
+- Excellent problem-solving and analytical thinking skills
+
+- Strong written and verbal communication skills with ability to communicate complex technical concepts to non-technical stakeholders
+
+- Demonstrated leadership abilities and experience mentoring junior team members
+
+
+Preferred Additional Experience
+-------------------------------
+
+*  Expertise with declarative infrastructure as code tooling such as Terraform, OpenTofu, Atmos preferred
+*  Expertise with GitHub Actions and Spacelift preferred
+*  Effective use of Python or Go preferred
+*  Experience with ICS protocols such as Modbus, DNP3, and OPC-UA.
+*  Experience with industrial control systems, such as SCADA, DCS, and PLC systems.
+*  Experience in conducting security assessments, penetration testing, and vulnerability management for ICS systems.
+*  Knowledge of ICS-specific regulatory compliance requirements such as NERC-CIP.
+*  Experience with incident response and forensic analysis in ICS environments.
+*  Experience in implementing security controls and best practices for ICS systems.
+*  Experience with network segmentation and isolation techniques for ICS networks.
+*  Knowledge of industrial communication technologies such as serial, Ethernet, and wireless.
+*  Experience with security technologies specifically designed for ICS, such as firewalls, intrusion detection systems,
+   and security information and event management (SIEM) systems.
+*  Experience with incident response and forensic analysis in ICS environments.
+*  Experience with security incident management and incident response planning for ICS.
+*  Experience with ICS-specific security standards and best practices such as ISA/IEC 62443 and NIST SP800-82.
+
+
+Working Conditions
+------------------
+
+The Senior Industrial Cybersecurity Platform Engineer will be working in a fast-paced and dynamic environment,
+where they will be expected to collaborate with cross-functional teams and provide technical expertise on security
+best practices. This role requires strong communication and problem-solving skills, as well as the ability to work
+independently and prioritize tasks effectively. The candidate must be able to work in a traditional office environment
+and be willing to travel as needed to meet with clients or attend industry events. This role requires availability to
+work outside of normal business hours on occasion, including on-call rotations and shift work.
+
+Physical Demands
+----------------
+
+The physical demands described here are representative of those that must be met by an employee to successfully perform
+the essential functions of this job. The candidate must be able to sit and work at a computer for extended periods of
+time. This role may rarely require light physical activity, such as lifting equipment and materials up to 50 pounds.
+
+Note: The above statements are intended to describe the general nature and level of work performed by individuals
+assigned to this position. They are not intended to be an exhaustive list of all responsibilities, duties, and skills
+required.
+
+Benefits
+--------
+
+Benefits include:
+
+*  Medical, Dental, Vision, Life, and Disability Insurance
+*  401(k) with company match
+*  Paid Time Off
+*  Paid Holidays
+*  Floating Holidays
+*  Tuition Reimbursement
+*  Employee Assistance Program
+*  Employee Referral Program
+*  Employee Discounts
+*  Employee Stock Ownership Plan
+*  Flexible Spending Accounts
+*  Wellness Program
+*  Professional Development Program
+*  Oncall duty pay (if applicable) (work in progress)
+*  Relocation Assistance
+*  Bonus Program
+
+
+Equivalent experience notes
+---------------------------
+*  Degree or equivalent work experience.
+*  Candidates with a degree in a related field will be given one year of experience credit for each full-time year of
+   completed education. (Associate is two years, Bachelor's is four years, etc.)
+*  Leadership positions in related industry professional societies count toward experience.
+*  Professional Designations/Accreditations/Certifications in a related field are valued at 100% or more experience.
+
+Notes
+-----
+
+Competitor Titles:
+
+*  This role is several separate job roles rolled into a single position. See Helpful Searches below for more
+   information.
+
+Helpful Searches:
+
+*  Senior Platform Engineer
+*  Senior DevOps Engineer
+*  Senior Infrastructure Architect
+*  Senior Cybersecurity Engineer
+*  Senior Cybersecurity Incident Response Engineer
+*  Python Developer
+*  Senior Network Engineer
+
+
+
+
+Sample Interview Questions
+--------------------------
+*  Can you describe your experience with security best practices, such as network security, access control, and
+   data protection?
+*  How have you integrated security into the DevOps pipeline in your previous projects?
+*  What methods have you used to secure industrial control systems?
+*  Can you provide an example of a time when you had to troubleshoot a security issue in your environment? How did
+   you resolve it?
+*  Can you discuss your experience with infrastructure and architecture, including security configurations,
+   network design, and disaster recovery planning?
+*  How do you stay current with the latest developments in security? Can you provide examples of recent research
+   or projects you have worked on?
+*  Have you had experience with conducting risk assessments and creating security plans? Can you provide an example of
+   a security plan you have created?
+*  Can you discuss your experience with cloud security tools, such as firewalls, intrusion detection systems, and
+   security information and event management (SIEM) solutions?
+*  Have you had experience working with regulatory and compliance requirements, such as PCI-DSS, HIPAA, and NIST?
+*  Can you discuss your experience working with cross-functional teams and providing technical guidance on cloud
+   security best practices?
+
+Disclaimer
+----------
+Note: The above statements are intended to describe the general nature and level of work performed by individuals
+assigned to this position. They are not intended to be an exhaustive list of all responsibilities, duties, and skills
+required. All personnel may be required to perform duties outside of their normal responsibilities from time to time, as
+needed.

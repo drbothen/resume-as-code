@@ -1,0 +1,60 @@
+# Infrastructure as Code Automation Work Unit
+schema_version: "1.0.0"
+
+id: "wu-2024-02-15-terraform-automation"
+
+title: "Developed Terraform module library standardizing multi-cloud deployments"
+
+problem:
+  statement: |
+    Teams deployed infrastructure inconsistently across AWS and Azure,
+    creating security gaps and compliance drift. Manual processes led
+    to 40+ hours monthly in audit remediation.
+
+  constraints:
+    - "Support both AWS and Azure with consistent patterns"
+    - "Integrate with existing Spacelift workflows"
+    - "Maintain backwards compatibility with existing deployments"
+
+  context: |
+    Part of compliance modernization initiative following audit finding
+    on infrastructure configuration management.
+
+actions:
+  - "Architected reusable Terraform module structure with Atmos integration"
+  - "Built security-hardened base modules for compute, networking, and storage"
+  - "Implemented policy-as-code using OPA for pre-deployment validation"
+  - "Created automated testing pipeline for module validation"
+  - "Developed migration tooling for brownfield infrastructure adoption"
+  - "Documented module usage with examples for common deployment patterns"
+
+outcome:
+  result: |
+    Delivered 15-module library now used by 6 product teams.
+    100% compliance score on subsequent audits.
+
+  quantified_impact: "Zero audit findings, 75% reduction in deployment errors"
+
+  business_value: |
+    Standardized infrastructure practices enabling faster onboarding
+    of new teams and predictable compliance posture.
+
+time_started: "2023-11-01"
+time_ended: "2024-02-15"
+
+skills_demonstrated:
+  - name: "Terraform"
+  - name: "Infrastructure as Code"
+  - name: "AWS"
+  - name: "Azure"
+  - name: "Policy as Code"
+
+confidence: high
+
+tags:
+  - terraform
+  - iac
+  - aws
+  - azure
+  - compliance
+  - atmos

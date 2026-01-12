@@ -1,0 +1,59 @@
+# Security Incident Response Work Unit
+schema_version: "1.0.0"
+
+id: "wu-2023-08-20-security-incident-response"
+
+title: "Led incident response containing ransomware threat in OT environment"
+
+problem:
+  statement: |
+    Anomalous network traffic detected between corporate IT network and industrial
+    control system DMZ. Initial indicators suggested potential lateral movement
+    attempt targeting SCADA systems.
+
+  constraints:
+    - "Time pressure: 4-hour window before potential OT impact"
+    - "Limited visibility into legacy HMI systems"
+    - "Cannot disrupt active manufacturing processes"
+
+  context: |
+    Critical infrastructure client with 24/7 operations. Any production
+    disruption estimated at $500K per hour in lost output.
+
+actions:
+  - "Detected anomaly through SIEM correlation rules I had previously implemented"
+  - "Mobilized incident response team and established command structure"
+  - "Isolated affected network segments using pre-planned containment procedures"
+  - "Performed forensic analysis identifying compromised jump server"
+  - "Coordinated with OT team to verify PLC integrity and SCADA system status"
+  - "Communicated status to executive leadership with 30-minute updates"
+
+outcome:
+  result: |
+    Contained threat within 2.5 hours with zero impact to industrial operations.
+    No data exfiltration or OT system compromise confirmed through forensic analysis.
+
+  quantified_impact: "Prevented estimated $4M potential impact, 0 production downtime"
+
+  business_value: |
+    Validated incident response playbooks and strengthened IT/OT security
+    boundary controls. Led to board-approved investment in OT security monitoring.
+
+time_started: "2023-08-20"
+time_ended: "2023-08-21"
+
+skills_demonstrated:
+  - name: "Incident Response"
+  - name: "Digital Forensics"
+  - name: "SIEM Administration"
+  - name: "ICS Security"
+  - name: "Crisis Communication"
+
+confidence: high
+
+tags:
+  - incident-response
+  - cybersecurity
+  - ics-security
+  - scada
+  - forensics

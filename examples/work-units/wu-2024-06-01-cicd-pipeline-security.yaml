@@ -1,0 +1,59 @@
+# CI/CD Pipeline Security Work Unit
+schema_version: "1.0.0"
+
+id: "wu-2024-06-01-cicd-pipeline-security"
+
+title: "Built secure CI/CD pipeline with integrated security scanning reducing deployment time 60%"
+
+problem:
+  statement: |
+    Development team struggled with manual security reviews creating 2-week
+    deployment backlogs. Inconsistent security controls led to production
+    vulnerabilities being discovered post-deployment.
+
+  constraints:
+    - "Must integrate with existing GitHub Enterprise environment"
+    - "Support both containerized and traditional VM deployments"
+    - "Maintain compliance with SOC 2 and NIST 800-53 requirements"
+
+  context: |
+    Security team of 3 supporting 50+ developers across 8 product teams.
+    Shift-left security initiative mandated by CISO.
+
+actions:
+  - "Designed GitHub Actions workflow with SAST, DAST, and SCA integration"
+  - "Implemented Spacelift for infrastructure as code deployment automation"
+  - "Built custom Python tools for compliance evidence collection"
+  - "Created security gate policies preventing high-severity issues in production"
+  - "Developed training program for developers on secure coding practices"
+  - "Automated container image scanning with policy-as-code enforcement"
+
+outcome:
+  result: |
+    Reduced deployment cycle from 2 weeks to 2 days while improving
+    security posture. Zero critical vulnerabilities in production over 6 months.
+
+  quantified_impact: "60% faster deployments, 85% reduction in production security findings"
+
+  business_value: |
+    Enabled faster feature delivery while strengthening security compliance.
+    Model adopted by 3 additional business units.
+
+time_started: "2024-04-01"
+time_ended: "2024-06-01"
+
+skills_demonstrated:
+  - name: "CI/CD Pipeline Development"
+  - name: "GitHub Actions"
+  - name: "Security Automation"
+  - name: "Python"
+  - name: "DevSecOps"
+
+confidence: high
+
+tags:
+  - cicd
+  - devsecops
+  - github-actions
+  - security-automation
+  - compliance

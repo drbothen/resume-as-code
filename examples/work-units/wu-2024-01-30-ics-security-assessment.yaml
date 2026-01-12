@@ -1,0 +1,59 @@
+# ICS Security Assessment Work Unit
+schema_version: "1.0.0"
+
+id: "wu-2024-01-30-ics-security-assessment"
+
+title: "Conducted ICS security assessment identifying 23 critical vulnerabilities in SCADA systems"
+
+problem:
+  statement: |
+    Manufacturing facility operating legacy SCADA systems had never
+    undergone comprehensive security assessment. Regulatory pressure
+    from upcoming NERC-CIP audit created urgent timeline.
+
+  constraints:
+    - "Assessment must not disrupt 24/7 production operations"
+    - "Limited documentation of existing OT network architecture"
+    - "Mix of legacy and modern protocols (Modbus, DNP3, OPC-UA)"
+
+  context: |
+    Critical infrastructure site with potential NERC-CIP applicability.
+    Previous audit identified OT security as significant risk area.
+
+actions:
+  - "Performed passive network reconnaissance mapping OT asset inventory"
+  - "Analyzed network traffic identifying insecure protocol usage"
+  - "Conducted vulnerability assessment using ICS-specific tooling"
+  - "Evaluated access controls between IT/OT network boundaries"
+  - "Assessed compliance against IEC 62443 and NIST SP800-82 frameworks"
+  - "Developed prioritized remediation roadmap with risk ratings"
+
+outcome:
+  result: |
+    Delivered comprehensive assessment report with 23 critical, 47 high,
+    and 89 medium findings. Provided actionable remediation guidance.
+
+  quantified_impact: "159 total findings identified, remediation roadmap delivered"
+
+  business_value: |
+    Client achieved audit readiness and secured board approval for
+    $1.5M OT security improvement program based on findings.
+
+time_started: "2023-12-01"
+time_ended: "2024-01-30"
+
+skills_demonstrated:
+  - name: "ICS Security"
+  - name: "Vulnerability Assessment"
+  - name: "Network Analysis"
+  - name: "Compliance Frameworks"
+  - name: "Technical Writing"
+
+confidence: high
+
+tags:
+  - ics-security
+  - scada
+  - vulnerability-assessment
+  - nerc-cip
+  - compliance
