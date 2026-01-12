@@ -13,6 +13,7 @@ from resume_as_code.utils.work_unit_text import extract_work_unit_text
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
+    from resume_as_code.models.config import ScoringWeights
     from resume_as_code.models.job_description import JobDescription
     from resume_as_code.services.embedder import EmbeddingService
 
@@ -77,6 +78,7 @@ class HybridRanker:
         work_units: list[dict[str, Any]],
         jd: JobDescription,
         top_k: int = 10,
+        scoring_weights: ScoringWeights | None = None,
     ) -> RankingOutput:
         """Rank Work Units against a job description.
 
@@ -84,6 +86,7 @@ class HybridRanker:
             work_units: List of Work Unit dictionaries.
             jd: Parsed JobDescription.
             top_k: Number of top results to return.
+            scoring_weights: Optional weights for BM25/semantic balance.
 
         Returns:
             RankingOutput with sorted results.
@@ -101,8 +104,8 @@ class HybridRanker:
         # Semantic ranking
         semantic_ranks = self._semantic_rank(wu_texts, jd.text_for_ranking)
 
-        # RRF fusion
-        rrf_scores = self._rrf_fusion(bm25_ranks, semantic_ranks)
+        # RRF fusion with optional weights (AC: #3)
+        rrf_scores = self._rrf_fusion(bm25_ranks, semantic_ranks, scoring_weights)
 
         # Sort by RRF score (higher is better), then by ID for determinism
         sorted_indices = sorted(
@@ -205,18 +208,37 @@ class HybridRanker:
         self,
         bm25_ranks: list[int],
         semantic_ranks: list[int],
+        scoring_weights: ScoringWeights | None = None,
     ) -> list[float]:
         """Combine rankings using Reciprocal Rank Fusion.
 
-        RRF_Score(d) = Σ (1 / (k + rank_i(d)))
+        RRF_Score(d) = Σ (weight_i / (k + rank_i(d)))
 
         Where:
             k = RRF_K constant (60)
             rank_i(d) = rank of document d in ranking method i
+            weight_i = weight for ranking method i (from scoring_weights)
+
+        Args:
+            bm25_ranks: BM25 ranks for each document.
+            semantic_ranks: Semantic similarity ranks for each document.
+            scoring_weights: Optional weights for BM25/semantic balance.
+
+        Returns:
+            List of RRF fusion scores.
         """
+        # Get weights (default to 1.0 if not provided)
+        bm25_weight = 1.0
+        semantic_weight = 1.0
+        if scoring_weights is not None:
+            bm25_weight = scoring_weights.bm25_weight
+            semantic_weight = scoring_weights.semantic_weight
+
         scores: list[float] = []
         for i in range(len(bm25_ranks)):
-            rrf_score = 1.0 / (self.RRF_K + bm25_ranks[i]) + 1.0 / (self.RRF_K + semantic_ranks[i])
+            bm25_score = bm25_weight / (self.RRF_K + bm25_ranks[i])
+            semantic_score = semantic_weight / (self.RRF_K + semantic_ranks[i])
+            rrf_score = bm25_score + semantic_score
             scores.append(rrf_score)
         return scores
 

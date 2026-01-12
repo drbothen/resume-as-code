@@ -9,8 +9,18 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class ScoringWeights(BaseModel):
-    """Weights for ranking algorithm."""
+    """Weights for ranking algorithm.
 
+    BM25 vs Semantic weights control the balance in RRF fusion.
+    Higher bm25_weight emphasizes keyword matching.
+    Higher semantic_weight emphasizes meaning/context matching.
+    """
+
+    # BM25 vs Semantic balance for RRF fusion
+    bm25_weight: float = Field(default=1.0, ge=0.0, le=2.0)
+    semantic_weight: float = Field(default=1.0, ge=0.0, le=2.0)
+
+    # Reserved for future field-specific weighting
     title_weight: float = Field(default=1.0, ge=0.0, le=10.0)
     skills_weight: float = Field(default=1.0, ge=0.0, le=10.0)
     experience_weight: float = Field(default=1.0, ge=0.0, le=10.0)

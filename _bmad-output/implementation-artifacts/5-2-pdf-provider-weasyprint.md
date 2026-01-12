@@ -1,6 +1,6 @@
 # Story 5.2: PDF Provider (WeasyPrint)
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -37,38 +37,38 @@ So that **I have a polished document ready for submission**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create PDFProvider class (AC: #1, #2)
-  - [ ] 1.1: Create `src/resume_as_code/providers/pdf.py`
-  - [ ] 1.2: Implement `PDFProvider` class with `render()` method
-  - [ ] 1.3: Use WeasyPrint for HTML→PDF conversion
-  - [ ] 1.4: Load and apply CSS from template
+- [x] Task 1: Create PDFProvider class (AC: #1, #2)
+  - [x] 1.1: Create `src/resume_as_code/providers/pdf.py`
+  - [x] 1.2: Implement `PDFProvider` class with `render()` method
+  - [x] 1.3: Use WeasyPrint for HTML→PDF conversion
+  - [x] 1.4: Load and apply CSS from template
 
-- [ ] Task 2: Handle page formatting (AC: #2, #4)
-  - [ ] 2.1: Configure page size (letter/A4)
-  - [ ] 2.2: Set appropriate margins
-  - [ ] 2.3: Handle page breaks with CSS
-  - [ ] 2.4: Ensure text wrapping works correctly
+- [x] Task 2: Handle page formatting (AC: #2, #4)
+  - [x] 2.1: Configure page size (letter/A4)
+  - [x] 2.2: Set appropriate margins
+  - [x] 2.3: Handle page breaks with CSS
+  - [x] 2.4: Ensure text wrapping works correctly
 
-- [ ] Task 3: Font handling (AC: #2)
-  - [ ] 3.1: Use web-safe fonts by default
-  - [ ] 3.2: Support custom fonts via CSS @font-face
-  - [ ] 3.3: Test rendering with special characters
+- [x] Task 3: Font handling (AC: #2)
+  - [x] 3.1: Use web-safe fonts by default
+  - [x] 3.2: Support custom fonts via CSS @font-face
+  - [x] 3.3: Test rendering with special characters
 
-- [ ] Task 4: Output file handling (AC: #3)
-  - [ ] 4.1: Write PDF to specified output path
-  - [ ] 4.2: Handle file overwrite gracefully
-  - [ ] 4.3: Create output directory if needed
+- [x] Task 4: Output file handling (AC: #3)
+  - [x] 4.1: Write PDF to specified output path
+  - [x] 4.2: Handle file overwrite gracefully
+  - [x] 4.3: Create output directory if needed
 
-- [ ] Task 5: Performance optimization (AC: #5)
-  - [ ] 5.1: Profile WeasyPrint rendering time
-  - [ ] 5.2: Optimize CSS for fast rendering
-  - [ ] 5.3: Verify NFR2: <5 seconds
+- [x] Task 5: Performance optimization (AC: #5)
+  - [x] 5.1: Profile WeasyPrint rendering time
+  - [x] 5.2: Optimize CSS for fast rendering
+  - [x] 5.3: Verify NFR2: <5 seconds
 
-- [ ] Task 6: Code quality verification
-  - [ ] 6.1: Run `ruff check src tests --fix`
-  - [ ] 6.2: Run `mypy src --strict` with zero errors
-  - [ ] 6.3: Add tests for PDF generation
-  - [ ] 6.4: Add visual inspection test artifacts
+- [x] Task 6: Code quality verification
+  - [x] 6.1: Run `ruff check src tests --fix`
+  - [x] 6.2: Run `mypy src --strict` with zero errors
+  - [x] 6.3: Add tests for PDF generation
+  - [x] 6.4: Add visual inspection test artifacts
 
 ## Dev Notes
 
@@ -331,11 +331,37 @@ rm test-resume.pdf
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+- WeasyPrint requires system dependencies (pango, cairo) on macOS
+- Added automatic DYLD_LIBRARY_PATH configuration in tests/conftest.py
+
 ### Completion Notes List
 
+- Created `PDFProvider` class using WeasyPrint for HTML→PDF conversion
+- Provider uses `TemplateService` to render HTML and load CSS
+- Added orphans/widows and page-break-after CSS rules for professional PDF layout
+- Performance: 0.112s rendering time (NFR2 <5s requirement met)
+- All 20 tests pass (18 original + 2 error handling), 842 total tests pass
+- mypy --strict passes with type: ignore for untyped weasyprint import
+- Configured DYLD_LIBRARY_PATH automatically for macOS in conftest.py
+
+**Code Review Fixes (2026-01-11):**
+- Added `RenderError` class to wrap WeasyPrint exceptions with actionable suggestions
+- Added error handling tests for invalid template names
+- Documented macOS platform requirements in README.md
+- Updated File List with accurate file changes
+
 ### File List
+
+- src/resume_as_code/providers/__init__.py (new)
+- src/resume_as_code/providers/pdf.py (new - with RenderError handling)
+- src/resume_as_code/templates/modern.css (modified - added orphans/widows and page-break-after CSS rules for PDF)
+- src/resume_as_code/models/errors.py (modified - added RenderError class)
+- src/resume_as_code/models/__init__.py (modified - exported RenderError)
+- tests/conftest.py (modified - added WeasyPrint library path config for macOS)
+- tests/unit/test_pdf_provider.py (new - 20 tests including error handling)
+- README.md (modified - added macOS platform requirements for WeasyPrint)
 

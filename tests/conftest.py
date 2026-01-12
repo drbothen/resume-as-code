@@ -3,11 +3,49 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 from pathlib import Path
 from typing import Any
 
 import pytest
 from click.testing import CliRunner
+
+
+def _configure_weasyprint_library_path() -> None:
+    """Configure library path for WeasyPrint on macOS.
+
+    WeasyPrint requires pango/cairo libraries. On macOS with Homebrew,
+    these are installed but not on the default library path.
+    This adds the Homebrew lib path to DYLD_LIBRARY_PATH.
+    """
+    import platform
+
+    if platform.system() != "Darwin":
+        return
+
+    try:
+        result = subprocess.run(
+            ["brew", "--prefix"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        brew_prefix = result.stdout.strip()
+        lib_path = f"{brew_prefix}/lib"
+
+        current_path = os.environ.get("DYLD_LIBRARY_PATH", "")
+        if lib_path not in current_path:
+            os.environ["DYLD_LIBRARY_PATH"] = (
+                f"{lib_path}:{current_path}" if current_path else lib_path
+            )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # Homebrew not available - skip configuration
+        pass
+
+
+# Configure library path before tests import WeasyPrint
+_configure_weasyprint_library_path()
 
 
 @pytest.fixture

@@ -1,6 +1,6 @@
 # Story 5.5: Manifest & Provenance
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -33,34 +33,34 @@ So that **I know exactly what went into each resume version**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create Manifest model (AC: #1, #2, #4)
-  - [ ] 1.1: Create `src/resume_as_code/models/manifest.py`
-  - [ ] 1.2: Define `BuildManifest` Pydantic model
-  - [ ] 1.3: Include timestamp, version, Work Unit IDs
-  - [ ] 1.4: Include JD hash and template info
-  - [ ] 1.5: Include content hash for determinism check
+- [x] Task 1: Create Manifest model (AC: #1, #2, #4)
+  - [x] 1.1: Create `src/resume_as_code/models/manifest.py`
+  - [x] 1.2: Define `BuildManifest` Pydantic model
+  - [x] 1.3: Include timestamp, version, Work Unit IDs
+  - [x] 1.4: Include JD hash and template info
+  - [x] 1.5: Include content hash for determinism check
 
-- [ ] Task 2: Create ManifestProvider (AC: #1, #5)
-  - [ ] 2.1: Create `src/resume_as_code/providers/manifest.py`
-  - [ ] 2.2: Implement `generate()` method
-  - [ ] 2.3: Compute content hash of inputs
-  - [ ] 2.4: Save as human-readable YAML
+- [x] Task 2: Create ManifestProvider (AC: #1, #5)
+  - [x] 2.1: Create `src/resume_as_code/providers/manifest.py`
+  - [x] 2.2: Implement `generate()` method
+  - [x] 2.3: Compute content hash of inputs
+  - [x] 2.4: Save as human-readable YAML
 
-- [ ] Task 3: Integrate with build command (AC: #1)
-  - [ ] 3.1: Generate manifest after successful build
-  - [ ] 3.2: Save alongside resume files
-  - [ ] 3.3: Include manifest in atomic write
+- [x] Task 3: Integrate with build command (AC: #1)
+  - [x] 3.1: Generate manifest after successful build
+  - [x] 3.2: Save alongside resume files
+  - [x] 3.3: Include manifest in atomic write
 
-- [ ] Task 4: Add comparison support (AC: #3)
-  - [ ] 4.1: Store comparable fields
-  - [ ] 4.2: Add `resume manifest diff` command (optional)
-  - [ ] 4.3: Human-readable diff format
+- [x] Task 4: Add comparison support (AC: #3)
+  - [x] 4.1: Store comparable fields
+  - [x] 4.2: Add `resume manifest diff` command (optional) - Added `diff()` and `is_equivalent()` methods instead
+  - [x] 4.3: Human-readable diff format
 
-- [ ] Task 5: Code quality verification
-  - [ ] 5.1: Run `ruff check src tests --fix`
-  - [ ] 5.2: Run `mypy src --strict` with zero errors
-  - [ ] 5.3: Add tests for manifest generation
-  - [ ] 5.4: Test determinism with same inputs
+- [x] Task 5: Code quality verification
+  - [x] 5.1: Run `ruff check src tests --fix`
+  - [x] 5.2: Run `mypy src --strict` with zero errors
+  - [x] 5.3: Add tests for manifest generation
+  - [x] 5.4: Test determinism with same inputs
 
 ## Dev Notes
 
@@ -498,11 +498,74 @@ diff test1/manifest.yaml test2/manifest.yaml
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None
+
 ### Completion Notes List
 
+- Implemented `BuildManifest` Pydantic model in `src/resume_as_code/models/manifest.py`
+- Implemented `WorkUnitReference` model for tracking Work Units included in builds
+- Added content hash computation for deterministic builds (AC #5)
+- Created `ManifestProvider` in `src/resume_as_code/providers/manifest.py`
+- Integrated manifest generation into `build` command's atomic write flow
+- Added `diff()` method for manifest comparison (AC #3)
+- Added `is_equivalent()` method for checking content equivalence
+- All 909 tests pass (6 new tests added during code review)
+- ruff check passes with no errors
+- mypy strict mode passes with no errors
+
 ### File List
+
+- src/resume_as_code/models/manifest.py (new)
+- src/resume_as_code/models/__init__.py (modified)
+- src/resume_as_code/providers/manifest.py (new)
+- src/resume_as_code/providers/__init__.py (modified)
+- src/resume_as_code/commands/build.py (modified)
+- tests/unit/test_manifest.py (new - 21 tests)
+- tests/unit/test_build_command.py (modified)
+
+### Change Log
+
+- 2026-01-11: Implemented Story 5.5 - Manifest & Provenance tracking for resume builds
+- 2026-01-11: Code review completed - all issues fixed
+
+## Code Review Record
+
+### Review Date
+
+2026-01-11
+
+### Reviewer
+
+Claude Opus 4.5 (adversarial code review)
+
+### Issues Found and Fixed
+
+| Issue | Severity | Description | Fix Applied |
+|-------|----------|-------------|-------------|
+| M1 | MEDIUM | Missing `ranker_version` in content hash | Added to `_compute_content_hash()` |
+| M2 | MEDIUM | `datetime.now()` without timezone | Changed to `datetime.now(timezone.utc)` |
+| M3 | MEDIUM | No error handling in save/load | Added try/except with RenderError/ValidationError |
+| M5 | MEDIUM | Test DOCX mock inconsistent | Added `side_effect` to create dummy file |
+| L1 | LOW | Magic string "hybrid-rrf-v1" | Created `DEFAULT_RANKER_VERSION` constant |
+| L2 | LOW | Hardcoded version "0.1.0" | Now reads from `__version__` |
+| L3 | LOW | Type annotation too narrow | Changed to `dict[str, Any]` |
+
+### New Tests Added
+
+- `test_content_hash_includes_ranker_version` - Verifies ranker version affects hash
+- `test_created_at_has_timezone` - Verifies UTC timezone on timestamps
+- `test_load_nonexistent_file_raises_validation_error` - Error handling
+- `test_load_empty_file_raises_validation_error` - Error handling
+- `test_load_invalid_yaml_raises_validation_error` - Error handling
+- `test_save_to_readonly_raises_render_error` - Error handling
+
+### Verification
+
+- All 909 tests pass
+- ruff check: no errors
+- mypy --strict: no errors
 

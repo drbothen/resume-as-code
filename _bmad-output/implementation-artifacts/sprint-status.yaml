@@ -87,11 +87,11 @@ development_status:
   # Epic 5: Resume Generation & Output
   # Goal: Users can generate tailored PDF and DOCX resumes with full provenance
   # FRs Covered: FR20, FR21, FR22, FR23, FR24, FR25, FR26, FR27, FR31, FR32, FR33
-  epic-5: in-progress
+  epic-5: done
   5-1-resume-data-model-template-system: done
   5-2-pdf-provider-weasyprint: done
   5-3-docx-provider-python-docx: done
   5-4-build-command: done
-  5-5-manifest-provenance: ready-for-dev
-  5-6-output-configuration: ready-for-dev
+  5-5-manifest-provenance: done
+  5-6-output-configuration: done
   epic-5-retrospective: optional

@@ -21,6 +21,11 @@ from resume_as_code.models.job_description import (
     JobDescription,
     Requirement,
 )
+from resume_as_code.models.manifest import (
+    DEFAULT_RANKER_VERSION,
+    BuildManifest,
+    WorkUnitReference,
+)
 from resume_as_code.models.output import FORMAT_VERSION, JSONResponse
 from resume_as_code.models.plan import SavedPlan, SelectedWorkUnit
 from resume_as_code.models.resume import (
@@ -54,7 +59,9 @@ from resume_as_code.models.work_unit import (
 
 __all__ = [
     "ArtifactEvidence",
+    "BuildManifest",
     "ConfigSource",
+    "DEFAULT_RANKER_VERSION",
     "ConfigurationError",
     "ConfidenceLevel",
     "ContactInfo",
@@ -97,5 +104,6 @@ __all__ = [
     "WEAK_VERBS",
     "WorkUnit",
     "WorkUnitConfidence",
+    "WorkUnitReference",
     "get_exclusion_reason",
 ]

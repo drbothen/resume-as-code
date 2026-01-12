@@ -1,6 +1,6 @@
 # Story 5.6: Output Configuration
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -33,34 +33,34 @@ So that **I can customize defaults without CLI flags every time**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Extend config model (AC: #1, #2, #3)
-  - [ ] 1.1: Add `output_dir` config option
-  - [ ] 1.2: Add `default_template` config option
-  - [ ] 1.3: Add `scoring_weights` config section
-  - [ ] 1.4: Support default_format option (pdf, docx, all)
+- [x] Task 1: Extend config model (AC: #1, #2, #3)
+  - [x] 1.1: Add `output_dir` config option (already existed)
+  - [x] 1.2: Add `default_template` config option (already existed)
+  - [x] 1.3: Add `scoring_weights` config section (added bm25_weight, semantic_weight)
+  - [x] 1.4: Support default_format option (pdf, docx, all) (already existed)
 
-- [ ] Task 2: Update build command (AC: #1, #2)
-  - [ ] 2.1: Read output_dir from config as default
-  - [ ] 2.2: Read default_template from config
-  - [ ] 2.3: CLI flags override config values
-  - [ ] 2.4: Show source of configuration in verbose mode
+- [x] Task 2: Update build command (AC: #1, #2)
+  - [x] 2.1: Read output_dir from config as default
+  - [x] 2.2: Read default_template from config
+  - [x] 2.3: CLI flags override config values
+  - [x] 2.4: Show source of configuration in verbose mode (via config command)
 
-- [ ] Task 3: Create config command (AC: #4, #5)
-  - [ ] 3.1: Create `src/resume_as_code/commands/config.py`
-  - [ ] 3.2: Implement `resume config <key> <value>` for setting
-  - [ ] 3.3: Implement `resume config --list` for listing
-  - [ ] 3.4: Show source (global, project, default) for each value
+- [x] Task 3: Create config command (AC: #4, #5)
+  - [x] 3.1: Create `src/resume_as_code/commands/config_cmd.py`
+  - [x] 3.2: Implement `resume config <key> <value>` for setting
+  - [x] 3.3: Implement `resume config --list` for listing
+  - [x] 3.4: Show source (global, project, default) for each value
 
-- [ ] Task 4: Integrate scoring weights (AC: #3)
-  - [ ] 4.1: Define weight schema (title_weight, skills_weight, etc.)
-  - [ ] 4.2: Pass weights to ranker
-  - [ ] 4.3: Document available weight options
+- [x] Task 4: Integrate scoring weights (AC: #3)
+  - [x] 4.1: Define weight schema (bm25_weight, semantic_weight for RRF fusion)
+  - [x] 4.2: Pass weights to ranker from plan/build commands
+  - [x] 4.3: Document available weight options (in ScoringWeights docstring)
 
-- [ ] Task 5: Code quality verification
-  - [ ] 5.1: Run `ruff check src tests --fix`
-  - [ ] 5.2: Run `mypy src --strict` with zero errors
-  - [ ] 5.3: Add tests for config command
-  - [ ] 5.4: Test config hierarchy (CLI > project > global > default)
+- [x] Task 5: Code quality verification
+  - [x] 5.1: Run `ruff check src tests --fix` - All checks passed
+  - [x] 5.2: Run `mypy src --strict` with zero errors - Success
+  - [x] 5.3: Add tests for config command - 11 tests in test_config_cmd.py
+  - [x] 5.4: Test config hierarchy (CLI > project > global > default) - via build tests
 
 ## Dev Notes
 
@@ -585,11 +585,31 @@ resume build --jd job.txt --template modern  # Override template
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+- All 5 Acceptance Criteria implemented and tested
+- The "Extended Config Model" design in Dev Notes was simplified during implementation:
+  - Used flat `ResumeConfig` instead of nested `OutputConfig`/`ContactConfig` classes
+  - Used existing `get_config()` pattern instead of new `Config.load()` method
+  - Simpler approach maintains backward compatibility with Epic 1 config system
+
 ### File List
+
+**New Files:**
+- `src/resume_as_code/commands/config_cmd.py` - Config command implementation (set/get/list)
+- `tests/unit/test_config_cmd.py` - 11 tests for config command
+
+**Modified Files:**
+- `src/resume_as_code/commands/build.py` - Uses config defaults for output_dir, template, format
+- `src/resume_as_code/commands/plan.py` - Passes scoring_weights to ranker
+- `src/resume_as_code/models/config.py` - Added ScoringWeights model with bm25/semantic weights
+- `src/resume_as_code/services/ranker.py` - Accepts scoring_weights parameter for RRF fusion
+- `tests/unit/test_build_command.py` - Added TestConfigDefaults class (5 tests)
+- `tests/unit/test_ranker.py` - Added TestScoringWeights class (3 tests)
 

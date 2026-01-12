@@ -305,6 +305,219 @@ created_at: "2024-01-01T00:00:00"
             assert call_args.kwargs["output_format"] == "docx"
 
 
+class TestConfigDefaults:
+    """Tests for config-based defaults (Story 5.6: Output Configuration)."""
+
+    def test_uses_config_output_dir_when_no_cli_flag(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """Should use output_dir from config when --output-dir not provided (AC: #1)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        with (
+            patch("resume_as_code.commands.build.SavedPlan.load") as mock_load,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+        ):
+            mock_plan = MagicMock()
+            mock_plan.selected_work_units = []
+            mock_load.return_value = mock_plan
+
+            config = MagicMock()
+            config.work_units_dir = tmp_path / "work-units"
+            config.output_dir = Path("./resumes")  # Config sets custom output_dir
+            config.default_template = "modern"
+            config.default_format = "both"
+            (tmp_path / "work-units").mkdir()
+            mock_config.return_value = config
+
+            runner.invoke(main, ["build", "--plan", str(plan_file)])
+
+            # Should use config output_dir, not hardcoded "dist"
+            assert mock_gen.called
+            call_args = mock_gen.call_args
+            assert call_args.kwargs["output_dir"] == Path("./resumes")
+
+    def test_uses_config_default_template_when_no_cli_flag(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """Should use default_template from config when --template not provided (AC: #2)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        with (
+            patch("resume_as_code.commands.build.SavedPlan.load") as mock_load,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+        ):
+            mock_plan = MagicMock()
+            mock_plan.selected_work_units = []
+            mock_load.return_value = mock_plan
+
+            config = MagicMock()
+            config.work_units_dir = tmp_path / "work-units"
+            config.output_dir = Path("dist")
+            config.default_template = "ats-safe"  # Config sets custom template
+            config.default_format = "both"
+            (tmp_path / "work-units").mkdir()
+            mock_config.return_value = config
+
+            runner.invoke(main, ["build", "--plan", str(plan_file)])
+
+            # Should use config template, not hardcoded "modern"
+            assert mock_gen.called
+            call_args = mock_gen.call_args
+            assert call_args.kwargs["template_name"] == "ats-safe"
+
+    def test_cli_flag_overrides_config_output_dir(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """CLI --output-dir flag should override config value (AC: #2)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        cli_output_dir = tmp_path / "cli-output"
+
+        with (
+            patch("resume_as_code.commands.build.SavedPlan.load") as mock_load,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+        ):
+            mock_plan = MagicMock()
+            mock_plan.selected_work_units = []
+            mock_load.return_value = mock_plan
+
+            config = MagicMock()
+            config.work_units_dir = tmp_path / "work-units"
+            config.output_dir = Path("./resumes")  # Config sets output_dir
+            config.default_template = "modern"
+            config.default_format = "both"
+            (tmp_path / "work-units").mkdir()
+            mock_config.return_value = config
+
+            # CLI flag should override config
+            runner.invoke(
+                main, ["build", "--plan", str(plan_file), "--output-dir", str(cli_output_dir)]
+            )
+
+            assert mock_gen.called
+            call_args = mock_gen.call_args
+            assert call_args.kwargs["output_dir"] == cli_output_dir
+
+    def test_cli_flag_overrides_config_template(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """CLI --template flag should override config value (AC: #2)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        with (
+            patch("resume_as_code.commands.build.SavedPlan.load") as mock_load,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+        ):
+            mock_plan = MagicMock()
+            mock_plan.selected_work_units = []
+            mock_load.return_value = mock_plan
+
+            config = MagicMock()
+            config.work_units_dir = tmp_path / "work-units"
+            config.output_dir = Path("dist")
+            config.default_template = "ats-safe"  # Config sets template
+            config.default_format = "both"
+            (tmp_path / "work-units").mkdir()
+            mock_config.return_value = config
+
+            # CLI flag should override config
+            runner.invoke(main, ["build", "--plan", str(plan_file), "--template", "modern"])
+
+            assert mock_gen.called
+            call_args = mock_gen.call_args
+            assert call_args.kwargs["template_name"] == "modern"
+
+    def test_uses_config_default_format_when_no_cli_flag(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """Should use default_format from config when --format not provided."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        with (
+            patch("resume_as_code.commands.build.SavedPlan.load") as mock_load,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+        ):
+            mock_plan = MagicMock()
+            mock_plan.selected_work_units = []
+            mock_load.return_value = mock_plan
+
+            config = MagicMock()
+            config.work_units_dir = tmp_path / "work-units"
+            config.output_dir = Path("dist")
+            config.default_template = "modern"
+            config.default_format = "pdf"  # Config sets pdf only
+            (tmp_path / "work-units").mkdir()
+            mock_config.return_value = config
+
+            runner.invoke(main, ["build", "--plan", str(plan_file)])
+
+            # Should use config format
+            assert mock_gen.called
+            call_args = mock_gen.call_args
+            assert call_args.kwargs["output_format"] == "pdf"
+
+
 class TestOutputDirectory:
     """Tests for output directory handling (AC: #5)."""
 
@@ -489,6 +702,147 @@ created_at: "2024-01-01T00:00:00"
                 assert len(files) == 0, f"Found partial files: {files}"
 
 
+class TestManifestGeneration:
+    """Tests for manifest generation (Story 5.5)."""
+
+    def test_manifest_generated_with_build(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """Should generate manifest file alongside resume files (AC: #1)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123def456"
+jd_title: "Test Job"
+selected_work_units:
+  - id: "wu-test"
+    title: "Test Work Unit"
+    score: 0.85
+    match_reasons: ["Skills: Python"]
+selection_count: 1
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        mock_work_units = [
+            {
+                "id": "wu-test",
+                "title": "Test Work Unit",
+                "organization": "Test Corp",
+                "outcome": {"result": "Good result"},
+            }
+        ]
+
+        output_dir = tmp_path / "dist"
+
+        def create_pdf(resume: Any, path: Path) -> None:
+            """Create a dummy PDF file."""
+            path.write_bytes(b"%PDF-1.4 dummy")
+
+        def create_docx(resume: Any, path: Path) -> None:
+            """Create a dummy DOCX file."""
+            path.write_bytes(b"PK dummy docx")
+
+        with (
+            patch("resume_as_code.config.get_config") as mock_config,
+            patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
+            # Patch at source provider modules (lazy imports resolve here)
+            patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
+            patch("resume_as_code.providers.docx.DOCXProvider") as mock_docx,
+        ):
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            mock_config.return_value = config
+            mock_load_wus.return_value = mock_work_units
+
+            # Make render actually create files
+            mock_pdf.return_value.render.side_effect = create_pdf
+            mock_docx.return_value.render.side_effect = create_docx
+
+            result = runner.invoke(
+                main,
+                ["build", "--plan", str(plan_file), "--output-dir", str(output_dir)],
+            )
+
+            assert result.exit_code == 0
+            assert (output_dir / "manifest.yaml").exists()
+
+            # Verify manifest content
+            manifest_content = (output_dir / "manifest.yaml").read_text()
+            assert "jd_hash" in manifest_content
+            assert "abc123def456" in manifest_content
+            assert "wu-test" in manifest_content
+
+    def test_manifest_includes_formats_generated(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """Manifest should list output formats that were generated."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+        output_dir = tmp_path / "dist"
+
+        def create_pdf(resume: Any, path: Path) -> None:
+            """Create a dummy PDF file."""
+            path.write_bytes(b"%PDF-1.4 dummy")
+
+        def create_docx(resume: Any, path: Path) -> None:
+            """Create a dummy DOCX file."""
+            path.write_bytes(b"PK dummy docx")
+
+        with (
+            patch("resume_as_code.config.get_config") as mock_config,
+            patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
+            # Patch at source provider modules (lazy imports resolve here)
+            patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
+            patch("resume_as_code.providers.docx.DOCXProvider") as mock_docx,
+        ):
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            mock_config.return_value = config
+            mock_load_wus.return_value = []
+
+            # Make render actually create files (consistent pattern)
+            mock_pdf.return_value.render.side_effect = create_pdf
+            mock_docx.return_value.render.side_effect = create_docx
+
+            # Build PDF only
+            runner.invoke(
+                main,
+                [
+                    "build",
+                    "--plan",
+                    str(plan_file),
+                    "--output-dir",
+                    str(output_dir),
+                    "--format",
+                    "pdf",
+                ],
+            )
+
+            manifest_content = (output_dir / "manifest.yaml").read_text()
+            assert "output_formats" in manifest_content
+            assert "pdf" in manifest_content
+
+
 class TestWorkUnitToResumeDataTransformation:
     """Tests for Work Unit to ResumeData transformation (H2 fix)."""
 
@@ -540,15 +894,9 @@ created_at: "2024-01-01T00:00:00"
 
         with (
             patch("resume_as_code.config.get_config") as mock_config,
-            patch(
-                "resume_as_code.commands.build.load_all_work_units"
-            ) as mock_load_wus,
-            patch(
-                "resume_as_code.providers.pdf.PDFProvider"
-            ) as mock_pdf,
-            patch(
-                "resume_as_code.providers.docx.DOCXProvider"
-            ) as mock_docx,
+            patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
+            patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
+            patch("resume_as_code.providers.docx.DOCXProvider") as mock_docx,
         ):
             config = MagicMock()
             config.work_units_dir = work_units_dir
@@ -639,15 +987,9 @@ created_at: "2024-01-01T00:00:00"
 
         with (
             patch("resume_as_code.config.get_config") as mock_config,
-            patch(
-                "resume_as_code.commands.build.load_all_work_units"
-            ) as mock_load_wus,
-            patch(
-                "resume_as_code.providers.pdf.PDFProvider"
-            ) as mock_pdf,
-            patch(
-                "resume_as_code.providers.docx.DOCXProvider"
-            ) as mock_docx,
+            patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
+            patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
+            patch("resume_as_code.providers.docx.DOCXProvider") as mock_docx,
         ):
             config = MagicMock()
             config.work_units_dir = work_units_dir

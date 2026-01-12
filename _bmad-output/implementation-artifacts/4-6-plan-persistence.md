@@ -1,6 +1,6 @@
 # Story 4.6: Plan Persistence
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -34,34 +34,34 @@ So that **I can review, modify, and use it for resume generation**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create Plan model (AC: #1, #5)
-  - [ ] 1.1: Create `src/resume_as_code/models/plan.py`
-  - [ ] 1.2: Define `SavedPlan` Pydantic model
-  - [ ] 1.3: Include JD hash for change detection
-  - [ ] 1.4: Include selected Work Unit IDs and scores
-  - [ ] 1.5: Include timestamp and metadata
+- [x] Task 1: Create Plan model (AC: #1, #5)
+  - [x] 1.1: Create `src/resume_as_code/models/plan.py`
+  - [x] 1.2: Define `SavedPlan` Pydantic model
+  - [x] 1.3: Include JD hash for change detection
+  - [x] 1.4: Include selected Work Unit IDs and scores
+  - [x] 1.5: Include timestamp and metadata
 
-- [ ] Task 2: Implement plan saving (AC: #1)
-  - [ ] 2.1: Add `--output` option to plan command
-  - [ ] 2.2: Serialize plan to YAML
-  - [ ] 2.3: Include human-readable comments
-  - [ ] 2.4: Calculate and store JD hash
+- [x] Task 2: Implement plan saving (AC: #1)
+  - [x] 2.1: Add `--output` option to plan command
+  - [x] 2.2: Serialize plan to YAML
+  - [x] 2.3: Include human-readable comments
+  - [x] 2.4: Calculate and store JD hash
 
-- [ ] Task 3: Implement plan loading (AC: #2)
-  - [ ] 3.1: Add `--load` option to plan command
-  - [ ] 3.2: Load and display saved plan
-  - [ ] 3.3: Skip ranking when loading
-  - [ ] 3.4: Warn if Work Units have changed
+- [x] Task 3: Implement plan loading (AC: #2)
+  - [x] 3.1: Add `--load` option to plan command
+  - [x] 3.2: Load and display saved plan
+  - [x] 3.3: Skip ranking when loading
+  - [x] 3.4: Warn if Work Units have changed
 
-- [ ] Task 4: JD hash for change detection (AC: #3)
-  - [ ] 4.1: Compute SHA256 hash of JD content
-  - [ ] 4.2: Store in plan file
-  - [ ] 4.3: Compare on load to detect changes
+- [x] Task 4: JD hash for change detection (AC: #3)
+  - [x] 4.1: Compute SHA256 hash of JD content
+  - [x] 4.2: Store in plan file
+  - [x] 4.3: Compare on load to detect changes
 
-- [ ] Task 5: Code quality verification
-  - [ ] 5.1: Run `ruff check src tests --fix`
-  - [ ] 5.2: Run `mypy src --strict` with zero errors
-  - [ ] 5.3: Add tests for plan persistence
+- [x] Task 5: Code quality verification
+  - [x] 5.1: Run `ruff check src tests --fix`
+  - [x] 5.2: Run `mypy src --strict` with zero errors
+  - [x] 5.3: Add tests for plan persistence
 
 ## Dev Notes
 
@@ -268,11 +268,42 @@ resume build --plan my-plan.yaml
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None
+
 ### Completion Notes List
 
+- Created `SavedPlan` and `SelectedWorkUnit` Pydantic models in `src/resume_as_code/models/plan.py`
+- Implemented plan save/load with human-readable YAML output and header comments
+- Added `--output` and `--load` options to plan command
+- Implemented JD hash (SHA256, truncated to 16 chars) for change detection
+- Added `_display_saved_plan` function for rich output of loaded plans
+- All acceptance criteria satisfied:
+  - AC1: `resume plan --jd file.txt --output plan.yaml` saves plan with JD hash, Work Units, scores, timestamp
+  - AC2: `resume plan --load plan.yaml` displays plan without re-running ranking
+  - AC3: Re-running `resume plan --jd` creates new rankings (original plan unchanged)
+  - AC4: Saved plan ready for `resume build --plan` (Epic 5)
+  - AC5: YAML is human-readable with header comments
+- 754 tests pass (10 new unit tests + 7 new integration tests)
+- ruff check passes, mypy --strict passes
+
+**Code Review Fixes Applied:**
+- Issue #1 (HIGH): Implemented Task 3.4 - Warn if Work Units have changed since plan was saved
+- Issue #2 (MEDIUM): Added `encoding="utf-8"` to all file I/O operations
+- Issue #3 (MEDIUM): Added test for `--json --load` combination
+- Issue #4 (MEDIUM): Added error handling for malformed YAML and empty plan files
+- Issue #5 (LOW): Added explicit test for AC3 (original plan unchanged on re-run)
+- Issue #6 (LOW): Made datetime format consistent between JSON and Rich output
+- Added 6 new tests for code review findings (51 total plan-related tests)
+
 ### File List
+
+- src/resume_as_code/models/plan.py (new, modified for encoding + error handling)
+- src/resume_as_code/models/__init__.py (modified - added SavedPlan, SelectedWorkUnit exports)
+- src/resume_as_code/commands/plan.py (modified - added --output, --load, Work Unit change warning)
+- tests/unit/test_plan_model.py (new)
+- tests/integration/test_plan_command.py (modified - added TestPlanPersistence class + 6 review tests)
 

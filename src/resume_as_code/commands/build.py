@@ -40,23 +40,23 @@ if TYPE_CHECKING:
     "-f",
     "output_format",
     type=click.Choice(["pdf", "docx", "all"]),
-    default="all",
-    help="Output format(s) to generate",
+    default=None,
+    help="Output format(s) to generate (default: from config or 'all')",
 )
 @click.option(
     "--output-dir",
     "-o",
     "output_dir",
     type=click.Path(path_type=Path),
-    default=Path("dist"),
-    help="Output directory for generated files",
+    default=None,
+    help="Output directory for generated files (default: from config or 'dist')",
 )
 @click.option(
     "--template",
     "-t",
     "template_name",
-    default="modern",
-    help="Template to use for rendering",
+    default=None,
+    help="Template to use for rendering (default: from config or 'modern')",
 )
 @click.pass_context
 @handle_errors
@@ -64,9 +64,9 @@ def build_command(
     ctx: click.Context,
     plan_path: Path | None,
     jd_path: Path | None,
-    output_format: str,
-    output_dir: Path,
-    template_name: str,
+    output_format: str | None,
+    output_dir: Path | None,
+    template_name: str | None,
 ) -> None:
     """Build resume from plan or job description.
 
@@ -85,6 +85,14 @@ def build_command(
         resume build --jd job.txt --format pdf --output-dir ./applications/google/
     """
     config = get_config()
+
+    # Apply config defaults when CLI flags not provided (Story 5.6: Output Configuration)
+    # CLI flags override config values (AC: #1, #2)
+    actual_output_dir = output_dir if output_dir is not None else config.output_dir
+    actual_template = template_name if template_name is not None else config.default_template
+    # Map config "both" to build "all" for consistency
+    config_format = "all" if config.default_format == "both" else config.default_format
+    actual_format = output_format if output_format is not None else config_format
 
     # Validate inputs (AC: #3)
     if not plan_path and not jd_path:
@@ -128,14 +136,16 @@ def build_command(
     # Generate outputs atomically (AC: #4, #5, #7)
     _generate_outputs(
         resume=resume,
-        output_format=output_format,
-        output_dir=output_dir,
-        template_name=template_name,
+        plan=plan,
+        work_units=work_units,
+        output_format=actual_format,
+        output_dir=actual_output_dir,
+        template_name=actual_template,
     )
 
     # AC: #6 - Success exit code is 0 (automatic if no exception)
     if not ctx.obj.quiet:
-        success(f"Build complete! Files in: {output_dir}")
+        success(f"Build complete! Files in: {actual_output_dir}")
 
 
 def _generate_implicit_plan(jd_path: Path, config: ResumeConfig) -> SavedPlan:
@@ -157,9 +167,11 @@ def _generate_implicit_plan(jd_path: Path, config: ResumeConfig) -> SavedPlan:
     # Load Work Units
     work_units = load_all_work_units(config.work_units_dir)
 
-    # Rank
+    # Rank with scoring weights from config (AC: #3)
     ranker = HybridRanker()
-    ranking = ranker.rank(work_units, jd, top_k=config.default_top_k)
+    ranking = ranker.rank(
+        work_units, jd, top_k=config.default_top_k, scoring_weights=config.scoring_weights
+    )
 
     # Create plan
     return SavedPlan.from_ranking(ranking, jd, jd_path, top_k=config.default_top_k)
@@ -202,12 +214,10 @@ def _load_contact_info(config: ResumeConfig) -> ContactInfo:
 
     Note:
         Contact info fields are not yet supported in ResumeConfig.
-        This is a known limitation - see Story 5.6 (Output Configuration)
-        which will add contact.* fields to .resume.yaml configuration.
+        This is a known limitation for future enhancement.
         For now, users should manually edit generated output files.
     """
-    # TODO(story-5.6): Load contact info from config.contact_* fields
-    # when Output Configuration story is implemented
+    # Future enhancement: Add contact.* fields to ResumeConfig
     return ContactInfo(
         name="Your Name",
         email=None,
@@ -220,6 +230,8 @@ def _load_contact_info(config: ResumeConfig) -> ContactInfo:
 
 def _generate_outputs(
     resume: ResumeData,
+    plan: SavedPlan,
+    work_units: list[dict[str, Any]],
     output_format: str,
     output_dir: Path,
     template_name: str,
@@ -231,6 +243,8 @@ def _generate_outputs(
 
     Args:
         resume: ResumeData to render.
+        plan: SavedPlan used for the build.
+        work_units: List of Work Unit dictionaries included in build.
         output_format: Format to generate (pdf, docx, all).
         output_dir: Target output directory.
         template_name: Name of template to use.
@@ -242,7 +256,11 @@ def _generate_outputs(
     # system dependencies (pango, cairo) are not installed.
     # This allows the CLI to start even without PDF generation capability.
     from resume_as_code.providers.docx import DOCXProvider
+    from resume_as_code.providers.manifest import ManifestProvider
     from resume_as_code.providers.pdf import PDFProvider
+
+    # Track which formats are generated for manifest
+    formats_generated: list[str] = []
 
     # Create temp directory for atomic writes
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -256,6 +274,7 @@ def _generate_outputs(
                 tmp_pdf = tmp_path / "resume.pdf"
                 pdf_provider.render(resume, tmp_pdf)
                 generated_files.append((tmp_pdf, output_dir / "resume.pdf"))
+                formats_generated.append("pdf")
                 console.print("[green]\u2713[/green] Generated PDF")
 
             # Generate DOCX (AC: #4)
@@ -264,7 +283,21 @@ def _generate_outputs(
                 tmp_docx = tmp_path / "resume.docx"
                 docx_provider.render(resume, tmp_docx)
                 generated_files.append((tmp_docx, output_dir / "resume.docx"))
+                formats_generated.append("docx")
                 console.print("[green]\u2713[/green] Generated DOCX")
+
+            # Generate manifest (Story 5.5 - Provenance)
+            manifest_provider = ManifestProvider()
+            tmp_manifest = tmp_path / "manifest.yaml"
+            manifest_provider.generate(
+                plan=plan,
+                work_units=work_units,
+                template=template_name,
+                output_formats=formats_generated,
+                output_path=tmp_manifest,
+            )
+            generated_files.append((tmp_manifest, output_dir / "manifest.yaml"))
+            console.print("[green]\u2713[/green] Generated manifest")
 
             # All succeeded - move to final location (AC: #5)
             output_dir.mkdir(parents=True, exist_ok=True)

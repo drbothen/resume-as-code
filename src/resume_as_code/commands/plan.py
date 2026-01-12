@@ -11,6 +11,7 @@ from rich.panel import Panel
 from resume_as_code.config import get_config
 from resume_as_code.models.exclusion import get_exclusion_reason
 from resume_as_code.models.output import JSONResponse
+from resume_as_code.models.plan import SavedPlan
 from resume_as_code.services.coverage_analyzer import (
     CoverageLevel,
     CoverageReport,
@@ -19,7 +20,7 @@ from resume_as_code.services.coverage_analyzer import (
 from resume_as_code.services.jd_parser import parse_jd_file
 from resume_as_code.services.ranker import HybridRanker, RankingResult
 from resume_as_code.services.work_unit_service import load_all_work_units
-from resume_as_code.utils.console import console, info, json_output, warning
+from resume_as_code.utils.console import console, info, json_output, success, warning
 from resume_as_code.utils.errors import handle_errors
 from resume_as_code.utils.work_unit_text import extract_work_unit_text
 
@@ -38,8 +39,21 @@ ONE_PAGE_THRESHOLD = 1.5  # Pages
     "-j",
     "jd_path",
     type=click.Path(exists=True, path_type=Path),
-    required=True,
     help="Path to job description file",
+)
+@click.option(
+    "--output",
+    "-o",
+    "output_path",
+    type=click.Path(path_type=Path),
+    help="Save plan to file",
+)
+@click.option(
+    "--load",
+    "-l",
+    "load_path",
+    type=click.Path(exists=True, path_type=Path),
+    help="Load and display saved plan",
 )
 @click.option(
     "--top",
@@ -61,7 +75,9 @@ ONE_PAGE_THRESHOLD = 1.5  # Pages
 @handle_errors
 def plan_command(
     ctx: click.Context,
-    jd_path: Path,
+    jd_path: Path | None,
+    output_path: Path | None,
+    load_path: Path | None,
     top: int,
     show_excluded: bool,
     show_all_excluded: bool,
@@ -71,6 +87,16 @@ def plan_command(
     This is the "terraform plan" for your resume - see exactly what
     will be selected before generating output.
     """
+    # Handle loading saved plan
+    if load_path:
+        plan = SavedPlan.load(load_path)
+        _display_saved_plan(plan, ctx.obj.json_output if ctx.obj else False)
+        return
+
+    # Require --jd if not loading
+    if not jd_path:
+        raise click.UsageError("Either --jd or --load is required")
+
     config = get_config()
 
     # Load Work Units
@@ -84,14 +110,20 @@ def plan_command(
     if not ctx.obj.quiet:
         info(f"Analyzing: {jd.title or jd_path.name}")
 
-    # Run ranking
+    # Run ranking with scoring weights from config (AC: #3)
     ranker = HybridRanker()
-    ranking = ranker.rank(work_units, jd, top_k=top)
+    ranking = ranker.rank(work_units, jd, top_k=top, scoring_weights=config.scoring_weights)
 
     # Run coverage analysis on selected Work Units
     selected = ranking.results[:top]
     selected_wu_dicts = [r.work_unit for r in selected]
     coverage = analyze_coverage(jd.skills, selected_wu_dicts)
+
+    # Save plan if requested
+    if output_path:
+        plan = SavedPlan.from_ranking(ranking, jd, jd_path, top)
+        plan.save(output_path)
+        success(f"Plan saved to: {output_path}")
 
     # Output
     if ctx.obj.json_output:
@@ -105,6 +137,81 @@ def plan_command(
             show_all_excluded,
             coverage,
         )
+
+
+def _display_saved_plan(plan: SavedPlan, json_mode: bool = False) -> None:
+    """Display a loaded SavedPlan."""
+    # Check for Work Unit changes (Task 3.4)
+    config = get_config()
+    current_work_units = load_all_work_units(config.work_units_dir)
+    current_wu_ids = {wu.get("id") for wu in current_work_units}
+    saved_wu_ids = {wu.id for wu in plan.selected_work_units}
+    missing_wu_ids = saved_wu_ids - current_wu_ids
+
+    if json_mode:
+        response = JSONResponse(
+            status="success",
+            command="plan",
+            data={
+                "loaded_from": plan.jd_path,
+                "jd_hash": plan.jd_hash,
+                "jd_title": plan.jd_title,
+                "created_at": plan.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
+                "selected": [
+                    {
+                        "id": wu.id,
+                        "title": wu.title,
+                        "score": wu.score,
+                        "match_reasons": wu.match_reasons,
+                    }
+                    for wu in plan.selected_work_units
+                ],
+                "selection_count": plan.selection_count,
+                "top_k": plan.top_k,
+                "version": plan.version,
+                "missing_work_units": list(missing_wu_ids),
+            },
+        )
+        json_output(response.to_json())
+        return
+
+    # Rich output for saved plan
+    console.print()
+    console.print(
+        Panel(
+            f"[bold]Saved Resume Plan[/bold]\n"
+            f"JD: {plan.jd_title or 'Untitled'}\n"
+            f"Created: {plan.created_at.strftime('%Y-%m-%d %H:%M')}\n"
+            f"Hash: {plan.jd_hash}",
+            title="Plan Preview (Loaded)",
+            border_style="blue",
+        )
+    )
+
+    # Warn if Work Units have changed (Task 3.4)
+    if missing_wu_ids:
+        warning(
+            f"⚠️  {len(missing_wu_ids)} Work Unit(s) from this plan no longer exist: "
+            f"{', '.join(sorted(missing_wu_ids))}"
+        )
+        console.print()
+
+    # Selected Work Units
+    console.print(
+        f"\n[bold green]SELECTED[/bold green] ({len(plan.selected_work_units)} Work Units)\n"
+    )
+
+    for wu in plan.selected_work_units:
+        score_color = "green" if wu.score >= 0.7 else "yellow" if wu.score >= 0.4 else "red"
+        # Mark missing Work Units
+        missing_marker = " [red][MISSING][/red]" if wu.id in missing_wu_ids else ""
+        title_display = f"[bold]{wu.title}[/bold]{missing_marker}"
+        console.print(f"  [{score_color}]{wu.score:.0%}[/{score_color}] {title_display}")
+        console.print(f"       [dim]{wu.id}[/dim]")
+        if wu.match_reasons:
+            for reason in wu.match_reasons:
+                console.print(f"       [cyan]>[/cyan] {reason}")
+        console.print()
 
 
 def _output_rich(

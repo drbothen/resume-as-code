@@ -829,3 +829,332 @@ class TestPlanCommandExclusionJsonOutput:
         assert "exclusion_reason" in excluded[0]
         assert "type" in excluded[0]["exclusion_reason"]
         assert "message" in excluded[0]["exclusion_reason"]
+
+
+class TestPlanPersistence:
+    """Tests for plan persistence (Story 4.6)."""
+
+    def test_output_option_saves_plan(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC1: Should save plan to file with --output option."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python API",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Python Dev", "Requirements:\n- Python")
+
+        plan_file = tmp_path / "my-plan.yaml"
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--output", str(plan_file)])
+
+        assert result.exit_code == 0
+        assert plan_file.exists()
+        assert "saved" in result.output.lower() or "Plan saved" in result.output
+
+    def test_saved_plan_contains_required_fields(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC1: Saved plan should contain JD hash, Work Units, scores, timestamp."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python API",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Python Dev", "Requirements:\n- Python")
+
+        plan_file = tmp_path / "my-plan.yaml"
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--output", str(plan_file)])
+
+        assert result.exit_code == 0
+
+        content = plan_file.read_text()
+        assert "jd_hash" in content
+        assert "selected_work_units" in content
+        assert "score" in content
+        assert "created_at" in content
+
+    def test_load_option_displays_saved_plan(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC2: Should load and display saved plan with --load option."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python API",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Python Dev", "Requirements:\n- Python")
+
+        # First save a plan
+        plan_file = tmp_path / "my-plan.yaml"
+        cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--output", str(plan_file)])
+
+        # Then load it
+        result = cli_runner.invoke(main, ["plan", "--load", str(plan_file)])
+
+        assert result.exit_code == 0
+        assert "Python API" in result.output
+        assert "SELECTED" in result.output or "Plan" in result.output
+
+    def test_load_skips_ranking(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC2: Loading saved plan should skip ranking."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python API",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Python Dev", "Requirements:\n- Python")
+
+        # First save a plan
+        plan_file = tmp_path / "my-plan.yaml"
+        cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--output", str(plan_file)])
+
+        # Delete work units - if ranking runs it would fail
+        import shutil
+
+        shutil.rmtree(work_units)
+
+        # Load should still work without Work Units
+        result = cli_runner.invoke(main, ["plan", "--load", str(plan_file)])
+
+        assert result.exit_code == 0
+
+    def test_saved_plan_is_human_readable(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC5: Saved plan should be human-readable YAML."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python API",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Python Dev", "Requirements:\n- Python")
+
+        plan_file = tmp_path / "my-plan.yaml"
+        cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--output", str(plan_file)])
+
+        content = plan_file.read_text()
+        # Should have header comments
+        assert "# Resume Plan" in content
+        assert "resume build --plan" in content
+
+    def test_jd_or_load_required(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should require either --jd or --load option."""
+        monkeypatch.chdir(tmp_path)
+
+        # Neither --jd nor --load provided
+        result = cli_runner.invoke(main, ["plan"])
+
+        assert result.exit_code != 0
+
+    def test_load_nonexistent_file_shows_error(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should show error when loading nonexistent plan file."""
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["plan", "--load", "nonexistent.yaml"])
+
+        assert result.exit_code != 0
+
+    def test_load_json_output_structure(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Issue #3: Should output valid JSON when loading saved plan with --json."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python API",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Python Dev", "Requirements:\n- Python")
+
+        # First save a plan
+        plan_file = tmp_path / "my-plan.yaml"
+        cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--output", str(plan_file)])
+
+        # Then load with JSON output
+        result = cli_runner.invoke(main, ["--json", "plan", "--load", str(plan_file)])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["status"] == "success"
+        assert data["command"] == "plan"
+        assert "selected" in data["data"]
+        assert "jd_hash" in data["data"]
+        assert "created_at" in data["data"]
+
+    def test_rerun_plan_leaves_original_unchanged(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC3: Re-running plan should not modify original saved plan file."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python API",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Python Dev", "Requirements:\n- Python")
+
+        # Save initial plan
+        plan_file = tmp_path / "my-plan.yaml"
+        cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--output", str(plan_file)])
+        original_content = plan_file.read_text()
+
+        # Modify work unit
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python API - MODIFIED TITLE",
+            tags=["python", "modified"],
+        )
+
+        # Re-run plan (without --output)
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Original plan file should be unchanged
+        assert plan_file.read_text() == original_content
+
+    def test_load_warns_when_work_units_missing(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Task 3.4: Should warn when Work Units from plan no longer exist."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python API",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Python Dev", "Requirements:\n- Python")
+
+        # Save a plan
+        plan_file = tmp_path / "my-plan.yaml"
+        cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--output", str(plan_file)])
+
+        # Delete the Work Unit
+        (work_units / "wu-python.yaml").unlink()
+
+        # Load the plan - should warn about missing Work Unit
+        result = cli_runner.invoke(main, ["plan", "--load", str(plan_file)])
+
+        assert result.exit_code == 0
+        assert "no longer exist" in result.output or "MISSING" in result.output
+
+    def test_load_json_includes_missing_work_units(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Task 3.4: JSON output should include missing Work Unit IDs."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python API",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Python Dev", "Requirements:\n- Python")
+
+        # Save a plan
+        plan_file = tmp_path / "my-plan.yaml"
+        cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--output", str(plan_file)])
+
+        # Delete the Work Unit
+        (work_units / "wu-python.yaml").unlink()
+
+        # Load with JSON output
+        result = cli_runner.invoke(main, ["--json", "plan", "--load", str(plan_file)])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "missing_work_units" in data["data"]
+        assert "wu-2026-01-01-python" in data["data"]["missing_work_units"]
+
+    def test_load_malformed_yaml_shows_error(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Issue #4: Should show helpful error for malformed YAML."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create a malformed YAML file
+        plan_file = tmp_path / "bad-plan.yaml"
+        plan_file.write_text("invalid: yaml: content: [unclosed")
+
+        result = cli_runner.invoke(main, ["plan", "--load", str(plan_file)])
+
+        assert result.exit_code != 0
+
+    def test_load_empty_plan_shows_error(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Issue #4: Should show helpful error for empty plan file."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create an empty YAML file
+        plan_file = tmp_path / "empty-plan.yaml"
+        plan_file.write_text("")
+
+        result = cli_runner.invoke(main, ["plan", "--load", str(plan_file)])
+
+        assert result.exit_code != 0

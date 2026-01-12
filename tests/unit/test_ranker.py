@@ -334,6 +334,100 @@ class TestRRFFusion:
         assert ids_1 == ids_2
 
 
+class TestScoringWeights:
+    """Tests for scoring weights integration (Story 5.6 AC: #3)."""
+
+    def test_rrf_fusion_with_custom_weights(self):
+        """Scoring weights should affect RRF fusion calculation."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker()
+
+        bm25_ranks = [1, 2]
+        semantic_ranks = [2, 1]
+
+        # Default weights (1.0, 1.0)
+        default_scores = ranker._rrf_fusion(bm25_ranks, semantic_ranks)
+
+        # Custom weights: emphasize BM25
+        bm25_heavy = ScoringWeights(bm25_weight=2.0, semantic_weight=0.5)
+        bm25_scores = ranker._rrf_fusion(bm25_ranks, semantic_ranks, bm25_heavy)
+
+        # Custom weights: emphasize semantic
+        semantic_heavy = ScoringWeights(bm25_weight=0.5, semantic_weight=2.0)
+        semantic_scores = ranker._rrf_fusion(bm25_ranks, semantic_ranks, semantic_heavy)
+
+        # With BM25 emphasis, doc with better BM25 rank should score higher
+        # Doc 0: BM25 rank 1, semantic rank 2
+        # Doc 1: BM25 rank 2, semantic rank 1
+        assert bm25_scores[0] > bm25_scores[1], "BM25-heavy should favor doc with better BM25 rank"
+        assert semantic_scores[1] > semantic_scores[0], (
+            "Semantic-heavy should favor doc with better semantic rank"
+        )
+
+        # Scores should differ from default
+        assert bm25_scores != default_scores
+        assert semantic_scores != default_scores
+
+    def test_rrf_fusion_with_zero_weight(self):
+        """Zero weight should exclude that ranking method entirely."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker()
+
+        bm25_ranks = [1, 2]
+        semantic_ranks = [2, 1]
+
+        # Only BM25
+        bm25_only = ScoringWeights(bm25_weight=1.0, semantic_weight=0.0)
+        scores_bm25 = ranker._rrf_fusion(bm25_ranks, semantic_ranks, bm25_only)
+
+        # Only semantic
+        semantic_only = ScoringWeights(bm25_weight=0.0, semantic_weight=1.0)
+        scores_semantic = ranker._rrf_fusion(bm25_ranks, semantic_ranks, semantic_only)
+
+        # BM25 only: doc 0 has rank 1 (better), doc 1 has rank 2
+        assert scores_bm25[0] > scores_bm25[1]
+
+        # Semantic only: doc 1 has rank 1 (better), doc 0 has rank 2
+        assert scores_semantic[1] > scores_semantic[0]
+
+    def test_ranker_accepts_scoring_weights(self, mock_embedding_service):
+        """HybridRanker.rank() should accept scoring_weights parameter."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.models.job_description import JobDescription
+        from resume_as_code.services.ranker import HybridRanker
+
+        work_units = [
+            {
+                "id": "wu-2026-01-01-test",
+                "title": "Python API Project",
+                "problem": {"statement": "Test"},
+                "actions": ["Did work"],
+                "outcome": {"result": "Success"},
+                "tags": ["python"],
+                "skills_demonstrated": [],
+            }
+        ]
+
+        jd = JobDescription(
+            raw_text="Need python skills",
+            skills=["python"],
+            keywords=["python"],
+            requirements=[],
+        )
+
+        weights = ScoringWeights(bm25_weight=1.5, semantic_weight=0.5)
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+        # Should not raise - scoring_weights is accepted
+        output = ranker.rank(work_units, jd, top_k=10, scoring_weights=weights)
+
+        assert len(output.results) == 1
+
+
 class TestMatchReasonExtraction:
     """Tests for match reason extraction."""
 
