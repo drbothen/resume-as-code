@@ -213,7 +213,6 @@ class TestProfileSummaryIntegration:
         """profile.summary should be passed to ResumeData.from_work_units()."""
         from unittest.mock import MagicMock, patch
 
-
         config = ResumeConfig(
             profile=ProfileConfig(
                 name="Test User",
@@ -264,9 +263,7 @@ class TestProfileSummaryIntegration:
 class TestProfileLoadingFromConfig:
     """Test profile loading from config files."""
 
-    def test_profile_loads_from_yaml(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_profile_loads_from_yaml(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Profile should load from .resume.yaml file."""
         reset_config()
         config_file = tmp_path / ".resume.yaml"
@@ -325,9 +322,7 @@ profile:
             assert config.profile.name is None
             assert config.profile.email is None
 
-    def test_profile_partial_config(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_profile_partial_config(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Profile should handle partial configuration."""
         reset_config()
         config_file = tmp_path / ".resume.yaml"

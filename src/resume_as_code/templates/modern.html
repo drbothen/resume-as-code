@@ -99,6 +99,22 @@
     </section>
     {% endif %}
 
+    {% if resume.get_active_certifications() %}
+    <section class="certifications">
+        <h2>Certifications</h2>
+        <ul class="cert-list">
+            {% for cert in resume.get_active_certifications() %}
+            <li>
+                <strong>{{ cert.name }}</strong>
+                {% if cert.issuer %}, {{ cert.issuer }}{% endif %}
+                {% if cert.date %}, {{ cert.date[:4] }}{% endif %}
+                {% if cert.expires %} (expires {{ cert.expires }}){% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
     {% if resume.skills %}
     <section class="skills">
         <h2>Skills</h2>

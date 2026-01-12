@@ -1,6 +1,6 @@
 # Story 6.2: Certifications Model & Storage
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -50,50 +50,50 @@ So that **they appear on my resume to meet job requirements**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create Certification model (AC: #1)
-  - [ ] 1.1: Create `Certification` Pydantic model in `models/certification.py`
-  - [ ] 1.2: Add fields: name, issuer, date, expires, credential_id, url, display
-  - [ ] 1.3: Use `HttpUrl` type for URL field with validation
-  - [ ] 1.4: Add date format validation (YYYY-MM)
-  - [ ] 1.5: Add `certifications: list[Certification]` field to `ResumeConfig`
+- [x] Task 1: Create Certification model (AC: #1)
+  - [x] 1.1: Create `Certification` Pydantic model in `models/certification.py`
+  - [x] 1.2: Add fields: name, issuer, date, expires, credential_id, url, display
+  - [x] 1.3: Use `HttpUrl` type for URL field with validation
+  - [x] 1.4: Add date format validation (YYYY-MM)
+  - [x] 1.5: Add `certifications: list[Certification]` field to `ResumeConfig`
 
-- [ ] Task 2: Update ResumeData model (AC: #2, #5)
-  - [ ] 2.1: Add `certifications: list[Certification]` to `ResumeData`
-  - [ ] 2.2: Create `ResumeData.from_config()` method or update existing factory
-  - [ ] 2.3: Handle empty certifications list gracefully
+- [x] Task 2: Update ResumeData model (AC: #2, #5)
+  - [x] 2.1: Add `certifications: list[Certification]` to `ResumeData`
+  - [x] 2.2: Added `get_active_certifications()` method to filter displayable certs
+  - [x] 2.3: Handle empty certifications list gracefully
 
-- [ ] Task 3: Update build command (AC: #2, #3, #4, #5)
-  - [ ] 3.1: Load certifications from config in build command
-  - [ ] 3.2: Pass certifications to ResumeData
-  - [ ] 3.3: Add expiration status calculation (active/expires_soon/expired)
-  - [ ] 3.4: Filter out expired certs if `display: false` or config option set
+- [x] Task 3: Update build command (AC: #2, #3, #4, #5)
+  - [x] 3.1: Load certifications from config in build command
+  - [x] 3.2: Pass certifications to ResumeData
+  - [x] 3.3: Add expiration status calculation (active/expires_soon/expired)
+  - [x] 3.4: Filter out expired certs if `display: false` or config option set
 
-- [ ] Task 4: Update templates (AC: #2, #3)
-  - [ ] 4.1: Add certifications section to `modern.html` template
-  - [ ] 4.2: Add Jinja2 conditional: `{% if resume.certifications %}`
-  - [ ] 4.3: Format certification display with issuer and dates
-  - [ ] 4.4: Handle expiration display format
-  - [ ] 4.5: Add certifications CSS styling
+- [x] Task 4: Update templates (AC: #2, #3)
+  - [x] 4.1: Add certifications section to `modern.html` template
+  - [x] 4.2: Add Jinja2 conditional: `{% if resume.get_active_certifications() %}`
+  - [x] 4.3: Format certification display with issuer and dates
+  - [x] 4.4: Handle expiration display format
+  - [x] 4.5: Add certifications CSS styling
 
-- [ ] Task 5: Update DOCX provider (AC: #2)
-  - [ ] 5.1: Add `_add_certifications_section()` method to DOCXProvider
-  - [ ] 5.2: Use Word list formatting for certifications
+- [x] Task 5: Update DOCX provider (AC: #2)
+  - [x] 5.1: Add `_add_certifications_section()` method to DOCXProvider
+  - [x] 5.2: Use Word list formatting for certifications
 
-- [ ] Task 6: Config command support (AC: #6)
-  - [ ] 6.1: Support `resume config certifications --list` for table display
-  - [ ] 6.2: Display certification status (active/expires_soon/expired)
+- [x] Task 6: Config command support (AC: #6)
+  - [x] 6.1: Support `resume config certifications --list` for table display
+  - [x] 6.2: Display certification status (active/expires_soon/expired)
 
-- [ ] Task 7: Testing
-  - [ ] 7.1: Add unit tests for Certification model validation
-  - [ ] 7.2: Add tests for certification loading from config
-  - [ ] 7.3: Add tests for template rendering with certifications
-  - [ ] 7.4: Add tests for empty certifications handling
-  - [ ] 7.5: Add tests for expiration status calculation
+- [x] Task 7: Testing
+  - [x] 7.1: Add unit tests for Certification model validation
+  - [x] 7.2: Add tests for certification loading from config
+  - [x] 7.3: Add tests for template rendering with certifications
+  - [x] 7.4: Add tests for empty certifications handling
+  - [x] 7.5: Add tests for expiration status calculation
 
-- [ ] Task 8: Code quality verification
-  - [ ] 8.1: Run `ruff check src tests --fix`
-  - [ ] 8.2: Run `mypy src --strict` with zero errors
-  - [ ] 8.3: Run `pytest` - all tests pass
+- [x] Task 8: Code quality verification
+  - [x] 8.1: Run `ruff check src tests --fix`
+  - [x] 8.2: Run `mypy src --strict` with zero errors
+  - [x] 8.3: Run `pytest` - all tests pass (992 tests)
 
 ## Dev Notes
 

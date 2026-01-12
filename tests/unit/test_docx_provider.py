@@ -386,6 +386,126 @@ class TestDOCXEducation:
         assert "UC Berkeley" in text
 
 
+class TestDOCXCertifications:
+    """Tests for certifications section in DOCX."""
+
+    def test_renders_certifications_section(self, tmp_path: Path) -> None:
+        """DOCX should render certifications section."""
+        from resume_as_code.models.certification import Certification
+
+        resume = ResumeData(
+            contact=ContactInfo(name="Test User"),
+            certifications=[
+                Certification(name="AWS Solutions Architect", issuer="Amazon Web Services"),
+                Certification(name="CISSP", issuer="ISC2", date="2024-06"),
+            ],
+        )
+
+        output_path = tmp_path / "resume.docx"
+        provider = DOCXProvider()
+        provider.render(resume, output_path)
+
+        doc = Document(output_path)
+        text = "\n".join(p.text for p in doc.paragraphs)
+
+        assert "Certifications" in text
+        assert "AWS Solutions Architect" in text
+        assert "Amazon Web Services" in text
+        assert "CISSP" in text
+        assert "ISC2" in text
+
+    def test_certifications_with_expiration(self, tmp_path: Path) -> None:
+        """DOCX should show expiration date when present."""
+        from resume_as_code.models.certification import Certification
+
+        resume = ResumeData(
+            contact=ContactInfo(name="Test User"),
+            certifications=[
+                Certification(
+                    name="AWS SAP",
+                    issuer="AWS",
+                    date="2024-01",
+                    expires="2027-01",
+                ),
+            ],
+        )
+
+        output_path = tmp_path / "resume.docx"
+        provider = DOCXProvider()
+        provider.render(resume, output_path)
+
+        doc = Document(output_path)
+        text = "\n".join(p.text for p in doc.paragraphs)
+
+        assert "expires" in text
+        assert "2027-01" in text
+
+    def test_excludes_hidden_certifications(self, tmp_path: Path) -> None:
+        """DOCX should exclude certifications with display=False."""
+        from resume_as_code.models.certification import Certification
+
+        resume = ResumeData(
+            contact=ContactInfo(name="Test User"),
+            certifications=[
+                Certification(name="Visible Cert", display=True),
+                Certification(name="Hidden Cert", display=False),
+            ],
+        )
+
+        output_path = tmp_path / "resume.docx"
+        provider = DOCXProvider()
+        provider.render(resume, output_path)
+
+        doc = Document(output_path)
+        text = "\n".join(p.text for p in doc.paragraphs)
+
+        assert "Visible Cert" in text
+        assert "Hidden Cert" not in text
+
+    def test_excludes_expired_certifications(self, tmp_path: Path) -> None:
+        """DOCX should exclude expired certifications."""
+        from resume_as_code.models.certification import Certification
+
+        resume = ResumeData(
+            contact=ContactInfo(name="Test User"),
+            certifications=[
+                Certification(name="Active Cert", expires="2099-12", display=True),
+                Certification(name="Expired Cert", expires="2020-01", display=True),
+            ],
+        )
+
+        output_path = tmp_path / "resume.docx"
+        provider = DOCXProvider()
+        provider.render(resume, output_path)
+
+        doc = Document(output_path)
+        text = "\n".join(p.text for p in doc.paragraphs)
+
+        assert "Active Cert" in text
+        assert "Expired Cert" not in text
+
+    def test_no_section_when_no_active_certs(self, tmp_path: Path) -> None:
+        """DOCX should not render Certifications heading when no active certs."""
+        from resume_as_code.models.certification import Certification
+
+        resume = ResumeData(
+            contact=ContactInfo(name="Test User"),
+            certifications=[
+                Certification(name="Expired Cert", expires="2020-01", display=True),
+            ],
+        )
+
+        output_path = tmp_path / "resume.docx"
+        provider = DOCXProvider()
+        provider.render(resume, output_path)
+
+        doc = Document(output_path)
+        text = "\n".join(p.text for p in doc.paragraphs)
+
+        # Should not have Certifications heading if all certs are expired/hidden
+        assert "Certifications" not in text
+
+
 class TestRenderToBytes:
     """Tests for render_to_bytes method."""
 

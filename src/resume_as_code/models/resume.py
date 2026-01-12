@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from resume_as_code.models.certification import Certification
+
 
 class ContactInfo(BaseModel):
     """Contact information for resume header."""
@@ -59,6 +61,19 @@ class ResumeData(BaseModel):
     sections: list[ResumeSection] = Field(default_factory=list)
     skills: list[str] = Field(default_factory=list)
     education: list[ResumeItem] = Field(default_factory=list)
+    certifications: list[Certification] = Field(default_factory=list)
+
+    def get_active_certifications(self) -> list[Certification]:
+        """Get certifications that should be displayed on resume.
+
+        Returns certifications where display=True and not expired.
+
+        Returns:
+            List of active, displayable certifications.
+        """
+        return [
+            cert for cert in self.certifications if cert.display and cert.get_status() != "expired"
+        ]
 
     @classmethod
     def from_work_units(

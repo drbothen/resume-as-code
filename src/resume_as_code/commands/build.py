@@ -132,6 +132,15 @@ def build_command(
         contact=contact,
         summary=config.profile.summary,  # Load from profile config
     )
+    # Add certifications from config (Story 6.2)
+    resume = ResumeData(
+        contact=resume.contact,
+        summary=resume.summary,
+        sections=resume.sections,
+        skills=resume.skills,
+        education=resume.education,
+        certifications=list(config.certifications),
+    )
 
     # Generate outputs atomically (AC: #4, #5, #7)
     _generate_outputs(

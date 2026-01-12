@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 from rich.table import Table
@@ -11,6 +12,9 @@ from ruamel.yaml import YAML
 from resume_as_code.config import get_config, get_config_sources, reset_config
 from resume_as_code.models.output import JSONResponse
 from resume_as_code.utils.console import console
+
+if TYPE_CHECKING:
+    from resume_as_code.models.config import ResumeConfig
 
 # Project config filename
 PROJECT_CONFIG_NAME = ".resume.yaml"
@@ -52,7 +56,7 @@ def config_command(
 
     # Handle get single value
     if key and not value:
-        _get_config_value(ctx, key)
+        _get_config_value(ctx, key, list_flag=list_all)
         return
 
     # Handle list/show all (AC: #5)
@@ -104,10 +108,15 @@ def _set_config_value(ctx: click.Context, key: str, value: str) -> None:
     console.print(f"[green]✓[/green] Set {key} = {converted_value}")
 
 
-def _get_config_value(ctx: click.Context, key: str) -> None:
+def _get_config_value(ctx: click.Context, key: str, list_flag: bool = False) -> None:
     """Get a single config value."""
     config = get_config()
     sources = get_config_sources()
+
+    # Special handling for certifications with --list flag (Story 6.2, AC #6)
+    if key == "certifications" and list_flag:
+        _show_certifications_table(ctx, config)
+        return
 
     config_dict = config.model_dump()
 
@@ -209,3 +218,73 @@ def _convert_value(value: str) -> str | int | float | bool:
 
     # String
     return value
+
+
+def _show_certifications_table(ctx: click.Context, config: ResumeConfig) -> None:
+    """Display certifications in a table with status (Story 6.2, AC #6).
+
+    Args:
+        ctx: Click context with output options.
+        config: ResumeConfig containing certifications.
+    """
+    certifications = config.certifications
+
+    if ctx.obj.json_output:
+        response = JSONResponse(
+            status="success",
+            command="config",
+            data={
+                "certifications": [
+                    {
+                        "name": cert.name,
+                        "issuer": cert.issuer,
+                        "date": cert.date,
+                        "expires": cert.expires,
+                        "status": cert.get_status(),
+                        "display": cert.display,
+                    }
+                    for cert in certifications
+                ]
+            },
+        )
+        click.echo(response.to_json())
+        return
+
+    if ctx.obj.quiet:
+        return
+
+    if not certifications:
+        console.print("[dim]No certifications configured.[/dim]")
+        console.print(
+            "[dim]Add certifications to .resume.yaml:[/dim]\n"
+            "[dim]  certifications:[/dim]\n"
+            "[dim]    - name: 'AWS Solutions Architect'[/dim]\n"
+            "[dim]      issuer: 'Amazon Web Services'[/dim]"
+        )
+        return
+
+    # Rich table output
+    table = Table(title="Certifications")
+    table.add_column("Name", style="cyan")
+    table.add_column("Issuer", style="white")
+    table.add_column("Date", style="white")
+    table.add_column("Expires", style="white")
+    table.add_column("Status", style="bold")
+
+    for cert in certifications:
+        status = cert.get_status()
+        status_style = {
+            "active": "[green]active[/green]",
+            "expires_soon": "[yellow]expires_soon[/yellow]",
+            "expired": "[red]expired[/red]",
+        }.get(status, status)
+
+        table.add_row(
+            cert.name,
+            cert.issuer or "",
+            cert.date or "",
+            cert.expires or "",
+            status_style,
+        )
+
+    console.print(table)

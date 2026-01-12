@@ -40,9 +40,7 @@ class BuildManifest(BaseModel):
     )
 
     # Timestamps (UTC for consistency)
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # JD information
     jd_hash: str = Field(..., description="SHA256 hash of JD content")

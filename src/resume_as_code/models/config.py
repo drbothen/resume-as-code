@@ -7,6 +7,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
+from resume_as_code.models.certification import Certification
+
 
 class ProfileConfig(BaseModel):
     """User profile information for resume header.
@@ -64,6 +66,9 @@ class ResumeConfig(BaseModel):
 
     # Profile information
     profile: ProfileConfig = Field(default_factory=ProfileConfig)
+
+    # Certifications
+    certifications: list[Certification] = Field(default_factory=list)
 
     @field_validator("output_dir", "work_units_dir", mode="before")
     @classmethod

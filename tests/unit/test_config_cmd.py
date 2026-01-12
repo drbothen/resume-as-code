@@ -110,9 +110,7 @@ class TestConfigSetValue:
             # Should preserve other values
             assert "default_format" in content
 
-    def test_config_set_shows_confirmation(
-        self, cli_runner: CliRunner, tmp_path: Path
-    ) -> None:
+    def test_config_set_shows_confirmation(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """resume config <key> <value> should show confirmation message."""
         reset_config()
         with cli_runner.isolated_filesystem(temp_dir=tmp_path):
@@ -126,9 +124,7 @@ class TestConfigSetValue:
 class TestConfigNestedAccess:
     """Tests for nested config access (profile keys)."""
 
-    def test_config_get_profile_name(
-        self, cli_runner: CliRunner, tmp_path: Path
-    ) -> None:
+    def test_config_get_profile_name(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """resume config profile.name should get profile name value."""
         reset_config()
         with cli_runner.isolated_filesystem(temp_dir=tmp_path):
@@ -146,9 +142,7 @@ profile:
             assert result.exit_code == 0
             assert "Test User" in result.output
 
-    def test_config_set_profile_name(
-        self, cli_runner: CliRunner, tmp_path: Path
-    ) -> None:
+    def test_config_set_profile_name(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """resume config profile.name 'Jane Doe' should set profile name."""
         reset_config()
         with cli_runner.isolated_filesystem(temp_dir=tmp_path):
@@ -163,9 +157,7 @@ profile:
             assert "name" in content
             assert "Jane Doe" in content
 
-    def test_config_get_profile_json(
-        self, cli_runner: CliRunner, tmp_path: Path
-    ) -> None:
+    def test_config_get_profile_json(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """resume config --json profile should return profile as JSON."""
         reset_config()
         with cli_runner.isolated_filesystem(temp_dir=tmp_path):
@@ -191,9 +183,7 @@ profile:
 class TestConfigListFlag:
     """Tests for config --list flag (AC: #5)."""
 
-    def test_config_list_shows_all_values(
-        self, cli_runner: CliRunner, tmp_path: Path
-    ) -> None:
+    def test_config_list_shows_all_values(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """resume config --list should show all config values with sources (AC: #5)."""
         reset_config()
         with cli_runner.isolated_filesystem(temp_dir=tmp_path):
@@ -206,9 +196,7 @@ class TestConfigListFlag:
             # Should show sources
             assert "default" in result.output.lower()
 
-    def test_config_list_shows_project_sources(
-        self, cli_runner: CliRunner, tmp_path: Path
-    ) -> None:
+    def test_config_list_shows_project_sources(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """resume config --list should show project config source."""
         reset_config()
         with cli_runner.isolated_filesystem(temp_dir=tmp_path):
@@ -220,3 +208,74 @@ class TestConfigListFlag:
 
             assert result.exit_code == 0
             assert "project" in result.output.lower()
+
+
+class TestConfigCertifications:
+    """Tests for resume config certifications --list (Story 6.2, AC #6)."""
+
+    def test_certifications_list_empty(self, cli_runner: CliRunner, tmp_path: Path) -> None:
+        """When no certifications configured, shows helpful message."""
+        reset_config()
+        with cli_runner.isolated_filesystem(temp_dir=tmp_path):
+            result = cli_runner.invoke(main, ["config", "certifications", "--list"])
+
+            assert result.exit_code == 0
+            assert "No certifications configured" in result.output
+            assert "certifications:" in result.output
+
+    def test_certifications_list_with_certs(self, cli_runner: CliRunner, tmp_path: Path) -> None:
+        """When certifications exist, shows table with status."""
+        reset_config()
+        with cli_runner.isolated_filesystem(temp_dir=tmp_path):
+            config_file = Path(".resume.yaml")
+            config_file.write_text(
+                "certifications:\n"
+                '  - name: "AWS Solutions Architect"\n'
+                '    issuer: "Amazon Web Services"\n'
+                '    date: "2024-06"\n'
+                '  - name: "CISSP"\n'
+                '    issuer: "ISC2"\n'
+                '    expires: "2099-01"\n'
+            )
+
+            result = cli_runner.invoke(main, ["config", "certifications", "--list"])
+
+            assert result.exit_code == 0
+            assert "AWS Solutions Architect" in result.output
+            assert "Amazon Web Services" in result.output
+            assert "CISSP" in result.output
+            assert "active" in result.output
+
+    def test_certifications_list_shows_expired_status(
+        self, cli_runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Expired certifications show 'expired' status."""
+        reset_config()
+        with cli_runner.isolated_filesystem(temp_dir=tmp_path):
+            config_file = Path(".resume.yaml")
+            config_file.write_text(
+                'certifications:\n  - name: "Old Cert"\n    expires: "2020-01"\n'
+            )
+
+            result = cli_runner.invoke(main, ["config", "certifications", "--list"])
+
+            assert result.exit_code == 0
+            assert "expired" in result.output
+
+    def test_certifications_list_json_mode(self, cli_runner: CliRunner, tmp_path: Path) -> None:
+        """JSON mode outputs certifications with status."""
+        reset_config()
+        with cli_runner.isolated_filesystem(temp_dir=tmp_path):
+            config_file = Path(".resume.yaml")
+            config_file.write_text('certifications:\n  - name: "AWS Cert"\n    issuer: "AWS"\n')
+
+            result = cli_runner.invoke(main, ["--json", "config", "certifications", "--list"])
+
+            assert result.exit_code == 0
+            import json
+
+            data = json.loads(result.output)
+            assert data["status"] == "success"
+            assert "certifications" in data["data"]
+            assert data["data"]["certifications"][0]["name"] == "AWS Cert"
+            assert "status" in data["data"]["certifications"][0]

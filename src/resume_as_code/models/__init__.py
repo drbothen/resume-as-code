@@ -1,5 +1,6 @@
 """Data models for Resume as Code."""
 
+from resume_as_code.models.certification import Certification
 from resume_as_code.models.config import ConfigSource, ResumeConfig, ScoringWeights
 from resume_as_code.models.errors import (
     ConfigurationError,
@@ -60,6 +61,7 @@ from resume_as_code.models.work_unit import (
 __all__ = [
     "ArtifactEvidence",
     "BuildManifest",
+    "Certification",
     "ConfigSource",
     "DEFAULT_RANKER_VERSION",
     "ConfigurationError",

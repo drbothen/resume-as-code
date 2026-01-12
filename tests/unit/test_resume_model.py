@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from resume_as_code.models.certification import Certification
 from resume_as_code.models.resume import (
     ContactInfo,
     ResumeBullet,
@@ -309,3 +310,79 @@ class TestResumeDataDateFormatting:
         """None returns None."""
         result = ResumeData._format_date(None)
         assert result is None
+
+
+class TestResumeDataCertifications:
+    """Tests for certifications in ResumeData."""
+
+    def test_certifications_default_empty(self) -> None:
+        """ResumeData should default to empty certifications list."""
+        contact = ContactInfo(name="Test User")
+        resume = ResumeData(contact=contact)
+        assert resume.certifications == []
+
+    def test_certifications_with_list(self) -> None:
+        """ResumeData should accept certifications list."""
+        contact = ContactInfo(name="Test User")
+        certs = [
+            Certification(name="AWS SAP", issuer="Amazon Web Services"),
+            Certification(name="CISSP", issuer="ISC2"),
+        ]
+        resume = ResumeData(contact=contact, certifications=certs)
+        assert len(resume.certifications) == 2
+        assert resume.certifications[0].name == "AWS SAP"
+        assert resume.certifications[1].name == "CISSP"
+
+    def test_certifications_empty_list_graceful(self) -> None:
+        """Empty certifications list should be handled gracefully."""
+        contact = ContactInfo(name="Test User")
+        resume = ResumeData(contact=contact, certifications=[])
+        assert resume.certifications == []
+        # Should not cause errors when iterating
+        assert list(resume.certifications) == []
+
+    def test_certifications_with_full_fields(self) -> None:
+        """ResumeData should store full certification data."""
+        contact = ContactInfo(name="Test User")
+        cert = Certification(
+            name="AWS Solutions Architect - Professional",
+            issuer="Amazon Web Services",
+            date="2024-06",
+            expires="2027-06",
+            credential_id="ABC123",
+            url="https://aws.amazon.com/verify/ABC123",
+        )
+        resume = ResumeData(contact=contact, certifications=[cert])
+        assert resume.certifications[0].date == "2024-06"
+        assert resume.certifications[0].expires == "2027-06"
+
+    def test_get_active_certifications(self) -> None:
+        """Should filter to only active/displayable certifications."""
+        contact = ContactInfo(name="Test User")
+        certs = [
+            Certification(name="Active Cert", display=True),
+            Certification(name="Hidden Cert", display=False),
+            Certification(name="Expired Cert", expires="2020-01", display=True),
+        ]
+        resume = ResumeData(contact=contact, certifications=certs)
+        active = resume.get_active_certifications()
+        # Should return certs where display=True and not expired
+        assert len(active) == 1
+        assert active[0].name == "Active Cert"
+
+    def test_get_active_certifications_includes_expires_soon(self) -> None:
+        """Expiring soon certs should still be active."""
+        contact = ContactInfo(name="Test User")
+        certs = [
+            Certification(name="Expiring Soon", expires="2099-01", display=True),
+        ]
+        resume = ResumeData(contact=contact, certifications=certs)
+        active = resume.get_active_certifications()
+        assert len(active) == 1
+
+    def test_get_active_certifications_empty_list(self) -> None:
+        """Empty certifications should return empty active list."""
+        contact = ContactInfo(name="Test User")
+        resume = ResumeData(contact=contact, certifications=[])
+        active = resume.get_active_certifications()
+        assert active == []

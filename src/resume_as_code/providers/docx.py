@@ -10,6 +10,7 @@ from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt
 
+from resume_as_code.models.certification import Certification
 from resume_as_code.models.errors import RenderError
 from resume_as_code.models.resume import ResumeData, ResumeItem
 
@@ -128,6 +129,11 @@ class DOCXProvider:
             for idx, item in enumerate(resume.education):
                 is_last = idx == len(resume.education) - 1
                 self._add_education_item(doc, item, is_last=is_last)
+
+        # Certifications section
+        active_certs = resume.get_active_certifications()
+        if active_certs:
+            self._add_certifications_section(doc, active_certs)
 
         # Skills section
         if resume.skills:
@@ -276,3 +282,39 @@ class DOCXProvider:
         if not is_last:
             spacer = doc.add_paragraph()
             spacer.paragraph_format.space_after = Pt(6)
+
+    def _add_certifications_section(self, doc: Any, certifications: list[Certification]) -> None:
+        """Add certifications section.
+
+        Args:
+            doc: Word document to add section to.
+            certifications: List of active certifications to render.
+        """
+        self._add_section_heading(doc, "Certifications")
+
+        for idx, cert in enumerate(certifications):
+            is_last = idx == len(certifications) - 1
+
+            # Build certification display text
+            cert_para = doc.add_paragraph()
+            name_run = cert_para.add_run(cert.name)
+            name_run.bold = True
+
+            # Add issuer and dates
+            details: list[str] = []
+            if cert.issuer:
+                details.append(cert.issuer)
+            if cert.date:
+                details.append(cert.date[:4])  # Year only
+            if cert.expires:
+                details.append(f"expires {cert.expires}")
+
+            if details:
+                cert_para.add_run(f" ({', '.join(details)})")
+
+            cert_para.paragraph_format.space_after = Pt(3)
+
+            # Add spacer only if not the last item
+            if not is_last:
+                spacer = doc.add_paragraph()
+                spacer.paragraph_format.space_after = Pt(3)

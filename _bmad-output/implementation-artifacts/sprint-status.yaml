@@ -108,7 +108,7 @@ development_status:
   # FR53: CTO resume template variant
   epic-6: in-progress
   6-1-profile-configuration-contact-info: done
-  6-2-certifications-model-storage: ready-for-dev
+  6-2-certifications-model-storage: done
   6-3-skills-curation-service: ready-for-dev
   6-4-executive-resume-template: ready-for-dev
   6-5-template-certifications-section: ready-for-dev
