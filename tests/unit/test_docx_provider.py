@@ -438,7 +438,7 @@ class TestDOCXCertifications:
         text = "\n".join(p.text for p in doc.paragraphs)
 
         assert "expires" in text
-        assert "2027-01" in text
+        assert "2027" in text  # Year-only format per AC #3
 
     def test_excludes_hidden_certifications(self, tmp_path: Path) -> None:
         """DOCX should exclude certifications with display=False."""

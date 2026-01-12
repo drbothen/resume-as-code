@@ -307,7 +307,7 @@ class DOCXProvider:
             if cert.date:
                 details.append(cert.date[:4])  # Year only
             if cert.expires:
-                details.append(f"expires {cert.expires}")
+                details.append(f"expires {cert.expires[:4]}")
 
             if details:
                 cert_para.add_run(f" ({', '.join(details)})")

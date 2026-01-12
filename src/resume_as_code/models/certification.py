@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import date
+from datetime import date, datetime, timedelta
 from typing import Literal
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
@@ -55,8 +55,6 @@ class Certification(BaseModel):
         if not self.expires:
             return "active"
 
-        from datetime import datetime
-
         # Parse YYYY-MM to first day of month
         expires_date = datetime.strptime(self.expires, "%Y-%m").date()
         today = date.today()
@@ -65,8 +63,6 @@ class Certification(BaseModel):
             return "expired"
 
         # Check if expires within 90 days
-        from datetime import timedelta
-
         if expires_date < today + timedelta(days=90):
             return "expires_soon"
 

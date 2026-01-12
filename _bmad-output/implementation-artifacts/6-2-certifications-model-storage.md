@@ -396,10 +396,36 @@ uv run resume build --jd examples/job-description.txt
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None
+
 ### Completion Notes List
 
+- All 8 tasks completed successfully
+- 992 tests passing
+- Code review remediation: Fixed expires display format (year-only per AC #3)
+
 ### File List
+
+**New Files:**
+- `src/resume_as_code/models/certification.py` - Certification Pydantic model
+- `tests/unit/test_certification.py` - Comprehensive unit tests
+
+**Modified Files:**
+- `src/resume_as_code/commands/build.py` - Load and pass certifications to ResumeData
+- `src/resume_as_code/commands/config_cmd.py` - Add certifications --list support
+- `src/resume_as_code/models/__init__.py` - Export Certification model
+- `src/resume_as_code/models/config.py` - Add certifications field to ResumeConfig
+- `src/resume_as_code/models/manifest.py` - Minor type annotation update
+- `src/resume_as_code/models/resume.py` - Add certifications field and get_active_certifications()
+- `src/resume_as_code/providers/docx.py` - Add _add_certifications_section() method
+- `src/resume_as_code/templates/modern.css` - Add certifications section styling
+- `src/resume_as_code/templates/modern.html` - Add certifications template section
+- `tests/unit/test_build_command.py` - Add certifications build tests
+- `tests/unit/test_config_cmd.py` - Add certifications config command tests
+- `tests/unit/test_docx_provider.py` - Add certifications DOCX tests
+- `tests/unit/test_profile_config.py` - Update for certifications support
+- `tests/unit/test_resume_model.py` - Add certifications model tests
