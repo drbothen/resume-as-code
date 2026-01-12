@@ -113,6 +113,14 @@ class ValidationError(ResumeError):
     recoverable = True  # User can fix file and retry
 
 
+class RenderError(ResumeError):
+    """Output rendering failed (PDF, DOCX generation)."""
+
+    exit_code = 1
+    error_code = "RENDER_ERROR"
+    recoverable = True  # User can fix template/data and retry
+
+
 class NotFoundError(ResumeError):
     """Resource (file, work unit) not found."""
 

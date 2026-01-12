@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ resume.contact.name }} - Resume</title>
+    <style>{{ css }}</style>
+</head>
+<body>
+    <!-- ATS-Safe Resume Template -->
+    <!-- Single-column layout with standard section headers for maximum parseability -->
+
+    <header>
+        <h1>{{ resume.contact.name }}</h1>
+        <p class="contact-line">
+            {% if resume.contact.email %}{{ resume.contact.email }}{% endif %}
+            {% if resume.contact.phone %} | {{ resume.contact.phone }}{% endif %}
+            {% if resume.contact.location %} | {{ resume.contact.location }}{% endif %}
+        </p>
+        {% if resume.contact.linkedin or resume.contact.github or resume.contact.website %}
+        <p class="links-line">
+            {% if resume.contact.linkedin %}{{ resume.contact.linkedin }}{% endif %}
+            {% if resume.contact.github %} | {{ resume.contact.github }}{% endif %}
+            {% if resume.contact.website %} | {{ resume.contact.website }}{% endif %}
+        </p>
+        {% endif %}
+    </header>
+
+    {% if resume.summary %}
+    <section>
+        <h2>PROFESSIONAL SUMMARY</h2>
+        <p>{{ resume.summary }}</p>
+    </section>
+    {% endif %}
+
+    {% if resume.skills %}
+    <section>
+        <h2>SKILLS</h2>
+        <p>{{ resume.skills | join(' | ') }}</p>
+    </section>
+    {% endif %}
+
+    {% for section in resume.sections %}
+    <section>
+        <h2>{{ section.title | upper }}</h2>
+        {% for item in section.items %}
+        <div class="entry">
+            <p class="entry-header">
+                <strong>{{ item.title }}</strong>
+                {% if item.organization %} - {{ item.organization }}{% endif %}
+                {% if item.location %}, {{ item.location }}{% endif %}
+            </p>
+            {% if item.start_date %}
+            <p class="entry-dates">{{ item.start_date }} - {{ item.end_date or 'Present' }}</p>
+            {% endif %}
+            {% if item.bullets %}
+            <ul>
+                {% for bullet in item.bullets %}
+                <li>{{ bullet.text }}{% if bullet.metrics %} ({{ bullet.metrics }}){% endif %}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endfor %}
+
+    {% if resume.education %}
+    <section>
+        <h2>EDUCATION</h2>
+        {% for item in resume.education %}
+        <div class="entry">
+            <p>
+                <strong>{{ item.title }}</strong>
+                {% if item.organization %} - {{ item.organization }}{% endif %}
+                {% if item.start_date or item.end_date %}
+                ({{ item.start_date or '' }}{% if item.start_date and item.end_date %} - {% endif %}{{ item.end_date or '' }})
+                {% endif %}
+            </p>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+</body>
+</html>

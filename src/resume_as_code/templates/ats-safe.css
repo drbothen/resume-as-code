@@ -1,0 +1,121 @@
+/* ATS-Safe Resume Template Styles */
+/* Minimal formatting for maximum parseability by Applicant Tracking Systems */
+/* Single-column layout with standard section headers */
+
+/* Page setup */
+@page {
+    size: letter;
+    margin: 0.75in;
+}
+
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Base styles - simple and parseable */
+body {
+    font-family: Arial, Helvetica, sans-serif;  /* Standard system fonts */
+    font-size: 11pt;
+    line-height: 1.4;
+    color: #000;
+    max-width: 8.5in;
+    margin: 0 auto;
+}
+
+/* Header - simple centered layout */
+header {
+    text-align: center;
+    margin-bottom: 1em;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid #000;
+}
+
+header h1 {
+    font-size: 18pt;
+    font-weight: bold;
+    margin-bottom: 0.3em;
+}
+
+.contact-line,
+.links-line {
+    font-size: 10pt;
+    margin: 0.2em 0;
+}
+
+/* Section headers - UPPERCASE for ATS recognition */
+h2 {
+    font-size: 12pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid #000;
+    padding-bottom: 0.2em;
+}
+
+/* Section content */
+section {
+    margin-bottom: 0.8em;
+}
+
+section > p {
+    margin: 0.3em 0;
+}
+
+/* Experience entries */
+.entry {
+    margin-bottom: 0.8em;
+}
+
+.entry-header {
+    margin-bottom: 0.2em;
+}
+
+.entry-dates {
+    font-style: italic;
+    font-size: 10pt;
+    margin-bottom: 0.3em;
+}
+
+/* Bullet points - standard format */
+ul {
+    margin: 0.3em 0 0 1.5em;
+    padding: 0;
+}
+
+li {
+    margin-bottom: 0.2em;
+}
+
+/* No decorative elements */
+a {
+    color: #000;
+    text-decoration: none;
+}
+
+/* Print styles - keep it simple */
+@media print {
+    body {
+        font-size: 10pt;
+    }
+
+    /* Ensure proper page breaks */
+    .entry {
+        page-break-inside: avoid;
+    }
+
+    section {
+        page-break-inside: avoid;
+    }
+}
+
+/* Screen preview */
+@media screen {
+    body {
+        padding: 0.75in;
+        background: #fff;
+    }
+}

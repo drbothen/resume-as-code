@@ -1,0 +1,302 @@
+/* Modern Resume Template Styles */
+/* Supports both letter (US) and A4 (international) page sizes */
+
+/* Page setup for printing */
+@page {
+    size: letter;
+    margin: 0.5in 0.6in;
+}
+
+@page :first {
+    margin-top: 0.5in;
+}
+
+/* A4 page size variant - uncomment to use */
+/*
+@page {
+    size: A4;
+    margin: 15mm 18mm;
+}
+*/
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.4;
+    color: #2c3e50;
+    max-width: 8.5in;
+    margin: 0 auto;
+    padding: 0;
+}
+
+/* Header styles */
+header {
+    text-align: center;
+    margin-bottom: 0.8em;
+    padding-bottom: 0.6em;
+    border-bottom: 2px solid #2c3e50;
+}
+
+header h1 {
+    font-size: 22pt;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.3em;
+    letter-spacing: 0.5px;
+}
+
+.contact-info {
+    margin: 0.4em 0;
+    font-size: 10pt;
+    color: #555;
+}
+
+.contact-item {
+    display: inline-block;
+    margin: 0 0.6em;
+}
+
+.contact-item:not(:last-child)::after {
+    content: '|';
+    margin-left: 1.2em;
+    color: #bdc3c7;
+}
+
+.links {
+    margin-top: 0.3em;
+    font-size: 9.5pt;
+}
+
+.links a {
+    color: #3498db;
+    text-decoration: none;
+    margin: 0 0.5em;
+}
+
+.links a:hover {
+    text-decoration: underline;
+}
+
+/* Section styles */
+section {
+    margin-bottom: 0.9em;
+}
+
+h2 {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #2c3e50;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid #bdc3c7;
+    padding-bottom: 0.15em;
+    margin-bottom: 0.5em;
+}
+
+/* Summary section */
+.summary p {
+    font-size: 10.5pt;
+    color: #444;
+    text-align: justify;
+    line-height: 1.5;
+}
+
+/* Experience / Job styles */
+.job {
+    margin-bottom: 0.8em;
+    page-break-inside: avoid;
+}
+
+.job-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 0.3em;
+}
+
+.job-title-company {
+    flex: 1;
+}
+
+.job-title-company h3 {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+    display: inline;
+}
+
+.company {
+    font-size: 10.5pt;
+    font-style: italic;
+    color: #555;
+    margin-left: 0.3em;
+}
+
+.company::before {
+    content: '| ';
+    color: #bdc3c7;
+}
+
+.job-meta {
+    text-align: right;
+    font-size: 9.5pt;
+    color: #7f8c8d;
+}
+
+.location {
+    display: block;
+}
+
+.dates {
+    display: block;
+    font-style: italic;
+}
+
+/* Achievement bullets */
+.achievements {
+    margin: 0.3em 0 0 1.2em;
+    padding-left: 0.3em;
+}
+
+.achievements li {
+    margin-bottom: 0.2em;
+    font-size: 10.5pt;
+    line-height: 1.4;
+    color: #333;
+}
+
+.metrics {
+    color: #27ae60;
+    font-weight: 500;
+}
+
+/* Education section */
+.education .edu-item {
+    margin-bottom: 0.5em;
+    page-break-inside: avoid;
+}
+
+.edu-header {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+}
+
+.edu-header h3 {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.institution {
+    font-size: 10pt;
+    font-style: italic;
+    color: #555;
+    margin-left: 0.3em;
+}
+
+.institution::before {
+    content: '- ';
+}
+
+.education .dates {
+    font-size: 9.5pt;
+    color: #7f8c8d;
+    display: block;
+}
+
+/* Skills section */
+.skills p {
+    font-size: 10pt;
+    color: #444;
+    line-height: 1.6;
+}
+
+/* Orphans and widows control for PDF */
+p, li {
+    orphans: 2;
+    widows: 2;
+}
+
+/* Section headers should not be orphaned */
+h2 {
+    page-break-after: avoid;
+}
+
+/* Print-specific styles */
+@media print {
+    body {
+        font-size: 10pt;
+        color: #000;
+    }
+
+    header h1 {
+        color: #000;
+    }
+
+    h2 {
+        color: #000;
+    }
+
+    .job-title-company h3 {
+        color: #000;
+    }
+
+    a {
+        color: #000;
+        text-decoration: none;
+    }
+
+    /* Prevent page breaks inside important elements */
+    .job,
+    .edu-item,
+    section {
+        page-break-inside: avoid;
+    }
+
+    /* Allow page breaks before sections if needed */
+    section {
+        page-break-before: auto;
+    }
+
+    /* Hide non-essential decorative elements */
+    .links a::after {
+        content: ' (' attr(href) ')';
+        font-size: 8pt;
+        color: #666;
+    }
+}
+
+/* Screen-only styles for preview */
+@media screen {
+    body {
+        padding: 1in;
+        background: #f5f5f5;
+    }
+
+    /* Simulate printed page */
+    body::before {
+        content: '';
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: white;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        z-index: -1;
+        max-width: 8.5in;
+        margin: 0 auto;
+    }
+}

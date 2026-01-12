@@ -4,6 +4,7 @@ from resume_as_code.models.config import ConfigSource, ResumeConfig, ScoringWeig
 from resume_as_code.models.errors import (
     ConfigurationError,
     NotFoundError,
+    RenderError,
     ResumeError,
     RuntimeSystemError,
     StructuredError,
@@ -21,6 +22,14 @@ from resume_as_code.models.job_description import (
     Requirement,
 )
 from resume_as_code.models.output import FORMAT_VERSION, JSONResponse
+from resume_as_code.models.plan import SavedPlan, SelectedWorkUnit
+from resume_as_code.models.resume import (
+    ContactInfo,
+    ResumeBullet,
+    ResumeData,
+    ResumeItem,
+    ResumeSection,
+)
 from resume_as_code.models.work_unit import (
     STRONG_VERBS,
     WEAK_VERBS,
@@ -48,6 +57,7 @@ __all__ = [
     "ConfigSource",
     "ConfigurationError",
     "ConfidenceLevel",
+    "ContactInfo",
     "DocumentEvidence",
     "Evidence",
     "EvidenceType",
@@ -66,12 +76,19 @@ __all__ = [
     "OtherEvidence",
     "Outcome",
     "Problem",
+    "RenderError",
     "Requirement",
+    "ResumeBullet",
     "ResumeConfig",
+    "ResumeData",
     "ResumeError",
+    "ResumeItem",
+    "ResumeSection",
     "RuntimeSystemError",
+    "SavedPlan",
     "Scope",
     "ScoringWeights",
+    "SelectedWorkUnit",
     "Skill",
     "STRONG_VERBS",
     "StructuredError",

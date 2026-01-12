@@ -1,6 +1,6 @@
 # Story 5.4: Build Command
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -44,45 +44,45 @@ So that **I get output files ready for job applications**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create build command structure (AC: #1, #2, #3)
-  - [ ] 1.1: Create `src/resume_as_code/commands/build.py`
-  - [ ] 1.2: Add Click command with `--plan`, `--jd`, `--format`, `--output-dir` flags
-  - [ ] 1.3: Register command in main CLI group
-  - [ ] 1.4: Validate that `--plan` or `--jd` is provided
+- [x] Task 1: Create build command structure (AC: #1, #2, #3)
+  - [x] 1.1: Create `src/resume_as_code/commands/build.py`
+  - [x] 1.2: Add Click command with `--plan`, `--jd`, `--format`, `--output-dir` flags
+  - [x] 1.3: Register command in main CLI group
+  - [x] 1.4: Validate that `--plan` or `--jd` is provided
 
-- [ ] Task 2: Implement plan-based build (AC: #1)
-  - [ ] 2.1: Load saved plan from YAML file
-  - [ ] 2.2: Retrieve Work Units by IDs from plan
-  - [ ] 2.3: Build ResumeData from Work Units
-  - [ ] 2.4: Pass to providers for rendering
+- [x] Task 2: Implement plan-based build (AC: #1)
+  - [x] 2.1: Load saved plan from YAML file
+  - [x] 2.2: Retrieve Work Units by IDs from plan
+  - [x] 2.3: Build ResumeData from Work Units
+  - [x] 2.4: Pass to providers for rendering
 
-- [ ] Task 3: Implement JD-based build (AC: #2)
-  - [ ] 3.1: Run implicit plan (reuse plan command logic)
-  - [ ] 3.2: Generate plan on-the-fly
-  - [ ] 3.3: Continue with rendering
+- [x] Task 3: Implement JD-based build (AC: #2)
+  - [x] 3.1: Run implicit plan (reuse plan command logic)
+  - [x] 3.2: Generate plan on-the-fly
+  - [x] 3.3: Continue with rendering
 
-- [ ] Task 4: Implement format selection (AC: #4)
-  - [ ] 4.1: Add `--format` option (pdf, docx, all)
-  - [ ] 4.2: Default to generating both formats
-  - [ ] 4.3: Only generate selected format when specified
+- [x] Task 4: Implement format selection (AC: #4)
+  - [x] 4.1: Add `--format` option (pdf, docx, all)
+  - [x] 4.2: Default to generating both formats
+  - [x] 4.3: Only generate selected format when specified
 
-- [ ] Task 5: Handle output directory (AC: #5)
-  - [ ] 5.1: Default to `dist/` directory
-  - [ ] 5.2: Support `--output-dir` flag
-  - [ ] 5.3: Create directory if it doesn't exist
-  - [ ] 5.4: Use semantic filenames (e.g., `resume.pdf`, `resume.docx`)
+- [x] Task 5: Handle output directory (AC: #5)
+  - [x] 5.1: Default to `dist/` directory
+  - [x] 5.2: Support `--output-dir` flag
+  - [x] 5.3: Create directory if it doesn't exist
+  - [x] 5.4: Use semantic filenames (e.g., `resume.pdf`, `resume.docx`)
 
-- [ ] Task 6: Atomic writes and cleanup (AC: #7)
-  - [ ] 6.1: Write to temp files first
-  - [ ] 6.2: Move to final location on success
-  - [ ] 6.3: Clean up temp files on failure
-  - [ ] 6.4: Never leave partial files
+- [x] Task 6: Atomic writes and cleanup (AC: #7)
+  - [x] 6.1: Write to temp files first
+  - [x] 6.2: Move to final location on success
+  - [x] 6.3: Clean up temp files on failure
+  - [x] 6.4: Never leave partial files
 
-- [ ] Task 7: Code quality verification
-  - [ ] 7.1: Run `ruff check src tests --fix`
-  - [ ] 7.2: Run `mypy src --strict` with zero errors
-  - [ ] 7.3: Add tests for build command
-  - [ ] 7.4: Test error scenarios and cleanup
+- [x] Task 7: Code quality verification
+  - [x] 7.1: Run `ruff check src tests --fix`
+  - [x] 7.2: Run `mypy src --strict` with zero errors
+  - [x] 7.3: Add tests for build command
+  - [x] 7.4: Test error scenarios and cleanup
 
 ## Dev Notes
 
@@ -422,11 +422,35 @@ resume build --jd job.txt && echo "Success" || echo "Failed"
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+- Implemented `resume build` command with `--plan`, `--jd`, `--format`, `--output-dir`, `--template` flags
+- Plan-based build loads SavedPlan and retrieves Work Units by ID
+- JD-based build generates implicit plan on-the-fly using JDParser and HybridRanker
+- Format selection supports pdf, docx, or all (default)
+- Atomic writes using tempfile.TemporaryDirectory to prevent partial files on failure
+- All 15 unit tests for build command pass
+- Full test suite (886 tests) passes with no regressions
+- ruff check passes with zero errors
+- mypy --strict passes with zero errors
+- Contact info uses placeholder defaults - documented as known limitation for Story 5.6
+
+### Code Review Fixes
+
+- **C1 (CRITICAL)**: Moved provider imports to lazy loading inside `_generate_outputs()` to prevent import-time WeasyPrint failures when system dependencies (pango, cairo) are not installed
+- **H1/H2/M2**: Added `TestWorkUnitToResumeDataTransformation` test class with integration tests verifying Work Unit to ResumeData transformation and plan order preservation
+- **H3**: Documented contact info limitation with TODO referencing Story 5.6 (Output Configuration)
+- **M3**: Enhanced empty Work Units warning with actionable hint directing users to `resume plan` command
+
 ### File List
+
+- src/resume_as_code/commands/build.py (new, modified for lazy imports)
+- src/resume_as_code/cli.py (modified - added build_command registration)
+- tests/unit/test_build_command.py (new, enhanced with transformation tests)
 

@@ -1,0 +1,363 @@
+/* Executive Resume Template Styles */
+/* Optimized for senior professionals with 2-3 page layout */
+/* Features scope indicators for budget, team size, and revenue */
+
+/* Page setup for 2-3 page executive resume */
+@page {
+    size: letter;
+    margin: 0.6in 0.7in;
+}
+
+@page :first {
+    margin-top: 0.5in;
+}
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 10.5pt;
+    line-height: 1.5;
+    color: #1a1a2e;
+    max-width: 8.5in;
+    margin: 0 auto;
+    padding: 0;
+}
+
+/* Executive Header */
+.executive-header {
+    text-align: center;
+    padding-bottom: 0.8em;
+    margin-bottom: 1em;
+    border-bottom: 3px double #1a1a2e;
+}
+
+.executive-header h1 {
+    font-size: 26pt;
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #1a1a2e;
+    margin-bottom: 0.4em;
+}
+
+.contact-info {
+    font-size: 10pt;
+    color: #4a4a5a;
+    margin: 0.5em 0;
+}
+
+.contact-item {
+    display: inline-block;
+    margin: 0 0.8em;
+}
+
+.contact-item .icon {
+    margin-right: 0.3em;
+    color: #1a1a2e;
+}
+
+.links {
+    margin-top: 0.4em;
+    font-size: 9.5pt;
+}
+
+.links a {
+    color: #2a5298;
+    text-decoration: none;
+    margin: 0 0.6em;
+    font-style: italic;
+}
+
+.links a:hover {
+    text-decoration: underline;
+}
+
+/* Section headers */
+section {
+    margin-bottom: 1.1em;
+}
+
+h2 {
+    font-size: 13pt;
+    font-weight: 600;
+    color: #1a1a2e;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 0.2em;
+    margin-bottom: 0.6em;
+}
+
+/* Executive Summary */
+.executive-summary {
+    background: #f8f9fa;
+    padding: 0.8em 1em;
+    border-left: 4px solid #1a1a2e;
+    margin-bottom: 1.2em;
+}
+
+.executive-summary h2 {
+    border-bottom: none;
+    margin-bottom: 0.4em;
+}
+
+.summary-text {
+    font-size: 10.5pt;
+    line-height: 1.6;
+    color: #333;
+    font-style: italic;
+}
+
+/* Executive Role styling */
+.executive-role {
+    margin-bottom: 1em;
+    page-break-inside: avoid;
+}
+
+.role-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.4em;
+}
+
+.role-title-company {
+    flex: 1;
+}
+
+.role-title-company h3 {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+    display: inline;
+}
+
+.organization {
+    font-size: 11pt;
+    font-style: italic;
+    color: #4a4a5a;
+    margin-left: 0.4em;
+}
+
+.organization::before {
+    content: '| ';
+    color: #ccc;
+}
+
+.role-meta {
+    text-align: right;
+    font-size: 9.5pt;
+    color: #666;
+}
+
+.location {
+    display: block;
+}
+
+.dates {
+    display: block;
+    font-style: italic;
+}
+
+/* Scope Indicators - Key executive feature */
+.scope-indicators {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em 1.5em;
+    background: linear-gradient(135deg, #f0f4f8 0%, #e8eef3 100%);
+    padding: 0.5em 0.8em;
+    border-radius: 4px;
+    margin: 0.4em 0 0.6em 0;
+    border: 1px solid #d0d8e0;
+}
+
+.scope-item {
+    font-size: 9.5pt;
+    display: flex;
+    align-items: center;
+}
+
+.scope-label {
+    color: #666;
+    font-weight: 600;
+    margin-right: 0.3em;
+}
+
+.scope-value {
+    color: #1a5f2a;
+    font-weight: 700;
+}
+
+/* Achievement bullets - RAS format (Result-Action-Situation) */
+.achievements {
+    margin: 0.4em 0 0 0;
+    padding-left: 1.3em;
+    list-style-type: none;
+}
+
+.achievement-item {
+    position: relative;
+    margin-bottom: 0.35em;
+    font-size: 10.5pt;
+    line-height: 1.45;
+    padding-left: 0.8em;
+}
+
+.achievement-item::before {
+    content: '\25A0';  /* Solid square bullet */
+    position: absolute;
+    left: -1em;
+    color: #1a1a2e;
+    font-size: 6pt;
+    top: 0.35em;
+}
+
+.achievement-text {
+    color: #333;
+}
+
+.achievement-metrics {
+    display: inline;
+    color: #1a5f2a;
+    font-weight: 600;
+    font-style: italic;
+}
+
+.achievement-metrics::before {
+    content: ' — ';
+    color: #999;
+}
+
+/* Education section */
+.education-section .edu-item {
+    margin-bottom: 0.5em;
+}
+
+.edu-header {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+}
+
+.edu-header h3 {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 0;
+}
+
+.institution {
+    font-size: 10pt;
+    font-style: italic;
+    color: #4a4a5a;
+    margin-left: 0.4em;
+}
+
+.institution::before {
+    content: '- ';
+}
+
+.education-section .dates {
+    font-size: 9.5pt;
+    color: #666;
+    display: block;
+}
+
+/* Core Competencies / Skills - Grid layout for executive feel */
+.skills-section {
+    page-break-inside: avoid;
+}
+
+.skills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+}
+
+.skill-item {
+    background: #f0f4f8;
+    border: 1px solid #d0d8e0;
+    padding: 0.25em 0.6em;
+    border-radius: 3px;
+    font-size: 9.5pt;
+    color: #333;
+}
+
+/* Print-specific styles */
+@media print {
+    body {
+        font-size: 10pt;
+        color: #000;
+    }
+
+    .executive-header h1 {
+        color: #000;
+    }
+
+    h2 {
+        color: #000;
+    }
+
+    .role-title-company h3 {
+        color: #000;
+    }
+
+    a {
+        color: #000;
+        text-decoration: none;
+    }
+
+    .scope-indicators {
+        background: #f5f5f5;
+        border-color: #ccc;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .scope-value,
+    .achievement-metrics {
+        color: #006600;
+    }
+
+    /* Prevent page breaks inside important elements */
+    .executive-role,
+    .edu-item,
+    section {
+        page-break-inside: avoid;
+    }
+
+    /* Allow page breaks between roles */
+    .executive-role {
+        page-break-after: auto;
+    }
+}
+
+/* Screen-only styles for preview */
+@media screen {
+    body {
+        padding: 0.8in;
+        background: #e8e8e8;
+    }
+
+    body::before {
+        content: '';
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: white;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.15);
+        z-index: -1;
+        max-width: 8.5in;
+        margin: 0 auto;
+    }
+}

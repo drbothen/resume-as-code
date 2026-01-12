@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ resume.contact.name }} - Executive Resume</title>
+    <style>{{ css }}</style>
+</head>
+<body>
+    <header class="executive-header">
+        <h1>{{ resume.contact.name }}</h1>
+        <div class="contact-info">
+            {% if resume.contact.email %}
+            <span class="contact-item">
+                <span class="icon">&#9993;</span>
+                {{ resume.contact.email }}
+            </span>
+            {% endif %}
+            {% if resume.contact.phone %}
+            <span class="contact-item">
+                <span class="icon">&#9742;</span>
+                {{ resume.contact.phone }}
+            </span>
+            {% endif %}
+            {% if resume.contact.location %}
+            <span class="contact-item">
+                <span class="icon">&#9906;</span>
+                {{ resume.contact.location }}
+            </span>
+            {% endif %}
+        </div>
+        {% if resume.contact.linkedin or resume.contact.github or resume.contact.website %}
+        <div class="links">
+            {% if resume.contact.linkedin %}
+            <a href="{{ resume.contact.linkedin }}">LinkedIn</a>
+            {% endif %}
+            {% if resume.contact.github %}
+            <a href="{{ resume.contact.github }}">GitHub</a>
+            {% endif %}
+            {% if resume.contact.website %}
+            <a href="{{ resume.contact.website }}">Portfolio</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </header>
+
+    {% if resume.summary %}
+    <section class="executive-summary">
+        <h2>Executive Summary</h2>
+        <p class="summary-text">{{ resume.summary }}</p>
+    </section>
+    {% endif %}
+
+    {% for section in resume.sections %}
+    <section class="experience-section">
+        <h2>{{ section.title }}</h2>
+        {% for item in section.items %}
+        <article class="executive-role">
+            <div class="role-header">
+                <div class="role-title-company">
+                    <h3>{{ item.title }}</h3>
+                    {% if item.organization %}
+                    <span class="organization">{{ item.organization }}</span>
+                    {% endif %}
+                </div>
+                <div class="role-meta">
+                    {% if item.location %}
+                    <span class="location">{{ item.location }}</span>
+                    {% endif %}
+                    {% if item.start_date %}
+                    <span class="dates">{{ item.start_date }} - {{ item.end_date or 'Present' }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Scope indicators for executive-level roles #}
+            {% if item.scope_budget or item.scope_team_size or item.scope_revenue %}
+            <div class="scope-indicators">
+                {% if item.scope_budget %}
+                <span class="scope-item">
+                    <span class="scope-label">Budget:</span>
+                    <span class="scope-value">{{ item.scope_budget }}</span>
+                </span>
+                {% endif %}
+                {% if item.scope_team_size %}
+                <span class="scope-item">
+                    <span class="scope-label">Team:</span>
+                    <span class="scope-value">{{ item.scope_team_size }} people</span>
+                </span>
+                {% endif %}
+                {% if item.scope_revenue %}
+                <span class="scope-item">
+                    <span class="scope-label">Revenue:</span>
+                    <span class="scope-value">{{ item.scope_revenue }}</span>
+                </span>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {# Achievement bullets in RAS format (Result-Action-Situation) #}
+            {% if item.bullets %}
+            <ul class="achievements">
+                {% for bullet in item.bullets %}
+                <li class="achievement-item">
+                    <span class="achievement-text">{{ bullet.text }}</span>
+                    {% if bullet.metrics %}
+                    <span class="achievement-metrics">{{ bullet.metrics }}</span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </section>
+    {% endfor %}
+
+    {% if resume.education %}
+    <section class="education-section">
+        <h2>Education</h2>
+        {% for item in resume.education %}
+        <article class="edu-item">
+            <div class="edu-header">
+                <h3>{{ item.title }}</h3>
+                {% if item.organization %}
+                <span class="institution">{{ item.organization }}</span>
+                {% endif %}
+            </div>
+            {% if item.start_date or item.end_date %}
+            <span class="dates">{{ item.start_date or '' }}{% if item.start_date and item.end_date %} - {% endif %}{{ item.end_date or '' }}</span>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if resume.skills %}
+    <section class="skills-section">
+        <h2>Core Competencies</h2>
+        <div class="skills-grid">
+            {% for skill in resume.skills %}
+            <span class="skill-item">{{ skill }}</span>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</body>
+</html>
