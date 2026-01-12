@@ -339,6 +339,16 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = Path("./resumes")  # Config sets custom output_dir
             config.default_template = "modern"
             config.default_format = "both"
+            # Profile with defaults (needed for _load_contact_info)
+            config.profile.name = None
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
             (tmp_path / "work-units").mkdir()
             mock_config.return_value = config
 
@@ -380,6 +390,16 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = Path("dist")
             config.default_template = "ats-safe"  # Config sets custom template
             config.default_format = "both"
+            # Profile with defaults (needed for _load_contact_info)
+            config.profile.name = None
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
             (tmp_path / "work-units").mkdir()
             mock_config.return_value = config
 
@@ -423,6 +443,16 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = Path("./resumes")  # Config sets output_dir
             config.default_template = "modern"
             config.default_format = "both"
+            # Profile with defaults (needed for _load_contact_info)
+            config.profile.name = None
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
             (tmp_path / "work-units").mkdir()
             mock_config.return_value = config
 
@@ -466,6 +496,16 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = Path("dist")
             config.default_template = "ats-safe"  # Config sets template
             config.default_format = "both"
+            # Profile with defaults (needed for _load_contact_info)
+            config.profile.name = None
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
             (tmp_path / "work-units").mkdir()
             mock_config.return_value = config
 
@@ -507,6 +547,16 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = Path("dist")
             config.default_template = "modern"
             config.default_format = "pdf"  # Config sets pdf only
+            # Profile with defaults (needed for _load_contact_info)
+            config.profile.name = None
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
             (tmp_path / "work-units").mkdir()
             mock_config.return_value = config
 

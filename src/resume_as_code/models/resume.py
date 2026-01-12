@@ -12,6 +12,7 @@ class ContactInfo(BaseModel):
     """Contact information for resume header."""
 
     name: str
+    title: str | None = None  # Professional title/headline
     email: str | None = None
     phone: str | None = None
     location: str | None = None

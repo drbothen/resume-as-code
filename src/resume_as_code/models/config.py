@@ -5,7 +5,25 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator
+
+
+class ProfileConfig(BaseModel):
+    """User profile information for resume header.
+
+    All fields are optional to support incremental configuration.
+    URL fields use HttpUrl for validation.
+    """
+
+    name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    location: str | None = None
+    linkedin: HttpUrl | None = None
+    github: HttpUrl | None = None
+    website: HttpUrl | None = None
+    title: str | None = None  # Professional title/headline
+    summary: str | None = None  # Executive summary template
 
 
 class ScoringWeights(BaseModel):
@@ -43,6 +61,9 @@ class ResumeConfig(BaseModel):
 
     # Editor settings
     editor: str | None = Field(default=None)  # Falls back to $EDITOR
+
+    # Profile information
+    profile: ProfileConfig = Field(default_factory=ProfileConfig)
 
     @field_validator("output_dir", "work_units_dir", mode="before")
     @classmethod

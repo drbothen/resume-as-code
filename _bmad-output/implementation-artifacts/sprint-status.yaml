@@ -102,7 +102,7 @@ development_status:
   # Architecture Decision (2026-01-12): Normalized positions model per deep research on resume data standards
   # FRs Covered: FR39, FR40, FR41, FR42, FR43, FR44, FR45, FR46, FR47, FR48
   epic-6: in-progress
-  6-1-profile-configuration-contact-info: ready-for-dev
+  6-1-profile-configuration-contact-info: done
   6-2-certifications-model-storage: ready-for-dev
   6-3-skills-curation-service: ready-for-dev
   6-4-executive-resume-template: ready-for-dev

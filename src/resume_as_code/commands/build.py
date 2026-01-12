@@ -130,7 +130,7 @@ def build_command(
     resume = ResumeData.from_work_units(
         work_units=work_units,
         contact=contact,
-        summary=None,  # Summary could be loaded from config in future
+        summary=config.profile.summary,  # Load from profile config
     )
 
     # Generate outputs atomically (AC: #4, #5, #7)
@@ -204,27 +204,32 @@ def _load_work_units_from_plan(plan: SavedPlan, config: ResumeConfig) -> list[di
 
 
 def _load_contact_info(config: ResumeConfig) -> ContactInfo:
-    """Load contact info from config or defaults.
+    """Load contact info from config profile.
 
     Args:
         config: Application configuration.
 
     Returns:
-        ContactInfo with available information.
-
-    Note:
-        Contact info fields are not yet supported in ResumeConfig.
-        This is a known limitation for future enhancement.
-        For now, users should manually edit generated output files.
+        ContactInfo populated from profile, with warnings for missing data.
     """
-    # Future enhancement: Add contact.* fields to ResumeConfig
+    profile = config.profile
+
+    # Warn if name not configured (AC: #3)
+    if not profile.name:
+        console.print(
+            "[yellow]Warning:[/yellow] No profile configured. "
+            "Run `resume config profile.name 'Your Name'` to set."
+        )
+
     return ContactInfo(
-        name="Your Name",
-        email=None,
-        phone=None,
-        location=None,
-        linkedin=None,
-        github=None,
+        name=profile.name or "Your Name",
+        title=profile.title,
+        email=profile.email,
+        phone=profile.phone,
+        location=profile.location,
+        linkedin=str(profile.linkedin) if profile.linkedin else None,
+        github=str(profile.github) if profile.github else None,
+        website=str(profile.website) if profile.website else None,
     )
 
 

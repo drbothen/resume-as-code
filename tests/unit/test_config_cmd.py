@@ -123,6 +123,71 @@ class TestConfigSetValue:
             assert "output_dir" in result.output.lower() or "set" in result.output.lower()
 
 
+class TestConfigNestedAccess:
+    """Tests for nested config access (profile keys)."""
+
+    def test_config_get_profile_name(
+        self, cli_runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """resume config profile.name should get profile name value."""
+        reset_config()
+        with cli_runner.isolated_filesystem(temp_dir=tmp_path):
+            # Create config with profile
+            config_file = Path(".resume.yaml")
+            config_file.write_text(
+                """
+profile:
+  name: "Test User"
+  email: "test@example.com"
+"""
+            )
+            result = cli_runner.invoke(main, ["config", "profile.name"])
+
+            assert result.exit_code == 0
+            assert "Test User" in result.output
+
+    def test_config_set_profile_name(
+        self, cli_runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """resume config profile.name 'Jane Doe' should set profile name."""
+        reset_config()
+        with cli_runner.isolated_filesystem(temp_dir=tmp_path):
+            result = cli_runner.invoke(main, ["config", "profile.name", "Jane Doe"])
+
+            assert result.exit_code == 0
+            # Verify config file was created with nested structure
+            config_file = Path(".resume.yaml")
+            assert config_file.exists()
+            content = config_file.read_text()
+            assert "profile" in content
+            assert "name" in content
+            assert "Jane Doe" in content
+
+    def test_config_get_profile_json(
+        self, cli_runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """resume config --json profile should return profile as JSON."""
+        reset_config()
+        with cli_runner.isolated_filesystem(temp_dir=tmp_path):
+            # Create config with profile
+            config_file = Path(".resume.yaml")
+            config_file.write_text(
+                """
+profile:
+  name: "Test User"
+  email: "test@example.com"
+"""
+            )
+            result = cli_runner.invoke(main, ["--json", "config", "profile"])
+
+            assert result.exit_code == 0
+            data = json.loads(result.output)
+            assert data["status"] == "success"
+            assert data["data"]["key"] == "profile"
+            assert data["data"]["value"]["name"] == "Test User"
+            assert data["data"]["value"]["email"] == "test@example.com"
+
+
 class TestConfigListFlag:
     """Tests for config --list flag (AC: #5)."""
 

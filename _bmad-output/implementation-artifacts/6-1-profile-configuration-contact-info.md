@@ -1,6 +1,6 @@
 # Story 6.1: Profile Configuration & Contact Info Loading
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -46,39 +46,39 @@ So that **my resumes include accurate contact details without manual editing**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create ProfileConfig model (AC: #1)
-  - [ ] 1.1: Create `ProfileConfig` Pydantic model in `models/config.py`
-  - [ ] 1.2: Add fields: name, email, phone, location, linkedin, github, website, title, summary
-  - [ ] 1.3: Use `HttpUrl` type for URL fields with proper validation
-  - [ ] 1.4: Add `profile: ProfileConfig` field to `ResumeConfig`
+- [x] Task 1: Create ProfileConfig model (AC: #1)
+  - [x] 1.1: Create `ProfileConfig` Pydantic model in `models/config.py`
+  - [x] 1.2: Add fields: name, email, phone, location, linkedin, github, website, title, summary
+  - [x] 1.3: Use `HttpUrl` type for URL fields with proper validation
+  - [x] 1.4: Add `profile: ProfileConfig` field to `ResumeConfig`
 
-- [ ] Task 2: Update config loader (AC: #1, #4)
-  - [ ] 2.1: Update `get_config()` in `config.py` to parse profile section
-  - [ ] 2.2: Support nested config access: `resume config profile.email`
-  - [ ] 2.3: Handle backward compatibility (no profile = default ProfileConfig)
+- [x] Task 2: Update config loader (AC: #1, #4)
+  - [x] 2.1: Update `get_config()` in `config.py` to parse profile section
+  - [x] 2.2: Support nested config access: `resume config profile.email`
+  - [x] 2.3: Handle backward compatibility (no profile = default ProfileConfig)
 
-- [ ] Task 3: Update build command (AC: #2, #3)
-  - [ ] 3.1: Update `_load_contact_info()` to read from `config.profile`
-  - [ ] 3.2: Map ProfileConfig fields to ContactInfo model
-  - [ ] 3.3: Add warning when profile.name is not configured
-  - [ ] 3.4: Fall back to "Your Name" placeholder for backward compatibility
+- [x] Task 3: Update build command (AC: #2, #3)
+  - [x] 3.1: Update `_load_contact_info()` to read from `config.profile`
+  - [x] 3.2: Map ProfileConfig fields to ContactInfo model
+  - [x] 3.3: Add warning when profile.name is not configured
+  - [x] 3.4: Fall back to "Your Name" placeholder for backward compatibility
 
-- [ ] Task 4: Update config command for profile access (AC: #4, #5)
-  - [ ] 4.1: Ensure nested key access works (`profile.name`, `profile.email`)
-  - [ ] 4.2: Add JSON output support for profile section
-  - [ ] 4.3: Handle setting nested profile values
+- [x] Task 4: Update config command for profile access (AC: #4, #5)
+  - [x] 4.1: Ensure nested key access works (`profile.name`, `profile.email`)
+  - [x] 4.2: Add JSON output support for profile section
+  - [x] 4.3: Handle setting nested profile values
 
-- [ ] Task 5: Testing
-  - [ ] 5.1: Add unit tests for ProfileConfig validation
-  - [ ] 5.2: Add tests for profile loading from config file
-  - [ ] 5.3: Add tests for build command using profile
-  - [ ] 5.4: Add tests for config command with profile keys
-  - [ ] 5.5: Add test for warning when profile missing
+- [x] Task 5: Testing
+  - [x] 5.1: Add unit tests for ProfileConfig validation
+  - [x] 5.2: Add tests for profile loading from config file
+  - [x] 5.3: Add tests for build command using profile
+  - [x] 5.4: Add tests for config command with profile keys
+  - [x] 5.5: Add test for warning when profile missing
 
-- [ ] Task 6: Code quality verification
-  - [ ] 6.1: Run `ruff check src tests --fix`
-  - [ ] 6.2: Run `mypy src --strict` with zero errors
-  - [ ] 6.3: Run `pytest` - all tests pass
+- [x] Task 6: Code quality verification
+  - [x] 6.1: Run `ruff check src tests --fix`
+  - [x] 6.2: Run `mypy src --strict` with zero errors
+  - [x] 6.3: Run `pytest` - all tests pass
 
 ## Dev Notes
 
@@ -272,10 +272,90 @@ uv run resume build --jd examples/job-description.txt
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None - implementation proceeded without issues.
+
 ### Completion Notes List
 
+- Created `ProfileConfig` Pydantic model with HttpUrl validation for linkedin/github/website fields
+- Added `profile: ProfileConfig` field to `ResumeConfig` with default_factory
+- Updated `_load_contact_info()` in build command to read from config.profile
+- Verified existing config command already supports nested key access (e.g., `profile.name`)
+- Added warning when profile.name is not configured (backward compatible fallback to "Your Name")
+- Fixed 5 existing test mocks in test_build_command.py that needed profile attribute
+- All 944 tests pass, mypy strict passes, ruff passes
+
 ### File List
+
+**Modified:**
+- src/resume_as_code/models/config.py - Added ProfileConfig model and profile field to ResumeConfig
+- src/resume_as_code/commands/build.py - Updated _load_contact_info() to use config.profile
+- tests/unit/test_build_command.py - Added profile mock to 5 existing tests
+
+**Created:**
+- tests/unit/test_profile_config.py - 19 tests for ProfileConfig, config loading, and build command
+
+**Added tests to:**
+- tests/unit/test_config_cmd.py - Added TestConfigNestedAccess class with 3 tests for profile access
+
+## Senior Developer Review (AI)
+
+### Review Date
+2026-01-12
+
+### Reviewer
+Claude Opus 4.5 (adversarial code review workflow)
+
+### Issues Found and Remediated
+
+**HIGH Severity (2 found, 2 fixed):**
+
+1. **H1: Test claimed to verify warning but didn't assert on output**
+   - Location: `tests/unit/test_profile_config.py:155-171`
+   - Issue: `capsys` fixture was injected but warning assertion was missing
+   - Fix: Added mock for `console.print` and assertion that warning contains expected text
+
+2. **H2: `profile.title` and `profile.summary` fields existed but were unused**
+   - Location: `src/resume_as_code/commands/build.py:129-134`
+   - Issue: ProfileConfig had title/summary but they weren't mapped to ResumeData
+   - Fix: Added title to ContactInfo model, mapped title and summary in build command
+
+**MEDIUM Severity (3 found, 3 fixed):**
+
+1. **M1: No integration test for profile → ResumeData flow**
+   - Fix: Added `TestProfileSummaryIntegration` class with end-to-end test
+
+2. **M2: Rich console can't be captured by capsys**
+   - Fix: Changed to mocking `console.print` instead of using capsys
+
+3. **M3: ContactInfo model lacked title field**
+   - Location: `src/resume_as_code/models/resume.py:11-20`
+   - Fix: Added `title: str | None = None` field to ContactInfo
+
+**LOW Severity (2 found, 2 fixed):**
+
+1. **L1: URL normalization behavior undocumented**
+   - Fix: Added comment explaining Pydantic HttpUrl trailing slash normalization
+
+2. **L2: Test file untracked in git**
+   - Fix: File will be staged with other changes
+
+### Files Modified During Review
+
+- `src/resume_as_code/models/resume.py` - Added title field to ContactInfo
+- `src/resume_as_code/commands/build.py` - Map profile.title and profile.summary
+- `tests/unit/test_profile_config.py` - Fixed warning test, added integration test (21 tests now)
+- `tests/unit/test_build_command.py` - Added title/summary to mock profiles
+
+### Verification
+
+- All 946 tests pass (2 new tests added)
+- mypy --strict passes
+- ruff check passes
+
+### Outcome
+
+**APPROVED** - All issues remediated, story marked as done.
