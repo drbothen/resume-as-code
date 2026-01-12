@@ -1,6 +1,6 @@
 # Story 4.4: Exclusion Reasoning
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -34,32 +34,32 @@ So that **I trust the system isn't hiding relevant experience**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Extend plan command for exclusions (AC: #1, #4)
-  - [ ] 1.1: Update `commands/plan.py` with exclusion display
-  - [ ] 1.2: Add `--show-excluded` flag
-  - [ ] 1.3: Default to showing top 5 excluded Work Units
-  - [ ] 1.4: Option to show all excluded with `--show-all-excluded`
+- [x] Task 1: Extend plan command for exclusions (AC: #1, #4)
+  - [x] 1.1: Update `commands/plan.py` with exclusion display
+  - [x] 1.2: Add `--show-excluded` flag
+  - [x] 1.3: Default to showing top 5 excluded Work Units
+  - [x] 1.4: Option to show all excluded with `--show-all-excluded`
 
-- [ ] Task 2: Implement exclusion reason generation (AC: #2, #3)
-  - [ ] 2.1: Create `ExclusionReason` enum/model
-  - [ ] 2.2: Generate "Low relevance" reason for scores < 20%
-  - [ ] 2.3: Generate "Below threshold" reason for others
-  - [ ] 2.4: Include score in reason text
+- [x] Task 2: Implement exclusion reason generation (AC: #2, #3)
+  - [x] 2.1: Create `ExclusionReason` enum/model
+  - [x] 2.2: Generate "Low relevance" reason for scores < 20%
+  - [x] 2.3: Generate "Below threshold" reason for others
+  - [x] 2.4: Include score in reason text
 
-- [ ] Task 3: Rich output for exclusions (AC: #1, #5)
-  - [ ] 3.1: Display excluded section with muted styling
-  - [ ] 3.2: Show score, title, and reason for each
-  - [ ] 3.3: Group by exclusion reason if many items
-  - [ ] 3.4: Add suggestions for improving relevance
+- [x] Task 3: Rich output for exclusions (AC: #1, #5)
+  - [x] 3.1: Display excluded section with muted styling
+  - [x] 3.2: Show score, title, and reason for each
+  - [x] 3.3: Group by exclusion reason if many items
+  - [x] 3.4: Add suggestions for improving relevance
 
-- [ ] Task 4: JSON output for exclusions (AC: #1)
-  - [ ] 4.1: Include excluded Work Units in JSON output
-  - [ ] 4.2: Include exclusion reasons in JSON
+- [x] Task 4: JSON output for exclusions (AC: #1)
+  - [x] 4.1: Include excluded Work Units in JSON output
+  - [x] 4.2: Include exclusion reasons in JSON
 
-- [ ] Task 5: Code quality verification
-  - [ ] 5.1: Run `ruff check src tests --fix`
-  - [ ] 5.2: Run `mypy src --strict` with zero errors
-  - [ ] 5.3: Add tests for exclusion reason generation
+- [x] Task 5: Code quality verification
+  - [x] 5.1: Run `ruff check src tests --fix`
+  - [x] 5.2: Run `mypy src --strict` with zero errors
+  - [x] 5.3: Add tests for exclusion reason generation
 
 ## Dev Notes
 
@@ -83,7 +83,6 @@ from dataclasses import dataclass
 class ExclusionType(str, Enum):
     LOW_RELEVANCE = "low_relevance"
     BELOW_THRESHOLD = "below_threshold"
-    SKILL_MISMATCH = "skill_mismatch"
 
 @dataclass
 class ExclusionReason:
@@ -154,11 +153,66 @@ resume --json plan --jd sample-jd.txt
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None required.
+
 ### Completion Notes List
 
+- Created `ExclusionReason` model with `ExclusionType` enum (LOW_RELEVANCE, BELOW_THRESHOLD)
+- Implemented `get_exclusion_reason()` function to determine exclusion reason based on score
+- Added `--show-all-excluded` flag to plan command
+- Updated `_display_excluded()` to use new exclusion reasons with muted styling
+- Added suggestions for low relevance items ("Consider adding JD keywords")
+- Shows "... and X more" when limiting to top 5
+- Updated JSON output to include `excluded` array with `exclusion_reason` objects
+- Added 8 new integration tests for exclusion functionality
+- All tests pass, ruff and mypy clean
+- Note: LOW_RELEVANCE_THRESHOLD (0.2) is currently hardcoded; consider making configurable via `.resume.yaml` in future (aligns with FR32)
+
 ### File List
+
+- src/resume_as_code/models/exclusion.py (NEW)
+- src/resume_as_code/models/__init__.py (MODIFIED)
+- src/resume_as_code/commands/plan.py (MODIFIED)
+- tests/integration/test_plan_command.py (MODIFIED)
+- tests/unit/test_exclusion.py (NEW - added during code review)
+
+## Senior Developer Review (AI)
+
+### Review Date
+2026-01-11
+
+### Reviewer
+Claude Opus 4.5 (Adversarial Code Review)
+
+### Findings Summary
+- **2 HIGH**: Untracked file, missing unit tests
+- **3 MEDIUM**: Story/code mismatch, boundary test missing, hardcoded threshold
+- **2 LOW**: Weak assertions, missing docstring
+
+### Remediation Applied
+All findings were remediated:
+
+1. **H1 Fixed**: Staged `exclusion.py` in git (`git add`)
+2. **H2 Fixed**: Created `tests/unit/test_exclusion.py` with 19 unit tests covering:
+   - `ExclusionType` enum values and string subclass behavior
+   - `ExclusionReason` dataclass creation and `to_dict()` serialization
+   - `get_exclusion_reason()` function for all score ranges
+   - Boundary testing at threshold (0.2)
+3. **M1 Fixed**: Removed `SKILL_MISMATCH` reference from story Dev Notes
+4. **M2 Fixed**: Added `test_boundary_at_threshold_returns_below_threshold` unit test
+5. **M3 Documented**: Added note about future configurable threshold (FR32)
+6. **L1 Fixed**: Strengthened integration test assertions for specific messages
+7. **L2 Fixed**: Added comprehensive docstring to `to_dict()` method
+
+### Verification
+- All 42 related tests pass (19 unit + 23 integration)
+- ruff check: All checks passed
+- mypy --strict: No issues found
+
+### Outcome
+**APPROVED** - Story marked as done
 

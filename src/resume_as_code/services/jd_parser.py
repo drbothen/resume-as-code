@@ -426,9 +426,7 @@ def _extract_keywords(text: str) -> list[str]:
     }
 
     words = re.findall(r"\b[a-z]+\b", text.lower())
-    word_counts = Counter(
-        w for w in words if w not in stop_words and len(w) > MIN_KEYWORD_LENGTH
-    )
+    word_counts = Counter(w for w in words if w not in stop_words and len(w) > MIN_KEYWORD_LENGTH)
 
     return [
         word

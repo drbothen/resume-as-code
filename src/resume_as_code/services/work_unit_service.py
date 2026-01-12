@@ -5,6 +5,10 @@ from __future__ import annotations
 import re
 from datetime import date
 from pathlib import Path
+from typing import Any
+
+from ruamel.yaml import YAML
+from ruamel.yaml.error import YAMLError
 
 from resume_as_code.services.archetype_service import load_archetype
 
@@ -113,3 +117,32 @@ def create_work_unit_file(
     file_path.write_text(content)
 
     return file_path
+
+
+def load_all_work_units(work_units_dir: Path) -> list[dict[str, Any]]:
+    """Load all Work Units from directory.
+
+    Args:
+        work_units_dir: Path to work-units directory.
+
+    Returns:
+        List of Work Unit dictionaries.
+    """
+    if not work_units_dir.exists():
+        return []
+
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    work_units: list[dict[str, Any]] = []
+
+    for yaml_file in sorted(work_units_dir.glob("*.yaml")):
+        try:
+            with yaml_file.open() as f:
+                data = yaml.load(f)
+                if data and isinstance(data, dict):
+                    work_units.append(data)
+        except (YAMLError, OSError):
+            # Skip invalid YAML or unreadable files (caught by validate command)
+            continue
+
+    return work_units

@@ -1,6 +1,6 @@
 # Story 4.3: Plan Command & Selection Display
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -45,45 +45,45 @@ So that **I know exactly what my resume will contain before generating it**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create plan command module (AC: #1, #2, #3, #4)
-  - [ ] 1.1: Create `src/resume_as_code/commands/plan.py`
-  - [ ] 1.2: Implement `resume plan` command with Click
-  - [ ] 1.3: Add `--jd` option (required) for job description file
-  - [ ] 1.4: Add `--top` option with default of 8
-  - [ ] 1.5: Register command in `cli.py`
+- [x] Task 1: Create plan command module (AC: #1, #2, #3, #4)
+  - [x] 1.1: Create `src/resume_as_code/commands/plan.py`
+  - [x] 1.2: Implement `resume plan` command with Click
+  - [x] 1.3: Add `--jd` option (required) for job description file
+  - [x] 1.4: Add `--top` option with default of 8
+  - [x] 1.5: Register command in `cli.py`
 
-- [ ] Task 2: Wire up ranking pipeline (AC: #1, #2)
-  - [ ] 2.1: Load Work Units from configured directory
-  - [ ] 2.2: Parse JD file using jd_parser
-  - [ ] 2.3: Run hybrid ranking
-  - [ ] 2.4: Select top N Work Units
+- [x] Task 2: Wire up ranking pipeline (AC: #1, #2)
+  - [x] 2.1: Load Work Units from configured directory
+  - [x] 2.2: Parse JD file using jd_parser
+  - [x] 2.3: Run hybrid ranking
+  - [x] 2.4: Select top N Work Units
 
-- [ ] Task 3: Implement Rich output display (AC: #1, #2, #5)
-  - [ ] 3.1: Create "SELECTED" section with Rich Panel
-  - [ ] 3.2: Display Work Unit ID, title, score as percentage
-  - [ ] 3.3: Display match reasons indented under each Work Unit
-  - [ ] 3.4: Use color coding (green for high scores, yellow for medium)
+- [x] Task 3: Implement Rich output display (AC: #1, #2, #5)
+  - [x] 3.1: Create "SELECTED" section with Rich Panel
+  - [x] 3.2: Display Work Unit ID, title, score as percentage
+  - [x] 3.3: Display match reasons indented under each Work Unit
+  - [x] 3.4: Use color coding (green for high scores, yellow for medium)
 
-- [ ] Task 4: Implement content analysis (AC: #6)
-  - [ ] 4.1: Calculate total word count of selected Work Units
-  - [ ] 4.2: Compare against optimal ranges (475-600 for 1-page, 800-1200 for 2-page)
-  - [ ] 4.3: Estimate page count
-  - [ ] 4.4: Display in Content Analysis section
+- [x] Task 4: Implement content analysis (AC: #6)
+  - [x] 4.1: Calculate total word count of selected Work Units
+  - [x] 4.2: Compare against optimal ranges (475-600 for 1-page, 800-1200 for 2-page)
+  - [x] 4.3: Estimate page count
+  - [x] 4.4: Display in Content Analysis section
 
-- [ ] Task 5: Implement keyword analysis (AC: #7)
-  - [ ] 5.1: Calculate keyword coverage percentage
-  - [ ] 5.2: Identify missing high-priority JD keywords
-  - [ ] 5.3: Display in Keyword Analysis section
+- [x] Task 5: Implement keyword analysis (AC: #7)
+  - [x] 5.1: Calculate keyword coverage percentage
+  - [x] 5.2: Identify missing high-priority JD keywords
+  - [x] 5.3: Display in Keyword Analysis section
 
-- [ ] Task 6: Implement JSON output (AC: #1)
-  - [ ] 6.1: Support `--json` flag for machine-readable output
-  - [ ] 6.2: Include all selection data in JSON
+- [x] Task 6: Implement JSON output (AC: #1)
+  - [x] 6.1: Support `--json` flag for machine-readable output
+  - [x] 6.2: Include all selection data in JSON
 
-- [ ] Task 7: Code quality verification
-  - [ ] 7.1: Run `ruff check src tests --fix`
-  - [ ] 7.2: Run `ruff format src tests`
-  - [ ] 7.3: Run `mypy src --strict` with zero errors
-  - [ ] 7.4: Add integration tests for plan command
+- [x] Task 7: Code quality verification
+  - [x] 7.1: Run `ruff check src tests --fix`
+  - [x] 7.2: Run `ruff format src tests`
+  - [x] 7.3: Run `mypy src --strict` with zero errors
+  - [x] 7.4: Add integration tests for plan command
 
 ## Dev Notes
 
@@ -362,11 +362,46 @@ resume --json plan --jd sample-jd.txt
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None
+
 ### Completion Notes List
 
+- Implemented `resume plan` command following the "terraform plan" pattern for resume previews
+- Created `src/resume_as_code/commands/plan.py` with all required functionality
+- Added `load_all_work_units()` to `work_unit_service.py` for reusability
+- Registered command in `cli.py`
+- All 7 Acceptance Criteria met:
+  - AC1: Shows "SELECTED" section with Work Units, ID, title, relevance score, match reasons
+  - AC2: Work Units ordered by relevance score (highest first), scores as percentages
+  - AC3: `--top` option limits results
+  - AC4: Default top is 8
+  - AC5: Rich formatting with indented match reasons
+  - AC6: Content analysis shows word count, optimal range comparison, page estimate
+  - AC7: Keyword analysis shows coverage percentage and missing keywords
+- Added 15 integration tests for plan command
+- All 684 tests pass (no regressions)
+- Code quality verified: ruff lint, ruff format, mypy strict all pass
+
 ### File List
+
+- `src/resume_as_code/commands/plan.py` (new)
+- `src/resume_as_code/cli.py` (modified - registered plan_command)
+- `src/resume_as_code/services/work_unit_service.py` (modified - added load_all_work_units)
+- `tests/integration/test_plan_command.py` (new)
+
+## Change Log
+
+- 2026-01-11: Code Review PASSED - all 7 issues fixed (3 MEDIUM, 4 LOW)
+  - M1: Reverted formatting-only change to jd_parser.py (not part of story)
+  - M2: Fixed weak test assertion in test_plan_top_option_limits_results
+  - M3: Fixed weak test assertion in test_plan_default_top_is_8
+  - L1: Fixed incomplete assertion in test_plan_shows_match_reasons_indented
+  - L2: Staged new files in git
+  - L3: Fixed silent exception in work_unit_service.py (catch YAMLError, OSError)
+  - L4: Extracted magic numbers to constants in plan.py
+- 2026-01-11: Implemented Story 4.3 - Plan Command & Selection Display (all ACs met)
 

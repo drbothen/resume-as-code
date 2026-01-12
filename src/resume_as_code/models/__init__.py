@@ -10,6 +10,11 @@ from resume_as_code.models.errors import (
     UserError,
     ValidationError,
 )
+from resume_as_code.models.exclusion import (
+    ExclusionReason,
+    ExclusionType,
+    get_exclusion_reason,
+)
 from resume_as_code.models.job_description import (
     ExperienceLevel,
     JobDescription,
@@ -43,10 +48,12 @@ __all__ = [
     "ConfigSource",
     "ConfigurationError",
     "ConfidenceLevel",
-    "ExperienceLevel",
     "DocumentEvidence",
     "Evidence",
     "EvidenceType",
+    "ExclusionReason",
+    "ExclusionType",
+    "ExperienceLevel",
     "FORMAT_VERSION",
     "Framing",
     "GitRepoEvidence",
@@ -73,4 +80,5 @@ __all__ = [
     "WEAK_VERBS",
     "WorkUnit",
     "WorkUnitConfidence",
+    "get_exclusion_reason",
 ]
