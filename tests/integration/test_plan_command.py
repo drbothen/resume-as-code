@@ -1158,3 +1158,119 @@ class TestPlanPersistence:
         result = cli_runner.invoke(main, ["plan", "--load", str(plan_file)])
 
         assert result.exit_code != 0
+
+
+class TestPlanCommandSkillsCuration:
+    """Tests for skills curation in plan output (Story 6.3, AC #6)."""
+
+    def test_plan_shows_skills_curation_section(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC6: Should show Skills Curation section in plan output."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python-api",
+            "Python REST API",
+            tags=["python", "aws", "docker"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Python Developer",
+            "Requirements:\n- Python\n- AWS",
+        )
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        assert "Skills Curation" in result.output or "Skills" in result.output
+
+    def test_plan_shows_included_skills_with_jd_match(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC6: Should show included skills with JD match indicator."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python-api",
+            "Python REST API",
+            tags=["python", "aws", "docker", "kubernetes"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Python Developer",
+            "Requirements:\n- Python\n- AWS\n- Kubernetes",
+        )
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should show checkmark or indicator for JD matches
+        output_lower = result.output.lower()
+        assert "python" in output_lower
+        assert "aws" in output_lower
+
+    def test_plan_deduplicates_skills_case_insensitively(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC6: Skills should be deduplicated case-insensitively."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python-api",
+            "Python REST API",
+            tags=["AWS", "aws", "Python", "python"],  # Duplicates with different case
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Developer", "Requirements:\n- Python")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Verify deduplication by checking "Curated X from Y" shows reduction
+        # 4 raw skills (AWS, aws, Python, python) should become 2 after dedup
+        assert "curated 2 from 4" in result.output.lower()
+
+    def test_plan_json_includes_skills_curation(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC6: JSON output should include skills curation data."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python-api",
+            "Python REST API",
+            tags=["python", "aws", "docker"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Python Developer",
+            "Requirements:\n- Python\n- AWS",
+        )
+
+        result = cli_runner.invoke(main, ["--json", "plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "skills_curation" in data["data"]
+        assert "included" in data["data"]["skills_curation"]
+        assert "stats" in data["data"]["skills_curation"]

@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
+
+if TYPE_CHECKING:
+    from resume_as_code.models.config import ResumeConfig
 from rich.panel import Panel
 
 from resume_as_code.config import get_config
@@ -19,6 +22,7 @@ from resume_as_code.services.coverage_analyzer import (
 )
 from resume_as_code.services.jd_parser import parse_jd_file
 from resume_as_code.services.ranker import HybridRanker, RankingResult
+from resume_as_code.services.skill_curator import CurationResult, SkillCurator
 from resume_as_code.services.work_unit_service import load_all_work_units
 from resume_as_code.utils.console import console, info, json_output, success, warning
 from resume_as_code.utils.errors import handle_errors
@@ -119,6 +123,14 @@ def plan_command(
     selected_wu_dicts = [r.work_unit for r in selected]
     coverage = analyze_coverage(jd.skills, selected_wu_dicts)
 
+    # Lowercase JD keywords once for reuse in curation and display
+    jd_keywords_lower = {k.lower() for k in jd.keywords}
+
+    # Run skills curation
+    skills_curation = _curate_skills_from_work_units(
+        selected_wu_dicts, config, jd_keywords_lower
+    )
+
     # Save plan if requested
     if output_path:
         plan = SavedPlan.from_ranking(ranking, jd, jd_path, top)
@@ -127,7 +139,7 @@ def plan_command(
 
     # Output
     if ctx.obj.json_output:
-        _output_json(ranking.results, jd, top, coverage)
+        _output_json(ranking.results, jd, top, coverage, skills_curation)
     else:
         _output_rich(
             ranking.results,
@@ -136,7 +148,52 @@ def plan_command(
             show_excluded or show_all_excluded,
             show_all_excluded,
             coverage,
+            skills_curation,
+            jd_keywords_lower,
         )
+
+
+def _curate_skills_from_work_units(
+    work_units: list[dict[str, Any]],
+    config: ResumeConfig,
+    jd_keywords_lower: set[str] | None = None,
+) -> CurationResult:
+    """Extract and curate skills from selected Work Units.
+
+    Args:
+        work_units: List of selected Work Unit dictionaries.
+        config: Resume configuration with skills settings.
+        jd_keywords_lower: Lowercased keywords from job description.
+
+    Returns:
+        CurationResult with curated skills.
+    """
+    # Extract all skills from work units
+    all_skills: set[str] = set()
+    for wu in work_units:
+        # Filter out empty/whitespace tags
+        for tag in wu.get("tags", []):
+            if tag and tag.strip():
+                all_skills.add(tag)
+        # Handle skills_demonstrated which may be list of dicts or strings
+        for skill in wu.get("skills_demonstrated", []):
+            if isinstance(skill, dict):
+                skill_name = skill.get("name", "")
+                if skill_name and skill_name.strip():
+                    all_skills.add(skill_name)
+            else:
+                skill_str = str(skill)
+                if skill_str and skill_str.strip():
+                    all_skills.add(skill_str)
+
+    # Create curator with config settings
+    curator = SkillCurator(
+        max_count=config.skills.max_display,
+        exclude=config.skills.exclude,
+        prioritize=config.skills.prioritize,
+    )
+
+    return curator.curate(all_skills, jd_keywords_lower or set())
 
 
 def _display_saved_plan(plan: SavedPlan, json_mode: bool = False) -> None:
@@ -221,6 +278,8 @@ def _output_rich(
     show_excluded: bool,
     show_all: bool = False,
     coverage: CoverageReport | None = None,
+    skills_curation: CurationResult | None = None,
+    jd_keywords_lower: set[str] | None = None,
 ) -> None:
     """Display plan with Rich formatting."""
     selected = results[:top]
@@ -262,6 +321,10 @@ def _output_rich(
     # Skill Coverage Analysis
     if coverage:
         _display_coverage(coverage)
+
+    # Skills Curation
+    if skills_curation:
+        _display_skills_curation(skills_curation, jd_keywords_lower or set())
 
     # Excluded (if requested)
     if show_excluded and excluded:
@@ -357,6 +420,42 @@ def _display_coverage(report: CoverageReport) -> None:
         console.print(line)
 
 
+def _display_skills_curation(
+    curation_result: CurationResult,
+    jd_keywords_lower: set[str],
+) -> None:
+    """Display skills curation in plan output.
+
+    Args:
+        curation_result: Result from SkillCurator.
+        jd_keywords_lower: Lowercased keywords from job description.
+    """
+    console.print("\n[bold]Skills Curation:[/bold]")
+
+    if not curation_result.included:
+        console.print("  [dim]No skills extracted from selected Work Units[/dim]")
+        return
+
+    # Build skills display with JD match indicators
+    skill_lines = []
+    for skill in curation_result.included:
+        match_indicator = " [green]✓[/green]" if skill.lower() in jd_keywords_lower else ""
+        skill_lines.append(f"  {skill}{match_indicator}")
+
+    for line in skill_lines:
+        console.print(line)
+
+    # Stats
+    stats = curation_result.stats
+    console.print(
+        f"\n[dim]Curated {stats['included']} from {stats['total_raw']} total skills[/dim]"
+    )
+
+    # Excluded count (if any)
+    if curation_result.excluded:
+        console.print(f"[dim]Excluded: {len(curation_result.excluded)} skills[/dim]")
+
+
 def _display_excluded(excluded: list[RankingResult], show_all: bool = False) -> None:
     """Display excluded Work Units with reasons."""
     total_excluded = len(excluded)
@@ -390,10 +489,23 @@ def _output_json(
     jd: Any,
     top: int,
     coverage: CoverageReport | None = None,
+    skills_curation: CurationResult | None = None,
 ) -> None:
     """Output plan as JSON."""
     selected = results[:top]
     excluded = results[top:]
+
+    # Build skills_curation data for JSON
+    skills_curation_data = None
+    if skills_curation:
+        skills_curation_data = {
+            "included": skills_curation.included,
+            "excluded": [
+                {"skill": skill, "reason": reason}
+                for skill, reason in skills_curation.excluded
+            ],
+            "stats": skills_curation.stats,
+        }
 
     response = JSONResponse(
         status="success",
@@ -425,6 +537,7 @@ def _output_json(
             ],
             "excluded_count": len(excluded),
             "coverage": coverage.to_dict() if coverage else None,
+            "skills_curation": skills_curation_data,
         },
     )
     json_output(response.to_json())

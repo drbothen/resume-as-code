@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 
 from resume_as_code.models.certification import Certification
+from resume_as_code.models.config import SkillsConfig
 from resume_as_code.models.resume import (
     ContactInfo,
     ResumeBullet,
@@ -386,3 +387,160 @@ class TestResumeDataCertifications:
         resume = ResumeData(contact=contact, certifications=[])
         active = resume.get_active_certifications()
         assert active == []
+
+
+class TestResumeDataSkillsCuration:
+    """Tests for skills curation integration in ResumeData.from_work_units() (AC #1, #2, #3)."""
+
+    def test_from_work_units_with_skills_config_deduplicates(self) -> None:
+        """Skills should be deduplicated case-insensitively when skills_config provided."""
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Test",
+                "tags": ["AWS", "aws", "Python", "python"],
+                "skills_demonstrated": [],
+                "actions": [],
+                "outcome": {"result": "Done"},
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        skills_config = SkillsConfig()
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            skills_config=skills_config,
+        )
+
+        # Should have 2 skills (AWS and Python) not 4
+        assert len(resume.skills) == 2
+        lower_skills = [s.lower() for s in resume.skills]
+        assert lower_skills.count("aws") == 1
+        assert lower_skills.count("python") == 1
+
+    def test_from_work_units_with_skills_config_respects_max_display(self) -> None:
+        """Skills should be limited to max_display when skills_config provided."""
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Test",
+                "tags": [f"Skill{i}" for i in range(20)],  # 20 skills
+                "skills_demonstrated": [],
+                "actions": [],
+                "outcome": {"result": "Done"},
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        skills_config = SkillsConfig(max_display=5)
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            skills_config=skills_config,
+        )
+
+        assert len(resume.skills) == 5
+
+    def test_from_work_units_with_skills_config_respects_exclude(self) -> None:
+        """Excluded skills should not appear when skills_config provided."""
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Test",
+                "tags": ["Python", "PHP", "JavaScript", "jQuery"],
+                "skills_demonstrated": [],
+                "actions": [],
+                "outcome": {"result": "Done"},
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        skills_config = SkillsConfig(exclude=["PHP", "jQuery"])
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            skills_config=skills_config,
+        )
+
+        assert "PHP" not in resume.skills
+        assert "jQuery" not in resume.skills
+        assert "Python" in resume.skills
+        assert "JavaScript" in resume.skills
+
+    def test_from_work_units_with_jd_keywords_prioritizes_matches(self) -> None:
+        """JD-matching skills should be prioritized when jd_keywords provided."""
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Test",
+                "tags": ["Alpha", "Beta", "Gamma", "Delta"],
+                "skills_demonstrated": [],
+                "actions": [],
+                "outcome": {"result": "Done"},
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        skills_config = SkillsConfig(max_display=3)
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            skills_config=skills_config,
+            jd_keywords={"gamma", "delta"},
+        )
+
+        # Gamma and Delta should be in the top 3 (JD matches prioritized)
+        lower_skills = [s.lower() for s in resume.skills]
+        assert "gamma" in lower_skills
+        assert "delta" in lower_skills
+
+    def test_from_work_units_extracts_from_tags_and_skills_demonstrated(self) -> None:
+        """Skills should be extracted from both tags and skills_demonstrated."""
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Test",
+                "tags": ["Python", "AWS"],
+                "skills_demonstrated": ["Leadership", "Architecture"],
+                "actions": [],
+                "outcome": {"result": "Done"},
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        skills_config = SkillsConfig()
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            skills_config=skills_config,
+        )
+
+        assert len(resume.skills) == 4
+        lower_skills = [s.lower() for s in resume.skills]
+        assert "python" in lower_skills
+        assert "aws" in lower_skills
+        assert "leadership" in lower_skills
+        assert "architecture" in lower_skills
+
+    def test_from_work_units_without_skills_config_uses_old_behavior(self) -> None:
+        """Without skills_config, old alphabetical sorting should be used."""
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Test",
+                "tags": ["Zulu", "Alpha", "Mike"],
+                "skills_demonstrated": [],
+                "actions": [],
+                "outcome": {"result": "Done"},
+            }
+        ]
+        contact = ContactInfo(name="Test")
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+        )
+
+        # Without skills_config, should be alphabetically sorted
+        assert resume.skills == ["Alpha", "Mike", "Zulu"]

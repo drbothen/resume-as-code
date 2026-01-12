@@ -980,9 +980,12 @@ created_at: "2024-01-01T00:00:00"
             assert len(item.bullets) > 0
             assert item.bullets[0].text == "Great outcome"
 
-            # Verify skills were extracted
+            # Verify skills were extracted and deduplicated (Story 6.3)
+            # "Python" from skills_demonstrated and "python" from tags are merged
             assert "Python" in captured_resume_data.skills
-            assert "python" in captured_resume_data.skills  # From tags
+            assert "testing" in captured_resume_data.skills  # From tags
+            # With deduplication, "python" merges with "Python" (title case preferred)
+            assert captured_resume_data.skills.count("Python") == 1  # No duplicates
 
     def test_multiple_work_units_preserve_order(
         self,
@@ -1209,3 +1212,76 @@ created_at: "2024-01-01T00:00:00"
             # Certifications should be empty list
             assert captured_resume_data is not None
             assert captured_resume_data.certifications == []
+
+
+class TestGetJDKeywordsFromPlan:
+    """Tests for _get_jd_keywords_from_plan helper function (Issue 6 - exception handling)."""
+
+    def test_returns_empty_set_when_no_jd_path(self) -> None:
+        """Should return empty set when plan has no jd_path."""
+        from resume_as_code.commands.build import _get_jd_keywords_from_plan
+
+        plan = MagicMock()
+        plan.jd_path = None
+
+        result = _get_jd_keywords_from_plan(plan)
+
+        assert result == set()
+
+    def test_returns_empty_set_when_jd_file_not_exists(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Should return empty set when JD file doesn't exist."""
+        from resume_as_code.commands.build import _get_jd_keywords_from_plan
+
+        plan = MagicMock()
+        plan.jd_path = str(tmp_path / "nonexistent.txt")
+
+        result = _get_jd_keywords_from_plan(plan)
+
+        assert result == set()
+
+    def test_returns_empty_set_when_jd_parsing_fails(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Should return empty set when JD parsing throws an exception."""
+        from resume_as_code.commands.build import _get_jd_keywords_from_plan
+
+        # Create a file with invalid content that will cause parsing to fail
+        jd_file = tmp_path / "invalid_jd.txt"
+        jd_file.write_text("")  # Empty file may cause issues
+
+        plan = MagicMock()
+        plan.jd_path = str(jd_file)
+
+        # Patch at source since parse_jd_file is imported lazily inside the function
+        with patch("resume_as_code.services.jd_parser.parse_jd_file") as mock_parse:
+            mock_parse.side_effect = Exception("Parsing failed")
+            result = _get_jd_keywords_from_plan(plan)
+
+        assert result == set()
+
+    def test_returns_keywords_when_jd_parses_successfully(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Should return keywords when JD file parses successfully."""
+        from resume_as_code.commands.build import _get_jd_keywords_from_plan
+
+        jd_file = tmp_path / "valid_jd.txt"
+        jd_file.write_text("Looking for a Python developer with AWS experience.")
+
+        plan = MagicMock()
+        plan.jd_path = str(jd_file)
+
+        mock_jd = MagicMock()
+        mock_jd.keywords = ["Python", "AWS"]
+
+        # Patch at source since parse_jd_file is imported lazily inside the function
+        with patch("resume_as_code.services.jd_parser.parse_jd_file") as mock_parse:
+            mock_parse.return_value = mock_jd
+            result = _get_jd_keywords_from_plan(plan)
+
+        assert result == {"Python", "AWS"}

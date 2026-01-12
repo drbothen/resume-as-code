@@ -10,6 +10,7 @@ from resume_as_code.models.config import (
     ConfigSource,
     ResumeConfig,
     ScoringWeights,
+    SkillsConfig,
 )
 
 
@@ -186,3 +187,82 @@ class TestConfigSource:
         # None
         source = ConfigSource(value=None, source="default")
         assert source.value is None
+
+
+class TestSkillsConfig:
+    """Test SkillsConfig model for skills curation settings."""
+
+    def test_default_max_display(self) -> None:
+        """Default max_display should be 15."""
+        config = SkillsConfig()
+        assert config.max_display == 15
+
+    def test_default_exclude_is_empty_list(self) -> None:
+        """Default exclude list should be empty."""
+        config = SkillsConfig()
+        assert config.exclude == []
+
+    def test_default_prioritize_is_empty_list(self) -> None:
+        """Default prioritize list should be empty."""
+        config = SkillsConfig()
+        assert config.prioritize == []
+
+    def test_custom_max_display(self) -> None:
+        """SkillsConfig should accept custom max_display."""
+        config = SkillsConfig(max_display=12)
+        assert config.max_display == 12
+
+    def test_custom_exclude_list(self) -> None:
+        """SkillsConfig should accept custom exclude list."""
+        config = SkillsConfig(exclude=["PHP", "jQuery"])
+        assert config.exclude == ["PHP", "jQuery"]
+
+    def test_custom_prioritize_list(self) -> None:
+        """SkillsConfig should accept custom prioritize list."""
+        config = SkillsConfig(prioritize=["Python", "Kubernetes"])
+        assert config.prioritize == ["Python", "Kubernetes"]
+
+    def test_max_display_minimum_bound(self) -> None:
+        """max_display should have minimum value of 1."""
+        with pytest.raises(ValueError):
+            SkillsConfig(max_display=0)
+
+    def test_max_display_maximum_bound(self) -> None:
+        """max_display should have maximum value of 50."""
+        with pytest.raises(ValueError):
+            SkillsConfig(max_display=51)
+
+    def test_full_configuration(self) -> None:
+        """SkillsConfig should accept all fields together."""
+        config = SkillsConfig(
+            max_display=10,
+            exclude=["PHP", "Visual Basic"],
+            prioritize=["Python", "AWS"],
+        )
+        assert config.max_display == 10
+        assert config.exclude == ["PHP", "Visual Basic"]
+        assert config.prioritize == ["Python", "AWS"]
+
+
+class TestResumeConfigSkills:
+    """Test skills field in ResumeConfig."""
+
+    def test_default_skills_config(self) -> None:
+        """ResumeConfig should have default SkillsConfig."""
+        config = ResumeConfig()
+        assert config.skills.max_display == 15
+        assert config.skills.exclude == []
+        assert config.skills.prioritize == []
+
+    def test_custom_skills_config(self) -> None:
+        """ResumeConfig should accept custom skills configuration."""
+        config = ResumeConfig(
+            skills=SkillsConfig(
+                max_display=12,
+                exclude=["PHP"],
+                prioritize=["Python"],
+            )
+        )
+        assert config.skills.max_display == 12
+        assert config.skills.exclude == ["PHP"]
+        assert config.skills.prioritize == ["Python"]

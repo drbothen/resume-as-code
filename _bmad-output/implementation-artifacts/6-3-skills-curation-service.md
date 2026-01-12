@@ -1,6 +1,6 @@
 # Story 6.3: Skills Curation Service
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -39,49 +39,49 @@ So that **recruiters see a focused list instead of a skill dump**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create SkillsConfig model (AC: #4, #5)
-  - [ ] 1.1: Create `SkillsConfig` Pydantic model in `models/config.py`
-  - [ ] 1.2: Add fields: max_display, exclude, prioritize
-  - [ ] 1.3: Add `skills: SkillsConfig` field to `ResumeConfig`
-  - [ ] 1.4: Set sensible defaults (max_display=15)
+- [x] Task 1: Create SkillsConfig model (AC: #4, #5)
+  - [x] 1.1: Create `SkillsConfig` Pydantic model in `models/config.py`
+  - [x] 1.2: Add fields: max_display, exclude, prioritize
+  - [x] 1.3: Add `skills: SkillsConfig` field to `ResumeConfig`
+  - [x] 1.4: Set sensible defaults (max_display=15)
 
-- [ ] Task 2: Create SkillCurator service (AC: #1, #2, #3)
-  - [ ] 2.1: Create `services/skill_curator.py`
-  - [ ] 2.2: Implement case-insensitive deduplication
-  - [ ] 2.3: Implement JD keyword scoring
-  - [ ] 2.4: Implement skill ranking by relevance
-  - [ ] 2.5: Implement max_count limiting
-  - [ ] 2.6: Return both included and excluded skills with reasons
+- [x] Task 2: Create SkillCurator service (AC: #1, #2, #3)
+  - [x] 2.1: Create `services/skill_curator.py`
+  - [x] 2.2: Implement case-insensitive deduplication
+  - [x] 2.3: Implement JD keyword scoring
+  - [x] 2.4: Implement skill ranking by relevance
+  - [x] 2.5: Implement max_count limiting
+  - [x] 2.6: Return both included and excluded skills with reasons
 
-- [ ] Task 3: Integrate with ResumeData (AC: #1, #2)
-  - [ ] 3.1: Update `ResumeData.from_work_units()` to use SkillCurator
-  - [ ] 3.2: Extract skills from all work unit fields (skills, tags)
-  - [ ] 3.3: Pass JD keywords when available
-  - [ ] 3.4: Store curated skills in ResumeData
+- [x] Task 3: Integrate with ResumeData (AC: #1, #2)
+  - [x] 3.1: Update `ResumeData.from_work_units()` to use SkillCurator
+  - [x] 3.2: Extract skills from all work unit fields (skills, tags)
+  - [x] 3.3: Pass JD keywords when available
+  - [x] 3.4: Store curated skills in ResumeData
 
-- [ ] Task 4: Update plan command (AC: #6)
-  - [ ] 4.1: Add skills curation info to plan output
-  - [ ] 4.2: Show included skills with JD match indicator
-  - [ ] 4.3: Show excluded skills with exclusion reason
-  - [ ] 4.4: Display in skill coverage section
+- [x] Task 4: Update plan command (AC: #6)
+  - [x] 4.1: Add skills curation info to plan output
+  - [x] 4.2: Show included skills with JD match indicator
+  - [x] 4.3: Show excluded skills with exclusion reason
+  - [x] 4.4: Display in skill coverage section
 
-- [ ] Task 5: Update build command (AC: #1, #2, #3, #4, #5)
-  - [ ] 5.1: Load SkillsConfig from config
-  - [ ] 5.2: Pass exclude list and max_display to curator
-  - [ ] 5.3: Pass JD keywords to curator when --jd provided
+- [x] Task 5: Update build command (AC: #1, #2, #3, #4, #5)
+  - [x] 5.1: Load SkillsConfig from config
+  - [x] 5.2: Pass exclude list and max_display to curator
+  - [x] 5.3: Pass JD keywords to curator when --jd provided
 
-- [ ] Task 6: Testing
-  - [ ] 6.1: Add unit tests for SkillCurator deduplication
-  - [ ] 6.2: Add unit tests for JD keyword scoring
-  - [ ] 6.3: Add unit tests for skill ranking
-  - [ ] 6.4: Add unit tests for exclude list filtering
-  - [ ] 6.5: Add unit tests for max_display limiting
-  - [ ] 6.6: Add integration tests for plan output
+- [x] Task 6: Testing
+  - [x] 6.1: Add unit tests for SkillCurator deduplication
+  - [x] 6.2: Add unit tests for JD keyword scoring
+  - [x] 6.3: Add unit tests for skill ranking
+  - [x] 6.4: Add unit tests for exclude list filtering
+  - [x] 6.5: Add unit tests for max_display limiting
+  - [x] 6.6: Add integration tests for plan output
 
-- [ ] Task 7: Code quality verification
-  - [ ] 7.1: Run `ruff check src tests --fix`
-  - [ ] 7.2: Run `mypy src --strict` with zero errors
-  - [ ] 7.3: Run `pytest` - all tests pass
+- [x] Task 7: Code quality verification
+  - [x] 7.1: Run `ruff check src tests --fix`
+  - [x] 7.2: Run `mypy src --strict` with zero errors
+  - [x] 7.3: Run `pytest` - all tests pass
 
 ## Dev Notes
 
@@ -464,10 +464,63 @@ uv run resume plan --jd examples/job-description.txt
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-opus-4-5-20251101
 
 ### Debug Log References
 
+None
+
 ### Completion Notes List
 
+- All 7 tasks completed successfully following TDD (Red-Green-Refactor) methodology
+- Created SkillsConfig Pydantic model with max_display, exclude, and prioritize fields
+- Created SkillCurator service with case-insensitive deduplication, JD-based ranking, exclude filtering, and max_count limiting
+- Integrated skill curation into ResumeData.from_work_units() method
+- Added Skills Curation section to plan command output (both Rich and JSON)
+- Updated build command to pass skills_config and jd_keywords to ResumeData
+- All 1033 tests pass, mypy strict mode passes, ruff linting passes
+
 ### File List
+
+**New Files:**
+- `src/resume_as_code/services/skill_curator.py` - SkillCurator service with CurationResult dataclass
+- `tests/unit/test_skill_curator.py` - 20 unit tests for SkillCurator
+
+**Modified Files:**
+- `src/resume_as_code/models/config.py` - Added SkillsConfig model and skills field to ResumeConfig
+- `src/resume_as_code/models/resume.py` - Updated from_work_units() to accept skills_config and jd_keywords
+- `src/resume_as_code/commands/plan.py` - Added skills curation display and JSON output
+- `src/resume_as_code/commands/build.py` - Pass skills_config and jd_keywords to ResumeData
+- `tests/unit/test_config_models.py` - Added 11 tests for SkillsConfig
+- `tests/unit/test_resume_model.py` - Added 6 tests for skills curation integration
+- `tests/unit/test_build_command.py` - Updated test to reflect deduplication behavior
+- `tests/integration/test_plan_command.py` - Added 4 tests for skills curation in plan output
+
+## Code Review Record
+
+### Review Date
+2026-01-12
+
+### Issues Found and Remediated
+
+| # | Severity | Issue | Resolution |
+|---|----------|-------|------------|
+| 1 | Medium | Type annotation uses `Any` instead of `ResumeConfig` in `_curate_skills_from_work_units()` | Added `TYPE_CHECKING` import and proper `ResumeConfig` type annotation |
+| 2 | Low | Empty strings could be added to skills set when extracting from work units | Added filtering for empty/whitespace strings in skill extraction loop |
+| 3 | Low | Missing test coverage for empty/whitespace skill handling | Added `TestSkillCuratorEmptyStrings` class with 3 tests |
+| 4 | N/A | False positive - identified as non-issue during review | No change needed |
+| 5 | Low | Redundant JD keyword lowercasing (done in curator and again in display) | Refactored to lowercase once at call site and pass through |
+| 6 | Low | Missing edge case tests for `_get_jd_keywords_from_plan()` exception handling | Added `TestGetJDKeywordsFromPlan` class with 4 tests |
+
+### Files Modified During Remediation
+
+- `src/resume_as_code/commands/plan.py` - TYPE_CHECKING import, ResumeConfig type, empty string filtering, JD keyword refactor
+- `src/resume_as_code/services/skill_curator.py` - Empty/whitespace string filtering in `_deduplicate()`
+- `tests/unit/test_skill_curator.py` - Added `TestSkillCuratorEmptyStrings` class (3 tests)
+- `tests/unit/test_build_command.py` - Added `TestGetJDKeywordsFromPlan` class (4 tests)
+
+### Verification
+
+- All 1040 tests pass
+- `ruff check` passes
+- `mypy --strict` passes

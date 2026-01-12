@@ -28,6 +28,18 @@ class ProfileConfig(BaseModel):
     summary: str | None = None  # Executive summary template
 
 
+class SkillsConfig(BaseModel):
+    """Configuration for skills curation.
+
+    Controls how skills are deduplicated, filtered, and prioritized
+    for resume display.
+    """
+
+    max_display: int = Field(default=15, ge=1, le=50)
+    exclude: list[str] = Field(default_factory=list)
+    prioritize: list[str] = Field(default_factory=list)
+
+
 class ScoringWeights(BaseModel):
     """Weights for ranking algorithm.
 
@@ -69,6 +81,9 @@ class ResumeConfig(BaseModel):
 
     # Certifications
     certifications: list[Certification] = Field(default_factory=list)
+
+    # Skills curation
+    skills: SkillsConfig = Field(default_factory=SkillsConfig)
 
     @field_validator("output_dir", "work_units_dir", mode="before")
     @classmethod

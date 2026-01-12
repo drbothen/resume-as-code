@@ -109,7 +109,7 @@ development_status:
   epic-6: in-progress
   6-1-profile-configuration-contact-info: done
   6-2-certifications-model-storage: done
-  6-3-skills-curation-service: ready-for-dev
+  6-3-skills-curation-service: done
   6-4-executive-resume-template: ready-for-dev
   6-5-template-certifications-section: ready-for-dev
   6-6-education-model-rendering: ready-for-dev

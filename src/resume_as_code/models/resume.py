@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
 from resume_as_code.models.certification import Certification
+
+if TYPE_CHECKING:
+    from resume_as_code.models.config import SkillsConfig
 
 
 class ContactInfo(BaseModel):
@@ -81,6 +84,8 @@ class ResumeData(BaseModel):
         work_units: list[dict[str, Any]],
         contact: ContactInfo,
         summary: str | None = None,
+        skills_config: SkillsConfig | None = None,
+        jd_keywords: set[str] | None = None,
     ) -> ResumeData:
         """Build ResumeData from selected Work Units.
 
@@ -91,6 +96,8 @@ class ResumeData(BaseModel):
             work_units: List of Work Unit dictionaries.
             contact: Contact information for the resume.
             summary: Optional professional summary.
+            skills_config: Optional skills curation configuration.
+            jd_keywords: Optional JD keywords for skill prioritization.
 
         Returns:
             ResumeData instance ready for rendering.
@@ -127,11 +134,26 @@ class ResumeData(BaseModel):
                 else:
                     all_skills.add(str(skill))
 
+        # Curate skills if config provided, otherwise use legacy sorting
+        if skills_config is not None:
+            from resume_as_code.services.skill_curator import SkillCurator
+
+            curator = SkillCurator(
+                max_count=skills_config.max_display,
+                exclude=skills_config.exclude,
+                prioritize=skills_config.prioritize,
+            )
+            result = curator.curate(all_skills, jd_keywords)
+            curated_skills = result.included
+        else:
+            # Legacy behavior: alphabetical sort
+            curated_skills = sorted(s for s in all_skills if s)
+
         return cls(
             contact=contact,
             summary=summary,
             sections=sections,
-            skills=sorted(s for s in all_skills if s),
+            skills=curated_skills,
         )
 
     @staticmethod

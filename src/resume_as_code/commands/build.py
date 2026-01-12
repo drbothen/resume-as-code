@@ -102,15 +102,17 @@ def build_command(
             "  Use --jd to generate an implicit plan from a job description"
         )
 
-    # Get plan (load or generate)
+    # Get plan (load or generate) and JD keywords for skill curation
+    jd_keywords: set[str] = set()
     if plan_path:
         plan = SavedPlan.load(plan_path)
+        jd_keywords = _get_jd_keywords_from_plan(plan)
         if not ctx.obj.quiet:
             info(f"Loaded plan from: {plan_path}")
     else:
         # Generate implicit plan (same as `resume plan`) (AC: #2)
         assert jd_path is not None  # Guaranteed by validation above
-        plan = _generate_implicit_plan(jd_path, config)
+        plan, jd_keywords = _generate_implicit_plan(jd_path, config)
         if not ctx.obj.quiet:
             info("Generated implicit plan from JD")
 
@@ -125,12 +127,14 @@ def build_command(
             "  Hint: Run 'resume plan --jd <file>' to see Work Unit selection."
         )
 
-    # Build ResumeData
+    # Build ResumeData with skill curation (Story 6.3)
     contact = _load_contact_info(config)
     resume = ResumeData.from_work_units(
         work_units=work_units,
         contact=contact,
         summary=config.profile.summary,  # Load from profile config
+        skills_config=config.skills,  # Pass skills curation config
+        jd_keywords=jd_keywords if jd_keywords else None,  # Pass JD keywords for prioritization
     )
     # Add certifications from config (Story 6.2)
     resume = ResumeData(
@@ -157,7 +161,9 @@ def build_command(
         success(f"Build complete! Files in: {actual_output_dir}")
 
 
-def _generate_implicit_plan(jd_path: Path, config: ResumeConfig) -> SavedPlan:
+def _generate_implicit_plan(
+    jd_path: Path, config: ResumeConfig
+) -> tuple[SavedPlan, set[str]]:
     """Generate plan on-the-fly from JD.
 
     Args:
@@ -165,7 +171,7 @@ def _generate_implicit_plan(jd_path: Path, config: ResumeConfig) -> SavedPlan:
         config: Application configuration.
 
     Returns:
-        SavedPlan created from ranking results.
+        Tuple of (SavedPlan created from ranking results, JD keywords set).
     """
     from resume_as_code.services.jd_parser import parse_jd_file
     from resume_as_code.services.ranker import HybridRanker
@@ -183,7 +189,36 @@ def _generate_implicit_plan(jd_path: Path, config: ResumeConfig) -> SavedPlan:
     )
 
     # Create plan
-    return SavedPlan.from_ranking(ranking, jd, jd_path, top_k=config.default_top_k)
+    plan = SavedPlan.from_ranking(ranking, jd, jd_path, top_k=config.default_top_k)
+
+    # Return both plan and JD keywords for skill curation
+    return plan, set(jd.keywords)
+
+
+def _get_jd_keywords_from_plan(plan: SavedPlan) -> set[str]:
+    """Extract JD keywords from saved plan by re-parsing JD file.
+
+    Args:
+        plan: SavedPlan with jd_path.
+
+    Returns:
+        Set of JD keywords, or empty set if JD file not accessible.
+    """
+    if not plan.jd_path:
+        return set()
+
+    jd_file = Path(plan.jd_path)
+    if not jd_file.exists():
+        return set()
+
+    try:
+        from resume_as_code.services.jd_parser import parse_jd_file
+
+        jd = parse_jd_file(jd_file)
+        return set(jd.keywords)
+    except Exception:
+        # If JD parsing fails, continue without keywords
+        return set()
 
 
 def _load_work_units_from_plan(plan: SavedPlan, config: ResumeConfig) -> list[dict[str, Any]]:
