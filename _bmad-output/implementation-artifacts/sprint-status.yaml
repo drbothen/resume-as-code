@@ -101,17 +101,17 @@ development_status:
   # Gap Analysis: E2E testing revealed "Your Name" placeholder, missing certs, skill dump, no education
   # Architecture Decision (2026-01-12): Normalized positions model per deep research on resume data standards
   # FRs Covered: FR39, FR40, FR41, FR42, FR43, FR44, FR45, FR46, FR47, FR48
-  epic-6: backlog
-  6-1-profile-configuration-contact-info: backlog
-  6-2-certifications-model-storage: backlog
-  6-3-skills-curation-service: backlog
-  6-4-executive-resume-template: backlog
-  6-5-template-certifications-section: backlog
-  6-6-education-model-rendering: backlog
-  6-7-positions-data-model-employment-history: backlog  # Renamed: normalized architecture
-  6-8-position-management-commands: backlog  # Human-friendly UX
-  6-9-inline-position-creation: backlog  # LLM-optimized UX
-  6-10-claude-md-documentation-update: backlog
-  6-11-certification-management-commands: backlog
-  6-12-education-management-commands: backlog
+  epic-6: in-progress
+  6-1-profile-configuration-contact-info: ready-for-dev
+  6-2-certifications-model-storage: ready-for-dev
+  6-3-skills-curation-service: ready-for-dev
+  6-4-executive-resume-template: ready-for-dev
+  6-5-template-certifications-section: ready-for-dev
+  6-6-education-model-rendering: ready-for-dev
+  6-7-positions-data-model-employment-history: ready-for-dev  # Renamed: normalized architecture
+  6-8-position-management-commands: ready-for-dev  # Human-friendly UX
+  6-9-inline-position-creation: ready-for-dev  # LLM-optimized UX
+  6-10-claude-md-documentation-update: ready-for-dev
+  6-11-certification-management-commands: ready-for-dev
+  6-12-education-management-commands: ready-for-dev
   epic-6-retrospective: optional

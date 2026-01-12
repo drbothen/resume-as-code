@@ -1,0 +1,559 @@
+# Story 6.5: Template Certifications Section
+
+Status: ready-for-dev
+
+## Story
+
+As a **user with professional certifications**,
+I want **certifications to render properly in all templates**,
+So that **recruiters see my credentials regardless of template choice**.
+
+## Acceptance Criteria
+
+1. **Given** certifications exist in config
+   **When** the modern template renders
+   **Then** a "Certifications" section appears after Education
+
+2. **Given** certifications exist in config
+   **When** the executive template renders
+   **Then** certifications appear prominently (after Experience or Core Competencies)
+
+3. **Given** certifications exist in config
+   **When** the ats-safe template renders
+   **Then** certifications use plain text formatting for maximum parseability
+
+4. **Given** a certification has all fields populated
+   **When** it renders
+   **Then** format is: "AWS Solutions Architect - Professional, Amazon Web Services, June 2024"
+
+5. **Given** a certification has only name and date
+   **When** it renders
+   **Then** format is: "CISSP, 2023"
+
+6. **Given** certifications render in PDF
+   **When** I inspect the layout
+   **Then** certifications are in a clean list or grid format
+   **And** credential IDs are not shown (too detailed for resume)
+
+7. **Given** certifications render in DOCX
+   **When** I open in Word
+   **Then** certifications use proper Word list formatting
+   **And** can be edited/removed by user
+
+## Tasks / Subtasks
+
+- [ ] Task 1: Update modern template (AC: #1, #4, #5, #6)
+  - [ ] 1.1: Add certifications section to `modern.html`
+  - [ ] 1.2: Position after Education section
+  - [ ] 1.3: Use Jinja2 conditional for presence check
+  - [ ] 1.4: Format with name, issuer, date (no credential_id)
+  - [ ] 1.5: Add CSS styling to `modern.css`
+
+- [ ] Task 2: Update executive template (AC: #2, #4, #5, #6)
+  - [ ] 2.1: Add certifications section to `executive.html`
+  - [ ] 2.2: Position prominently (after Core Competencies)
+  - [ ] 2.3: Style consistently with executive design
+  - [ ] 2.4: Add styling to `executive.css`
+
+- [ ] Task 3: Create/update ATS-safe template (AC: #3, #4, #5)
+  - [ ] 3.1: Create `ats-safe.html` if not exists
+  - [ ] 3.2: Use plain text formatting (no fancy styling)
+  - [ ] 3.3: Standard section header "CERTIFICATIONS"
+  - [ ] 3.4: Simple list format for maximum ATS parseability
+  - [ ] 3.5: Create minimal `ats-safe.css`
+
+- [ ] Task 4: Update DOCX provider (AC: #7)
+  - [ ] 4.1: Add `_add_certifications_section()` method
+  - [ ] 4.2: Use Word heading style for section
+  - [ ] 4.3: Use proper Word bullet list
+  - [ ] 4.4: Format certification entries consistently
+
+- [ ] Task 5: Create certification display helper (AC: #4, #5)
+  - [ ] 5.1: Create helper function for formatting certification display
+  - [ ] 5.2: Handle all field combinations gracefully
+  - [ ] 5.3: Never show credential_id in resume output
+
+- [ ] Task 6: Testing
+  - [ ] 6.1: Add tests for modern template certifications
+  - [ ] 6.2: Add tests for executive template certifications
+  - [ ] 6.3: Add tests for ats-safe template certifications
+  - [ ] 6.4: Add tests for DOCX certifications
+  - [ ] 6.5: Test partial certification data handling
+  - [ ] 6.6: Visual inspection of all outputs
+
+- [ ] Task 7: Code quality verification
+  - [ ] 7.1: Run `ruff check src tests --fix`
+  - [ ] 7.2: Run `mypy src --strict` with zero errors
+  - [ ] 7.3: Run `pytest` - all tests pass
+
+## Dev Notes
+
+### Architecture Compliance
+
+This story implements FR43 (certifications rendering in templates) and ensures all templates can display certifications consistently. It builds on Story 6.2 (Certifications Model) and Story 6.4 (Executive Template).
+
+**Critical Rules from project-context.md:**
+- Templates render gracefully when optional sections missing
+- Use Jinja2 conditionals for all optional content
+- ATS-safe template prioritizes parseability over visual design
+
+### Certification Display Format
+
+```python
+# Helper function for consistent formatting across templates
+
+def format_certification_for_display(cert: Certification) -> str:
+    """Format certification for resume display.
+
+    Full format: "AWS Solutions Architect - Professional, Amazon Web Services, June 2024"
+    Minimal format: "CISSP, 2023"
+
+    Note: credential_id and url are NEVER shown in resume output.
+    """
+    parts = [cert.name]
+
+    if cert.issuer:
+        parts.append(cert.issuer)
+
+    if cert.date:
+        # Convert YYYY-MM to "Month YYYY" or just "YYYY"
+        year = cert.date[:4]
+        month = cert.date[5:7] if len(cert.date) > 4 else None
+        if month:
+            month_names = {
+                "01": "January", "02": "February", "03": "March",
+                "04": "April", "05": "May", "06": "June",
+                "07": "July", "08": "August", "09": "September",
+                "10": "October", "11": "November", "12": "December"
+            }
+            parts.append(f"{month_names.get(month, month)} {year}")
+        else:
+            parts.append(year)
+
+    return ", ".join(parts)
+```
+
+### Modern Template Update
+
+```html
+<!-- In templates/modern.html - add after Education section -->
+
+{% if resume.certifications %}
+<section class="certifications">
+  <h2>Certifications</h2>
+  <ul class="cert-list">
+    {% for cert in resume.certifications %}
+    {% if cert.display is not defined or cert.display %}
+    <li>
+      <strong>{{ cert.name }}</strong>
+      {%- if cert.issuer %}, {{ cert.issuer }}{% endif %}
+      {%- if cert.date %}, {{ cert.date[:4] }}{% endif %}
+    </li>
+    {% endif %}
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+```
+
+### Modern CSS
+
+```css
+/* In templates/modern.css */
+
+.certifications {
+  margin-top: 1.5em;
+}
+
+.certifications h2 {
+  font-size: 14pt;
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.25em;
+  margin-bottom: 0.5em;
+}
+
+.cert-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cert-list li {
+  margin-bottom: 0.4em;
+  padding-left: 1em;
+  position: relative;
+}
+
+.cert-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #333;
+}
+```
+
+### Executive Template Update
+
+```html
+<!-- In templates/executive.html - after Core Competencies -->
+
+{% if resume.certifications %}
+<section class="certifications">
+  <h2>Certifications</h2>
+  <div class="cert-grid">
+    {% for cert in resume.certifications %}
+    {% if cert.display is not defined or cert.display %}
+    <div class="cert-item">
+      <strong>{{ cert.name }}</strong>
+      {% if cert.issuer %}<span class="issuer">{{ cert.issuer }}</span>{% endif %}
+      {% if cert.date %}<span class="date">{{ cert.date[:4] }}</span>{% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+```
+
+### Executive CSS for Certifications
+
+```css
+/* In templates/executive.css */
+
+.certifications {
+  margin-top: 1.25em;
+}
+
+.cert-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5em;
+}
+
+.cert-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.cert-item strong {
+  color: #1a1a1a;
+}
+
+.cert-item .issuer {
+  font-size: 10pt;
+  color: #555;
+}
+
+.cert-item .date {
+  font-size: 10pt;
+  color: #777;
+}
+```
+
+### ATS-Safe Template
+
+```html
+<!-- templates/ats-safe.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="ats-safe.css">
+</head>
+<body>
+  <header>
+    <h1>{{ resume.contact.name }}</h1>
+    <p>
+      {{ resume.contact.email }}
+      {% if resume.contact.phone %} | {{ resume.contact.phone }}{% endif %}
+      {% if resume.contact.location %} | {{ resume.contact.location }}{% endif %}
+    </p>
+  </header>
+
+  {% if resume.summary %}
+  <section>
+    <h2>PROFESSIONAL SUMMARY</h2>
+    <p>{{ resume.summary }}</p>
+  </section>
+  {% endif %}
+
+  <section>
+    <h2>PROFESSIONAL EXPERIENCE</h2>
+    {% for entry in resume.experience %}
+    <div class="job">
+      <p><strong>{{ entry.title }}</strong> | {{ entry.company }} | {{ entry.start_date }} - {{ entry.end_date or "Present" }}</p>
+      <ul>
+        {% for achievement in entry.achievements %}
+        <li>{{ achievement }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </section>
+
+  {% if resume.certifications %}
+  <section>
+    <h2>CERTIFICATIONS</h2>
+    <ul>
+      {% for cert in resume.certifications %}
+      {% if cert.display is not defined or cert.display %}
+      <li>{{ cert.name }}{% if cert.issuer %}, {{ cert.issuer }}{% endif %}{% if cert.date %}, {{ cert.date[:4] }}{% endif %}</li>
+      {% endif %}
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if resume.education %}
+  <section>
+    <h2>EDUCATION</h2>
+    {% for edu in resume.education %}
+    <p>{{ edu.degree }}, {{ edu.institution }}{% if edu.year %}, {{ edu.year }}{% endif %}</p>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if resume.skills %}
+  <section>
+    <h2>SKILLS</h2>
+    <p>{{ resume.skills | join(", ") }}</p>
+  </section>
+  {% endif %}
+</body>
+</html>
+```
+
+### ATS-Safe CSS
+
+```css
+/* templates/ats-safe.css - Minimal styling for ATS parseability */
+
+body {
+  font-family: Arial, sans-serif;
+  font-size: 11pt;
+  line-height: 1.4;
+  color: #000;
+  margin: 1in;
+}
+
+h1 {
+  font-size: 16pt;
+  margin: 0 0 0.25em 0;
+}
+
+h2 {
+  font-size: 12pt;
+  font-weight: bold;
+  margin: 1em 0 0.5em 0;
+  border-bottom: 1px solid #000;
+}
+
+ul {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+li {
+  margin-bottom: 0.25em;
+}
+
+p {
+  margin: 0.25em 0;
+}
+
+.job {
+  margin-bottom: 1em;
+}
+```
+
+### DOCX Provider Update
+
+```python
+# In providers/docx.py
+
+def _add_certifications_section(
+    self,
+    document: Document,
+    certifications: list[Certification],
+) -> None:
+    """Add certifications section to DOCX."""
+    if not certifications:
+        return
+
+    # Add section heading
+    document.add_heading("Certifications", level=2)
+
+    # Add as bullet list
+    for cert in certifications:
+        if cert.display is False:
+            continue
+
+        # Format certification text
+        parts = [cert.name]
+        if cert.issuer:
+            parts.append(cert.issuer)
+        if cert.date:
+            parts.append(cert.date[:4])  # Year only
+
+        text = ", ".join(parts)
+        document.add_paragraph(text, style="List Bullet")
+```
+
+### Dependencies
+
+This story REQUIRES:
+- Story 6.2 (Certifications Model) - Certification data available
+- Story 6.4 (Executive Template) - Base executive template [should be ready-for-dev]
+- Story 5.1 (Resume Data Model) - ResumeData structure [DONE]
+- Story 5.2 (PDF Provider) - PDF rendering [DONE]
+- Story 5.3 (DOCX Provider) - DOCX rendering [DONE]
+
+This story ENABLES:
+- Complete certification support across all output formats
+- Story 6.11 (Certification Management Commands)
+
+### Files to Create/Modify
+
+**New Files:**
+- `src/resume_as_code/templates/ats-safe.html` - ATS-optimized template
+- `src/resume_as_code/templates/ats-safe.css` - ATS-optimized styling
+- `tests/unit/test_template_certifications.py` - Certification rendering tests
+
+**Modified Files:**
+- `src/resume_as_code/templates/modern.html` - Add certifications section
+- `src/resume_as_code/templates/modern.css` - Add certifications styling
+- `src/resume_as_code/templates/executive.html` - Add certifications section
+- `src/resume_as_code/templates/executive.css` - Add certifications styling
+- `src/resume_as_code/providers/docx.py` - Add `_add_certifications_section()`
+- `src/resume_as_code/providers/pdf.py` - Register ats-safe template
+
+### Testing Strategy
+
+```python
+# tests/unit/test_template_certifications.py
+
+import pytest
+from pathlib import Path
+
+from resume_as_code.models.resume import ResumeData, ContactInfo
+from resume_as_code.models.certification import Certification
+
+
+class TestCertificationsInTemplates:
+    """Tests for certification rendering across templates."""
+
+    @pytest.fixture
+    def sample_certifications(self):
+        return [
+            Certification(
+                name="AWS Solutions Architect - Professional",
+                issuer="Amazon Web Services",
+                date="2024-06",
+            ),
+            Certification(
+                name="CISSP",
+                issuer="ISC²",
+                date="2023-01",
+            ),
+            Certification(
+                name="Old Cert",
+                display=False,  # Should be hidden
+            ),
+        ]
+
+    def test_modern_template_renders_certs(self, tmp_path, sample_certifications):
+        """Modern template should render certifications section."""
+        # Test implementation
+        pass
+
+    def test_executive_template_renders_certs(self, tmp_path, sample_certifications):
+        """Executive template should render certifications prominently."""
+        pass
+
+    def test_ats_safe_template_renders_certs(self, tmp_path, sample_certifications):
+        """ATS-safe template should render certifications as plain list."""
+        pass
+
+    def test_docx_renders_certs(self, tmp_path, sample_certifications):
+        """DOCX provider should render certifications with Word formatting."""
+        pass
+
+    def test_hidden_cert_not_rendered(self, tmp_path, sample_certifications):
+        """Certifications with display=False should not appear."""
+        pass
+
+    def test_partial_cert_data(self, tmp_path):
+        """Should handle certifications with minimal data."""
+        cert = Certification(name="Basic Cert")
+        # Should render as just "Basic Cert"
+        pass
+
+    def test_no_credential_id_in_output(self, tmp_path):
+        """Credential IDs should never appear in resume output."""
+        cert = Certification(
+            name="AWS SAP",
+            credential_id="ABC123XYZ",  # Should NOT appear
+        )
+        # Verify credential_id not in rendered output
+        pass
+```
+
+### Verification Commands
+
+```bash
+# After implementation, verify:
+uv run ruff check src tests --fix
+uv run mypy src --strict
+uv run pytest tests/unit/test_template_certifications.py -v
+
+# Manual verification - generate all formats:
+uv run resume build --jd examples/job-description.txt --template modern
+uv run resume build --jd examples/job-description.txt --template executive
+uv run resume build --jd examples/job-description.txt --template ats-safe
+
+# Check each output:
+# - Certifications section present
+# - Proper formatting (name, issuer, year)
+# - No credential_id shown
+# - Hidden certs not displayed
+```
+
+### Visual Verification Checklist
+
+**Modern Template:**
+- [ ] Certifications section after Education
+- [ ] Bullet list format
+- [ ] Name bold, issuer and year follow
+
+**Executive Template:**
+- [ ] Certifications prominent (after Core Competencies)
+- [ ] Grid or styled layout
+- [ ] Consistent with executive design
+
+**ATS-Safe Template:**
+- [ ] Plain text formatting
+- [ ] Standard "CERTIFICATIONS" header
+- [ ] Simple list for maximum parseability
+
+**DOCX:**
+- [ ] Word heading style
+- [ ] Proper bullet list
+- [ ] Editable by user
+
+### References
+
+- [Source: epics.md#Story 6.5](_bmad-output/planning-artifacts/epics.md)
+- [Related: Story 6.2 Certifications Model](_bmad-output/implementation-artifacts/6-2-certifications-model-storage.md)
+- [Related: Story 6.4 Executive Template](_bmad-output/implementation-artifacts/6-4-executive-resume-template.md)
+
+## Dev Agent Record
+
+### Agent Model Used
+
+{{agent_model_name_version}}
+
+### Debug Log References
+
+### Completion Notes List
+
+### File List
