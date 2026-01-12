@@ -117,6 +117,14 @@ This story implements FR53 (CTO Resume Template) based on CTO resume research (2
 - Templates render gracefully when optional sections missing
 - Single-column layout for ATS compatibility (94-97% parsing accuracy)
 
+### Project Structure Notes
+
+- **Alignment:** Follows Jinja2 template inheritance pattern, extends executive template
+- **Paths:** New templates in `templates/cto.html` and `templates/cto.css`
+- **Modules:** Template registration in `services/template_provider.py`
+- **Naming:** `cto` template name, CSS class prefix `.cto-` for variant-specific styles
+- **Conflicts:** None detected - uses inheritance to share base styling with executive template
+
 ### CTO Template Structure
 
 ```html

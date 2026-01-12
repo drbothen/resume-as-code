@@ -100,6 +100,14 @@ This story implements FR49 (Career Highlights) based on CTO resume research (202
 - Templates render gracefully when optional sections missing
 - Use Jinja2 conditionals for all optional content
 
+### Project Structure Notes
+
+- **Alignment:** Follows existing config extension pattern from Story 6.1 (ProfileConfig)
+- **Paths:** New field in `models/config.py`, template updates in `templates/executive.html`
+- **Modules:** Config model extension, no new modules required
+- **Naming:** `career_highlights` follows snake_case convention per Architecture
+- **Conflicts:** None detected - extends existing patterns without breaking changes
+
 ### Career Highlights Template Structure
 
 ```html

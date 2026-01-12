@@ -134,6 +134,14 @@ This story implements FR51 (Publications & Speaking) based on CTO resume researc
 - Use `HttpUrl` type for URL fields with proper validation
 - Templates render gracefully when optional sections missing
 
+### Project Structure Notes
+
+- **Alignment:** Follows existing model pattern from Certifications (Story 6.2) and Board Roles (Story 6.14)
+- **Paths:** New model in `models/publication.py`, commands in `commands/publications.py`
+- **Modules:** New Publication model, new publications command module
+- **Naming:** `publications`, `Publication`, `PublicationType` follow project conventions
+- **Conflicts:** None detected - mirrors board_roles pattern exactly
+
 ### Publication Model Design
 
 ```python

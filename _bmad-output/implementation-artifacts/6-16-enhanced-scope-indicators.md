@@ -132,6 +132,14 @@ This story implements FR52 (Enhanced Scope Indicators) based on CTO resume resea
 - Templates render gracefully when optional data missing
 - Services do the heavy lifting, commands orchestrate
 
+### Project Structure Notes
+
+- **Alignment:** Extends existing Position model from Story 6.7 (positions data model)
+- **Paths:** Extends `models/position.py`, adds service function in `services/position_service.py`
+- **Modules:** No new modules - extends existing position model and service
+- **Naming:** `PositionScope`, `scope`, `format_scope_line()` follow project conventions
+- **Conflicts:** None detected - additive change to existing Position model
+
 ### PositionScope Model Design
 
 ```python

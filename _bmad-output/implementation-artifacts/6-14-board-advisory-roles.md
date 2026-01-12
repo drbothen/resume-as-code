@@ -127,6 +127,14 @@ This story implements FR50 (Board & Advisory Roles) based on CTO resume research
 - Templates render gracefully when optional sections missing
 - Services do the heavy lifting, commands orchestrate
 
+### Project Structure Notes
+
+- **Alignment:** Follows existing model pattern from Certifications (Story 6.2)
+- **Paths:** New model in `models/board_role.py`, commands in `commands/board_roles.py`
+- **Modules:** New BoardRole model, new board_roles command module
+- **Naming:** `board_roles`, `BoardRole`, `BoardRoleType` follow project conventions
+- **Conflicts:** None detected - new model follows established patterns from certifications/education
+
 ### BoardRole Model Design
 
 ```python
