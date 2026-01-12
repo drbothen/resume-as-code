@@ -1,6 +1,6 @@
 # Story 4.5: Skill Coverage & Gap Analysis
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -35,26 +35,26 @@ So that **I can honestly assess my fit for the role**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create coverage analysis service (AC: #1, #2, #3, #4)
-  - [ ] 1.1: Create `src/resume_as_code/services/coverage_analyzer.py`
-  - [ ] 1.2: Implement skill matching against Work Units
-  - [ ] 1.3: Categorize matches as strong (✓), weak (△), or gap (✗)
-  - [ ] 1.4: Return coverage matrix with Work Unit references
+- [x] Task 1: Create coverage analysis service (AC: #1, #2, #3, #4)
+  - [x] 1.1: Create `src/resume_as_code/services/coverage_analyzer.py`
+  - [x] 1.2: Implement skill matching against Work Units
+  - [x] 1.3: Categorize matches as strong (✓), weak (△), or gap (✗)
+  - [x] 1.4: Return coverage matrix with Work Unit references
 
-- [ ] Task 2: Integrate into plan command (AC: #1)
-  - [ ] 2.1: Call coverage analyzer after ranking
-  - [ ] 2.2: Display COVERAGE section in Rich output
-  - [ ] 2.3: Add to JSON output
+- [x] Task 2: Integrate into plan command (AC: #1)
+  - [x] 2.1: Call coverage analyzer after ranking
+  - [x] 2.2: Display COVERAGE section in Rich output
+  - [x] 2.3: Add to JSON output
 
-- [ ] Task 3: Rich output for coverage (AC: #1, #2, #3, #4)
-  - [ ] 3.1: Use color-coded symbols (green ✓, yellow △, red ✗)
-  - [ ] 3.2: Show matching Work Unit IDs for covered skills
-  - [ ] 3.3: Display coverage summary percentage
+- [x] Task 3: Rich output for coverage (AC: #1, #2, #3, #4)
+  - [x] 3.1: Use color-coded symbols (green ✓, yellow △, red ✗)
+  - [x] 3.2: Show matching Work Unit IDs for covered skills
+  - [x] 3.3: Display coverage summary percentage
 
-- [ ] Task 4: Code quality verification
-  - [ ] 4.1: Run `ruff check src tests --fix`
-  - [ ] 4.2: Run `mypy src --strict` with zero errors
-  - [ ] 4.3: Add tests for coverage analysis
+- [x] Task 4: Code quality verification
+  - [x] 4.1: Run `ruff check src tests --fix`
+  - [x] 4.2: Run `mypy src --strict` with zero errors
+  - [x] 4.3: Add tests for coverage analysis
 
 ## Dev Notes
 
@@ -241,11 +241,70 @@ resume --json plan --jd sample-jd.txt | jq '.data.coverage'
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+- Created `coverage_analyzer.py` service with `CoverageLevel` enum, `SkillCoverage` and `CoverageReport` dataclasses
+- Implemented `analyze_coverage()` function that:
+  - Matches JD skills against Work Unit tags and skills_demonstrated (strong match)
+  - Matches against Work Unit text content (weak match)
+  - Returns gap status for unmatched skills
+  - Case-insensitive matching
+- Integrated coverage analysis into `plan.py` command:
+  - Called after ranking, using selected Work Units only
+  - Added `_display_coverage()` function for Rich output with color-coded symbols
+  - Added coverage data to JSON output via `to_dict()` serialization
+- Added 20 unit tests in `test_coverage_analyzer.py` covering all data classes and functions
+- Added 5 integration tests in `test_plan_command.py` for coverage display and JSON output
+- All 736 tests pass
+- ruff check and mypy --strict pass with zero errors
+
 ### File List
+
+- src/resume_as_code/services/coverage_analyzer.py (created)
+- src/resume_as_code/commands/plan.py (modified)
+- tests/unit/test_coverage_analyzer.py (created)
+- tests/integration/test_plan_command.py (modified)
+
+## Senior Developer Review (AI)
+
+**Reviewer:** Claude Opus 4.5 (Adversarial Code Review)
+**Date:** 2026-01-11
+**Outcome:** APPROVED with fixes applied
+
+### Issues Found & Remediated
+
+| # | Severity | Issue | Resolution |
+|---|----------|-------|------------|
+| 1 | MEDIUM | New files not staged in git | Staged `coverage_analyzer.py` and `test_coverage_analyzer.py` |
+| 2 | MEDIUM | Code duplication (`_extract_wu_text` in 3 files) | Created shared `utils/work_unit_text.py`, refactored all usages |
+| 3 | LOW | Missing test for dict-format skills_demonstrated | Added `test_dict_format_skills_demonstrated` test |
+| 4 | LOW | Module not exported in services `__init__.py` | Added exports for `CoverageLevel`, `CoverageReport`, `SkillCoverage`, `analyze_coverage` |
+| 5 | LOW | AC3 "Weak signal" text not shown | Added "Weak signal" indicator for weak coverage matches |
+
+### Files Modified During Review
+
+- src/resume_as_code/utils/work_unit_text.py (created - shared utility)
+- src/resume_as_code/utils/__init__.py (modified - exports)
+- src/resume_as_code/services/__init__.py (modified - exports)
+- src/resume_as_code/services/coverage_analyzer.py (modified - use shared utility)
+- src/resume_as_code/services/ranker.py (modified - use shared utility)
+- src/resume_as_code/commands/plan.py (modified - use shared utility, add "Weak signal")
+- tests/unit/test_coverage_analyzer.py (modified - add dict-format test)
+
+### Verification
+
+- All 737 tests pass (added 1 new test)
+- ruff check passes
+- mypy --strict passes
+
+## Change Log
+
+- 2026-01-11: Implemented skill coverage & gap analysis feature (Story 4.5)
+- 2026-01-11: Code review: Fixed 5 issues, refactored duplicate code, added missing test
 

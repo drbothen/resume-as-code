@@ -626,6 +626,152 @@ class TestPlanCommandExclusionReasons:
         assert "%" in excluded_section, "Exclusion reasons should include score percentages"
 
 
+class TestPlanCommandCoverage:
+    """Tests for skill coverage analysis (Story 4.5)."""
+
+    def test_plan_shows_coverage_section(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC1: Should show COVERAGE section in plan output."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python-api",
+            "Python REST API",
+            tags=["python", "api"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Python Developer",
+            "Requirements:\n- Python\n- API design",
+        )
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        assert "Coverage" in result.output
+
+    def test_plan_shows_coverage_symbols(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC1: Should show ✓, △, ✗ symbols for coverage levels."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python Project",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Developer",
+            "Requirements:\n- Python\n- Rust",  # Python covered, Rust gap
+        )
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should show coverage symbols
+        output = result.output
+        assert "✓" in output or "✗" in output or "△" in output
+
+    def test_plan_shows_coverage_percentage(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC1: Should show coverage percentage summary."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python Project",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Developer", "Requirements:\n- Python")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should show coverage percentage in coverage section
+        assert "Coverage" in result.output and "%" in result.output
+
+    def test_plan_json_includes_coverage(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC5: JSON output should include coverage data."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python API",
+            tags=["python", "api"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Python Developer",
+            "Requirements:\n- Python\n- API\n- Rust",
+        )
+
+        result = cli_runner.invoke(main, ["--json", "plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "coverage" in data["data"]
+        assert "items" in data["data"]["coverage"]
+        assert "coverage_percentage" in data["data"]["coverage"]
+
+    def test_plan_json_coverage_includes_gaps(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC5: JSON output should clearly enumerate gaps."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Python Project",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Developer",
+            "Requirements:\n- Python\n- Rust\n- Go",  # Rust and Go are gaps
+        )
+
+        result = cli_runner.invoke(main, ["--json", "plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        coverage = data["data"]["coverage"]
+
+        # Check for gaps in items
+        gaps = [item for item in coverage["items"] if item["level"] == "gap"]
+        assert len(gaps) >= 2  # Rust and Go should be gaps
+
+
 class TestPlanCommandExclusionJsonOutput:
     """Tests for JSON output of exclusions (Story 4.4, AC #1)."""
 

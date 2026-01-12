@@ -30,3 +30,4 @@ dist/
 
 # Python packaging
 *.egg-info/
+.coverage

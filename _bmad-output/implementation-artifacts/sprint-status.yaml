@@ -80,7 +80,7 @@ development_status:
   4-2-bm25-ranking-engine: done
   4-3-plan-command-selection-display: done
   4-4-exclusion-reasoning: done
-  4-5-skill-coverage-gap-analysis: ready-for-dev
+  4-5-skill-coverage-gap-analysis: done
   4-6-plan-persistence: ready-for-dev
   epic-4-retrospective: optional
 

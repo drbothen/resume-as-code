@@ -11,11 +11,17 @@ from rich.panel import Panel
 from resume_as_code.config import get_config
 from resume_as_code.models.exclusion import get_exclusion_reason
 from resume_as_code.models.output import JSONResponse
+from resume_as_code.services.coverage_analyzer import (
+    CoverageLevel,
+    CoverageReport,
+    analyze_coverage,
+)
 from resume_as_code.services.jd_parser import parse_jd_file
 from resume_as_code.services.ranker import HybridRanker, RankingResult
 from resume_as_code.services.work_unit_service import load_all_work_units
 from resume_as_code.utils.console import console, info, json_output, warning
 from resume_as_code.utils.errors import handle_errors
+from resume_as_code.utils.work_unit_text import extract_work_unit_text
 
 # Content analysis thresholds
 WORDS_PER_PAGE = 500
@@ -82,12 +88,22 @@ def plan_command(
     ranker = HybridRanker()
     ranking = ranker.rank(work_units, jd, top_k=top)
 
+    # Run coverage analysis on selected Work Units
+    selected = ranking.results[:top]
+    selected_wu_dicts = [r.work_unit for r in selected]
+    coverage = analyze_coverage(jd.skills, selected_wu_dicts)
+
     # Output
     if ctx.obj.json_output:
-        _output_json(ranking.results, jd, top)
+        _output_json(ranking.results, jd, top, coverage)
     else:
         _output_rich(
-            ranking.results, jd, top, show_excluded or show_all_excluded, show_all_excluded
+            ranking.results,
+            jd,
+            top,
+            show_excluded or show_all_excluded,
+            show_all_excluded,
+            coverage,
         )
 
 
@@ -97,6 +113,7 @@ def _output_rich(
     top: int,
     show_excluded: bool,
     show_all: bool = False,
+    coverage: CoverageReport | None = None,
 ) -> None:
     """Display plan with Rich formatting."""
     selected = results[:top]
@@ -135,6 +152,10 @@ def _output_rich(
     # Keyword Analysis
     _display_keyword_analysis(selected, jd)
 
+    # Skill Coverage Analysis
+    if coverage:
+        _display_coverage(coverage)
+
     # Excluded (if requested)
     if show_excluded and excluded:
         _display_excluded(excluded, show_all=show_all)
@@ -143,7 +164,7 @@ def _output_rich(
 def _display_content_analysis(selected: list[RankingResult]) -> None:
     """Display content analysis section."""
     # Calculate word count
-    total_words = sum(len(_extract_text(r.work_unit).split()) for r in selected)
+    total_words = sum(len(extract_work_unit_text(r.work_unit).split()) for r in selected)
 
     # Estimate pages
     estimated_pages = total_words / WORDS_PER_PAGE
@@ -171,7 +192,7 @@ def _display_content_analysis(selected: list[RankingResult]) -> None:
 def _display_keyword_analysis(selected: list[RankingResult], jd: Any) -> None:
     """Display keyword analysis section."""
     # Get all text from selected Work Units
-    all_text = " ".join(_extract_text(r.work_unit).lower() for r in selected)
+    all_text = " ".join(extract_work_unit_text(r.work_unit).lower() for r in selected)
 
     # Check JD keywords
     found = [kw for kw in jd.keywords if kw.lower() in all_text]
@@ -192,6 +213,41 @@ def _display_keyword_analysis(selected: list[RankingResult], jd: Any) -> None:
             border_style="yellow",
         )
     )
+
+
+def _display_coverage(report: CoverageReport) -> None:
+    """Display skill coverage analysis with Rich formatting."""
+    if not report.items:
+        return
+
+    # Header with summary
+    summary = (
+        f"Coverage: {report.coverage_percentage:.0f}%\n"
+        f"Strong: {report.strong_count} | Weak: {report.weak_count} | Gaps: {report.gap_count}"
+    )
+
+    console.print(
+        Panel(
+            summary,
+            title="🎯 Skill Coverage",
+            border_style="magenta",
+        )
+    )
+
+    # Show each skill with its coverage status
+    for item in report.items:
+        wu_info = ""
+        if item.matching_work_units:
+            # Show up to 2 Work Unit IDs
+            wu_ids = item.matching_work_units[:2]
+            wu_info = f" ({', '.join(wu_ids)})"
+            if len(item.matching_work_units) > 2:
+                wu_info = f" ({', '.join(wu_ids)}, +{len(item.matching_work_units) - 2})"
+
+        # Add "Weak signal" indicator for weak matches per AC3
+        weak_label = " [dim]Weak signal[/dim]" if item.level == CoverageLevel.WEAK else ""
+        line = f"  [{item.color}]{item.symbol}[/{item.color}] {item.skill}{weak_label}{wu_info}"
+        console.print(line)
 
 
 def _display_excluded(excluded: list[RankingResult], show_all: bool = False) -> None:
@@ -222,41 +278,12 @@ def _display_excluded(excluded: list[RankingResult], show_all: bool = False) -> 
         )
 
 
-def _extract_text(work_unit: dict[str, Any]) -> str:
-    """Extract text from Work Unit."""
-    parts: list[str] = []
-
-    # Title
-    if title := work_unit.get("title"):
-        parts.append(title)
-
-    # Problem
-    if problem := work_unit.get("problem"):
-        if isinstance(problem, dict):
-            if stmt := problem.get("statement"):
-                parts.append(stmt)
-        elif isinstance(problem, str):
-            parts.append(problem)
-
-    # Actions
-    if actions := work_unit.get("actions"):
-        if isinstance(actions, list):
-            parts.extend(str(a) for a in actions)
-        elif isinstance(actions, str):
-            parts.append(actions)
-
-    # Outcome
-    if outcome := work_unit.get("outcome"):
-        if isinstance(outcome, dict):
-            if result := outcome.get("result"):
-                parts.append(result)
-        elif isinstance(outcome, str):
-            parts.append(outcome)
-
-    return " ".join(filter(None, parts))
-
-
-def _output_json(results: list[RankingResult], jd: Any, top: int) -> None:
+def _output_json(
+    results: list[RankingResult],
+    jd: Any,
+    top: int,
+    coverage: CoverageReport | None = None,
+) -> None:
     """Output plan as JSON."""
     selected = results[:top]
     excluded = results[top:]
@@ -290,6 +317,7 @@ def _output_json(results: list[RankingResult], jd: Any, top: int) -> None:
                 for r in excluded
             ],
             "excluded_count": len(excluded),
+            "coverage": coverage.to_dict() if coverage else None,
         },
     )
     json_output(response.to_json())

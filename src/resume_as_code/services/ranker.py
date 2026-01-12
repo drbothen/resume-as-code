@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 from rank_bm25 import BM25Okapi  # type: ignore[import-untyped]
 
+from resume_as_code.utils.work_unit_text import extract_work_unit_text
+
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
@@ -90,7 +92,7 @@ class HybridRanker:
             return RankingOutput(results=[], jd_keywords=jd.keywords)
 
         # Extract text from Work Units
-        wu_texts = [self._extract_text(wu) for wu in work_units]
+        wu_texts = [extract_work_unit_text(wu) for wu in work_units]
         wu_ids = [wu.get("id", f"wu-{i}") for i, wu in enumerate(work_units)]
 
         # BM25 ranking
@@ -135,62 +137,6 @@ class HybridRanker:
             )
 
         return RankingOutput(results=results, jd_keywords=jd.keywords)
-
-    def _extract_text(self, work_unit: dict[str, Any]) -> str:
-        """Extract searchable text from Work Unit.
-
-        Combines title, problem, actions, outcome, tags, and skills
-        into a single string for ranking.
-        """
-        parts: list[str] = []
-
-        # Title
-        if title := work_unit.get("title"):
-            parts.append(title)
-
-        # Problem statement
-        if problem := work_unit.get("problem"):
-            if isinstance(problem, dict):
-                if stmt := problem.get("statement"):
-                    parts.append(stmt)
-                if context := problem.get("context"):
-                    parts.append(context)
-            elif isinstance(problem, str):
-                parts.append(problem)
-
-        # Actions
-        if actions := work_unit.get("actions"):
-            if isinstance(actions, list):
-                parts.extend(str(a) for a in actions)
-            elif isinstance(actions, str):
-                parts.append(actions)
-
-        # Outcome
-        if outcome := work_unit.get("outcome"):
-            if isinstance(outcome, dict):
-                if result := outcome.get("result"):
-                    parts.append(result)
-                if impact := outcome.get("quantified_impact"):
-                    parts.append(impact)
-                if value := outcome.get("business_value"):
-                    parts.append(value)
-            elif isinstance(outcome, str):
-                parts.append(outcome)
-
-        # Tags
-        if tags := work_unit.get("tags"):
-            parts.extend(str(t) for t in tags)
-
-        # Skills demonstrated
-        if skills := work_unit.get("skills_demonstrated"):
-            for skill in skills:
-                if isinstance(skill, dict):
-                    if name := skill.get("name"):
-                        parts.append(name)
-                elif isinstance(skill, str):
-                    parts.append(skill)
-
-        return " ".join(filter(None, parts))
 
     def _bm25_rank(self, documents: list[str], query: str) -> list[int]:
         """Compute BM25 ranks (1-indexed, lower is better)."""
@@ -280,7 +226,7 @@ class HybridRanker:
         Returns up to 3 reasons explaining the match.
         """
         reasons: list[str] = []
-        wu_text = self._extract_text(work_unit).lower()
+        wu_text = extract_work_unit_text(work_unit).lower()
 
         # Check for skill matches
         matching_skills = [skill for skill in jd.skills if skill.lower() in wu_text]
