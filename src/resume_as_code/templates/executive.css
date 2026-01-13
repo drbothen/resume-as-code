@@ -1,15 +1,20 @@
-/* Executive Resume Template Styles */
-/* Optimized for senior professionals with 2-3 page layout */
-/* Features scope indicators for budget, team size, and revenue */
+/* Executive Resume Template Styles
+ * Modern sans-serif styling optimized for tech, healthcare, and general sectors
+ * Single-column layout for ATS compatibility (94-97% parsing accuracy)
+ * Story: 6-4-executive-resume-template
+ */
 
-/* Page setup for 2-3 page executive resume */
+/* Page setup - 1 inch margins for professional executive resume */
 @page {
     size: letter;
-    margin: 0.6in 0.7in;
+    margin: 1in;
 }
 
-@page :first {
-    margin-top: 0.5in;
+/* Running header for page 2+ */
+@page :not(:first) {
+    @top-center {
+        content: element(running-header);
+    }
 }
 
 /* Reset and base styles */
@@ -20,258 +25,88 @@
 }
 
 body {
-    font-family: 'Georgia', 'Times New Roman', serif;
-    font-size: 10.5pt;
-    line-height: 1.5;
-    color: #1a1a2e;
-    max-width: 8.5in;
-    margin: 0 auto;
+    font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.4;
+    color: #1a1a1a;
+    margin: 0;
     padding: 0;
 }
 
-/* Executive Header */
-.executive-header {
-    text-align: center;
-    padding-bottom: 0.8em;
-    margin-bottom: 1em;
-    border-bottom: 3px double #1a1a2e;
-}
-
-.executive-header h1 {
-    font-size: 26pt;
-    font-weight: 400;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: #1a1a2e;
-    margin-bottom: 0.4em;
-}
-
-.contact-info {
+/* Running header - appears on page 2+ */
+.running-header {
+    position: running(running-header);
     font-size: 10pt;
-    color: #4a4a5a;
-    margin: 0.5em 0;
+    color: #555;
+    text-align: center;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid #ddd;
 }
 
-.contact-item {
-    display: inline-block;
-    margin: 0 0.8em;
+/* Resume Header */
+.resume-header {
+    text-align: center;
+    margin-bottom: 1.5em;
+    border-bottom: 2px solid #2c3e50;
+    padding-bottom: 1em;
 }
 
-.contact-item .icon {
-    margin-right: 0.3em;
-    color: #1a1a2e;
+.name {
+    font-size: 22pt;
+    font-weight: bold;
+    margin: 0;
+    color: #1a1a1a;
 }
 
-.links {
-    margin-top: 0.4em;
-    font-size: 9.5pt;
+.professional-title {
+    font-size: 14pt;
+    color: #2c3e50;
+    margin: 0.25em 0;
+    font-weight: normal;
 }
 
-.links a {
-    color: #2a5298;
+.contact-line {
+    font-size: 10pt;
+    color: #555;
+    margin-top: 0.5em;
+}
+
+.contact-line a {
+    color: #2c3e50;
     text-decoration: none;
-    margin: 0 0.6em;
-    font-style: italic;
 }
 
-.links a:hover {
+.contact-line a:hover {
     text-decoration: underline;
 }
 
-/* Section headers */
-section {
-    margin-bottom: 1.1em;
-}
-
+/* Section Headers */
 h2 {
-    font-size: 13pt;
-    font-weight: 600;
-    color: #1a1a2e;
+    font-size: 12pt;
+    font-weight: bold;
+    color: #2c3e50;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.25em;
+    margin-top: 1.25em;
+    margin-bottom: 0.75em;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 0.2em;
-    margin-bottom: 0.6em;
+    letter-spacing: 0.5px;
 }
 
 /* Executive Summary */
-.executive-summary {
-    background: #f8f9fa;
-    padding: 0.8em 1em;
-    border-left: 4px solid #1a1a2e;
-    margin-bottom: 1.2em;
-}
-
-.executive-summary h2 {
-    border-bottom: none;
-    margin-bottom: 0.4em;
-}
-
-.summary-text {
-    font-size: 10.5pt;
-    line-height: 1.6;
-    color: #333;
-    font-style: italic;
-}
-
-/* Executive Role styling */
-.executive-role {
-    margin-bottom: 1em;
-    page-break-inside: avoid;
-}
-
-.role-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 0.4em;
-}
-
-.role-title-company {
-    flex: 1;
-}
-
-.role-title-company h3 {
-    font-size: 12pt;
-    font-weight: 700;
-    color: #1a1a2e;
+.executive-summary p {
+    text-align: justify;
     margin: 0;
-    display: inline;
+    line-height: 1.5;
 }
 
-.organization {
-    font-size: 11pt;
-    font-style: italic;
-    color: #4a4a5a;
-    margin-left: 0.4em;
-}
-
-.organization::before {
-    content: '| ';
-    color: #ccc;
-}
-
-.role-meta {
-    text-align: right;
-    font-size: 9.5pt;
-    color: #666;
-}
-
-.location {
-    display: block;
-}
-
-.dates {
-    display: block;
+.executive-summary .placeholder {
+    color: #888;
     font-style: italic;
 }
 
-/* Scope Indicators - Key executive feature */
-.scope-indicators {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5em 1.5em;
-    background: linear-gradient(135deg, #f0f4f8 0%, #e8eef3 100%);
-    padding: 0.5em 0.8em;
-    border-radius: 4px;
-    margin: 0.4em 0 0.6em 0;
-    border: 1px solid #d0d8e0;
-}
-
-.scope-item {
-    font-size: 9.5pt;
-    display: flex;
-    align-items: center;
-}
-
-.scope-label {
-    color: #666;
-    font-weight: 600;
-    margin-right: 0.3em;
-}
-
-.scope-value {
-    color: #1a5f2a;
-    font-weight: 700;
-}
-
-/* Achievement bullets - RAS format (Result-Action-Situation) */
-.achievements {
-    margin: 0.4em 0 0 0;
-    padding-left: 1.3em;
-    list-style-type: none;
-}
-
-.achievement-item {
-    position: relative;
-    margin-bottom: 0.35em;
-    font-size: 10.5pt;
-    line-height: 1.45;
-    padding-left: 0.8em;
-}
-
-.achievement-item::before {
-    content: '\25A0';  /* Solid square bullet */
-    position: absolute;
-    left: -1em;
-    color: #1a1a2e;
-    font-size: 6pt;
-    top: 0.35em;
-}
-
-.achievement-text {
-    color: #333;
-}
-
-.achievement-metrics {
-    display: inline;
-    color: #1a5f2a;
-    font-weight: 600;
-    font-style: italic;
-}
-
-.achievement-metrics::before {
-    content: ' — ';
-    color: #999;
-}
-
-/* Education section */
-.education-section .edu-item {
-    margin-bottom: 0.5em;
-}
-
-.edu-header {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-}
-
-.edu-header h3 {
-    font-size: 10.5pt;
-    font-weight: 600;
-    color: #1a1a2e;
-    margin: 0;
-}
-
-.institution {
-    font-size: 10pt;
-    font-style: italic;
-    color: #4a4a5a;
-    margin-left: 0.4em;
-}
-
-.institution::before {
-    content: '- ';
-}
-
-.education-section .dates {
-    font-size: 9.5pt;
-    color: #666;
-    display: block;
-}
-
-/* Core Competencies / Skills - Grid layout for executive feel */
-.skills-section {
+/* Core Competencies / Skills Grid */
+.core-competencies {
     page-break-inside: avoid;
 }
 
@@ -281,69 +116,152 @@ h2 {
     gap: 0.5em;
 }
 
-.skill-item {
-    background: #f0f4f8;
-    border: 1px solid #d0d8e0;
-    padding: 0.25em 0.6em;
+.skill {
+    background: #f5f5f5;
+    padding: 0.25em 0.75em;
     border-radius: 3px;
-    font-size: 9.5pt;
+    font-size: 10pt;
     color: #333;
+}
+
+/* Professional Experience */
+.experience {
+    page-break-inside: avoid;
+}
+
+.position {
+    margin-bottom: 1.25em;
+    page-break-inside: avoid;
+}
+
+.position-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.company {
+    font-size: 11pt;
+    font-weight: bold;
+    margin: 0;
+    color: #1a1a1a;
+}
+
+.dates {
+    font-size: 10pt;
+    color: #555;
+}
+
+.role {
+    font-style: italic;
+    margin: 0.25em 0;
+    color: #333;
+}
+
+/* Scope indicators - Executive feature */
+.scope-line {
+    font-size: 10pt;
+    color: #2c3e50;
+    font-weight: 500;
+    margin: 0.5em 0;
+}
+
+/* Achievement bullets */
+.achievements {
+    margin: 0.5em 0;
+    padding-left: 1.25em;
+}
+
+.achievements li {
+    margin-bottom: 0.35em;
+    line-height: 1.4;
+}
+
+.achievements .metrics {
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+/* Certifications */
+.certifications {
+    page-break-inside: avoid;
+}
+
+.cert-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.cert-list li {
+    margin-bottom: 0.35em;
+}
+
+/* Education */
+.education {
+    page-break-inside: avoid;
+}
+
+.education p {
+    margin: 0.35em 0;
+}
+
+/* Page break controls */
+section {
+    page-break-inside: avoid;
+}
+
+.position {
+    page-break-inside: avoid;
 }
 
 /* Print-specific styles */
 @media print {
     body {
-        font-size: 10pt;
+        font-size: 10.5pt;
         color: #000;
     }
 
-    .executive-header h1 {
+    .name {
         color: #000;
     }
 
     h2 {
-        color: #000;
+        color: #2c3e50;
     }
 
-    .role-title-company h3 {
+    .company {
         color: #000;
     }
 
     a {
-        color: #000;
+        color: #2c3e50;
         text-decoration: none;
     }
 
-    .scope-indicators {
-        background: #f5f5f5;
-        border-color: #ccc;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+    .scope-line,
+    .achievements .metrics {
+        color: #2c3e50;
     }
 
-    .scope-value,
-    .achievement-metrics {
-        color: #006600;
-    }
-
-    /* Prevent page breaks inside important elements */
-    .executive-role,
-    .edu-item,
+    /* Ensure page breaks are respected */
+    .position,
     section {
         page-break-inside: avoid;
     }
 
-    /* Allow page breaks between roles */
-    .executive-role {
+    .position {
         page-break-after: auto;
     }
 }
 
-/* Screen-only styles for preview */
+/* Screen preview styles */
 @media screen {
     body {
-        padding: 0.8in;
+        padding: 1in;
         background: #e8e8e8;
+        max-width: 8.5in;
+        margin: 0 auto;
     }
 
     body::before {

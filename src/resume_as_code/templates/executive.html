@@ -7,106 +7,78 @@
     <style>{{ css }}</style>
 </head>
 <body>
-    <header class="executive-header">
-        <h1>{{ resume.contact.name }}</h1>
-        <div class="contact-info">
-            {% if resume.contact.email %}
-            <span class="contact-item">
-                <span class="icon">&#9993;</span>
-                {{ resume.contact.email }}
-            </span>
-            {% endif %}
-            {% if resume.contact.phone %}
-            <span class="contact-item">
-                <span class="icon">&#9742;</span>
-                {{ resume.contact.phone }}
-            </span>
-            {% endif %}
-            {% if resume.contact.location %}
-            <span class="contact-item">
-                <span class="icon">&#9906;</span>
-                {{ resume.contact.location }}
-            </span>
-            {% endif %}
-        </div>
-        {% if resume.contact.linkedin or resume.contact.github or resume.contact.website %}
-        <div class="links">
+    {# Running header for page 2+ #}
+    <div class="running-header">{{ resume.contact.name }}</div>
+
+    <header class="resume-header">
+        <h1 class="name">{{ resume.contact.name }}</h1>
+        {% if resume.contact.title %}
+        <p class="professional-title">{{ resume.contact.title }}</p>
+        {% endif %}
+        <div class="contact-line">
+            {% set contact_parts = [] %}
+            {% if resume.contact.location %}{% set _ = contact_parts.append(resume.contact.location) %}{% endif %}
+            {% if resume.contact.email %}{% set _ = contact_parts.append(resume.contact.email) %}{% endif %}
+            {% if resume.contact.phone %}{% set _ = contact_parts.append(resume.contact.phone) %}{% endif %}
+            {{ contact_parts | join(' | ') }}
             {% if resume.contact.linkedin %}
-            <a href="{{ resume.contact.linkedin }}">LinkedIn</a>
+            | <a href="{{ resume.contact.linkedin }}">LinkedIn</a>
             {% endif %}
             {% if resume.contact.github %}
-            <a href="{{ resume.contact.github }}">GitHub</a>
+            | <a href="{{ resume.contact.github }}">GitHub</a>
             {% endif %}
             {% if resume.contact.website %}
-            <a href="{{ resume.contact.website }}">Portfolio</a>
+            | <a href="{{ resume.contact.website }}">Portfolio</a>
             {% endif %}
         </div>
-        {% endif %}
     </header>
 
-    {% if resume.summary %}
     <section class="executive-summary">
         <h2>Executive Summary</h2>
-        <p class="summary-text">{{ resume.summary }}</p>
+        {% if resume.summary %}
+        <p>{{ resume.summary }}</p>
+        {% else %}
+        <p class="placeholder">[Executive summary not configured. Add 'summary' to your profile configuration to highlight your value proposition.]</p>
+        {% endif %}
+    </section>
+
+    {% if resume.skills %}
+    <section class="core-competencies">
+        <h2>Core Competencies</h2>
+        <div class="skills-grid">
+            {% for skill in resume.skills %}
+            <span class="skill">{{ skill }}</span>
+            {% endfor %}
+        </div>
     </section>
     {% endif %}
 
     {% for section in resume.sections %}
-    <section class="experience-section">
+    <section class="experience">
         <h2>{{ section.title }}</h2>
         {% for item in section.items %}
-        <article class="executive-role">
-            <div class="role-header">
-                <div class="role-title-company">
-                    <h3>{{ item.title }}</h3>
-                    {% if item.organization %}
-                    <span class="organization">{{ item.organization }}</span>
-                    {% endif %}
-                </div>
-                <div class="role-meta">
-                    {% if item.location %}
-                    <span class="location">{{ item.location }}</span>
-                    {% endif %}
-                    {% if item.start_date %}
-                    <span class="dates">{{ item.start_date }} - {{ item.end_date or 'Present' }}</span>
-                    {% endif %}
-                </div>
+        <article class="position">
+            <div class="position-header">
+                <h3 class="company">{{ item.organization or item.title }}</h3>
+                <span class="dates">{{ item.start_date or '' }}{% if item.start_date %} - {% endif %}{{ item.end_date or 'Present' }}</span>
             </div>
+            <p class="role">{{ item.title }}{% if item.organization and item.location %}, {{ item.location }}{% elif item.location %} | {{ item.location }}{% endif %}</p>
 
-            {# Scope indicators for executive-level roles #}
+            {# Scope indicators line: "Led team of X | $YM budget | ZM revenue" #}
             {% if item.scope_budget or item.scope_team_size or item.scope_revenue %}
-            <div class="scope-indicators">
-                {% if item.scope_budget %}
-                <span class="scope-item">
-                    <span class="scope-label">Budget:</span>
-                    <span class="scope-value">{{ item.scope_budget }}</span>
-                </span>
-                {% endif %}
-                {% if item.scope_team_size %}
-                <span class="scope-item">
-                    <span class="scope-label">Team:</span>
-                    <span class="scope-value">{{ item.scope_team_size }} people</span>
-                </span>
-                {% endif %}
-                {% if item.scope_revenue %}
-                <span class="scope-item">
-                    <span class="scope-label">Revenue:</span>
-                    <span class="scope-value">{{ item.scope_revenue }}</span>
-                </span>
-                {% endif %}
-            </div>
+            <p class="scope-line">
+                {% set scope_parts = [] %}
+                {% if item.scope_team_size %}{% set _ = scope_parts.append('Led team of ' ~ item.scope_team_size) %}{% endif %}
+                {% if item.scope_budget %}{% set _ = scope_parts.append(item.scope_budget ~ ' budget') %}{% endif %}
+                {% if item.scope_revenue %}{% set _ = scope_parts.append(item.scope_revenue ~ ' revenue impact') %}{% endif %}
+                {{ scope_parts | join(' | ') }}
+            </p>
             {% endif %}
 
-            {# Achievement bullets in RAS format (Result-Action-Situation) #}
             {% if item.bullets %}
             <ul class="achievements">
                 {% for bullet in item.bullets %}
-                <li class="achievement-item">
-                    <span class="achievement-text">{{ bullet.text }}</span>
-                    {% if bullet.metrics %}
-                    <span class="achievement-metrics">{{ bullet.metrics }}</span>
-                    {% endif %}
-                </li>
+                <li>{{ bullet.text }}{% if bullet.metrics %} — <em class="metrics">{{ bullet.metrics }}</em>{% endif %}</li>
                 {% endfor %}
             </ul>
             {% endif %}
@@ -115,33 +87,27 @@
     </section>
     {% endfor %}
 
-    {% if resume.education %}
-    <section class="education-section">
-        <h2>Education</h2>
-        {% for item in resume.education %}
-        <article class="edu-item">
-            <div class="edu-header">
-                <h3>{{ item.title }}</h3>
-                {% if item.organization %}
-                <span class="institution">{{ item.organization }}</span>
-                {% endif %}
-            </div>
-            {% if item.start_date or item.end_date %}
-            <span class="dates">{{ item.start_date or '' }}{% if item.start_date and item.end_date %} - {% endif %}{{ item.end_date or '' }}</span>
-            {% endif %}
-        </article>
-        {% endfor %}
+    {% if resume.get_active_certifications() %}
+    <section class="certifications">
+        <h2>Certifications</h2>
+        <ul class="cert-list">
+            {% for cert in resume.get_active_certifications() %}
+            <li>
+                <strong>{{ cert.name }}</strong>{% if cert.issuer %}, {{ cert.issuer }}{% endif %}{% if cert.date %}, {{ cert.date[:4] }}{% endif %}{% if cert.expires %} (expires {{ cert.expires[:4] }}){% endif %}
+            </li>
+            {% endfor %}
+        </ul>
     </section>
     {% endif %}
 
-    {% if resume.skills %}
-    <section class="skills-section">
-        <h2>Core Competencies</h2>
-        <div class="skills-grid">
-            {% for skill in resume.skills %}
-            <span class="skill-item">{{ skill }}</span>
-            {% endfor %}
-        </div>
+    {% if resume.education %}
+    <section class="education">
+        <h2>Education</h2>
+        {% for item in resume.education %}
+        <p>
+            <strong>{{ item.title }}</strong>{% if item.organization %}, {{ item.organization }}{% endif %}{% if item.end_date %}, {{ item.end_date }}{% endif %}
+        </p>
+        {% endfor %}
     </section>
     {% endif %}
 </body>
