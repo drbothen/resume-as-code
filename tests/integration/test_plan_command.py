@@ -1160,6 +1160,361 @@ class TestPlanPersistence:
         assert result.exit_code != 0
 
 
+class TestPlanEnhancedDataModelPreview:
+    """Tests for enhanced plan data model preview (Story 6.18)."""
+
+    def _create_config_file(
+        self,
+        path: Path,
+        profile: dict[str, str] | None = None,
+        certifications: list[dict[str, str]] | None = None,
+        education: list[dict[str, str]] | None = None,
+    ) -> None:
+        """Helper to create a .resume.yaml config file."""
+        import yaml
+
+        config: dict[str, object] = {"work_units_dir": "work-units"}
+
+        if profile:
+            config["profile"] = profile
+        if certifications:
+            config["certifications"] = certifications
+        if education:
+            config["education"] = education
+
+        (path / ".resume.yaml").write_text(yaml.dump(config))
+
+    def _create_positions_file(
+        self,
+        path: Path,
+        positions: list[dict[str, str | None]],
+    ) -> None:
+        """Helper to create a positions.yaml file."""
+        import yaml
+
+        # Convert list to dict format expected by position service
+        positions_dict: dict[str, dict[str, str | None]] = {}
+        for pos in positions:
+            pos_id = pos.pop("id")
+            if pos_id:
+                positions_dict[pos_id] = pos
+
+        (path / "positions.yaml").write_text(yaml.dump({"positions": positions_dict}))
+
+    def test_plan_shows_profile_preview_section(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC4: Should show Profile Preview section."""
+        monkeypatch.chdir(tmp_path)
+
+        self._create_config_file(
+            tmp_path,
+            profile={
+                "name": "Test User",
+                "title": "Senior Engineer",
+                "email": "test@example.com",
+                "phone": "555-1234",
+                "location": "NYC",
+                "linkedin": "https://linkedin.com/in/test",
+                "summary": "Experienced engineer with ten years of expertise in building "
+                "scalable systems and leading cross-functional teams to deliver "
+                "innovative solutions that drive business growth and efficiency.",
+            },
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Engineer", "Requirements:\n- Python")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        assert "Profile Preview" in result.output
+        assert "Test User" in result.output
+        assert "Senior Engineer" in result.output
+
+    def test_plan_shows_certifications_analysis_section(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC2: Should show Certifications Analysis section with matches."""
+        monkeypatch.chdir(tmp_path)
+
+        self._create_config_file(
+            tmp_path,
+            certifications=[
+                {"name": "CISSP", "issuer": "ISC2", "date": "2023-01"},
+                {"name": "AWS Solutions Architect", "issuer": "Amazon", "date": "2023-06"},
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Security Engineer",
+            "Requirements:\n- CISSP or CISM certification required\n- Python",
+        )
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        assert "Certifications Analysis" in result.output
+
+    def test_plan_shows_education_analysis_section(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC3: Should show Education Analysis section."""
+        monkeypatch.chdir(tmp_path)
+
+        self._create_config_file(
+            tmp_path,
+            education=[
+                {"degree": "MS Computer Science", "institution": "MIT", "year": "2020"},
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Engineer",
+            "Requirements:\n- Bachelor's degree in Computer Science\n- Python",
+        )
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        assert "Education Analysis" in result.output
+
+    def test_plan_shows_position_grouping_preview(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC1: Should show Position Grouping Preview section."""
+        monkeypatch.chdir(tmp_path)
+
+        self._create_config_file(tmp_path)
+        self._create_positions_file(
+            tmp_path,
+            [
+                {
+                    "id": "pos-techcorp-senior",
+                    "employer": "TechCorp",
+                    "title": "Senior Engineer",
+                    "start_date": "2022-01",
+                    "end_date": None,
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        # Create work unit linked to position
+        content = """\
+schema_version: "1.0.0"
+id: "wu-2026-01-01-api"
+title: "Built API"
+position_id: "pos-techcorp-senior"
+problem:
+  statement: "Needed API"
+actions:
+  - "Built it"
+outcome:
+  result: "Improved performance"
+tags: []
+confidence: high
+"""
+        (work_units / "wu-api.yaml").write_text(content)
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Engineer", "Requirements:\n- Python")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        assert "Position Grouping" in result.output
+        assert "TechCorp" in result.output
+
+    def test_plan_json_includes_all_new_sections(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC5: JSON output should include all new analysis sections."""
+        monkeypatch.chdir(tmp_path)
+
+        self._create_config_file(
+            tmp_path,
+            profile={
+                "name": "Test User",
+                "title": "Senior Engineer",
+                "email": "test@example.com",
+                "summary": "Short summary for testing purposes.",
+            },
+            certifications=[
+                {"name": "CISSP", "issuer": "ISC2", "date": "2023-01"},
+            ],
+            education=[
+                {"degree": "MS Computer Science", "institution": "MIT", "year": "2020"},
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Engineer",
+            "Requirements:\n- CISSP certification\n- Bachelor's degree\n- Python",
+        )
+
+        result = cli_runner.invoke(main, ["--json", "plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+
+        # Check all new sections are present
+        assert "certifications_analysis" in data["data"]
+        assert "education_analysis" in data["data"]
+        assert "profile_preview" in data["data"]
+
+        # Check certifications analysis structure
+        certs = data["data"]["certifications_analysis"]
+        assert "matched" in certs
+        assert "gaps" in certs
+        assert "additional" in certs
+        assert "match_percentage" in certs
+
+        # Check education analysis structure
+        edu = data["data"]["education_analysis"]
+        assert "meets_requirements" in edu
+        assert "degree_match" in edu
+        assert "field_relevance" in edu
+
+        # Check profile preview structure
+        profile = data["data"]["profile_preview"]
+        assert "name" in profile
+        assert "title" in profile
+        assert "contact_complete" in profile
+        assert "summary_words" in profile
+        assert "summary_status" in profile
+
+    def test_plan_handles_no_certifications_gracefully(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC7: Should show helpful message when no certifications configured."""
+        monkeypatch.chdir(tmp_path)
+
+        # Config with no certifications
+        self._create_config_file(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Security Engineer",
+            "Requirements:\n- CISSP certification required\n- Python",
+        )
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should mention no certifications or show helpful message
+        assert "No certifications" in result.output or "certifications" in result.output.lower()
+
+    def test_plan_handles_no_positions_gracefully(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC6: Should show helpful message when no positions configured."""
+        monkeypatch.chdir(tmp_path)
+
+        # Config with no positions file
+        self._create_config_file(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Engineer", "Requirements:\n- Python")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should suggest adding positions.yaml
+        assert "positions" in result.output.lower()
+
+    def test_plan_shows_profile_missing_fields(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC8: Should show missing profile fields."""
+        monkeypatch.chdir(tmp_path)
+
+        # Profile with missing fields
+        self._create_config_file(
+            tmp_path,
+            profile={
+                "name": "Test User",
+                "title": "Engineer",
+                # Missing: email, phone, location, linkedin
+            },
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Engineer", "Requirements:\n- Python")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        assert "Profile Preview" in result.output
+        # Should show missing fields warning
+        assert "Missing" in result.output or "missing" in result.output.lower()
+
+
 class TestPlanCommandSkillsCuration:
     """Tests for skills curation in plan output (Story 6.3, AC #6)."""
 

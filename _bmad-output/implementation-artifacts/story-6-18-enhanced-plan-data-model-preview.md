@@ -123,6 +123,87 @@ Match certifications and education against JD requirements using keyword extract
 **Then** profile preview shows missing fields
 **And** a warning: "Profile incomplete - configure in .resume.yaml"
 
+### AC9: Career Highlights Preview
+**Given** I have career_highlights configured in `.resume.yaml`
+**When** the plan output is displayed
+**Then** I see a "Career Highlights" section showing:
+  - List of configured highlights (numbered)
+  - Count of highlights configured
+  - Warning if more than 4 highlights (research suggests max 4 for optimal impact)
+
+### AC10: Board & Advisory Roles Preview
+**Given** I have board_roles configured in `.resume.yaml`
+**When** the plan output is displayed
+**Then** I see a "Board & Advisory Roles" section showing:
+  - Organization name and role title
+  - Role type (director, advisory, committee)
+  - Date range with current indicator
+  - Count of roles and how many are current
+
+### AC11: Publications & Speaking Preview
+**Given** I have publications configured in `.resume.yaml`
+**When** the plan output is displayed
+**Then** I see a "Publications & Speaking" section showing:
+  - Speaking engagements grouped together (conference, podcast, webinar)
+  - Written works grouped together (article, whitepaper, book)
+  - Venue and year for each entry
+  - Summary of total publications by type
+
+### AC12: JSON Output - New Executive Sections
+**Given** I run `resume plan --jd file.txt --json`
+**When** JSON output is requested with career_highlights, board_roles, or publications configured
+**Then** the response includes the new sections:
+```json
+{
+  "career_highlights": {
+    "highlights": ["Led security transformation...", "Built and scaled team..."],
+    "count": 4
+  },
+  "board_roles": {
+    "roles": [
+      {
+        "organization": "ICS-ISAC",
+        "role": "Technical Advisory Board Member",
+        "type": "advisory",
+        "dates": "2023 - Present",
+        "is_current": true
+      }
+    ],
+    "count": 2,
+    "current_count": 1
+  },
+  "publications": {
+    "publications": [
+      {
+        "title": "Securing Industrial Control Systems",
+        "type": "conference",
+        "venue": "S4 Conference",
+        "year": "2024",
+        "is_speaking": true
+      }
+    ],
+    "count": 3,
+    "speaking_count": 2,
+    "written_count": 1
+  }
+}
+```
+
+### AC13: Graceful Handling - No Career Highlights
+**Given** career_highlights is not configured or empty
+**When** the plan command runs
+**Then** a note: "No career highlights configured - add to .resume.yaml for executive resumes"
+
+### AC14: Graceful Handling - No Board Roles
+**Given** board_roles is not configured or empty
+**When** the plan command runs
+**Then** a note: "No board roles configured - add to .resume.yaml for executive resumes"
+
+### AC15: Graceful Handling - No Publications
+**Given** publications is not configured or empty
+**When** the plan command runs
+**Then** a note: "No publications configured - add to .resume.yaml for thought leadership"
+
 ## Technical Notes
 
 ### Files to Create
@@ -308,77 +389,103 @@ def _get_profile_preview(config: ResumeConfig) -> ProfilePreview:
 ## Tasks
 
 ### Task 1: Create CertificationMatcher Service
-- [ ] Create `services/certification_matcher.py` with `CertificationMatcher` class
-- [ ] Implement `CERT_PATTERNS` with common certification regex patterns
-- [ ] Implement `extract_jd_requirements()` to find cert mentions in JD text
-- [ ] Implement `match_certifications()` to compare user certs with JD requirements
-- [ ] Create `CertificationMatchResult` dataclass for return type
-- [ ] Write unit tests in `tests/unit/services/test_certification_matcher.py`
+- [x] Create `services/certification_matcher.py` with `CertificationMatcher` class
+- [x] Implement `CERT_PATTERNS` with common certification regex patterns
+- [x] Implement `extract_jd_requirements()` to find cert mentions in JD text
+- [x] Implement `match_certifications()` to compare user certs with JD requirements
+- [x] Create `CertificationMatchResult` dataclass for return type
+- [x] Write unit tests in `tests/unit/test_certification_matcher.py`
 
 ### Task 2: Create EducationMatcher Service
-- [ ] Create `services/education_matcher.py` with `EducationMatcher` class
-- [ ] Implement `DEGREE_LEVELS` mapping for comparison
-- [ ] Implement `FIELD_ALIASES` for field matching (CS includes "computing", etc.)
-- [ ] Implement `extract_jd_requirements()` to parse education requirements from JD
-- [ ] Implement `match_education()` to compare user education with JD
-- [ ] Create `EducationRequirement` and `EducationMatchResult` dataclasses
-- [ ] Write unit tests in `tests/unit/services/test_education_matcher.py`
+- [x] Create `services/education_matcher.py` with `EducationMatcher` class
+- [x] Implement `DEGREE_LEVELS` mapping for comparison
+- [x] Implement `FIELD_ALIASES` for field matching (CS includes "computing", etc.)
+- [x] Implement `extract_jd_requirements()` to parse education requirements from JD
+- [x] Implement `match_education()` to compare user education with JD
+- [x] Create `EducationRequirement` and `EducationMatchResult` dataclasses
+- [x] Write unit tests in `tests/unit/test_education_matcher.py`
 
 ### Task 3: Add Position Grouping to Plan
-- [ ] Create `_get_position_grouping()` helper function in `plan.py`
-- [ ] Create `PositionGroupingResult`, `EmployerGroup`, `PositionSummary` dataclasses
-- [ ] Call position grouping in `plan_command` after ranking
-- [ ] Add Rich display for position grouping section
-- [ ] Handle graceful fallback when positions.yaml doesn't exist
+- [x] Create `_get_position_grouping()` helper function in `plan.py`
+- [x] Create `PositionGroupingResult`, `EmployerGroup`, `PositionSummary` dataclasses
+- [x] Call position grouping in `plan_command` after ranking
+- [x] Add Rich display for position grouping section
+- [x] Handle graceful fallback when positions.yaml doesn't exist
 
 ### Task 4: Add Certifications Analysis to Plan
-- [ ] Integrate `CertificationMatcher` in `plan.py`
-- [ ] Extract JD cert requirements using matcher
-- [ ] Match against `config.certifications`
-- [ ] Add Rich display for certifications analysis section
-- [ ] Show matched (green), gaps (red), additional (dim)
-- [ ] Handle graceful fallback when no certs configured
+- [x] Integrate `CertificationMatcher` in `plan.py`
+- [x] Extract JD cert requirements using matcher
+- [x] Match against `config.certifications`
+- [x] Add Rich display for certifications analysis section
+- [x] Show matched (green), gaps (red), additional (dim)
+- [x] Handle graceful fallback when no certs configured
 
 ### Task 5: Add Education Analysis to Plan
-- [ ] Integrate `EducationMatcher` in `plan.py`
-- [ ] Extract JD education requirements using matcher
-- [ ] Match against `config.education`
-- [ ] Add Rich display for education analysis section
-- [ ] Show degree match and field relevance
-- [ ] Handle graceful fallback when no education configured
+- [x] Integrate `EducationMatcher` in `plan.py`
+- [x] Extract JD education requirements using matcher
+- [x] Match against `config.education`
+- [x] Add Rich display for education analysis section
+- [x] Show degree match and field relevance
+- [x] Handle graceful fallback when no education configured
 
 ### Task 6: Add Profile Preview to Plan
-- [ ] Create `_get_profile_preview()` helper function in `plan.py`
-- [ ] Create `ProfilePreview` dataclass
-- [ ] Add Rich display for profile preview section
-- [ ] Show completeness status and missing fields
-- [ ] Show summary word count with optimal range indicator
+- [x] Create `_get_profile_preview()` helper function in `plan.py`
+- [x] Create `ProfilePreview` dataclass
+- [x] Add Rich display for profile preview section
+- [x] Show completeness status and missing fields
+- [x] Show summary word count with optimal range indicator
 
 ### Task 7: Update JSON Output
-- [ ] Extend `_output_json()` with new analysis sections
-- [ ] Add `position_grouping` to JSON response
-- [ ] Add `certifications_analysis` to JSON response
-- [ ] Add `education_analysis` to JSON response
-- [ ] Add `profile_preview` to JSON response
-- [ ] Update `JSONResponse.data` structure documentation
+- [x] Extend `_output_json()` with new analysis sections
+- [x] Add `position_grouping` to JSON response
+- [x] Add `certifications_analysis` to JSON response
+- [x] Add `education_analysis` to JSON response
+- [x] Add `profile_preview` to JSON response
+- [x] Update `JSONResponse.data` structure documentation
 
 ### Task 8: Integration Testing
-- [ ] Test plan command with full config (positions, certs, education, profile)
-- [ ] Test plan command with partial config (missing sections)
-- [ ] Test plan command with empty config
-- [ ] Test JSON output format
-- [ ] Verify section ordering in Rich output
+- [x] Test plan command with full config (positions, certs, education, profile)
+- [x] Test plan command with partial config (missing sections)
+- [x] Test plan command with empty config
+- [x] Test JSON output format
+- [x] Verify section ordering in Rich output
+
+### Task 9: Add Career Highlights Preview to Plan
+- [x] Create `_get_career_highlights_preview()` helper function in `plan.py`
+- [x] Create `CareerHighlightsPreview` dataclass
+- [x] Add Rich display for career highlights section
+- [x] Show numbered list of highlights with count
+- [x] Handle graceful fallback when no highlights configured
+
+### Task 10: Add Board Roles Preview to Plan
+- [x] Create `_get_board_roles_preview()` helper function in `plan.py`
+- [x] Create `BoardRolesPreview` and `BoardRoleSummary` dataclasses
+- [x] Add Rich display for board roles section
+- [x] Show organization, role, type, dates, current indicator
+- [x] Handle graceful fallback when no board roles configured
+
+### Task 11: Add Publications Preview to Plan
+- [x] Create `_get_publications_preview()` helper function in `plan.py`
+- [x] Create `PublicationsPreview` and `PublicationSummary` dataclasses
+- [x] Add Rich display for publications section
+- [x] Group by speaking vs written works
+- [x] Handle graceful fallback when no publications configured
+
+### Task 12: Update JSON Output for New Sections
+- [x] Add `career_highlights` to JSON response
+- [x] Add `board_roles` to JSON response
+- [x] Add `publications` to JSON response
 
 ## Definition of Done
 
-- [ ] All acceptance criteria pass
-- [ ] Unit tests for CertificationMatcher (>90% coverage)
-- [ ] Unit tests for EducationMatcher (>90% coverage)
-- [ ] Integration tests for plan command
-- [ ] `uv run pytest` passes
-- [ ] `uv run ruff check src tests` passes
-- [ ] `uv run ruff format src tests` passes
-- [ ] `uv run mypy src --strict` passes
+- [x] All acceptance criteria pass
+- [x] Unit tests for CertificationMatcher (>90% coverage)
+- [x] Unit tests for EducationMatcher (>90% coverage)
+- [x] Integration tests for plan command
+- [x] `uv run pytest` passes
+- [x] `uv run ruff check src tests` passes
+- [x] `uv run ruff format src tests` passes
+- [x] `uv run mypy src --strict` passes
 - [ ] Code reviewed
 
 ## Test Scenarios

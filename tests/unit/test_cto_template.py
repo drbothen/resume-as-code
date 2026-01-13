@@ -179,9 +179,7 @@ class TestCTOPDFGeneration:
 class TestExecutiveTemplateBlocks:
     """Tests for executive template block definitions."""
 
-    def test_executive_has_career_highlights_block(
-        self, template_service: TemplateService
-    ) -> None:
+    def test_executive_has_career_highlights_block(self, template_service: TemplateService) -> None:
         """Executive template defines career_highlights block."""
         exec_path = template_service.templates_dir / "executive.html"
         content = exec_path.read_text()
