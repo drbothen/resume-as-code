@@ -21,6 +21,27 @@ class Education(BaseModel):
     gpa: str | None = None  # e.g., "3.8/4.0"
     display: bool = Field(default=True)  # Allow hiding without deleting
 
+    @field_validator("degree", "institution", mode="before")
+    @classmethod
+    def validate_required_strings(cls, v: str) -> str:
+        """Validate that required string fields are not empty.
+
+        Args:
+            v: Field value.
+
+        Returns:
+            Stripped string value.
+
+        Raises:
+            ValueError: If field is empty or whitespace-only.
+        """
+        if not isinstance(v, str):
+            raise ValueError("Field must be a string")
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("Field cannot be empty")
+        return stripped
+
     @field_validator("year", mode="before")
     @classmethod
     def validate_year_format(cls, v: str | None) -> str | None:

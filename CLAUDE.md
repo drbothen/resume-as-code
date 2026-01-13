@@ -492,7 +492,7 @@ For each new resource type, implement:
 | work-unit | ✓ | ✓ | ✓ | ✓ | Complete |
 | position | ✓ | ✓ | ✓ | ✓ | Complete |
 | certification | ✓ | ✓ | ✓ | ✓ | Complete |
-| education | ✓ | ✗ | ✗ | ✗ | Story 6.12 |
+| education | ✓ | ✓ | ✓ | ✓ | Complete |
 
 ### Naming Conventions
 

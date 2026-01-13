@@ -1,6 +1,6 @@
 # Story 6.12: Education Management Commands
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -37,7 +37,12 @@ So that **I can easily add degrees without editing YAML**.
    **Then** it is removed from `.resume.yaml`
    **And** confirmation shows: "Removed education: BS Computer Science"
 
-5. **Given** I run non-interactively (LLM mode):
+5. **Given** I run `resume show education "BS Computer"`
+   **When** education entries match the partial query
+   **Then** detailed view shows: degree, institution, year, honors, GPA
+   **And** display setting is shown if hidden
+
+6. **Given** I run non-interactively (LLM mode):
    ```bash
    resume new education \
      --degree "Master of Science in Cybersecurity" \
@@ -47,68 +52,83 @@ So that **I can easily add degrees without editing YAML**.
    **When** the command executes
    **Then** the education entry is added without prompts
 
-6. **Given** I run `resume --json list education`
+7. **Given** I run `resume --json list education`
    **When** education entries exist
    **Then** JSON output includes all education fields
 
-7. **Given** education entries are rendered on resume
+8. **Given** education entries are rendered on resume
    **When** the user has 10+ years experience
    **Then** education appears after experience (industry standard)
    **And** this ordering is handled by templates, not this story
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create `new education` subcommand (AC: #1, #2, #5)
-  - [ ] 1.1: Add `education` subcommand to `commands/new.py`
-  - [ ] 1.2: Implement Rich prompts for interactive input:
+- [x] Task 1: Create `new education` subcommand (AC: #1, #2, #5)
+  - [x] 1.1: Add `education` subcommand to `commands/new.py`
+  - [x] 1.2: Implement Rich prompts for interactive input:
     - Degree/program name (required, text prompt)
     - Institution name (required, text prompt)
     - Graduation year (YYYY, validated)
     - Honors/distinction (optional, text)
     - GPA (optional, text)
-  - [ ] 1.3: Add non-interactive flags: `--degree`, `--institution`, `--year`, `--honors`, `--gpa`
-  - [ ] 1.4: Implement config file update using ConfigWriter service
-  - [ ] 1.5: Display confirmation message with formatted education entry
+  - [x] 1.3: Add non-interactive flags: `--degree`, `--institution`, `--year`, `--honors`, `--gpa`
+  - [x] 1.4: Implement config file update using EducationService (adapted from story design)
+  - [x] 1.5: Display confirmation message with formatted education entry
 
-- [ ] Task 2: Create `list education` command (AC: #3, #6)
-  - [ ] 2.1: Create `commands/education.py` module
-  - [ ] 2.2: Add `list_education()` command function
-  - [ ] 2.3: Implement Rich table with columns: Degree, Institution, Year, Honors
-  - [ ] 2.4: Handle empty education list gracefully
-  - [ ] 2.5: Implement JSON output with all education fields
+- [x] Task 2: Create `list education` command (AC: #3, #6)
+  - [x] 2.1: Add `list_education()` to `commands/list_cmd.py` (integrated with existing list group)
+  - [x] 2.2: Add `list_education()` command function
+  - [x] 2.3: Implement Rich table with columns: Degree, Institution, Year, Honors
+  - [x] 2.4: Handle empty education list gracefully
+  - [x] 2.5: Implement JSON output with all education fields
 
-- [ ] Task 3: Create `remove education` command (AC: #4)
-  - [ ] 3.1: Add `remove_education()` command function
-  - [ ] 3.2: Accept degree name as argument
-  - [ ] 3.3: Search education by degree name (case-insensitive partial match)
-  - [ ] 3.4: Confirm removal in interactive mode (skip with `--yes`)
-  - [ ] 3.5: Update `.resume.yaml` with education entry removed
-  - [ ] 3.6: Display confirmation message
+- [x] Task 3: Create `remove education` command (AC: #4)
+  - [x] 3.1: Add `remove_education()` command function to `commands/remove.py`
+  - [x] 3.2: Accept degree name as argument
+  - [x] 3.3: Search education by degree name (case-insensitive partial match)
+  - [x] 3.4: Confirm removal in interactive mode (skip with `--yes`)
+  - [x] 3.5: Update `.resume.yaml` with education entry removed
+  - [x] 3.6: Display confirmation message
 
-- [ ] Task 4: Register commands in CLI (AC: all)
-  - [ ] 4.1: Register `new education` in main CLI group
-  - [ ] 4.2: Register `list education` in main CLI group
-  - [ ] 4.3: Register `remove education` in main CLI group
-  - [ ] 4.4: Add help text for all commands
+- [x] Task 3.5: Create `show education` command (AC: #5) [Added during code review]
+  - [x] 3.5.1: Add `show_education()` command function to `commands/show.py`
+  - [x] 3.5.2: Accept degree name as argument (partial match supported)
+  - [x] 3.5.3: Implement Rich formatted output with all education fields
+  - [x] 3.5.4: Implement JSON output via `--json` flag
+  - [x] 3.5.5: Handle not-found and multiple-match cases
 
-- [ ] Task 5: Extend ConfigWriter service (AC: #2, #4)
-  - [ ] 5.1: Add `add_education()` method to ConfigWriter
-  - [ ] 5.2: Add `remove_education()` method to ConfigWriter
-  - [ ] 5.3: Handle missing education array (create if needed)
+- [x] Task 4: Register commands in CLI (AC: all)
+  - [x] 4.1: Register `new education` in main CLI group (via @new_group.command decorator)
+  - [x] 4.2: Register `list education` in main CLI group (via @list_command.command decorator)
+  - [x] 4.3: Register `remove education` in main CLI group (via @remove_group.command decorator)
+  - [x] 4.4: Register `show education` in main CLI group (via @show_group.command decorator)
+  - [x] 4.5: Add help text for all commands
 
-- [ ] Task 6: Testing (AC: all)
-  - [ ] 6.1: Add unit tests for education name matching
-  - [ ] 6.2: Add integration tests for `new education` (interactive mock)
-  - [ ] 6.3: Add integration tests for `new education` (non-interactive)
-  - [ ] 6.4: Add integration tests for `list education`
-  - [ ] 6.5: Add integration tests for `remove education`
-  - [ ] 6.6: Add tests for JSON output format
-  - [ ] 6.7: Add tests for empty education handling
+- [x] Task 5: Extend EducationService (AC: #2, #4)
+  - [x] 5.1: `save_education()` method already exists
+  - [x] 5.2: Add `remove_education()` method to EducationService
+  - [x] 5.3: Add `find_educations_by_degree()` method for partial matching
 
-- [ ] Task 7: Code quality verification
-  - [ ] 7.1: Run `ruff check src tests --fix`
-  - [ ] 7.2: Run `mypy src --strict` with zero errors
-  - [ ] 7.3: Run `pytest` - all tests pass
+- [x] Task 5.5: Add empty string validation to Education model [Added during code review]
+  - [x] 5.5.1: Add `field_validator` for `degree` and `institution` fields
+  - [x] 5.5.2: Reject empty or whitespace-only strings
+  - [x] 5.5.3: Strip whitespace from valid values
+  - [x] 5.5.4: Add 5 unit tests for validation behavior
+
+- [x] Task 6: Testing (AC: all)
+  - [x] 6.1: Add unit tests for education name matching
+  - [x] 6.2: Add integration tests for `new education` (interactive mock)
+  - [x] 6.3: Add integration tests for `new education` (non-interactive)
+  - [x] 6.4: Add integration tests for `list education`
+  - [x] 6.5: Add integration tests for `remove education`
+  - [x] 6.6: Add integration tests for `show education` [Added during code review]
+  - [x] 6.7: Add tests for JSON output format
+  - [x] 6.8: Add tests for empty education handling
+
+- [x] Task 7: Code quality verification
+  - [x] 7.1: Run `ruff check src tests --fix` - passed
+  - [x] 7.2: Run `mypy src --strict` with zero errors - passed
+  - [x] 7.3: Run `pytest` - all 1346 tests pass
 
 ## Dev Notes
 
@@ -652,11 +672,44 @@ uv run resume remove education "BS Computer Science"
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None - implementation proceeded without issues.
+
 ### Completion Notes List
+
+- Task 1 (`new education`) was already implemented in commands/new.py from a previous story
+- Task 2 (`list education`) added to commands/list_cmd.py following certification patterns
+- Task 3 (`remove education`) added to commands/remove.py following certification patterns
+- Task 3.5 (`show education`) added to commands/show.py during code review for CRUD consistency
+- Task 5 adapted: Used EducationService instead of ConfigWriter (service already existed with save_education method)
+- Added `find_educations_by_degree()` and `remove_education()` methods to EducationService
+- Task 5.5: Added empty string validation to Education model (rejects empty/whitespace-only degree and institution)
+- All 38 education-specific tests pass (27 original + 6 for show + 5 for validation)
+- Full regression suite: 1357 tests pass
+- Code quality: ruff check passed, mypy --strict passed
+- CLAUDE.md resource coverage table updated to show education as complete
 
 ### File List
 
+**Modified Files:**
+- `src/resume_as_code/services/education_service.py` - Added `find_educations_by_degree()` and `remove_education()` methods
+- `src/resume_as_code/commands/list_cmd.py` - Added `list_education` command and output helpers
+- `src/resume_as_code/commands/remove.py` - Added `remove_education` command
+- `src/resume_as_code/commands/show.py` - Added `show_education` command [Added during code review]
+- `CLAUDE.md` - Updated resource coverage table for education [Added during code review]
+
+**New Files:**
+- `tests/unit/test_education_commands.py` - 38 tests for education management commands
+
+**Pre-existing (minor changes):**
+- `src/resume_as_code/commands/new.py` - Already had `new education` command
+- `src/resume_as_code/models/education.py` - Added empty string validation for degree/institution [Modified during code review]
+
+## Change Log
+
+- 2026-01-12: Implemented education management commands (list, remove) and tests. All ACs satisfied.
+- 2026-01-12: Code review expansion - Added `show education` command for CRUD consistency.
+- 2026-01-12: Code review fix - Added empty string validation to Education model. All 38 tests pass.

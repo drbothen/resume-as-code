@@ -116,3 +116,65 @@ class EducationService:
 
         # Clear cache
         self._education = None
+
+    def find_educations_by_degree(self, query: str) -> list[Education]:
+        """Find education records matching degree name.
+
+        Case-insensitive partial matching on degree name.
+
+        Args:
+            query: Search string to match against degree names.
+
+        Returns:
+            List of matching Education records.
+        """
+        education = self.load_education()
+        query_lower = query.lower().strip()
+
+        return [
+            edu
+            for edu in education
+            if query_lower in edu.degree.lower()
+        ]
+
+    def remove_education(self, degree: str) -> bool:
+        """Remove an education record by degree name.
+
+        Performs exact match (case-insensitive) on degree name.
+
+        Args:
+            degree: The exact degree name to remove.
+
+        Returns:
+            True if education was removed, False if not found.
+        """
+        yaml = YAML()
+        yaml.default_flow_style = False
+
+        if not self.config_path.exists():
+            return False
+
+        with open(self.config_path) as f:
+            data = yaml.load(f) or {}
+
+        if "education" not in data or not data["education"]:
+            return False
+
+        original_count = len(data["education"])
+        degree_lower = degree.lower().strip()
+
+        data["education"] = [
+            e for e in data["education"]
+            if e.get("degree", "").lower().strip() != degree_lower
+        ]
+
+        if len(data["education"]) == original_count:
+            return False
+
+        # Save
+        with open(self.config_path, "w") as f:
+            yaml.dump(data, f)
+
+        # Clear cache
+        self._education = None
+        return True

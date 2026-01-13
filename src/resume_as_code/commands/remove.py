@@ -10,6 +10,7 @@ from rich.prompt import Confirm
 from resume_as_code.config import get_config
 from resume_as_code.models.output import JSONResponse
 from resume_as_code.services.certification_service import CertificationService
+from resume_as_code.services.education_service import EducationService
 from resume_as_code.services.position_service import PositionService
 from resume_as_code.utils.console import console, info, success, warning
 from resume_as_code.utils.errors import handle_errors
@@ -196,6 +197,92 @@ def remove_position(ctx: click.Context, position_id_or_query: str, yes: bool) ->
             click.echo(response.to_json())
         else:
             console.print("[red]Failed to remove position[/red]")
+        raise SystemExit(1)
+
+
+@remove_group.command("education")
+@click.argument("degree")
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
+@click.pass_context
+@handle_errors
+def remove_education(ctx: click.Context, degree: str, yes: bool) -> None:
+    """Remove an education entry by degree name.
+
+    Performs case-insensitive partial matching on the degree name.
+    If multiple education entries match, asks for clarification.
+    """
+    service = EducationService(config_path=Path.cwd() / ".resume.yaml")
+
+    # Find matching education entries
+    matching = service.find_educations_by_degree(degree)
+
+    if not matching:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="error",
+                command="remove education",
+                data={"message": f"No education entry found matching '{degree}'"},
+            )
+            click.echo(response.to_json())
+        else:
+            console.print(f"[red]No education entry found matching '{degree}'[/red]")
+        raise SystemExit(4)  # NOT_FOUND
+
+    if len(matching) > 1:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="error",
+                command="remove education",
+                data={
+                    "message": f"Multiple education entries match '{degree}'",
+                    "matches": [edu.degree for edu in matching],
+                },
+            )
+            click.echo(response.to_json())
+        else:
+            console.print(f"[yellow]Multiple education entries match '{degree}':[/yellow]")
+            for edu in matching:
+                console.print(f"  - {edu.degree}")
+            console.print("[yellow]Please be more specific.[/yellow]")
+        raise SystemExit(1)
+
+    edu = matching[0]
+
+    # Confirm removal unless --yes flag is set
+    if (
+        not yes
+        and not ctx.obj.json_output
+        and not Confirm.ask(f"Remove education '[cyan]{edu.degree}[/cyan]'?")
+    ):
+        info("Cancelled.")
+        return
+
+    # Remove the education
+    removed = service.remove_education(edu.degree)
+
+    if removed:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="success",
+                command="remove education",
+                data={
+                    "removed": True,
+                    "degree": edu.degree,
+                },
+            )
+            click.echo(response.to_json())
+        else:
+            success(f"Removed education: {edu.degree}")
+    else:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="error",
+                command="remove education",
+                data={"message": "Failed to remove education"},
+            )
+            click.echo(response.to_json())
+        else:
+            console.print("[red]Failed to remove education[/red]")
         raise SystemExit(1)
 
 

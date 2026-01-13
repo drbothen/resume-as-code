@@ -12,6 +12,7 @@ from ruamel.yaml import YAML
 from resume_as_code.config import get_config
 from resume_as_code.models.output import JSONResponse
 from resume_as_code.services.certification_service import CertificationService
+from resume_as_code.services.education_service import EducationService
 from resume_as_code.services.position_service import PositionService
 from resume_as_code.utils.console import console, info, json_output
 from resume_as_code.utils.errors import handle_errors
@@ -164,6 +165,81 @@ def list_certifications(ctx: click.Context) -> None:
         _output_certifications_json(certifications)
     else:
         _output_certifications_table(certifications)
+
+
+@list_command.command("education")
+@click.pass_context
+@handle_errors
+def list_education(ctx: click.Context) -> None:
+    """List all education entries."""
+    service = EducationService(config_path=Path.cwd() / ".resume.yaml")
+    education = service.load_education()
+
+    if not education:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="success",
+                command="list education",
+                data={"education": [], "count": 0},
+            )
+            json_output(response.to_json())
+        else:
+            info("No education entries found.")
+            console.print("[dim]Create one with: resume new education[/dim]")
+        return
+
+    if ctx.obj.json_output:
+        _output_education_json(education)
+    else:
+        _output_education_table(education)
+
+
+def _output_education_json(education: list[Any]) -> None:
+    """Output education as JSON."""
+    from resume_as_code.models.education import Education
+
+    edu_data = []
+    for edu in education:
+        if isinstance(edu, Education):
+            data = {
+                "degree": edu.degree,
+                "institution": edu.institution,
+                "year": edu.year,
+                "honors": edu.honors,
+                "gpa": edu.gpa,
+                "display": edu.display,
+            }
+            edu_data.append(data)
+
+    response = JSONResponse(
+        status="success",
+        command="list education",
+        data={"education": edu_data, "count": len(edu_data)},
+    )
+    json_output(response.to_json())
+
+
+def _output_education_table(education: list[Any]) -> None:
+    """Output education as Rich table."""
+    from resume_as_code.models.education import Education
+
+    table = Table(title="Education")
+    table.add_column("Degree", style="cyan", no_wrap=True)
+    table.add_column("Institution")
+    table.add_column("Year")
+    table.add_column("Honors")
+
+    for edu in education:
+        if isinstance(edu, Education):
+            table.add_row(
+                edu.degree,
+                edu.institution,
+                edu.year or "-",
+                edu.honors or "-",
+            )
+
+    console.print(table)
+    console.print(f"\n[dim]{len(education)} Education Entry(ies)[/dim]")
 
 
 def _output_certifications_json(certifications: list[Any]) -> None:
