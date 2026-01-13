@@ -141,10 +141,18 @@ CLI tool for git-native resume generation from structured Work Units.
 | `resume test-errors --type <type>` | Test error handling (dev tool) |
 | `resume test-output` | Test output formatting (dev tool) |
 | `resume new work-unit` | Create new Work Unit (planned) |
-| `resume validate [PATH]` | Validate Work Units (planned) |
+| `resume validate [PATH]` | Validate Work Units against schema |
 | `resume list` | List all Work Units (planned) |
-| `resume plan --jd <file>` | Analyze JD, select Work Units (planned) |
-| `resume build --jd <file>` | Generate resume files (planned) |
+| `resume plan --jd <file>` | Analyze JD, select Work Units |
+| `resume build --jd <file>` | Generate resume files |
+
+### Validate Command Options
+
+| Flag | Description |
+|------|-------------|
+| `--content-quality` | Check content quality (weak verbs, quantification) |
+| `--content-density` | Check content density (bullet length) |
+| `--check-positions` | Validate position_id references exist in positions.yaml |
 
 ### Global Flags
 
@@ -225,6 +233,7 @@ Use `--json` for structured output. Response format:
 | `.resume.yaml` | Project config |
 | `~/.config/resume-as-code/config.yaml` | User config |
 | `work-units/*.yaml` | Work Unit files |
+| `positions.yaml` | Employment positions (employers, titles, dates) |
 | `dist/` | Generated output |
 
 <!-- Keep CLAUDE.md in sync when adding new commands. Update Quick Reference table and add workflow examples. -->

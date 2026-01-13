@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 EmploymentType = Literal["full-time", "part-time", "contract", "consulting", "freelance"]
 
@@ -20,6 +20,8 @@ class Position(BaseModel):
     Represents a role at an employer. Work units reference positions
     via position_id to group achievements under employers.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     id: str = Field(description="Unique identifier like 'pos-techcorp-senior'")
     employer: str = Field(description="Company/organization name")
@@ -46,6 +48,16 @@ class Position(BaseModel):
         if not re.match(r"^\d{4}-\d{2}$", str(v)):
             raise ValueError("Date must be in YYYY-MM format")
         return v
+
+    @model_validator(mode="after")
+    def validate_date_range(self) -> Position:
+        """Validate that end_date is not before start_date."""
+        if self.end_date is not None and self.end_date < self.start_date:
+            raise ValueError(
+                f"end_date ({self.end_date}) must not be before "
+                f"start_date ({self.start_date})"
+            )
+        return self
 
     @property
     def is_current(self) -> bool:

@@ -70,6 +70,9 @@ class ResumeConfig(BaseModel):
     # Work unit settings
     work_units_dir: Path = Field(default=Path("./work-units"))
 
+    # Employment history settings
+    positions_path: Path = Field(default=Path("./positions.yaml"))
+
     # Ranking settings
     scoring_weights: ScoringWeights = Field(default_factory=ScoringWeights)
     default_top_k: int = Field(default=8, ge=1, le=50)
@@ -89,7 +92,7 @@ class ResumeConfig(BaseModel):
     # Skills curation
     skills: SkillsConfig = Field(default_factory=SkillsConfig)
 
-    @field_validator("output_dir", "work_units_dir", mode="before")
+    @field_validator("output_dir", "work_units_dir", "positions_path", mode="before")
     @classmethod
     def expand_path(cls, v: str | Path) -> Path:
         """Expand ~ and resolve path."""

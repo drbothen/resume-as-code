@@ -366,6 +366,60 @@ positions:
 
         assert chain == []
 
+    def test_get_promotion_chain_circular_reference(self, tmp_path: Path) -> None:
+        """Should handle circular promoted_from references without infinite loop."""
+        positions_file = tmp_path / "positions.yaml"
+        # Create circular reference: A -> B -> C -> A
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-a:
+    employer: "TechCorp"
+    title: "Role A"
+    start_date: "2023-01"
+    promoted_from: "pos-c"
+  pos-b:
+    employer: "TechCorp"
+    title: "Role B"
+    start_date: "2022-01"
+    promoted_from: "pos-a"
+  pos-c:
+    employer: "TechCorp"
+    title: "Role C"
+    start_date: "2021-01"
+    promoted_from: "pos-b"
+""")
+        service = PositionService(positions_file)
+
+        # Should not hang - cycle detection prevents infinite loop
+        # Returns partial chain up to point of cycle detection
+        chain = service.get_promotion_chain("pos-a")
+
+        # Should have at most 3 positions (cycle is detected and stops)
+        assert len(chain) <= 3
+        # Should include pos-a (the requested position)
+        assert any(p.id == "pos-a" for p in chain)
+
+    def test_get_promotion_chain_self_reference(self, tmp_path: Path) -> None:
+        """Should handle self-referential promoted_from without infinite loop."""
+        positions_file = tmp_path / "positions.yaml"
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-self:
+    employer: "TechCorp"
+    title: "Self Ref"
+    start_date: "2022-01"
+    promoted_from: "pos-self"
+""")
+        service = PositionService(positions_file)
+
+        # Should not hang - returns just the single position
+        chain = service.get_promotion_chain("pos-self")
+
+        assert len(chain) == 1
+        assert chain[0].id == "pos-self"
+
 
 class TestPositionServiceSave:
     """Tests for saving positions."""

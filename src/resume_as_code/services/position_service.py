@@ -123,15 +123,21 @@ class PositionService:
         Returns:
             List from earliest to most recent position in the chain.
             Empty list if position not found.
+
+        Note:
+            Includes cycle detection to prevent infinite loops from
+            malformed promoted_from references.
         """
         positions = self.load_positions()
         chain: list[Position] = []
+        visited: set[str] = set()
 
         current_id: str | None = position_id
-        while current_id:
+        while current_id and current_id not in visited:
             pos = positions.get(current_id)
             if not pos:
                 break
+            visited.add(current_id)
             chain.append(pos)
             current_id = pos.promoted_from
 

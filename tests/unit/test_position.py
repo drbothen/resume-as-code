@@ -199,3 +199,53 @@ class TestPositionModel:
                 title="Engineer",
                 start_date="2022-01",
             )  # type: ignore[call-arg]
+
+    def test_date_range_validation_valid(self) -> None:
+        """Should accept end_date after start_date."""
+        pos = Position(
+            id="pos-test",
+            employer="Test Corp",
+            title="Engineer",
+            start_date="2020-01",
+            end_date="2022-12",
+        )
+        assert pos.start_date == "2020-01"
+        assert pos.end_date == "2022-12"
+
+    def test_date_range_validation_same_month(self) -> None:
+        """Should accept end_date same as start_date."""
+        pos = Position(
+            id="pos-test",
+            employer="Test Corp",
+            title="Consultant",
+            start_date="2022-06",
+            end_date="2022-06",
+        )
+        assert pos.start_date == "2022-06"
+        assert pos.end_date == "2022-06"
+
+    def test_date_range_validation_end_before_start(self) -> None:
+        """Should reject end_date before start_date."""
+        with pytest.raises(ValidationError) as exc_info:
+            Position(
+                id="pos-test",
+                employer="Test Corp",
+                title="Engineer",
+                start_date="2024-01",
+                end_date="2020-12",
+            )
+        assert "end_date" in str(exc_info.value)
+        assert "start_date" in str(exc_info.value)
+
+    def test_extra_fields_forbidden(self) -> None:
+        """Should reject extra fields not in schema."""
+        with pytest.raises(ValidationError) as exc_info:
+            Position(
+                id="pos-test",
+                employer="Test Corp",
+                title="Engineer",
+                start_date="2022-01",
+                unknown_field="should not be allowed",  # type: ignore[call-arg]
+            )
+        errors = exc_info.value.errors()
+        assert errors[0]["type"] == "extra_forbidden"

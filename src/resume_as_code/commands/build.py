@@ -129,7 +129,7 @@ def build_command(
 
     # Build ResumeData with skill curation (Story 6.3) and position grouping (Story 6.7)
     contact = _load_contact_info(config)
-    positions_path = Path.cwd() / "positions.yaml"
+    positions_path = config.positions_path
     resume = ResumeData.from_work_units(
         work_units=work_units,
         contact=contact,

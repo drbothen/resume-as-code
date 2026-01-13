@@ -292,14 +292,15 @@ def _output_position_errors_rich(errors: list[ContentWarning]) -> None:
 def _load_position_ids() -> set[str]:
     """Load valid position IDs from positions.yaml.
 
-    Looks for positions.yaml in current working directory.
+    Uses positions_path from configuration.
 
     Returns:
-        Set of valid position IDs, empty set if file doesn't exist.
+        Set of valid position IDs, empty set if file doesn't exist or is invalid.
     """
     from resume_as_code.services.position_service import PositionService
 
-    positions_path = Path.cwd() / "positions.yaml"
+    config = get_config()
+    positions_path = config.positions_path
 
     if not positions_path.exists():
         return set()
@@ -308,6 +309,9 @@ def _load_position_ids() -> set[str]:
         service = PositionService(positions_path)
         positions = service.load_positions()
         return set(positions.keys())
-    except Exception:
-        # If positions.yaml is invalid, treat as no positions defined
+    except Exception as e:
+        # Log warning about malformed positions.yaml
+        console.print(
+            f"[yellow]⚠ Warning: Could not load positions.yaml: {e}[/yellow]"
+        )
         return set()

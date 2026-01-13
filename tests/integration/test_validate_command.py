@@ -459,6 +459,7 @@ outcome:
 """
 
 POSITIONS_YAML = """\
+schema_version: "1.0.0"
 positions:
   pos-techcorp-senior:
     employer: "TechCorp Industries"
