@@ -201,9 +201,7 @@ class TestInlineWorkUnitCreation:
 class TestInlineWorkUnitValidation:
     """Tests for inline work unit validation."""
 
-    def test_problem_minimum_length(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_problem_minimum_length(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should error if problem is too short."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / "work-units").mkdir()
@@ -228,9 +226,7 @@ class TestInlineWorkUnitValidation:
         assert result.exit_code != 0
         assert "20 characters" in result.output
 
-    def test_result_minimum_length(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_result_minimum_length(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should error if result is too short."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / "work-units").mkdir()
@@ -255,9 +251,7 @@ class TestInlineWorkUnitValidation:
         assert result.exit_code != 0
         assert "10 characters" in result.output
 
-    def test_action_minimum_length(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_action_minimum_length(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should error if any action is too short."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / "work-units").mkdir()

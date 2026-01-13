@@ -224,8 +224,7 @@ class WorkUnit(BaseModel):
 
     # Position reference for employment history grouping
     position_id: str | None = Field(
-        default=None,
-        description="Reference to position in positions.yaml for employer grouping"
+        default=None, description="Reference to position in positions.yaml for employer grouping"
     )
 
     # Optional metadata

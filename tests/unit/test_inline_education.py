@@ -97,9 +97,7 @@ class TestNewEducationCommand:
         assert edu["honors"] == "Magna Cum Laude"
         assert edu["gpa"] == "3.9/4.0"
 
-    def test_education_json_output(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_education_json_output(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should return structured JSON output."""
         monkeypatch.chdir(tmp_path)
 
@@ -304,9 +302,7 @@ class TestEducationPipeSeparated:
         assert edu.get("year") is None
         assert edu.get("honors") is None
 
-    def test_pipe_format_json_output(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_pipe_format_json_output(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should return JSON output with pipe-separated format."""
         monkeypatch.chdir(tmp_path)
 

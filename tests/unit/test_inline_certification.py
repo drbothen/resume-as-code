@@ -267,9 +267,7 @@ class TestCertificationPipeSeparated:
         assert cert.get("date") is None
         assert cert.get("expires") is None
 
-    def test_pipe_format_json_output(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_pipe_format_json_output(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should return JSON output with pipe-separated format."""
         monkeypatch.chdir(tmp_path)
 

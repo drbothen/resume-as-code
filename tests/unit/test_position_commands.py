@@ -308,9 +308,7 @@ positions:
         output = result.output
         assert "Junior Engineer" in output or "Progression" in output or "Career" in output
 
-    def test_position_not_found(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_position_not_found(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should error when position doesn't exist."""
         monkeypatch.chdir(tmp_path)
         runner = CliRunner()

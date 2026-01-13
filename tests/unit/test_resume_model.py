@@ -573,9 +573,7 @@ class TestResumeDataPositionGrouping:
         assert len(resume.sections[0].items) == 1
         assert resume.sections[0].items[0].title == "Built API service"
 
-    def test_from_work_units_with_positions_groups_by_position(
-        self, tmp_path: Path
-    ) -> None:
+    def test_from_work_units_with_positions_groups_by_position(self, tmp_path: Path) -> None:
         """Work units should be grouped by position_id."""
 
         positions_file = tmp_path / "positions.yaml"
@@ -621,9 +619,7 @@ positions:
         assert item.start_date == "2022"
         assert len(item.bullets) >= 2  # At least one bullet per work unit
 
-    def test_from_work_units_with_mixed_positions(
-        self, tmp_path: Path
-    ) -> None:
+    def test_from_work_units_with_mixed_positions(self, tmp_path: Path) -> None:
         """Work units with and without positions should both render."""
 
         positions_file = tmp_path / "positions.yaml"
@@ -661,9 +657,7 @@ positions:
         # Should have two items: one position-based, one standalone
         assert len(resume.sections[0].items) == 2
 
-    def test_from_work_units_sorts_by_date_descending(
-        self, tmp_path: Path
-    ) -> None:
+    def test_from_work_units_sorts_by_date_descending(self, tmp_path: Path) -> None:
         """Experience items should be sorted by date (most recent first)."""
 
         positions_file = tmp_path / "positions.yaml"
@@ -710,9 +704,7 @@ positions:
         assert items[0].organization == "NewCorp"
         assert items[1].organization == "OldCorp"
 
-    def test_from_work_units_invalid_position_id_fallback(
-        self, tmp_path: Path
-    ) -> None:
+    def test_from_work_units_invalid_position_id_fallback(self, tmp_path: Path) -> None:
         """Work units with invalid position_id should be treated as standalone."""
 
         positions_file = tmp_path / "positions.yaml"

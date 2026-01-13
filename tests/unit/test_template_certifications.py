@@ -180,9 +180,7 @@ class TestExecutiveTemplateCertifications:
 
         assert "Old Cert" not in html
 
-    def test_executive_template_shows_expiration(
-        self, template_service: TemplateService
-    ) -> None:
+    def test_executive_template_shows_expiration(self, template_service: TemplateService) -> None:
         """Executive template should show expiration year when present."""
         resume = ResumeData(
             contact=ContactInfo(name="Test"),
@@ -261,9 +259,7 @@ class TestATSSafeTemplateCertifications:
 
         assert "CERTIFICATIONS" not in html
 
-    def test_ats_safe_template_shows_expiration(
-        self, template_service: TemplateService
-    ) -> None:
+    def test_ats_safe_template_shows_expiration(self, template_service: TemplateService) -> None:
         """ATS-safe template should show expiration year when present."""
         resume = ResumeData(
             contact=ContactInfo(name="Test"),
@@ -483,9 +479,7 @@ class TestDOCXCertifications:
 class TestPartialCertificationData:
     """Tests for handling partial certification data."""
 
-    def test_certification_with_name_only(
-        self, template_service: TemplateService
-    ) -> None:
+    def test_certification_with_name_only(self, template_service: TemplateService) -> None:
         """Templates should handle certification with only name."""
         resume = ResumeData(
             contact=ContactInfo(name="Test"),

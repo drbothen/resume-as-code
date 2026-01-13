@@ -31,9 +31,7 @@ class Position(BaseModel):
     end_date: str | None = Field(
         default=None, description="End date in YYYY-MM format, None for current"
     )
-    employment_type: EmploymentType | None = Field(
-        default=None, description="Type of employment"
-    )
+    employment_type: EmploymentType | None = Field(default=None, description="Type of employment")
     promoted_from: str | None = Field(
         default=None, description="ID of previous position (for promotions)"
     )
@@ -54,8 +52,7 @@ class Position(BaseModel):
         """Validate that end_date is not before start_date."""
         if self.end_date is not None and self.end_date < self.start_date:
             raise ValueError(
-                f"end_date ({self.end_date}) must not be before "
-                f"start_date ({self.start_date})"
+                f"end_date ({self.end_date}) must not be before start_date ({self.start_date})"
             )
         return self
 

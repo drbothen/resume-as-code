@@ -57,8 +57,7 @@ def parse_position_flag(value: str) -> dict[str, str | None]:
     parts = value.split("|")
     if len(parts) < 3 or len(parts) > 4:
         raise click.BadParameter(
-            "Position must be in format: 'Employer|Title|StartDate|EndDate' "
-            "(EndDate optional)"
+            "Position must be in format: 'Employer|Title|StartDate|EndDate' (EndDate optional)"
         )
 
     employer = parts[0].strip()
@@ -137,8 +136,7 @@ def parse_education_flag(value: str) -> dict[str, str | None]:
     parts = value.split("|")
     if len(parts) < 2 or len(parts) > 4:
         raise click.BadParameter(
-            "Education must be in format: 'Degree|Institution|Year|Honors' "
-            "(Year, Honors optional)"
+            "Education must be in format: 'Degree|Institution|Year|Honors' (Year, Honors optional)"
         )
 
     degree = parts[0].strip()
@@ -370,10 +368,7 @@ def new_work_unit(
     # Determine if we're in full inline creation mode
     # (all required fields provided: title, problem, actions, result)
     inline_mode = (
-        title is not None
-        and problem is not None
-        and len(actions) > 0
-        and result is not None
+        title is not None and problem is not None and len(actions) > 0 and result is not None
     )
 
     if inline_mode:
@@ -387,9 +382,7 @@ def new_work_unit(
                 f"Problem statement must be at least 20 characters (got {len(problem)})"
             )
         if len(result) < 10:
-            raise click.UsageError(
-                f"Result must be at least 10 characters (got {len(result)})"
-            )
+            raise click.UsageError(f"Result must be at least 10 characters (got {len(result)})")
         for i, action in enumerate(actions):
             if len(action) < 10:
                 raise click.UsageError(
@@ -913,6 +906,10 @@ def new_certification(
     if non_interactive:
         # Non-interactive mode - use provided values directly
         assert name is not None
+
+        # Validate name is not empty
+        if not name.strip():
+            raise click.UsageError("Certification name cannot be empty")
 
         # Validate date formats if provided
         if cert_date and not _validate_date_format(cert_date):

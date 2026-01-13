@@ -311,7 +311,5 @@ def _load_position_ids() -> set[str]:
         return set(positions.keys())
     except Exception as e:
         # Log warning about malformed positions.yaml
-        console.print(
-            f"[yellow]⚠ Warning: Could not load positions.yaml: {e}[/yellow]"
-        )
+        console.print(f"[yellow]⚠ Warning: Could not load positions.yaml: {e}[/yellow]")
         return set()
