@@ -86,9 +86,7 @@ class PositionService:
         """
         return position_id in self.load_positions()
 
-    def group_by_employer(
-        self, positions: Sequence[Position]
-    ) -> dict[str, list[Position]]:
+    def group_by_employer(self, positions: Sequence[Position]) -> dict[str, list[Position]]:
         """Group positions by employer.
 
         Args:
@@ -208,3 +206,58 @@ class PositionService:
 
         # Clear cache
         self._positions = None
+
+    def remove_position(self, position_id: str) -> bool:
+        """Remove a position by ID.
+
+        Args:
+            position_id: The position ID to remove.
+
+        Returns:
+            True if position was removed, False if not found.
+        """
+        yaml = YAML()
+        yaml.default_flow_style = False
+
+        # Load existing data
+        if not self.positions_path.exists():
+            return False
+
+        with open(self.positions_path) as f:
+            data = yaml.load(f) or {}
+
+        if "positions" not in data or position_id not in data["positions"]:
+            return False
+
+        # Remove the position
+        del data["positions"][position_id]
+
+        # Save
+        with open(self.positions_path, "w") as f:
+            yaml.dump(data, f)
+
+        # Clear cache
+        self._positions = None
+        return True
+
+    def find_positions_by_query(self, query: str) -> list[Position]:
+        """Find positions matching a query string.
+
+        Searches employer and title fields (case-insensitive partial match).
+
+        Args:
+            query: Search string to match against employer or title.
+
+        Returns:
+            List of matching Position objects.
+        """
+        positions = self.load_positions()
+        query_lower = query.lower().strip()
+
+        return [
+            pos
+            for pos in positions.values()
+            if query_lower in pos.employer.lower()
+            or query_lower in pos.title.lower()
+            or query_lower in pos.id.lower()
+        ]

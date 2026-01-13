@@ -119,3 +119,68 @@ class CertificationService:
 
         # Clear cache
         self._certifications = None
+
+    def remove_certification(self, name: str) -> bool:
+        """Remove a certification by name (case-insensitive partial match).
+
+        Args:
+            name: Full or partial certification name to match.
+
+        Returns:
+            True if certification was removed, False if not found.
+
+        Note:
+            Uses case-insensitive partial matching. If multiple certifications
+            match, the first match is removed.
+        """
+        yaml = YAML()
+        yaml.default_flow_style = False
+
+        # Load existing data
+        if not self.config_path.exists():
+            return False
+
+        with open(self.config_path) as f:
+            data = yaml.load(f) or {}
+
+        if "certifications" not in data or not data["certifications"]:
+            return False
+
+        # Find matching certification index
+        name_lower = name.lower().strip()
+        remove_idx = None
+        for idx, cert_data in enumerate(data["certifications"]):
+            cert_name = cert_data.get("name", "")
+            if name_lower in cert_name.lower():
+                remove_idx = idx
+                break
+
+        if remove_idx is None:
+            return False
+
+        # Remove the certification
+        del data["certifications"][remove_idx]
+
+        # Save
+        with open(self.config_path, "w") as f:
+            yaml.dump(data, f)
+
+        # Clear cache
+        self._certifications = None
+        return True
+
+    def find_certifications_by_name(self, name: str) -> list[Certification]:
+        """Find all certifications matching a partial name.
+
+        Case-insensitive partial matching.
+
+        Args:
+            name: Partial name to search for.
+
+        Returns:
+            List of matching Certification objects.
+        """
+        certifications = self.load_certifications()
+        name_lower = name.lower().strip()
+
+        return [cert for cert in certifications if name_lower in cert.name.lower()]

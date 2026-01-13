@@ -1,4 +1,4 @@
-"""List command for browsing Work Units and Positions."""
+"""List command for browsing Work Units, Positions, and Certifications."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from ruamel.yaml import YAML
 
 from resume_as_code.config import get_config
 from resume_as_code.models.output import JSONResponse
+from resume_as_code.services.certification_service import CertificationService
 from resume_as_code.services.position_service import PositionService
 from resume_as_code.utils.console import console, info, json_output
 from resume_as_code.utils.errors import handle_errors
@@ -136,6 +137,104 @@ def list_positions(ctx: click.Context) -> None:
         _output_positions_json(sorted_positions)
     else:
         _output_positions_table(sorted_positions)
+
+
+@list_command.command("certifications")
+@click.pass_context
+@handle_errors
+def list_certifications(ctx: click.Context) -> None:
+    """List all certifications with expiration status."""
+    service = CertificationService(config_path=Path.cwd() / ".resume.yaml")
+    certifications = service.load_certifications()
+
+    if not certifications:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="success",
+                command="list certifications",
+                data={"certifications": [], "count": 0},
+            )
+            json_output(response.to_json())
+        else:
+            info("No certifications found.")
+            console.print("[dim]Create one with: resume new certification[/dim]")
+        return
+
+    if ctx.obj.json_output:
+        _output_certifications_json(certifications)
+    else:
+        _output_certifications_table(certifications)
+
+
+def _output_certifications_json(certifications: list[Any]) -> None:
+    """Output certifications as JSON with computed status."""
+    from resume_as_code.models.certification import Certification
+
+    cert_data = []
+    for cert in certifications:
+        if isinstance(cert, Certification):
+            data = {
+                "name": cert.name,
+                "issuer": cert.issuer,
+                "date": cert.date,
+                "expires": cert.expires,
+                "credential_id": cert.credential_id,
+                "url": str(cert.url) if cert.url else None,
+                "display": cert.display,
+                "status": cert.get_status(),
+            }
+            cert_data.append(data)
+
+    response = JSONResponse(
+        status="success",
+        command="list certifications",
+        data={"certifications": cert_data, "count": len(cert_data)},
+    )
+    json_output(response.to_json())
+
+
+def _output_certifications_table(certifications: list[Any]) -> None:
+    """Output certifications as Rich table with status highlighting."""
+    from resume_as_code.models.certification import Certification
+
+    table = Table(title="Certifications")
+    table.add_column("Name", style="cyan", no_wrap=True)
+    table.add_column("Issuer")
+    table.add_column("Date")
+    table.add_column("Expires")
+    table.add_column("Status")
+
+    expired_indices: list[int] = []
+    for idx, cert in enumerate(certifications):
+        if isinstance(cert, Certification):
+            status = cert.get_status()
+
+            # Determine status display and style
+            if status == "expired":
+                expired_indices.append(idx)
+                status_display = "[red]Expired[/red]"
+            elif status == "expires_soon":
+                status_display = "[yellow]Expires Soon[/yellow]"
+            else:
+                status_display = "[green]Active[/green]"
+
+            table.add_row(
+                cert.name,
+                cert.issuer or "-",
+                cert.date or "-",
+                cert.expires or "Never",
+                status_display,
+            )
+
+    console.print(table)
+    console.print(f"\n[dim]{len(certifications)} Certification(s)[/dim]")
+
+    if expired_indices:
+        # Show tip with actual index of first expired certification (AC#5)
+        console.print(
+            f"\n[yellow]Tip: Consider renewing expired certifications or hiding with "
+            f"`resume config certifications[{expired_indices[0]}].display false`[/yellow]"
+        )
 
 
 def _output_positions_json(positions: list[Any]) -> None:
