@@ -1,6 +1,6 @@
 # Story 6.9: Inline Position Creation (LLM-Optimized UX)
 
-Status: review
+Status: done
 
 ## Story
 
