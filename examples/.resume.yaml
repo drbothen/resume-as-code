@@ -1,0 +1,75 @@
+# Example Resume Configuration
+# Copy to your project root as .resume.yaml to customize
+
+# Output settings
+output_dir: ./dist
+default_format: both  # pdf, docx, or both
+default_template: executive  # modern, executive, executive-classic, ats-safe
+
+# Work unit and position file locations (relative to this config file's directory)
+work_units_dir: ./work-units
+positions_path: ./positions.yaml
+
+# Ranking settings for JD matching
+default_top_k: 8
+scoring_weights:
+  bm25_weight: 1.0      # Keyword matching weight
+  semantic_weight: 1.0  # Semantic similarity weight
+
+# Skills curation
+skills:
+  max_display: 15
+  prioritize:
+    - AWS
+    - Terraform
+    - Python
+    - ICS Security
+    - Kubernetes
+  exclude:
+    - Microsoft Office
+    - Windows
+
+# Profile information
+profile:
+  name: "Alex Morgan"
+  title: "Senior Platform Security Engineer"
+  email: "alex.morgan@example.com"
+  phone: "(555) 123-4567"
+  location: "Austin, TX"
+  linkedin: https://linkedin.com/in/alexmorgan
+  github: https://github.com/alexmorgan
+  summary: |
+    Senior Platform Security Engineer with 8+ years of experience securing
+    cloud-hybrid and industrial control system environments. Proven track record
+    designing compliant infrastructure, leading incident response, and mentoring
+    security teams. Expert in AWS architecture, Terraform automation, and
+    Python-based security tooling.
+
+# Education
+education:
+  - degree: "BS Computer Science"
+    institution: "University of Texas at Austin"
+    year: "2016"
+    honors: "Magna Cum Laude"
+  - degree: "MS Cybersecurity"
+    institution: "Georgia Institute of Technology"
+    year: "2020"
+
+# Certifications
+certifications:
+  - name: "CISSP"
+    issuer: "ISC2"
+    date: "2021-03"
+    expires: "2027-03"
+  - name: "AWS Solutions Architect Professional"
+    issuer: "Amazon Web Services"
+    date: "2022-06"
+    expires: "2025-06"
+  - name: "GICSP"
+    issuer: "GIAC"
+    date: "2023-01"
+    expires: "2027-01"
+  - name: "HashiCorp Terraform Associate"
+    issuer: "HashiCorp"
+    date: "2023-08"
+    expires: "2025-08"

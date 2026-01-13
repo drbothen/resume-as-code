@@ -1,0 +1,54 @@
+DevOps Engineer
+===============
+
+Company: CloudScale Technologies
+Location: Remote (US)
+Experience: 4-6 years
+
+About Us
+--------
+CloudScale Technologies is a fast-growing SaaS platform serving enterprise customers.
+We're building the next generation of workflow automation tools and need talented
+engineers to scale our infrastructure.
+
+Job Summary
+-----------
+We're looking for a DevOps Engineer to help us scale our infrastructure and improve
+our deployment processes. You'll work closely with development teams to build and
+maintain CI/CD pipelines, manage cloud infrastructure, and implement automation.
+
+Key Responsibilities
+--------------------
+* Design and maintain CI/CD pipelines using GitHub Actions or similar tools
+* Manage AWS infrastructure including EKS, RDS, and Lambda
+* Implement infrastructure as code using Terraform
+* Monitor system performance and implement improvements
+* Collaborate with development teams on deployment strategies
+* Participate in on-call rotation for production issues
+* Document infrastructure and runbooks
+
+Required Qualifications
+-----------------------
+* 4+ years experience in DevOps or SRE role
+* Strong experience with AWS services (EC2, EKS, RDS, S3, Lambda)
+* Proficiency with container orchestration (Kubernetes, Docker)
+* Experience with infrastructure as code (Terraform preferred)
+* CI/CD pipeline development (GitHub Actions, Jenkins, CircleCI)
+* Scripting skills in Python or Bash
+* Experience with monitoring tools (Datadog, Prometheus, Grafana)
+
+Nice to Have
+------------
+* Experience with GitOps workflows (ArgoCD, Flux)
+* Knowledge of security best practices and compliance (SOC 2)
+* Experience with database administration (PostgreSQL, Redis)
+* Contributions to open source projects
+
+Benefits
+--------
+* Competitive salary and equity
+* Remote-first culture
+* Flexible PTO
+* Health, dental, and vision insurance
+* 401(k) matching
+* Professional development budget

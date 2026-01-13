@@ -1,0 +1,61 @@
+Technical Lead - Backend Engineering
+=====================================
+
+Company: FinTech Innovations
+Location: Austin, TX (Hybrid)
+Experience: 7+ years
+
+About FinTech Innovations
+-------------------------
+We're revolutionizing the payments industry with our modern API-first platform.
+Our technology processes millions of transactions daily for clients worldwide.
+
+Role Overview
+-------------
+We're seeking a Technical Lead to guide our backend engineering team. You'll be
+responsible for technical direction, architecture decisions, and mentoring
+engineers while still contributing hands-on code.
+
+Responsibilities
+----------------
+* Lead a team of 5-7 backend engineers
+* Drive architectural decisions for our microservices platform
+* Own technical roadmap and coordinate with product management
+* Design and implement scalable APIs and services
+* Establish coding standards and best practices
+* Conduct code reviews and mentor junior engineers
+* Collaborate with security team on compliance requirements
+* Participate in incident response and post-mortems
+
+Technical Requirements
+----------------------
+* 7+ years of software engineering experience
+* 2+ years in a technical lead or senior role
+* Expert-level Python or Go programming
+* Experience designing and building microservices architectures
+* Strong knowledge of REST API design and gRPC
+* Database expertise (PostgreSQL, MongoDB, Redis)
+* Experience with message queues (Kafka, RabbitMQ)
+* Cloud infrastructure experience (AWS or GCP)
+
+Leadership Skills
+-----------------
+* Proven ability to mentor and develop engineers
+* Strong communication skills for technical and non-technical audiences
+* Experience with agile methodologies (Scrum, Kanban)
+* Track record of delivering complex projects on time
+
+Preferred Experience
+--------------------
+* Financial services or payments domain experience
+* Experience with PCI-DSS compliance
+* Knowledge of event-driven architectures
+* Experience with feature flags and A/B testing
+* Contributions to engineering culture initiatives
+
+Compensation
+------------
+* Base salary: $180,000 - $220,000
+* Annual bonus: 15-25%
+* Equity package
+* Comprehensive benefits

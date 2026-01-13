@@ -1,0 +1,64 @@
+Senior Python Developer
+========================
+
+Company: DataFlow Analytics
+Location: Remote
+Experience: 5+ years
+
+Company Overview
+----------------
+DataFlow Analytics builds data pipeline tools for enterprise customers.
+Our platform helps companies transform raw data into actionable insights.
+
+Position Summary
+----------------
+Join our engineering team to build and maintain our core data processing
+platform. You'll work on challenging problems involving large-scale data
+processing, API development, and system optimization.
+
+What You'll Do
+--------------
+- Build robust data pipelines processing terabytes of data daily
+- Develop and maintain RESTful APIs using FastAPI
+- Optimize performance of data processing jobs
+- Write comprehensive tests and documentation
+- Collaborate with data scientists on feature engineering pipelines
+- Debug and resolve production issues
+- Contribute to open source tools we maintain
+
+Requirements
+------------
+- 5+ years professional Python development experience
+- Strong understanding of Python internals and best practices
+- Experience with async programming (asyncio, aiohttp)
+- Familiarity with data processing frameworks (Pandas, Polars, Spark)
+- Database experience (PostgreSQL, ClickHouse, or similar)
+- Experience with API frameworks (FastAPI, Flask, Django)
+- Testing experience (pytest, unittest)
+- Git proficiency and code review experience
+
+Bonus Points
+------------
+- Experience with Apache Airflow or similar orchestration tools
+- Knowledge of Kubernetes and container orchestration
+- Experience with streaming data (Kafka, Pulsar)
+- Contributions to Python open source projects
+- Experience with Rust or other systems languages
+
+Our Stack
+---------
+- Python 3.11+
+- FastAPI, SQLAlchemy
+- PostgreSQL, ClickHouse, Redis
+- Apache Kafka, Airflow
+- Docker, Kubernetes
+- AWS (S3, ECS, Lambda)
+
+What We Offer
+-------------
+- Competitive salary ($140,000 - $180,000)
+- Fully remote work
+- Flexible hours
+- Equipment budget
+- Conference and training budget
+- Stock options

@@ -1,0 +1,41 @@
+# Example Employment Positions
+# Maps work units to employment history for resume generation
+schema_version: "1.0.0"
+
+positions:
+  # Current role - Senior Platform Security Engineer (promoted)
+  pos-industrialtech-senior:
+    employer: "IndustrialTech Solutions"
+    title: "Senior Platform Security Engineer"
+    location: "Austin, TX"
+    start_date: "2022-06"
+    employment_type: "full-time"
+    promoted_from: "pos-industrialtech-engineer"
+    description: |
+      Lead cloud-hybrid platform security for critical infrastructure clients.
+      Design secure architectures, automate security operations, and mentor
+      engineering teams on ICS/OT security best practices.
+
+  # Previous role at same company (promotion chain)
+  pos-industrialtech-engineer:
+    employer: "IndustrialTech Solutions"
+    title: "Platform Security Engineer"
+    location: "Austin, TX"
+    start_date: "2020-03"
+    end_date: "2022-05"
+    employment_type: "full-time"
+    description: |
+      Built security automation tools and CI/CD pipelines. Supported
+      vulnerability management program and incident response operations.
+
+  # Earlier role at different company
+  pos-cloudsecure-analyst:
+    employer: "CloudSecure Inc"
+    title: "Security Analyst"
+    location: "Denver, CO"
+    start_date: "2018-01"
+    end_date: "2020-02"
+    employment_type: "full-time"
+    description: |
+      Conducted security assessments and vulnerability analysis.
+      Developed Python automation for security operations.
