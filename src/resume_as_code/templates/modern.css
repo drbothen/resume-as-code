@@ -180,39 +180,26 @@ h2 {
 }
 
 /* Education section */
-.education .edu-item {
+.education {
+    margin-top: 1.5em;
+}
+
+.education h2 {
+    font-size: 14pt;
+    border-bottom: 1px solid #333;
+    padding-bottom: 0.25em;
+    margin-bottom: 0.5em;
+}
+
+.edu-entry {
     margin-bottom: 0.5em;
     page-break-inside: avoid;
 }
 
-.edu-header {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-}
-
-.edu-header h3 {
-    font-size: 10.5pt;
-    font-weight: 600;
-    color: #2c3e50;
+.edu-entry p {
     margin: 0;
-}
-
-.institution {
-    font-size: 10pt;
-    font-style: italic;
-    color: #555;
-    margin-left: 0.3em;
-}
-
-.institution::before {
-    content: '- ';
-}
-
-.education .dates {
-    font-size: 9.5pt;
-    color: #7f8c8d;
-    display: block;
+    font-size: 10.5pt;
+    color: #333;
 }
 
 /* Certifications section */

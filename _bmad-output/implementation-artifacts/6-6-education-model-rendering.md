@@ -1,6 +1,6 @@
 # Story 6.6: Education Model & Rendering
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -43,41 +43,44 @@ So that **degree requirements are visibly met**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create Education model (AC: #1)
-  - [ ] 1.1: Create `Education` Pydantic model in `models/education.py`
-  - [ ] 1.2: Add fields: degree, institution, year, honors, gpa, display
-  - [ ] 1.3: Add year validation (YYYY format)
-  - [ ] 1.4: Add `education: list[Education]` field to `ResumeConfig`
+- [x] Task 1: Create Education model (AC: #1)
+  - [x] 1.1: Create `Education` Pydantic model in `models/education.py`
+  - [x] 1.2: Add fields: degree, institution, year, honors, gpa, display
+  - [x] 1.3: Add year validation (YYYY format)
+  - [x] 1.4: Add `education: list[Education]` field to `ResumeConfig`
 
-- [ ] Task 2: Update ResumeData model (AC: #2, #4)
-  - [ ] 2.1: Add `education: list[Education]` to `ResumeData`
-  - [ ] 2.2: Load education from config in build command
-  - [ ] 2.3: Handle empty education list gracefully
+- [x] Task 2: Update ResumeData model (AC: #2, #4)
+  - [x] 2.1: Add `education: list[Education]` to `ResumeData`
+  - [x] 2.2: Load education from config in build command
+  - [x] 2.3: Handle empty education list gracefully
 
-- [ ] Task 3: Update templates (AC: #2, #3, #5)
-  - [ ] 3.1: Add education section to `modern.html`
-  - [ ] 3.2: Add education section to `executive.html`
-  - [ ] 3.3: Add education section to `ats-safe.html`
-  - [ ] 3.4: Position after Experience for all templates
-  - [ ] 3.5: Format with degree, institution, year, honors
-  - [ ] 3.6: Add CSS styling for education sections
+- [x] Task 3: Update templates (AC: #2, #3, #5)
+  - [x] 3.1: Add education section to `modern.html`
+  - [x] 3.2: Add education section to `executive.html`
+  - [x] 3.3: Add education section to `ats-safe.html`
+  - [x] 3.4: Position after Experience for all templates
+  - [x] 3.5: Format with degree, institution, year, honors
+  - [x] 3.6: Add CSS styling for education sections
+  - [x] 3.7: Add education section to `executive-classic.html` (bonus)
 
-- [ ] Task 4: Update DOCX provider (AC: #2, #3)
-  - [ ] 4.1: Add `_add_education_section()` method
-  - [ ] 4.2: Use Word heading style for section
-  - [ ] 4.3: Format education entries consistently
+- [x] Task 4: Update DOCX provider (AC: #2, #3)
+  - [x] 4.1: Add `_add_education_item()` method
+  - [x] 4.2: Use Word heading style for section
+  - [x] 4.3: Format education entries consistently
+  - [x] 4.4: Filter by display field
 
-- [ ] Task 5: Testing
-  - [ ] 5.1: Add unit tests for Education model validation
-  - [ ] 5.2: Add tests for education loading from config
-  - [ ] 5.3: Add tests for template rendering with education
-  - [ ] 5.4: Add tests for honors/GPA display
-  - [ ] 5.5: Add tests for empty education handling
+- [x] Task 5: Testing
+  - [x] 5.1: Add unit tests for Education model validation
+  - [x] 5.2: Add tests for education loading from config
+  - [x] 5.3: Add tests for template rendering with education
+  - [x] 5.4: Add tests for honors/GPA display
+  - [x] 5.5: Add tests for empty education handling
+  - [x] 5.6: Update existing test fixtures to use Education model
 
-- [ ] Task 6: Code quality verification
-  - [ ] 6.1: Run `ruff check src tests --fix`
-  - [ ] 6.2: Run `mypy src --strict` with zero errors
-  - [ ] 6.3: Run `pytest` - all tests pass
+- [x] Task 6: Code quality verification
+  - [x] 6.1: Run `ruff check src tests --fix`
+  - [x] 6.2: Run `mypy src --strict` with zero errors
+  - [x] 6.3: Run `pytest` - all 1114 tests pass
 
 ## Dev Notes
 
@@ -525,10 +528,68 @@ For senior professionals (10+ years), sections should appear in this order:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+- Created `Education` Pydantic model in `src/resume_as_code/models/education.py` with degree, institution, year, honors, gpa, and display fields
+- Added year validation that normalizes longer date formats (e.g., "2012-05-15") to YYYY format
+- Implemented `format_display()` method for consistent education formatting
+- Updated `ResumeConfig` in `models/config.py` to include `education: list[Education]`
+- Changed `ResumeData` education field type from `list[ResumeItem]` to `list[Education]`
+- Updated `build.py` to load education from config
+- Updated all 4 HTML templates (modern, executive, ats-safe, executive-classic) with education sections
+- Updated corresponding CSS files with education styling
+- Positioned education after Experience and before Certifications in all templates (industry standard for senior roles)
+- Updated DOCX provider with `_add_education_item()` method that filters by display field
+- Created comprehensive test suite in `tests/unit/test_education.py` with 22 tests
+- Updated test fixtures in test_docx_provider.py, test_executive_template.py, test_pdf_provider.py, and test_template_rendering.py to use Education model instead of ResumeItem
+- All 1114 tests pass, ruff check clean, mypy strict passes
+
+**Code Review Fixes (2026-01-12):**
+- Added `.edu-entry` CSS class to ats-safe.css for consistent education styling
+- Added `class="edu-entry"` to ats-safe.html education entries
+- Added integration tests for education rendering in ats-safe, executive, and executive-classic templates
+- Added DOCX education ordering test to verify AC#5 (education appears after experience)
+
+**Section Ordering Verification (AC#5):**
+- modern.html: Experience → Education → Certifications → Skills ✓
+- executive.html: Skills → Experience → Education → Certifications ✓
+- executive-classic.html: Experience → Education → Certifications → Skills ✓
+- ats-safe.html: Skills → Experience → Education → Certifications ✓
+- DOCX: Experience → Education → Certifications → Skills ✓
+- All templates position Education after Experience per industry standard
+
+**Design Decision - format_display() Method:**
+- The `Education.format_display()` method exists but is intentionally NOT used in templates
+- Templates use inline Jinja2 formatting for template-specific control (e.g., executive uses `<br>` between degree and institution, modern uses inline commas)
+- The method remains available for programmatic use cases (e.g., text-only exports, CLI display)
+
 ### File List
+
+**Created:**
+- `src/resume_as_code/models/education.py`
+- `tests/unit/test_education.py`
+
+**Modified:**
+- `src/resume_as_code/models/config.py`
+- `src/resume_as_code/models/resume.py`
+- `src/resume_as_code/commands/build.py`
+- `src/resume_as_code/templates/modern.html`
+- `src/resume_as_code/templates/modern.css`
+- `src/resume_as_code/templates/executive.html`
+- `src/resume_as_code/templates/executive.css`
+- `src/resume_as_code/templates/ats-safe.html`
+- `src/resume_as_code/templates/ats-safe.css`
+- `src/resume_as_code/templates/executive-classic.html`
+- `src/resume_as_code/templates/executive-classic.css`
+- `src/resume_as_code/providers/docx.py`
+- `tests/unit/test_resume_model.py`
+- `tests/unit/test_docx_provider.py`
+- `tests/unit/test_executive_template.py`
+- `tests/unit/test_pdf_provider.py`
+- `tests/integration/test_template_rendering.py`

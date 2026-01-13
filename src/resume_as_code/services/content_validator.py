@@ -142,6 +142,55 @@ def validate_content_density(work_unit: dict[str, Any], file_path: str) -> list[
     return warnings
 
 
+def validate_position_reference(
+    work_unit: dict[str, Any],
+    file_path: str,
+    valid_position_ids: set[str] | None = None,
+) -> list[ContentWarning]:
+    """Validate position_id reference in a Work Unit.
+
+    Checks for:
+    - Missing position_id (info severity - optional field)
+    - Invalid position_id that doesn't exist in positions.yaml (error severity)
+
+    Args:
+        work_unit: Work Unit data dictionary.
+        file_path: Path to the Work Unit file.
+        valid_position_ids: Set of valid position IDs from positions.yaml.
+            If None, only checks for missing position_id.
+
+    Returns:
+        List of ContentWarning objects.
+    """
+    warnings: list[ContentWarning] = []
+    position_id = work_unit.get("position_id")
+
+    if position_id is None:
+        # Missing position_id is just an info-level suggestion
+        warnings.append(
+            ContentWarning(
+                code="MISSING_POSITION_ID",
+                message="Work unit has no position_id",
+                path=file_path,
+                suggestion="Add position_id to group under employer in resume output",
+                severity="info",
+            )
+        )
+    elif valid_position_ids is not None and position_id not in valid_position_ids:
+        # Invalid position_id reference is a serious issue
+        warnings.append(
+            ContentWarning(
+                code="INVALID_POSITION_ID",
+                message=f"position_id '{position_id}' not found in positions.yaml",
+                path=f"{file_path}:position_id",
+                suggestion="Add position to positions.yaml or fix the position_id value",
+                severity="error",
+            )
+        )
+
+    return warnings
+
+
 def _has_quantification(text: str) -> bool:
     """Check if text contains quantification.
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from resume_as_code.models.education import Education
 from resume_as_code.models.resume import (
     ContactInfo,
     ResumeBullet,
@@ -501,11 +502,10 @@ class TestModernTemplateIntegration:
         resume = ResumeData(
             contact=contact,
             education=[
-                ResumeItem(
-                    title="BS Computer Science",
-                    organization="State University",
-                    start_date="2010",
-                    end_date="2014",
+                Education(
+                    degree="BS Computer Science",
+                    institution="State University",
+                    year="2014",
                 )
             ],
         )
@@ -516,6 +516,83 @@ class TestModernTemplateIntegration:
         assert "BS Computer Science" in html
         assert "State University" in html
         assert "2014" in html
+
+    def test_ats_safe_template_renders_education(self) -> None:
+        """ATS-safe template renders education section."""
+        service = TemplateService()
+        contact = ContactInfo(name="Jane Developer")
+        resume = ResumeData(
+            contact=contact,
+            education=[
+                Education(
+                    degree="BS Computer Science",
+                    institution="State University",
+                    year="2014",
+                    honors="Cum Laude",
+                )
+            ],
+        )
+
+        html = service.render(resume, "ats-safe")
+
+        assert "EDUCATION" in html  # ATS-safe uses uppercase
+        assert "BS Computer Science" in html
+        assert "State University" in html
+        assert "2014" in html
+        assert "Cum Laude" in html
+
+    def test_executive_template_renders_education(self) -> None:
+        """Executive template renders education section."""
+        service = TemplateService()
+        contact = ContactInfo(name="Jane Executive")
+        resume = ResumeData(
+            contact=contact,
+            education=[
+                Education(
+                    degree="MBA",
+                    institution="Stanford Graduate School of Business",
+                    year="2015",
+                ),
+                Education(
+                    degree="BS Computer Science",
+                    institution="MIT",
+                    year="2008",
+                ),
+            ],
+        )
+
+        html = service.render(resume, "executive")
+
+        assert "Education" in html
+        assert "MBA" in html
+        assert "Stanford Graduate School of Business" in html
+        assert "2015" in html
+        assert "BS Computer Science" in html
+        assert "MIT" in html
+
+    def test_executive_classic_template_renders_education(self) -> None:
+        """Executive-classic template renders education section."""
+        service = TemplateService()
+        contact = ContactInfo(name="Jane Executive")
+        resume = ResumeData(
+            contact=contact,
+            education=[
+                Education(
+                    degree="PhD Computer Science",
+                    institution="Carnegie Mellon",
+                    year="2010",
+                    honors="Summa Cum Laude",
+                )
+            ],
+        )
+
+        html = service.render(resume, "executive-classic")
+
+        assert "Education" in html
+        assert "PhD Computer Science" in html
+        assert "Carnegie Mellon" in html
+        assert "2010" in html
+        assert "Summa Cum Laude" in html
 
     def test_modern_template_renders_skills(self) -> None:
         """Modern template renders skills list."""

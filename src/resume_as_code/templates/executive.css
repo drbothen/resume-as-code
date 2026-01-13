@@ -199,11 +199,19 @@ h2 {
 
 /* Education */
 .education {
+    margin-top: 1.25em;
     page-break-inside: avoid;
 }
 
-.education p {
-    margin: 0.35em 0;
+.edu-entry {
+    margin-bottom: 0.75em;
+}
+
+.edu-entry .honors {
+    display: block;
+    font-style: italic;
+    color: #555;
+    font-size: 10pt;
 }
 
 /* Page break controls */

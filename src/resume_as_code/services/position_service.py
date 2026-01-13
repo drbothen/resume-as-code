@@ -1,0 +1,170 @@
+"""Position service for managing employment history.
+
+Handles loading, saving, and querying positions from positions.yaml.
+Supports grouping by employer and promotion chain detection.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from ruamel.yaml import YAML
+
+from resume_as_code.models.position import Position
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+
+class PositionService:
+    """Service for managing employment positions."""
+
+    def __init__(self, positions_path: Path | None = None) -> None:
+        """Initialize the position service.
+
+        Args:
+            positions_path: Path to positions.yaml file. Defaults to positions.yaml
+                           in current directory.
+        """
+        self.positions_path = positions_path or Path("positions.yaml")
+        self._positions: dict[str, Position] | None = None
+
+    def load_positions(self) -> dict[str, Position]:
+        """Load positions from YAML file.
+
+        Returns:
+            Dictionary mapping position ID to Position object.
+            Returns empty dict if file doesn't exist or is empty.
+        """
+        if self._positions is not None:
+            return self._positions
+
+        if not self.positions_path.exists():
+            self._positions = {}
+            return self._positions
+
+        yaml = YAML()
+        with open(self.positions_path) as f:
+            data = yaml.load(f)
+
+        if not data:
+            self._positions = {}
+            return self._positions
+
+        positions_data = data.get("positions", {})
+        self._positions = {}
+
+        for pos_id, pos_data in positions_data.items():
+            # Convert to dict if needed (ruamel returns CommentedMap)
+            pos_dict = dict(pos_data)
+            pos_dict["id"] = pos_id
+            self._positions[pos_id] = Position.model_validate(pos_dict)
+
+        return self._positions
+
+    def get_position(self, position_id: str) -> Position | None:
+        """Get a position by ID.
+
+        Args:
+            position_id: The position ID to look up.
+
+        Returns:
+            Position object if found, None otherwise.
+        """
+        positions = self.load_positions()
+        return positions.get(position_id)
+
+    def position_exists(self, position_id: str) -> bool:
+        """Check if a position ID exists.
+
+        Args:
+            position_id: The position ID to check.
+
+        Returns:
+            True if position exists, False otherwise.
+        """
+        return position_id in self.load_positions()
+
+    def group_by_employer(
+        self, positions: Sequence[Position]
+    ) -> dict[str, list[Position]]:
+        """Group positions by employer.
+
+        Args:
+            positions: Sequence of Position objects to group.
+
+        Returns:
+            Dictionary mapping employer name to list of positions,
+            sorted by start_date descending within each employer.
+        """
+        groups: dict[str, list[Position]] = {}
+
+        for pos in positions:
+            if pos.employer not in groups:
+                groups[pos.employer] = []
+            groups[pos.employer].append(pos)
+
+        # Sort positions within each employer by start_date descending
+        for positions_list in groups.values():
+            positions_list.sort(key=lambda p: p.start_date, reverse=True)
+
+        return groups
+
+    def get_promotion_chain(self, position_id: str) -> list[Position]:
+        """Get the promotion chain for a position.
+
+        Traces back through promoted_from references to build
+        the complete career progression at an employer.
+
+        Args:
+            position_id: The position ID to get chain for.
+
+        Returns:
+            List from earliest to most recent position in the chain.
+            Empty list if position not found.
+        """
+        positions = self.load_positions()
+        chain: list[Position] = []
+
+        current_id: str | None = position_id
+        while current_id:
+            pos = positions.get(current_id)
+            if not pos:
+                break
+            chain.append(pos)
+            current_id = pos.promoted_from
+
+        return list(reversed(chain))
+
+    def save_position(self, position: Position) -> None:
+        """Save a position to the positions file.
+
+        Creates the file if it doesn't exist, or adds to existing file.
+
+        Args:
+            position: The Position to save.
+        """
+        yaml = YAML()
+        yaml.default_flow_style = False
+
+        # Load existing data
+        if self.positions_path.exists():
+            with open(self.positions_path) as f:
+                data = yaml.load(f) or {}
+        else:
+            data = {"schema_version": "1.0.0", "positions": {}}
+
+        if "positions" not in data:
+            data["positions"] = {}
+
+        # Add position (exclude 'id' from stored data, exclude None values)
+        pos_data = position.model_dump(exclude={"id"}, exclude_none=True)
+        data["positions"][position.id] = pos_data
+
+        # Save
+        with open(self.positions_path, "w") as f:
+            yaml.dump(data, f)
+
+        # Clear cache
+        self._positions = None

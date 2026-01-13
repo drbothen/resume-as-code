@@ -127,22 +127,24 @@ def build_command(
             "  Hint: Run 'resume plan --jd <file>' to see Work Unit selection."
         )
 
-    # Build ResumeData with skill curation (Story 6.3)
+    # Build ResumeData with skill curation (Story 6.3) and position grouping (Story 6.7)
     contact = _load_contact_info(config)
+    positions_path = Path.cwd() / "positions.yaml"
     resume = ResumeData.from_work_units(
         work_units=work_units,
         contact=contact,
         summary=config.profile.summary,  # Load from profile config
         skills_config=config.skills,  # Pass skills curation config
         jd_keywords=jd_keywords if jd_keywords else None,  # Pass JD keywords for prioritization
+        positions_path=positions_path if positions_path.exists() else None,  # Position grouping
     )
-    # Add certifications from config (Story 6.2)
+    # Add certifications and education from config (Story 6.2, 6.6)
     resume = ResumeData(
         contact=resume.contact,
         summary=resume.summary,
         sections=resume.sections,
         skills=resume.skills,
-        education=resume.education,
+        education=list(config.education),
         certifications=list(config.certifications),
     )
 

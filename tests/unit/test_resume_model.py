@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 
 from resume_as_code.models.certification import Certification
 from resume_as_code.models.config import SkillsConfig
+from resume_as_code.models.education import Education
 from resume_as_code.models.resume import (
     ContactInfo,
     ResumeBullet,
@@ -139,11 +141,10 @@ class TestResumeData:
             ],
             skills=["Python", "AWS", "Kubernetes"],
             education=[
-                ResumeItem(
-                    title="BS Computer Science",
-                    organization="State University",
-                    start_date="2010",
-                    end_date="2014",
+                Education(
+                    degree="BS Computer Science",
+                    institution="State University",
+                    year="2014",
                 )
             ],
         )
@@ -544,3 +545,202 @@ class TestResumeDataSkillsCuration:
 
         # Without skills_config, should be alphabetically sorted
         assert resume.skills == ["Alpha", "Mike", "Zulu"]
+
+
+class TestResumeDataPositionGrouping:
+    """Tests for position-based grouping of work units."""
+
+    def test_from_work_units_without_positions_uses_standalone(self) -> None:
+        """Without positions, work units should be treated as standalone entries."""
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Built API service",
+                "actions": ["Designed REST API"],
+                "outcome": {"result": "Reduced latency by 50%"},
+            }
+        ]
+        contact = ContactInfo(name="Test")
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            positions_path=None,
+        )
+
+        assert len(resume.sections) == 1
+        assert resume.sections[0].title == "Experience"
+        assert len(resume.sections[0].items) == 1
+        assert resume.sections[0].items[0].title == "Built API service"
+
+    def test_from_work_units_with_positions_groups_by_position(
+        self, tmp_path: Path
+    ) -> None:
+        """Work units should be grouped by position_id."""
+
+        positions_file = tmp_path / "positions.yaml"
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-techcorp-senior:
+    employer: "TechCorp Industries"
+    title: "Senior Engineer"
+    location: "Austin, TX"
+    start_date: "2022-01"
+""")
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Built API service",
+                "position_id": "pos-techcorp-senior",
+                "actions": ["Designed REST API"],
+                "outcome": {"result": "Reduced latency by 50%"},
+            },
+            {
+                "id": "wu-2",
+                "title": "Improved performance",
+                "position_id": "pos-techcorp-senior",
+                "actions": ["Optimized queries"],
+                "outcome": {"result": "10x faster"},
+            },
+        ]
+        contact = ContactInfo(name="Test")
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            positions_path=positions_file,
+        )
+
+        # Should have one item with both work units' bullets
+        assert len(resume.sections[0].items) == 1
+        item = resume.sections[0].items[0]
+        assert item.title == "Senior Engineer"
+        assert item.organization == "TechCorp Industries"
+        assert item.location == "Austin, TX"
+        assert item.start_date == "2022"
+        assert len(item.bullets) >= 2  # At least one bullet per work unit
+
+    def test_from_work_units_with_mixed_positions(
+        self, tmp_path: Path
+    ) -> None:
+        """Work units with and without positions should both render."""
+
+        positions_file = tmp_path / "positions.yaml"
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-techcorp:
+    employer: "TechCorp"
+    title: "Engineer"
+    start_date: "2022-01"
+""")
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Project at TechCorp",
+                "position_id": "pos-techcorp",
+                "actions": ["Built feature"],
+                "outcome": {"result": "Success"},
+            },
+            {
+                "id": "wu-2",
+                "title": "Open source contribution",
+                "actions": ["Fixed bug"],
+                "outcome": {"result": "Merged PR"},
+            },
+        ]
+        contact = ContactInfo(name="Test")
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            positions_path=positions_file,
+        )
+
+        # Should have two items: one position-based, one standalone
+        assert len(resume.sections[0].items) == 2
+
+    def test_from_work_units_sorts_by_date_descending(
+        self, tmp_path: Path
+    ) -> None:
+        """Experience items should be sorted by date (most recent first)."""
+
+        positions_file = tmp_path / "positions.yaml"
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-old:
+    employer: "OldCorp"
+    title: "Junior"
+    start_date: "2018-01"
+    end_date: "2019-12"
+  pos-new:
+    employer: "NewCorp"
+    title: "Senior"
+    start_date: "2022-01"
+""")
+        work_units = [
+            {
+                "id": "wu-old",
+                "title": "Old work",
+                "position_id": "pos-old",
+                "actions": ["Did stuff"],
+                "outcome": {"result": "Done"},
+            },
+            {
+                "id": "wu-new",
+                "title": "New work",
+                "position_id": "pos-new",
+                "actions": ["Did stuff"],
+                "outcome": {"result": "Done"},
+            },
+        ]
+        contact = ContactInfo(name="Test")
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            positions_path=positions_file,
+        )
+
+        items = resume.sections[0].items
+        assert len(items) == 2
+        # Most recent first
+        assert items[0].organization == "NewCorp"
+        assert items[1].organization == "OldCorp"
+
+    def test_from_work_units_invalid_position_id_fallback(
+        self, tmp_path: Path
+    ) -> None:
+        """Work units with invalid position_id should be treated as standalone."""
+
+        positions_file = tmp_path / "positions.yaml"
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-valid:
+    employer: "ValidCorp"
+    title: "Engineer"
+    start_date: "2022-01"
+""")
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Work with invalid position",
+                "position_id": "pos-nonexistent",  # Invalid reference
+                "actions": ["Did work"],
+                "outcome": {"result": "Done"},
+            },
+        ]
+        contact = ContactInfo(name="Test")
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            positions_path=positions_file,
+        )
+
+        # Should fall back to standalone entry
+        assert len(resume.sections[0].items) == 1
+        assert resume.sections[0].items[0].title == "Work with invalid position"

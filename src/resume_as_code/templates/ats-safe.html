@@ -40,17 +40,6 @@
     </section>
     {% endif %}
 
-    {% if resume.get_active_certifications() %}
-    <section>
-        <h2>CERTIFICATIONS</h2>
-        <ul>
-            {% for cert in resume.get_active_certifications() %}
-            <li>{{ cert.name }}{% if cert.issuer %}, {{ cert.issuer }}{% endif %}{% if cert.date %}, {{ cert.date[:4] }}{% endif %}{% if cert.expires %}, expires {{ cert.expires[:4] }}{% endif %}</li>
-            {% endfor %}
-        </ul>
-    </section>
-    {% endif %}
-
     {% for section in resume.sections %}
     <section>
         <h2>{{ section.title | upper }}</h2>
@@ -79,17 +68,22 @@
     {% if resume.education %}
     <section>
         <h2>EDUCATION</h2>
-        {% for item in resume.education %}
-        <div class="entry">
-            <p>
-                <strong>{{ item.title }}</strong>
-                {% if item.organization %} - {{ item.organization }}{% endif %}
-                {% if item.start_date or item.end_date %}
-                ({{ item.start_date or '' }}{% if item.start_date and item.end_date %} - {% endif %}{{ item.end_date or '' }})
-                {% endif %}
-            </p>
-        </div>
+        {% for edu in resume.education %}
+        {% if edu.display is not defined or edu.display %}
+        <p class="edu-entry">{{ edu.degree }}, {{ edu.institution }}{% if edu.year %}, {{ edu.year }}{% endif %}{% if edu.honors %} - {{ edu.honors }}{% endif %}</p>
+        {% endif %}
         {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if resume.get_active_certifications() %}
+    <section>
+        <h2>CERTIFICATIONS</h2>
+        <ul>
+            {% for cert in resume.get_active_certifications() %}
+            <li>{{ cert.name }}{% if cert.issuer %}, {{ cert.issuer }}{% endif %}{% if cert.date %}, {{ cert.date[:4] }}{% endif %}{% if cert.expires %}, expires {{ cert.expires[:4] }}{% endif %}</li>
+            {% endfor %}
+        </ul>
     </section>
     {% endif %}
 </body>

@@ -18,6 +18,7 @@ from resume_as_code.services.content_validator import (
     ContentWarning,
     validate_content_density,
     validate_content_quality,
+    validate_position_reference,
 )
 from resume_as_code.services.validator import ValidationSummary, validate_path
 from resume_as_code.utils.console import console, info, json_output
@@ -40,6 +41,11 @@ from resume_as_code.utils.errors import handle_errors
     is_flag=True,
     help="Check content density (bullet length).",
 )
+@click.option(
+    "--check-positions",
+    is_flag=True,
+    help="Validate position_id references exist in positions.yaml.",
+)
 @click.pass_context
 @handle_errors
 def validate_command(
@@ -47,6 +53,7 @@ def validate_command(
     path: Path | None,
     content_quality: bool,
     content_density: bool,
+    check_positions: bool,
 ) -> None:
     """Validate Work Units against schema and content guidelines.
 
@@ -86,9 +93,15 @@ def validate_command(
             info("No YAML files found to validate.")
         return
 
+    # Load position IDs for validation if requested
+    valid_position_ids: set[str] | None = None
+    if check_positions:
+        valid_position_ids = _load_position_ids()
+
     # Collect content warnings for valid files
     all_warnings: list[ContentWarning] = []
-    if content_quality or content_density:
+    position_errors: list[ContentWarning] = []
+    if content_quality or content_density or check_positions:
         for result in summary.results:
             if result.valid:
                 data = _load_yaml(result.file_path)
@@ -97,17 +110,30 @@ def validate_command(
                         all_warnings.extend(validate_content_quality(data, str(result.file_path)))
                     if content_density:
                         all_warnings.extend(validate_content_density(data, str(result.file_path)))
+                    if check_positions:
+                        position_warnings = validate_position_reference(
+                            data, str(result.file_path), valid_position_ids
+                        )
+                        # Separate errors from warnings
+                        for pw in position_warnings:
+                            if pw.severity == "error":
+                                position_errors.append(pw)
+                            else:
+                                all_warnings.append(pw)
 
     # Output results and handle exit code
     if ctx.obj.json_output:
-        _output_json(summary, all_warnings)
+        _output_json(summary, all_warnings, position_errors)
     else:
         _output_rich(summary)
+        if position_errors:
+            _output_position_errors_rich(position_errors)
         if all_warnings:
             _output_warnings_rich(all_warnings)
 
     # Exit with appropriate code (avoid raising exception to prevent duplicate output)
-    if summary.invalid_count > 0:
+    # Position errors are validation failures (AC #3: invalid position_id is an error)
+    if summary.invalid_count > 0 or position_errors:
         sys.exit(ValidationError.exit_code)
 
 
@@ -125,11 +151,18 @@ def _load_yaml(file_path: Path) -> dict[str, Any] | None:
         return None
 
 
-def _output_json(summary: ValidationSummary, warnings: list[ContentWarning] | None = None) -> None:
+def _output_json(
+    summary: ValidationSummary,
+    warnings: list[ContentWarning] | None = None,
+    position_errors: list[ContentWarning] | None = None,
+) -> None:
     """Output validation results as JSON."""
+    # Count position errors as validation failures
+    position_error_count = len(position_errors) if position_errors else 0
+
     data: dict[str, Any] = {
         "valid_count": summary.valid_count,
-        "invalid_count": summary.invalid_count,
+        "invalid_count": summary.invalid_count + position_error_count,
         "files": [
             {
                 "path": str(r.file_path),
@@ -150,8 +183,19 @@ def _output_json(summary: ValidationSummary, warnings: list[ContentWarning] | No
             }
             for w in warnings
         ]
+    if position_errors:
+        data["position_errors"] = [
+            {
+                "code": e.code,
+                "message": e.message,
+                "path": e.path,
+                "suggestion": e.suggestion,
+            }
+            for e in position_errors
+        ]
+    has_errors = summary.invalid_count > 0 or position_error_count > 0
     response = JSONResponse(
-        status="success" if summary.invalid_count == 0 else "error",
+        status="error" if has_errors else "success",
         command="validate",
         data=data,
     )
@@ -220,3 +264,50 @@ def _output_warnings_rich(warnings: list[ContentWarning]) -> None:
             warning_node = tree.add(f"[{color}]{w.code}[/{color}]: {w.message}")
             warning_node.add(f"[dim]💡 {w.suggestion}[/dim]")
         console.print(tree)
+
+
+def _output_position_errors_rich(errors: list[ContentWarning]) -> None:
+    """Output position reference errors with Rich formatting."""
+    console.print()
+    console.print("[red]Position Reference Errors[/red]")
+    console.print()
+
+    # Group errors by file
+    errors_by_file: dict[str, list[ContentWarning]] = {}
+    for e in errors:
+        # Extract file path (before the colon if present)
+        file_path = e.path.split(":")[0]
+        if file_path not in errors_by_file:
+            errors_by_file[file_path] = []
+        errors_by_file[file_path].append(e)
+
+    for file_path, file_errors in errors_by_file.items():
+        tree = Tree(f"[red]✗[/red] {file_path}")
+        for e in file_errors:
+            error_node = tree.add(f"[red]{e.code}[/red]: {e.message}")
+            error_node.add(f"[dim]💡 {e.suggestion}[/dim]")
+        console.print(tree)
+
+
+def _load_position_ids() -> set[str]:
+    """Load valid position IDs from positions.yaml.
+
+    Looks for positions.yaml in current working directory.
+
+    Returns:
+        Set of valid position IDs, empty set if file doesn't exist.
+    """
+    from resume_as_code.services.position_service import PositionService
+
+    positions_path = Path.cwd() / "positions.yaml"
+
+    if not positions_path.exists():
+        return set()
+
+    try:
+        service = PositionService(positions_path)
+        positions = service.load_positions()
+        return set(positions.keys())
+    except Exception:
+        # If positions.yaml is invalid, treat as no positions defined
+        return set()

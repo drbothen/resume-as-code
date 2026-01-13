@@ -425,3 +425,175 @@ outcome:
         data = json.loads(result.output)
         assert "content_warnings" in data["data"]
         assert any(w["code"] == "BULLET_TOO_SHORT" for w in data["data"]["content_warnings"])
+
+
+WORK_UNIT_WITH_POSITION = """\
+schema_version: "1.0.0"
+id: "wu-2026-01-10-with-position"
+title: "Test Work Unit with Position ID"
+position_id: "pos-techcorp-senior"
+
+problem:
+  statement: "A test problem statement that is long enough"
+
+actions:
+  - "Took an action that is long enough"
+
+outcome:
+  result: "Got a result that is long enough"
+"""
+
+WORK_UNIT_WITHOUT_POSITION = """\
+schema_version: "1.0.0"
+id: "wu-2026-01-10-no-position"
+title: "Test Work Unit without Position ID"
+
+problem:
+  statement: "A test problem statement that is long enough"
+
+actions:
+  - "Took an action that is long enough"
+
+outcome:
+  result: "Got a result that is long enough"
+"""
+
+POSITIONS_YAML = """\
+positions:
+  pos-techcorp-senior:
+    employer: "TechCorp Industries"
+    title: "Senior Platform Engineer"
+    start_date: "2022-01"
+  pos-techcorp-junior:
+    employer: "TechCorp Industries"
+    title: "Platform Engineer"
+    start_date: "2020-01"
+    end_date: "2021-12"
+"""
+
+
+class TestValidatePositionReferences:
+    """Tests for position_id validation (Story 6.7, AC #7)."""
+
+    def test_check_positions_warns_missing_position_id(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should warn about missing position_id (AC #7)."""
+        # Create work-units directory with file without position_id
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-test.yaml").write_text(WORK_UNIT_WITHOUT_POSITION)
+
+        # Create positions.yaml
+        (tmp_path / "positions.yaml").write_text(POSITIONS_YAML)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate", "--check-positions"])
+
+        # Missing position_id is a warning, not an error - validation passes
+        assert result.exit_code == 0
+        assert "MISSING_POSITION_ID" in result.output
+
+    def test_check_positions_error_invalid_position_id(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should error on invalid position_id reference (AC #3)."""
+        # Create work-units directory with file referencing non-existent position
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        work_unit_content = WORK_UNIT_WITH_POSITION.replace(
+            "pos-techcorp-senior", "pos-nonexistent"
+        )
+        (work_units / "wu-test.yaml").write_text(work_unit_content)
+
+        # Create positions.yaml without the referenced position
+        (tmp_path / "positions.yaml").write_text(POSITIONS_YAML)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate", "--check-positions"])
+
+        # Invalid position_id is an error - validation fails
+        assert result.exit_code == 3  # ValidationError exit code
+        assert "INVALID_POSITION_ID" in result.output
+        assert "pos-nonexistent" in result.output
+
+    def test_check_positions_valid_position_id_passes(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should pass when position_id exists (AC #3)."""
+        # Create work-units directory with valid position reference
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-test.yaml").write_text(WORK_UNIT_WITH_POSITION)
+
+        # Create positions.yaml with the referenced position
+        (tmp_path / "positions.yaml").write_text(POSITIONS_YAML)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate", "--check-positions"])
+
+        # Valid position_id passes without errors
+        assert result.exit_code == 0
+        assert "INVALID_POSITION_ID" not in result.output
+
+    def test_check_positions_no_positions_file_warns(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should warn about missing position_id when no positions.yaml exists."""
+        # Create work-units directory with file referencing a position
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-test.yaml").write_text(WORK_UNIT_WITH_POSITION)
+
+        # No positions.yaml file
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate", "--check-positions"])
+
+        # Without positions.yaml, position_id is treated as invalid reference
+        assert result.exit_code == 3  # Error for invalid position_id
+        assert "INVALID_POSITION_ID" in result.output
+
+    def test_check_positions_json_output(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should include position errors in JSON output."""
+        # Create work-units directory with invalid position reference
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        work_unit_content = WORK_UNIT_WITH_POSITION.replace(
+            "pos-techcorp-senior", "pos-nonexistent"
+        )
+        (work_units / "wu-test.yaml").write_text(work_unit_content)
+
+        # Create positions.yaml
+        (tmp_path / "positions.yaml").write_text(POSITIONS_YAML)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["--json", "validate", "--check-positions"])
+
+        assert result.exit_code == 3
+        data = json.loads(result.output)
+        assert "position_errors" in data["data"]
+        assert any(e["code"] == "INVALID_POSITION_ID" for e in data["data"]["position_errors"])
+        assert data["status"] == "error"
+
+    def test_check_positions_json_output_warnings(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should include position warnings in JSON output."""
+        # Create work-units directory with file without position_id
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-test.yaml").write_text(WORK_UNIT_WITHOUT_POSITION)
+
+        # Create positions.yaml
+        (tmp_path / "positions.yaml").write_text(POSITIONS_YAML)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["--json", "validate", "--check-positions"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "content_warnings" in data["data"]
+        assert any(w["code"] == "MISSING_POSITION_ID" for w in data["data"]["content_warnings"])

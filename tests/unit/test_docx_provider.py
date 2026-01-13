@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from docx import Document
 
+from resume_as_code.models.education import Education
 from resume_as_code.models.errors import RenderError
 from resume_as_code.models.resume import (
     ContactInfo,
@@ -97,17 +98,15 @@ def detailed_resume() -> ResumeData:
         ],
         skills=["Python", "Go", "Kubernetes", "AWS", "Terraform"],
         education=[
-            ResumeItem(
-                title="M.S. Computer Science",
-                organization="Stanford University",
-                location="Stanford, CA",
-                start_date="2010",
-                end_date="2012",
+            Education(
+                degree="M.S. Computer Science",
+                institution="Stanford University",
+                year="2012",
             ),
-            ResumeItem(
-                title="B.S. Computer Science",
-                organization="UC Berkeley",
-                end_date="2010",
+            Education(
+                degree="B.S. Computer Science",
+                institution="UC Berkeley",
+                year="2010",
             ),
         ],
     )
@@ -362,16 +361,27 @@ class TestDOCXEducation:
         assert "2010" in text
         assert "2012" in text
 
-    def test_education_with_location(self, detailed_resume: ResumeData, tmp_path: Path) -> None:
-        """Education with location should render it."""
+    def test_education_with_honors(self, tmp_path: Path) -> None:
+        """Education with honors should render them."""
+        resume = ResumeData(
+            contact=ContactInfo(name="Test User"),
+            education=[
+                Education(
+                    degree="B.S. Computer Science",
+                    institution="MIT",
+                    year="2012",
+                    honors="Summa Cum Laude",
+                ),
+            ],
+        )
         output_path = tmp_path / "resume.docx"
         provider = DOCXProvider()
-        provider.render(detailed_resume, output_path)
+        provider.render(resume, output_path)
 
         doc = Document(output_path)
         text = "\n".join(p.text for p in doc.paragraphs)
 
-        assert "Stanford, CA" in text
+        assert "Summa Cum Laude" in text
 
     def test_multiple_education_entries(self, detailed_resume: ResumeData, tmp_path: Path) -> None:
         """Multiple education entries should all render."""
@@ -384,6 +394,48 @@ class TestDOCXEducation:
 
         assert "Stanford University" in text
         assert "UC Berkeley" in text
+
+    def test_education_appears_after_experience(self, tmp_path: Path) -> None:
+        """Education section should appear after Experience per industry standard (AC#5)."""
+        from resume_as_code.models.resume import ResumeBullet, ResumeItem, ResumeSection
+
+        resume = ResumeData(
+            contact=ContactInfo(name="Senior Professional"),
+            sections=[
+                ResumeSection(
+                    title="Experience",
+                    items=[
+                        ResumeItem(
+                            title="Senior Engineer",
+                            organization="TechCorp",
+                            bullets=[ResumeBullet(text="Led team projects")],
+                        )
+                    ],
+                )
+            ],
+            education=[
+                Education(
+                    degree="BS Computer Science",
+                    institution="MIT",
+                    year="2010",
+                )
+            ],
+        )
+
+        output_path = tmp_path / "resume.docx"
+        provider = DOCXProvider()
+        provider.render(resume, output_path)
+
+        doc = Document(output_path)
+        text = "\n".join(p.text for p in doc.paragraphs)
+
+        # Find positions of Experience and Education headings
+        experience_pos = text.find("Experience")
+        education_pos = text.find("Education")
+
+        assert experience_pos != -1, "Experience heading not found"
+        assert education_pos != -1, "Education heading not found"
+        assert experience_pos < education_pos, "Education should appear after Experience"
 
 
 class TestDOCXCertifications:

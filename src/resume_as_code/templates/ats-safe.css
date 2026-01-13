@@ -90,6 +90,11 @@ li {
     margin-bottom: 0.2em;
 }
 
+/* Education entries - minimal for ATS parseability */
+.edu-entry {
+    margin-bottom: 0.3em;
+}
+
 /* No decorative elements */
 a {
     color: #000;

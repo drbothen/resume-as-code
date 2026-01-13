@@ -222,6 +222,12 @@ class WorkUnit(BaseModel):
     time_started: date | None = None
     time_ended: date | None = None
 
+    # Position reference for employment history grouping
+    position_id: str | None = Field(
+        default=None,
+        description="Reference to position in positions.yaml for employer grouping"
+    )
+
     # Optional metadata
     skills_demonstrated: list[Skill] = Field(default_factory=list)
     confidence: WorkUnitConfidence | None = None

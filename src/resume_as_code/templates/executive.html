@@ -87,6 +87,21 @@
     </section>
     {% endfor %}
 
+    {% if resume.education %}
+    <section class="education">
+        <h2>Education</h2>
+        {% for edu in resume.education %}
+        {% if edu.display is not defined or edu.display %}
+        <p class="edu-entry">
+            <strong>{{ edu.degree }}</strong><br>
+            {{ edu.institution }}{% if edu.year %}, {{ edu.year }}{% endif %}
+            {% if edu.honors %}<span class="honors">{{ edu.honors }}</span>{% endif %}
+        </p>
+        {% endif %}
+        {% endfor %}
+    </section>
+    {% endif %}
+
     {% if resume.get_active_certifications() %}
     <section class="certifications">
         <h2>Certifications</h2>
@@ -97,17 +112,6 @@
             </li>
             {% endfor %}
         </ul>
-    </section>
-    {% endif %}
-
-    {% if resume.education %}
-    <section class="education">
-        <h2>Education</h2>
-        {% for item in resume.education %}
-        <p>
-            <strong>{{ item.title }}</strong>{% if item.organization %}, {{ item.organization }}{% endif %}{% if item.end_date %}, {{ item.end_date }}{% endif %}
-        </p>
-        {% endfor %}
     </section>
     {% endif %}
 </body>

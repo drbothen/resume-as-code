@@ -83,18 +83,17 @@
     {% if resume.education %}
     <section class="education">
         <h2>Education</h2>
-        {% for item in resume.education %}
-        <article class="edu-item">
-            <div class="edu-header">
-                <h3>{{ item.title }}</h3>
-                {% if item.organization %}
-                <span class="institution">{{ item.organization }}</span>
-                {% endif %}
-            </div>
-            {% if item.start_date or item.end_date %}
-            <span class="dates">{{ item.start_date or '' }}{% if item.start_date and item.end_date %} - {% endif %}{{ item.end_date or '' }}</span>
-            {% endif %}
-        </article>
+        {% for edu in resume.education %}
+        {% if edu.display is not defined or edu.display %}
+        <div class="edu-entry">
+            <p>
+                <strong>{{ edu.degree }}</strong>, {{ edu.institution }}
+                {%- if edu.year %}, {{ edu.year }}{% endif %}
+                {%- if edu.honors %} - {{ edu.honors }}{% endif %}
+                {%- if edu.gpa and not edu.honors %} (GPA: {{ edu.gpa }}){% endif %}
+            </p>
+        </div>
+        {% endif %}
         {% endfor %}
     </section>
     {% endif %}

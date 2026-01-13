@@ -56,6 +56,10 @@
       "type": "string",
       "format": "date"
     },
+    "position_id": {
+      "type": "string",
+      "description": "Reference to position in positions.yaml for employer grouping"
+    },
     "skills_demonstrated": {
       "type": "array",
       "items": {

@@ -1,6 +1,6 @@
 # Story 6.7: Positions Data Model & Employment History (Normalized Architecture)
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -56,58 +56,58 @@ So that **my resume shows proper chronological employment history with achieveme
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create Position model (AC: #2)
-  - [ ] 1.1: Create `models/position.py` with Position Pydantic model
-  - [ ] 1.2: Add fields: id, employer, title, location, start_date, end_date, employment_type, promoted_from, description
-  - [ ] 1.3: Add date validation (YYYY-MM format)
-  - [ ] 1.4: Add employment_type enum (full-time, part-time, contract, consulting, freelance)
+- [x] Task 1: Create Position model (AC: #2)
+  - [x] 1.1: Create `models/position.py` with Position Pydantic model
+  - [x] 1.2: Add fields: id, employer, title, location, start_date, end_date, employment_type, promoted_from, description
+  - [x] 1.3: Add date validation (YYYY-MM format)
+  - [x] 1.4: Add employment_type enum (full-time, part-time, contract, consulting, freelance)
 
-- [ ] Task 2: Create PositionService (AC: #2, #4, #5, #6)
-  - [ ] 2.1: Create `services/position_service.py`
-  - [ ] 2.2: Implement `load_positions(path)` to read positions.yaml
-  - [ ] 2.3: Implement `get_position(position_id)` lookup
-  - [ ] 2.4: Implement `group_by_employer(positions)` for resume rendering
-  - [ ] 2.5: Implement `get_promotion_chain(position_id)` for career progression
-  - [ ] 2.6: Create positions.yaml if not exists
+- [x] Task 2: Create PositionService (AC: #2, #4, #5, #6)
+  - [x] 2.1: Create `services/position_service.py`
+  - [x] 2.2: Implement `load_positions(path)` to read positions.yaml
+  - [x] 2.3: Implement `get_position(position_id)` lookup
+  - [x] 2.4: Implement `group_by_employer(positions)` for resume rendering
+  - [x] 2.5: Implement `get_promotion_chain(position_id)` for career progression
+  - [x] 2.6: Create positions.yaml if not exists
 
-- [ ] Task 3: Create positions schema (AC: #2)
-  - [ ] 3.1: Create `schemas/positions.schema.json`
-  - [ ] 3.2: Define position object schema
-  - [ ] 3.3: Add to validation pipeline
+- [x] Task 3: Create positions schema (AC: #2)
+  - [x] 3.1: Create `schemas/positions.schema.json`
+  - [x] 3.2: Define position object schema
+  - [x] 3.3: Add to validation pipeline (via Pydantic in PositionService)
 
-- [ ] Task 4: Update WorkUnit model (AC: #3, #7)
-  - [ ] 4.1: Add `position_id: str | None` field to WorkUnit model
-  - [ ] 4.2: Update work-unit.schema.json with optional position_id
-  - [ ] 4.3: Add validation for position_id existence
+- [x] Task 4: Update WorkUnit model (AC: #3, #7)
+  - [x] 4.1: Add `position_id: str | None` field to WorkUnit model
+  - [x] 4.2: Update work-unit.schema.json with optional position_id
+  - [x] 4.3: Add validation for position_id existence (deferred to Task 7 - validate command)
 
-- [ ] Task 5: Update ResumeData for grouped rendering (AC: #4, #5)
-  - [ ] 5.1: Update `ResumeData.from_work_units()` to load positions
-  - [ ] 5.2: Group work units by position_id
-  - [ ] 5.3: Group positions by employer
-  - [ ] 5.4: Sort by date for chronological rendering
-  - [ ] 5.5: Handle work units without position_id
+- [x] Task 5: Update ResumeData for grouped rendering (AC: #4, #5)
+  - [x] 5.1: Update `ResumeData.from_work_units()` to load positions
+  - [x] 5.2: Group work units by position_id
+  - [x] 5.3: Group positions by employer
+  - [x] 5.4: Sort by date for chronological rendering
+  - [x] 5.5: Handle work units without position_id
 
-- [ ] Task 6: Update templates for employer grouping (AC: #4, #5)
-  - [ ] 6.1: Update experience section in all templates
-  - [ ] 6.2: Render employer → role → achievements hierarchy
-  - [ ] 6.3: Show career progression within same employer
+- [x] Task 6: Update templates for employer grouping (AC: #4, #5)
+  - [x] 6.1: Update experience section in all templates (already compatible via ResumeItem)
+  - [x] 6.2: Render employer → role → achievements hierarchy (supported via organization/title/bullets)
+  - [x] 6.3: Show career progression within same employer (each position renders separately)
 
-- [ ] Task 7: Update validate command (AC: #7)
-  - [ ] 7.1: Add warning for work units without position_id
-  - [ ] 7.2: Validate position_id references exist
-  - [ ] 7.3: Validation still passes (position is optional)
+- [x] Task 7: Update validate command (AC: #7)
+  - [x] 7.1: Add warning for work units without position_id
+  - [x] 7.2: Validate position_id references exist
+  - [x] 7.3: Validation still passes (position is optional)
 
-- [ ] Task 8: Testing
-  - [ ] 8.1: Add unit tests for Position model
-  - [ ] 8.2: Add unit tests for PositionService
-  - [ ] 8.3: Add tests for work unit position_id validation
-  - [ ] 8.4: Add tests for grouped resume rendering
-  - [ ] 8.5: Add tests for promotion chain detection
+- [x] Task 8: Testing
+  - [x] 8.1: Add unit tests for Position model
+  - [x] 8.2: Add unit tests for PositionService
+  - [x] 8.3: Add tests for work unit position_id validation
+  - [x] 8.4: Add tests for grouped resume rendering
+  - [x] 8.5: Add tests for promotion chain detection
 
-- [ ] Task 9: Code quality verification
-  - [ ] 9.1: Run `ruff check src tests --fix`
-  - [ ] 9.2: Run `mypy src --strict` with zero errors
-  - [ ] 9.3: Run `pytest` - all tests pass
+- [x] Task 9: Code quality verification
+  - [x] 9.1: Run `ruff check src tests --fix`
+  - [x] 9.2: Run `mypy src --strict` with zero errors
+  - [x] 9.3: Run `pytest` - all tests pass
 
 ## Dev Notes
 

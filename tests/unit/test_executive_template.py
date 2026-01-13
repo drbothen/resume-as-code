@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from resume_as_code.models.certification import Certification
+from resume_as_code.models.education import Education
 from resume_as_code.models.resume import (
     ContactInfo,
     ResumeBullet,
@@ -78,15 +79,15 @@ def executive_resume() -> ResumeData:
     ]
 
     education = [
-        ResumeItem(
-            title="MBA",
-            organization="Stanford Graduate School of Business",
-            end_date="2015",
+        Education(
+            degree="MBA",
+            institution="Stanford Graduate School of Business",
+            year="2015",
         ),
-        ResumeItem(
-            title="BS Computer Science",
-            organization="MIT",
-            end_date="2008",
+        Education(
+            degree="BS Computer Science",
+            institution="MIT",
+            year="2008",
         ),
     ]
 

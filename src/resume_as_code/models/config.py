@@ -8,6 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 from resume_as_code.models.certification import Certification
+from resume_as_code.models.education import Education
 
 
 class ProfileConfig(BaseModel):
@@ -81,6 +82,9 @@ class ResumeConfig(BaseModel):
 
     # Certifications
     certifications: list[Certification] = Field(default_factory=list)
+
+    # Education
+    education: list[Education] = Field(default_factory=list)
 
     # Skills curation
     skills: SkillsConfig = Field(default_factory=SkillsConfig)

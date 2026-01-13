@@ -162,6 +162,29 @@ class TestWorkUnitModel:
                 outcome=Outcome(result="Result achieved here"),
             )
 
+    def test_work_unit_with_position_id(self) -> None:
+        """Work unit should accept optional position_id."""
+        wu = WorkUnit(
+            id="wu-2024-03-15-cloud-migration",
+            title="Migrated legacy system to cloud infrastructure",
+            problem=Problem(statement="Legacy on-prem system was costly and hard to scale"),
+            actions=["Designed cloud architecture", "Migrated databases"],
+            outcome=Outcome(result="Reduced infrastructure costs by 40%"),
+            position_id="pos-techcorp-senior",
+        )
+        assert wu.position_id == "pos-techcorp-senior"
+
+    def test_work_unit_without_position_id(self) -> None:
+        """Work unit should work without position_id (for personal projects)."""
+        wu = WorkUnit(
+            id="wu-2024-03-15-open-source",
+            title="Contributed to open source security project",
+            problem=Problem(statement="Open source project needed better security tooling"),
+            actions=["Implemented feature", "Added documentation"],
+            outcome=Outcome(result="Feature merged and used by 1000+ users"),
+        )
+        assert wu.position_id is None
+
 
 class TestEvidenceDiscriminatedUnion:
     """Test evidence type discrimination."""

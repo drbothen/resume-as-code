@@ -11,6 +11,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt
 
 from resume_as_code.models.certification import Certification
+from resume_as_code.models.education import Education
 from resume_as_code.models.errors import RenderError
 from resume_as_code.models.resume import ResumeData, ResumeItem
 
@@ -124,11 +125,12 @@ class DOCXProvider:
                 self._add_experience_item(doc, item, is_last=is_last)
 
         # Education section
-        if resume.education:
+        displayable_education = [edu for edu in resume.education if edu.display]
+        if displayable_education:
             self._add_section_heading(doc, "Education")
-            for idx, item in enumerate(resume.education):
-                is_last = idx == len(resume.education) - 1
-                self._add_education_item(doc, item, is_last=is_last)
+            for idx, edu in enumerate(displayable_education):
+                is_last = idx == len(displayable_education) - 1
+                self._add_education_item(doc, edu, is_last=is_last)
 
         # Certifications section
         active_certs = resume.get_active_certifications()
@@ -243,40 +245,27 @@ class DOCXProvider:
             spacer = doc.add_paragraph()
             spacer.paragraph_format.space_after = Pt(6)
 
-    def _add_education_item(self, doc: Any, item: ResumeItem, *, is_last: bool = False) -> None:
+    def _add_education_item(self, doc: Any, edu: Education, *, is_last: bool = False) -> None:
         """Add an education item.
 
         Args:
             doc: Word document to add item to.
-            item: Education item to render.
+            edu: Education item to render.
             is_last: Whether this is the last item in the section.
         """
-        # Degree/title line
-        title_para = doc.add_paragraph()
-        title_run = title_para.add_run(item.title)
-        title_run.bold = True
+        # Format: "Degree, Institution, Year - Honors" or "(GPA: X)"
+        parts = [edu.degree, edu.institution]
+        if edu.year:
+            parts.append(edu.year)
 
-        if item.organization:
-            title_para.add_run(f" | {item.organization}")
+        text = ", ".join(parts)
+        if edu.honors:
+            text += f" - {edu.honors}"
+        elif edu.gpa:
+            text += f" (GPA: {edu.gpa})"
 
-        if item.start_date or item.end_date:
-            if item.start_date and item.end_date:
-                dates = f"{item.start_date} - {item.end_date}"
-            elif item.end_date:
-                dates = item.end_date
-            else:
-                dates = item.start_date or ""
-            title_para.add_run(f"  ({dates})")
-
-        title_para.paragraph_format.space_after = Pt(3)
-
-        # Location if present
-        if item.location:
-            loc_para = doc.add_paragraph(item.location)
-            loc_para.paragraph_format.left_indent = Inches(0.25)
-            for run in loc_para.runs:
-                run.italic = True
-            loc_para.paragraph_format.space_after = Pt(3)
+        p = doc.add_paragraph(text)
+        p.paragraph_format.space_after = Pt(3)
 
         # Add spacer only if not the last item
         if not is_last:

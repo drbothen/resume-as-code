@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from resume_as_code.models.education import Education
 from resume_as_code.models.resume import (
     ContactInfo,
     ResumeBullet,
@@ -67,11 +68,10 @@ def detailed_resume() -> ResumeData:
         ],
         skills=["Python", "Go", "Kubernetes", "AWS", "Terraform"],
         education=[
-            ResumeItem(
-                title="M.S. Computer Science",
-                organization="Stanford University",
-                start_date="2010",
-                end_date="2012",
+            Education(
+                degree="M.S. Computer Science",
+                institution="Stanford University",
+                year="2012",
             ),
         ],
     )
