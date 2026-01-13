@@ -213,6 +213,176 @@ class TestNewEducationCommand:
         assert "already exists" in result.output
 
 
+class TestEducationPipeSeparated:
+    """Tests for pipe-separated education creation."""
+
+    def test_creates_education_pipe_separated(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should create education with pipe-separated format."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "education",
+                "BS Computer Science|MIT|2015|Magna Cum Laude",
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Education created" in result.output
+        assert (tmp_path / ".resume.yaml").exists()
+
+        import yaml
+
+        with open(tmp_path / ".resume.yaml") as f:
+            data = yaml.safe_load(f)
+
+        edu = data["education"][0]
+        assert edu["degree"] == "BS Computer Science"
+        assert edu["institution"] == "MIT"
+        assert edu["year"] == "2015"
+        assert edu["honors"] == "Magna Cum Laude"
+
+    def test_creates_education_pipe_minimal(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should create education with just degree and institution."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "education",
+                "MS Cybersecurity|Georgia Tech",
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Education created" in result.output
+
+        import yaml
+
+        with open(tmp_path / ".resume.yaml") as f:
+            data = yaml.safe_load(f)
+
+        edu = data["education"][0]
+        assert edu["degree"] == "MS Cybersecurity"
+        assert edu["institution"] == "Georgia Tech"
+
+    def test_pipe_format_with_partial_fields(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should handle pipe format with some empty fields."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "education",
+                "PhD Computer Science|Stanford||",  # No year or honors
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+
+        import yaml
+
+        with open(tmp_path / ".resume.yaml") as f:
+            data = yaml.safe_load(f)
+
+        edu = data["education"][0]
+        assert edu["degree"] == "PhD Computer Science"
+        assert edu["institution"] == "Stanford"
+        assert edu.get("year") is None
+        assert edu.get("honors") is None
+
+    def test_pipe_format_json_output(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should return JSON output with pipe-separated format."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "--json",
+                "new",
+                "education",
+                "BS Test|Test University|2020",
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        data = json.loads(result.output)
+        assert data["status"] == "success"
+        assert data["data"]["education_created"] is True
+        assert data["data"]["degree"] == "BS Test"
+        assert data["data"]["institution"] == "Test University"
+
+    def test_pipe_format_missing_institution_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should error if institution is missing in pipe format."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "education",
+                "BS Computer Science",  # Only degree, no institution
+            ],
+        )
+
+        # Should error because institution is required
+        assert result.exit_code != 0
+        assert "Institution" in result.output or "format" in result.output.lower()
+
+    def test_flags_override_pipe_values(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should allow flags to override pipe-separated values."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "education",
+                "Pipe Degree|Pipe Institution|2015|Pipe Honors",
+                "--degree",
+                "Flag Degree",  # Override degree
+                "--institution",
+                "Flag Institution",  # Override institution
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+
+        import yaml
+
+        with open(tmp_path / ".resume.yaml") as f:
+            data = yaml.safe_load(f)
+
+        edu = data["education"][0]
+        assert edu["degree"] == "Flag Degree"
+        assert edu["institution"] == "Flag Institution"
+        # These should still come from pipe since not overridden
+        assert edu["year"] == "2015"
+        assert edu["honors"] == "Pipe Honors"
+
+
 class TestEducationService:
     """Tests for EducationService directly."""
 

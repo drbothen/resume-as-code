@@ -67,6 +67,85 @@ def parse_position_flag(value: str) -> dict[str, str | None]:
     }
 
 
+def parse_certification_flag(value: str) -> dict[str, str | None]:
+    """Parse --certification flag value.
+
+    Format: "Name|Issuer|Date|Expires"
+    Issuer, Date, and Expires can be empty.
+
+    Args:
+        value: The certification flag value in pipe-separated format.
+
+    Returns:
+        Dictionary with name, issuer, date, expires keys.
+
+    Raises:
+        click.BadParameter: If format is invalid.
+    """
+    parts = value.split("|")
+    if len(parts) < 1 or len(parts) > 4:
+        raise click.BadParameter(
+            "Certification must be in format: 'Name|Issuer|Date|Expires' "
+            "(Issuer, Date, Expires optional)"
+        )
+
+    name = parts[0].strip()
+    if not name:
+        raise click.BadParameter("Certification name cannot be empty")
+
+    issuer = parts[1].strip() if len(parts) > 1 else None
+    cert_date = parts[2].strip() if len(parts) > 2 else None
+    expires = parts[3].strip() if len(parts) > 3 else None
+
+    return {
+        "name": name,
+        "issuer": issuer or None,
+        "date": cert_date or None,
+        "expires": expires or None,
+    }
+
+
+def parse_education_flag(value: str) -> dict[str, str | None]:
+    """Parse --education flag value.
+
+    Format: "Degree|Institution|Year|Honors"
+    Year and Honors can be empty.
+
+    Args:
+        value: The education flag value in pipe-separated format.
+
+    Returns:
+        Dictionary with degree, institution, year, honors keys.
+
+    Raises:
+        click.BadParameter: If format is invalid.
+    """
+    parts = value.split("|")
+    if len(parts) < 2 or len(parts) > 4:
+        raise click.BadParameter(
+            "Education must be in format: 'Degree|Institution|Year|Honors' "
+            "(Year, Honors optional)"
+        )
+
+    degree = parts[0].strip()
+    institution = parts[1].strip()
+
+    if not degree:
+        raise click.BadParameter("Degree cannot be empty")
+    if not institution:
+        raise click.BadParameter("Institution cannot be empty")
+
+    year = parts[2].strip() if len(parts) > 2 else None
+    honors = parts[3].strip() if len(parts) > 3 else None
+
+    return {
+        "degree": degree,
+        "institution": institution,
+        "year": year or None,
+        "honors": honors or None,
+    }
+
+
 def find_existing_position(
     employer: str,
     title: str,
@@ -759,6 +838,7 @@ def _validate_year_format(year_str: str) -> bool:
 
 
 @new_group.command("certification")
+@click.argument("certification_spec", required=False)
 @click.option("--name", required=False, help="Certification name")
 @click.option("--issuer", help="Issuing organization")
 @click.option("--date", "cert_date", help="Date obtained (YYYY-MM)")
@@ -769,6 +849,7 @@ def _validate_year_format(year_str: str) -> bool:
 @handle_errors
 def new_certification(
     ctx: click.Context,
+    certification_spec: str | None,
     name: str | None,
     issuer: str | None,
     cert_date: str | None,
@@ -778,11 +859,24 @@ def new_certification(
 ) -> None:
     """Create a new certification record.
 
-    Can be used interactively (no flags) or non-interactively (with --name).
-    For non-interactive mode, at minimum provide --name.
+    Can be used in three ways:
+    1. Pipe-separated: resume new certification "Name|Issuer|Date|Expires"
+    2. Flags: resume new certification --name "Name" --issuer "Issuer"
+    3. Interactive: resume new certification
     """
     # Use Path.cwd() for config location (certifications stored in .resume.yaml)
     service = CertificationService(config_path=Path.cwd() / ".resume.yaml")
+
+    # Parse pipe-separated format if provided
+    if certification_spec:
+        try:
+            parsed = parse_certification_flag(certification_spec)
+            name = name or parsed["name"]
+            issuer = issuer or parsed["issuer"]
+            cert_date = cert_date or parsed["date"]
+            expires = expires or parsed["expires"]
+        except click.BadParameter as e:
+            raise click.UsageError(str(e)) from e
 
     # Determine interactive vs non-interactive mode
     non_interactive = name is not None
@@ -885,6 +979,7 @@ def new_certification(
 
 
 @new_group.command("education")
+@click.argument("education_spec", required=False)
 @click.option("--degree", required=False, help="Degree name")
 @click.option("--institution", required=False, help="Institution name")
 @click.option("--year", help="Graduation year (YYYY)")
@@ -894,6 +989,7 @@ def new_certification(
 @handle_errors
 def new_education(
     ctx: click.Context,
+    education_spec: str | None,
     degree: str | None,
     institution: str | None,
     year: str | None,
@@ -902,11 +998,24 @@ def new_education(
 ) -> None:
     """Create a new education record.
 
-    Can be used interactively (no flags) or non-interactively (with --degree and --institution).
-    For non-interactive mode, provide at least --degree and --institution.
+    Can be used in three ways:
+    1. Pipe-separated: resume new education "Degree|Institution|Year|Honors"
+    2. Flags: resume new education --degree "BS CS" --institution "MIT"
+    3. Interactive: resume new education
     """
     # Use Path.cwd() for config location (education stored in .resume.yaml)
     service = EducationService(config_path=Path.cwd() / ".resume.yaml")
+
+    # Parse pipe-separated format if provided
+    if education_spec:
+        try:
+            parsed = parse_education_flag(education_spec)
+            degree = degree or parsed["degree"]
+            institution = institution or parsed["institution"]
+            year = year or parsed["year"]
+            honors = honors or parsed["honors"]
+        except click.BadParameter as e:
+            raise click.UsageError(str(e)) from e
 
     # Determine interactive vs non-interactive mode
     non_interactive = degree is not None and institution is not None

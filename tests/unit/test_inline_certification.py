@@ -179,6 +179,153 @@ class TestNewCertificationCommand:
         assert "invalid" in result.output.lower() or "YYYY-MM" in result.output
 
 
+class TestCertificationPipeSeparated:
+    """Tests for pipe-separated certification creation."""
+
+    def test_creates_certification_pipe_separated(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should create certification with pipe-separated format."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "certification",
+                "AWS Solutions Architect|Amazon Web Services|2023-06|2026-06",
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Certification created" in result.output
+        assert (tmp_path / ".resume.yaml").exists()
+
+        import yaml
+
+        with open(tmp_path / ".resume.yaml") as f:
+            data = yaml.safe_load(f)
+
+        assert data["certifications"][0]["name"] == "AWS Solutions Architect"
+        assert data["certifications"][0]["issuer"] == "Amazon Web Services"
+        assert data["certifications"][0]["date"] == "2023-06"
+        assert data["certifications"][0]["expires"] == "2026-06"
+
+    def test_creates_certification_pipe_minimal(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should create certification with just name in pipe format."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "certification",
+                "CISSP",  # Just name, no pipes
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Certification created" in result.output
+
+        import yaml
+
+        with open(tmp_path / ".resume.yaml") as f:
+            data = yaml.safe_load(f)
+
+        assert data["certifications"][0]["name"] == "CISSP"
+
+    def test_pipe_format_with_partial_fields(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should handle pipe format with some empty fields."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "certification",
+                "CompTIA Security+|CompTIA||",  # No date or expires
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+
+        import yaml
+
+        with open(tmp_path / ".resume.yaml") as f:
+            data = yaml.safe_load(f)
+
+        cert = data["certifications"][0]
+        assert cert["name"] == "CompTIA Security+"
+        assert cert["issuer"] == "CompTIA"
+        assert cert.get("date") is None
+        assert cert.get("expires") is None
+
+    def test_pipe_format_json_output(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should return JSON output with pipe-separated format."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "--json",
+                "new",
+                "certification",
+                "Test Cert|Test Issuer",
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        data = json.loads(result.output)
+        assert data["status"] == "success"
+        assert data["data"]["certification_created"] is True
+        assert data["data"]["name"] == "Test Cert"
+        assert data["data"]["issuer"] == "Test Issuer"
+
+    def test_flags_override_pipe_values(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should allow flags to override pipe-separated values."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "certification",
+                "Pipe Name|Pipe Issuer|2020-01|2023-01",
+                "--name",
+                "Flag Name",  # Override name
+                "--issuer",
+                "Flag Issuer",  # Override issuer
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+
+        import yaml
+
+        with open(tmp_path / ".resume.yaml") as f:
+            data = yaml.safe_load(f)
+
+        cert = data["certifications"][0]
+        assert cert["name"] == "Flag Name"
+        assert cert["issuer"] == "Flag Issuer"
+        # These should still come from pipe since not overridden
+        assert cert["date"] == "2020-01"
+        assert cert["expires"] == "2023-01"
+
+
 class TestCertificationService:
     """Tests for CertificationService directly."""
 
