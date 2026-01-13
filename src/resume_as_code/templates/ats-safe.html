@@ -40,6 +40,17 @@
     </section>
     {% endif %}
 
+    {% if resume.get_active_certifications() %}
+    <section>
+        <h2>CERTIFICATIONS</h2>
+        <ul>
+            {% for cert in resume.get_active_certifications() %}
+            <li>{{ cert.name }}{% if cert.issuer %}, {{ cert.issuer }}{% endif %}{% if cert.date %}, {{ cert.date[:4] }}{% endif %}{% if cert.expires %}, expires {{ cert.expires[:4] }}{% endif %}</li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
     {% for section in resume.sections %}
     <section>
         <h2>{{ section.title | upper }}</h2>

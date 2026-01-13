@@ -284,7 +284,7 @@ class DOCXProvider:
             spacer.paragraph_format.space_after = Pt(6)
 
     def _add_certifications_section(self, doc: Any, certifications: list[Certification]) -> None:
-        """Add certifications section.
+        """Add certifications section with Word bullet list formatting.
 
         Args:
             doc: Word document to add section to.
@@ -292,29 +292,16 @@ class DOCXProvider:
         """
         self._add_section_heading(doc, "Certifications")
 
-        for idx, cert in enumerate(certifications):
-            is_last = idx == len(certifications) - 1
-
-            # Build certification display text
-            cert_para = doc.add_paragraph()
-            name_run = cert_para.add_run(cert.name)
-            name_run.bold = True
-
-            # Add issuer and dates
-            details: list[str] = []
+        for cert in certifications:
+            # Build certification display text: "Name, Issuer, Year"
+            parts: list[str] = [cert.name]
             if cert.issuer:
-                details.append(cert.issuer)
+                parts.append(cert.issuer)
             if cert.date:
-                details.append(cert.date[:4])  # Year only
+                parts.append(cert.date[:4])  # Year only
             if cert.expires:
-                details.append(f"expires {cert.expires[:4]}")
+                parts.append(f"expires {cert.expires[:4]}")
 
-            if details:
-                cert_para.add_run(f" ({', '.join(details)})")
-
-            cert_para.paragraph_format.space_after = Pt(3)
-
-            # Add spacer only if not the last item
-            if not is_last:
-                spacer = doc.add_paragraph()
-                spacer.paragraph_format.space_after = Pt(3)
+            cert_text = ", ".join(parts)
+            bullet_para = doc.add_paragraph(cert_text, style="List Bullet")
+            bullet_para.paragraph_format.space_after = Pt(3)
