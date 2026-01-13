@@ -104,7 +104,7 @@ def new_work_unit(
 
     # Position selection (interactive if not provided and not in quiet/json mode)
     if position_id is None and not ctx.obj.json_output and not ctx.obj.quiet:
-        position_id = _prompt_position_interactive(ctx, config)
+        position_id = _prompt_position_interactive(ctx, config, from_memory=from_memory)
 
     # Generate ID and create file
     work_unit_id = generate_id(title, date.today())
@@ -197,7 +197,7 @@ def new_position(ctx: click.Context) -> None:
     title: str = click.prompt("Job title")
 
     # Optional location
-    location_input: str = click.prompt("Location (city, state)", default="")
+    location_input: str = click.prompt("Location (city, state/country)", default="")
     location: str | None = location_input if location_input else None
 
     # Date prompts
@@ -284,8 +284,15 @@ def new_position(ctx: click.Context) -> None:
         info(f"Use this ID in work units: position_id: {position_id}")
 
 
-def _prompt_position_interactive(ctx: click.Context, config: Any) -> str | None:
+def _prompt_position_interactive(
+    ctx: click.Context, config: Any, from_memory: bool = False
+) -> str | None:
     """Prompt user to select or create a position.
+
+    Args:
+        ctx: Click context.
+        config: Application configuration.
+        from_memory: If True, suggest position based on current date (AC#5).
 
     Returns:
         Position ID if selected, None if skipped or no positions exist.
@@ -296,6 +303,18 @@ def _prompt_position_interactive(ctx: click.Context, config: Any) -> str | None:
     # Only prompt if positions exist - skip for new projects
     if not positions:
         return None
+
+    # AC#5: Date-based position suggestion for --from-memory mode
+    if from_memory:
+        today = datetime.now().strftime("%Y-%m")
+        suggested = service.suggest_position_for_date(today)
+        if suggested:
+            console.print(
+                f"\n[cyan]Suggested position:[/cyan] {suggested.title} at {suggested.employer}"
+            )
+            if click.confirm("Use this position?", default=True):
+                return suggested.id
+            # User declined, fall through to full selection
 
     options: list[tuple[str, str]] = []
 
@@ -341,8 +360,8 @@ def _create_position_inline(
     employer: str = click.prompt("Employer name")
     title: str = click.prompt("Job title")
 
-    # Optional location
-    location_input: str = click.prompt("Location (city, state)", default="")
+    # Optional location (consistent with main new position command)
+    location_input: str = click.prompt("Location (city, state/country)", default="")
     location: str | None = location_input if location_input else None
 
     # Date prompts

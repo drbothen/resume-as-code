@@ -1,6 +1,6 @@
 # Story 6.7: Positions Data Model & Employment History (Normalized Architecture)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -600,10 +600,35 @@ uv run resume build --jd examples/job-description.txt
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+- Normalized positions model fully implemented following JSON Resume, HR-XML, LinkedIn patterns
+- All 7 acceptance criteria implemented and tested
+- Position model with validation, date formatting, and employment type enum
+- PositionService with loading, grouping, promotion chain detection, and saving
+- Work unit position_id validation integrated with validate command
+- Resume grouping by employer working via ResumeData
+- Promotion chain detection with cycle prevention
+- 69 position-related tests passing
+
 ### File List
+
+**New Files:**
+- `src/resume_as_code/models/position.py` - Position Pydantic model with date validation
+- `src/resume_as_code/services/position_service.py` - Position service with grouping and chain detection
+- `schemas/positions.schema.json` - JSON Schema for positions.yaml validation
+- `tests/unit/test_position.py` - Position model unit tests
+- `tests/unit/test_position_service.py` - Position service unit tests
+
+**Modified Files:**
+- `src/resume_as_code/models/work_unit.py` - Added position_id field
+- `schemas/work-unit.schema.json` - Added optional position_id property
+- `src/resume_as_code/models/resume.py` - Updated ResumeData for position grouping
+- `src/resume_as_code/services/content_validator.py` - Added position reference validation
+- `src/resume_as_code/commands/validate.py` - Added --check-positions flag

@@ -509,3 +509,133 @@ positions:
         assert "location:" not in content
         assert "end_date:" not in content
         assert "promoted_from:" not in content
+
+
+class TestPositionServiceSuggestForDate:
+    """Tests for date-based position suggestion (AC#5)."""
+
+    def test_suggest_current_position_for_today(self, tmp_path: Path) -> None:
+        """Should suggest current position for today's date."""
+        positions_file = tmp_path / "positions.yaml"
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-current:
+    employer: "Current Corp"
+    title: "Senior Engineer"
+    start_date: "2022-01"
+""")
+        service = PositionService(positions_file)
+        result = service.suggest_position_for_date("2025-06")
+
+        assert result is not None
+        assert result.id == "pos-current"
+
+    def test_suggest_past_position_for_past_date(self, tmp_path: Path) -> None:
+        """Should suggest past position for date within its tenure."""
+        positions_file = tmp_path / "positions.yaml"
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-current:
+    employer: "Current Corp"
+    title: "Senior Engineer"
+    start_date: "2023-01"
+  pos-past:
+    employer: "Past Corp"
+    title: "Engineer"
+    start_date: "2020-01"
+    end_date: "2022-12"
+""")
+        service = PositionService(positions_file)
+        result = service.suggest_position_for_date("2021-06")
+
+        assert result is not None
+        assert result.id == "pos-past"
+
+    def test_suggest_returns_most_recent_match(self, tmp_path: Path) -> None:
+        """Should return most recent matching position when multiple overlap."""
+        positions_file = tmp_path / "positions.yaml"
+        # Overlapping positions (e.g., promotion mid-month)
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-senior:
+    employer: "TechCorp"
+    title: "Senior Engineer"
+    start_date: "2022-06"
+  pos-junior:
+    employer: "TechCorp"
+    title: "Junior Engineer"
+    start_date: "2020-01"
+    end_date: "2022-06"
+""")
+        service = PositionService(positions_file)
+        # Date matches both positions
+        result = service.suggest_position_for_date("2022-06")
+
+        assert result is not None
+        assert result.id == "pos-senior"  # Most recent start_date
+
+    def test_suggest_returns_none_no_positions(self, tmp_path: Path) -> None:
+        """Should return None when no positions exist."""
+        positions_file = tmp_path / "nonexistent.yaml"
+        service = PositionService(positions_file)
+        result = service.suggest_position_for_date("2024-01")
+
+        assert result is None
+
+    def test_suggest_returns_none_date_before_all_positions(self, tmp_path: Path) -> None:
+        """Should return None when date is before all positions."""
+        positions_file = tmp_path / "positions.yaml"
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-first:
+    employer: "First Corp"
+    title: "Engineer"
+    start_date: "2020-01"
+""")
+        service = PositionService(positions_file)
+        result = service.suggest_position_for_date("2018-06")
+
+        assert result is None
+
+    def test_suggest_returns_none_date_between_positions(self, tmp_path: Path) -> None:
+        """Should return None when date falls in employment gap."""
+        positions_file = tmp_path / "positions.yaml"
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-later:
+    employer: "Later Corp"
+    title: "Engineer"
+    start_date: "2023-01"
+  pos-earlier:
+    employer: "Earlier Corp"
+    title: "Developer"
+    start_date: "2020-01"
+    end_date: "2021-06"
+""")
+        service = PositionService(positions_file)
+        # Gap from 2021-07 to 2022-12
+        result = service.suggest_position_for_date("2022-03")
+
+        assert result is None
+
+    def test_suggest_handles_full_date_format(self, tmp_path: Path) -> None:
+        """Should handle YYYY-MM-DD date format."""
+        positions_file = tmp_path / "positions.yaml"
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-test:
+    employer: "Test Corp"
+    title: "Engineer"
+    start_date: "2022-01"
+""")
+        service = PositionService(positions_file)
+        result = service.suggest_position_for_date("2023-06-15")
+
+        assert result is not None
+        assert result.id == "pos-test"

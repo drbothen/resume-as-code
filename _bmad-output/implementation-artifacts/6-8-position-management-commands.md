@@ -1,6 +1,6 @@
 # Story 6.8: Position Management Commands (Human-Friendly UX)
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -59,62 +59,62 @@ So that **I can easily set up my employment history without manually editing YAM
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create `resume new position` command (AC: #1, #2)
-  - [ ] 1.1: Add `position` subcommand to `new` command group
-  - [ ] 1.2: Implement Rich prompts for each field
-  - [ ] 1.3: Add employer name prompt (required)
-  - [ ] 1.4: Add job title prompt (required)
-  - [ ] 1.5: Add location prompt (optional)
-  - [ ] 1.6: Add start date prompt with validation
-  - [ ] 1.7: Add end date prompt (blank for current)
-  - [ ] 1.8: Add employment type select from list
-  - [ ] 1.9: Add promotion question with position selection
-  - [ ] 1.10: Generate position ID from employer/title slugs
-  - [ ] 1.11: Save to positions.yaml via PositionService
+- [x] Task 1: Create `resume new position` command (AC: #1, #2)
+  - [x] 1.1: Add `position` subcommand to `new` command group
+  - [x] 1.2: Implement Rich prompts for each field
+  - [x] 1.3: Add employer name prompt (required)
+  - [x] 1.4: Add job title prompt (required)
+  - [x] 1.5: Add location prompt (optional)
+  - [x] 1.6: Add start date prompt with validation
+  - [x] 1.7: Add end date prompt (blank for current)
+  - [x] 1.8: Add employment type select from list
+  - [x] 1.9: Add promotion question with position selection
+  - [x] 1.10: Generate position ID from employer/title slugs
+  - [x] 1.11: Save to positions.yaml via PositionService
 
-- [ ] Task 2: Create `resume list positions` command (AC: #3)
-  - [ ] 2.1: Add `positions` subcommand to `list` command group
-  - [ ] 2.2: Load positions via PositionService
-  - [ ] 2.3: Display as Rich table
-  - [ ] 2.4: Show ID, employer, title, dates, type columns
-  - [ ] 2.5: Sort by start_date descending (most recent first)
+- [x] Task 2: Create `resume list positions` command (AC: #3)
+  - [x] 2.1: Add `positions` subcommand to `list` command group
+  - [x] 2.2: Load positions via PositionService
+  - [x] 2.3: Display as Rich table
+  - [x] 2.4: Show ID, employer, title, dates, type columns
+  - [x] 2.5: Sort by start_date descending (most recent first)
 
-- [ ] Task 3: Create `resume show position` command (AC: #7)
-  - [ ] 3.1: Add `position` subcommand to `show` command group (or new group)
-  - [ ] 3.2: Load position by ID
-  - [ ] 3.3: Display full position details
-  - [ ] 3.4: Find and list work units referencing this position
-  - [ ] 3.5: Show promotion chain if part of one
+- [x] Task 3: Create `resume show position` command (AC: #7)
+  - [x] 3.1: Add `position` subcommand to `show` command group (or new group)
+  - [x] 3.2: Load position by ID
+  - [x] 3.3: Display full position details
+  - [x] 3.4: Find and list work units referencing this position
+  - [x] 3.5: Show promotion chain if part of one
 
-- [ ] Task 4: Update `resume new work-unit` for position selection (AC: #4, #5)
-  - [ ] 4.1: Add position selection prompt to work-unit creation
-  - [ ] 4.2: List existing positions as options
-  - [ ] 4.3: Add "Create new position..." option
-  - [ ] 4.4: Add "No position (personal project)" option
-  - [ ] 4.5: Implement date-based position suggestion
-  - [ ] 4.6: Set position_id on created work unit
+- [x] Task 4: Update `resume new work-unit` for position selection (AC: #4, #5)
+  - [x] 4.1: Add position selection prompt to work-unit creation
+  - [x] 4.2: List existing positions as options
+  - [x] 4.3: Add "Create new position..." option
+  - [x] 4.4: Add "No position (personal project)" option
+  - [x] 4.5: Implement date-based position suggestion
+  - [x] 4.6: Set position_id on created work unit
 
-- [ ] Task 5: Update validate command (AC: #6)
-  - [ ] 5.1: Add check for work units without position_id
-  - [ ] 5.2: Display warning (not error) for missing position
-  - [ ] 5.3: Ensure validation still passes
+- [x] Task 5: Update validate command (AC: #6)
+  - [x] 5.1: Add check for work units without position_id
+  - [x] 5.2: Display warning (not error) for missing position
+  - [x] 5.3: Ensure validation still passes
 
-- [ ] Task 6: ID generation utility
-  - [ ] 6.1: Create `slugify()` utility function
-  - [ ] 6.2: Generate `pos-{employer-slug}-{title-slug}` format
-  - [ ] 6.3: Handle duplicates (append number if needed)
+- [x] Task 6: ID generation utility
+  - [x] 6.1: Create `slugify()` utility function
+  - [x] 6.2: Generate `pos-{employer-slug}-{title-slug}` format
+  - [x] 6.3: Handle duplicates (append number if needed)
 
-- [ ] Task 7: Testing
-  - [ ] 7.1: Add tests for new position command
-  - [ ] 7.2: Add tests for list positions command
-  - [ ] 7.3: Add tests for show position command
-  - [ ] 7.4: Add tests for position selection in new work-unit
-  - [ ] 7.5: Add tests for ID generation
+- [x] Task 7: Testing
+  - [x] 7.1: Add tests for new position command
+  - [x] 7.2: Add tests for list positions command
+  - [x] 7.3: Add tests for show position command
+  - [x] 7.4: Add tests for position selection in new work-unit
+  - [x] 7.5: Add tests for ID generation
 
-- [ ] Task 8: Code quality verification
-  - [ ] 8.1: Run `ruff check src tests --fix`
-  - [ ] 8.2: Run `mypy src --strict` with zero errors
-  - [ ] 8.3: Run `pytest` - all tests pass
+- [x] Task 8: Code quality verification
+  - [x] 8.1: Run `ruff check src tests --fix`
+  - [x] 8.2: Run `mypy src --strict` with zero errors
+  - [x] 8.3: Run `pytest` - all tests pass
 
 ## Dev Notes
 
@@ -546,10 +546,33 @@ uv run resume new work-unit
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+- All 7 acceptance criteria implemented and tested
+- AC#5 (date-based position suggestion) implemented via `suggest_position_for_date()` method
+- Position commands integrated with existing CLI structure
+- Consistent UX across all prompts (location prompt wording unified)
+- Comprehensive test coverage for all commands and utilities
+
 ### File List
+
+**New Files:**
+- `src/resume_as_code/utils/slugify.py` - Slug generation and position ID utilities
+- `src/resume_as_code/commands/show.py` - Show command group with position subcommand
+- `tests/unit/test_position_commands.py` - CLI command tests
+- `tests/unit/test_slugify.py` - Slug utility tests
+
+**Modified Files:**
+- `src/resume_as_code/commands/new.py` - Added `new position` subcommand, position selection in work-unit creation
+- `src/resume_as_code/commands/list_cmd.py` - Added `list positions` subcommand
+- `src/resume_as_code/commands/validate.py` - Added position reference warnings
+- `src/resume_as_code/services/position_service.py` - Added `suggest_position_for_date()` method
+- `src/resume_as_code/services/content_validator.py` - Added position validation
+- `src/resume_as_code/cli.py` - Registered show command group
+- `tests/unit/test_position_service.py` - Added date suggestion tests

@@ -143,6 +143,40 @@ class PositionService:
 
         return list(reversed(chain))
 
+    def suggest_position_for_date(self, target_date: str) -> Position | None:
+        """Suggest a position whose date range contains the target date.
+
+        Useful for auto-suggesting positions during work unit creation
+        when the work happened within a position's tenure.
+
+        Args:
+            target_date: Date string in YYYY-MM or YYYY-MM-DD format.
+
+        Returns:
+            Most recent matching Position, or None if no match.
+        """
+        positions = self.load_positions()
+        if not positions:
+            return None
+
+        # Normalize to YYYY-MM for comparison
+        target_ym = target_date[:7] if len(target_date) >= 7 else target_date
+
+        matching: list[Position] = []
+        for pos in positions.values():
+            start = pos.start_date
+            end = pos.end_date or "9999-12"  # Current positions match any future date
+
+            if start <= target_ym <= end:
+                matching.append(pos)
+
+        if not matching:
+            return None
+
+        # Return most recent matching position (by start_date descending)
+        matching.sort(key=lambda p: p.start_date, reverse=True)
+        return matching[0]
+
     def save_position(self, position: Position) -> None:
         """Save a position to the positions file.
 
