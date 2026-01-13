@@ -14,6 +14,28 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 EmploymentType = Literal["full-time", "part-time", "contract", "consulting", "freelance"]
 
 
+class PositionScope(BaseModel):
+    """Scope indicators for executive positions.
+
+    Captures leadership scale: P&L, revenue, team size, budget, geography.
+    All fields are optional - only populated fields render in scope line.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    revenue: str | None = Field(default=None, description="Revenue impact, e.g., '$500M'")
+    team_size: int | None = Field(default=None, description="Total engineers/team members")
+    direct_reports: int | None = Field(default=None, description="Direct reports count")
+    budget: str | None = Field(default=None, description="Budget managed, e.g., '$50M'")
+    pl_responsibility: str | None = Field(default=None, description="P&L responsibility amount")
+    geography: str | None = Field(
+        default=None, description="Geographic reach, e.g., 'Global', 'APAC'"
+    )
+    customers: str | None = Field(
+        default=None, description="Customer scope, e.g., '500K users', 'Fortune 500'"
+    )
+
+
 class Position(BaseModel):
     """Employment position record.
 
@@ -36,6 +58,9 @@ class Position(BaseModel):
         default=None, description="ID of previous position (for promotions)"
     )
     description: str | None = Field(default=None, description="Optional role summary")
+    scope: PositionScope | None = Field(
+        default=None, description="Scope indicators for executive positions"
+    )
 
     @field_validator("start_date", "end_date", mode="before")
     @classmethod

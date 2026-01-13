@@ -16,7 +16,7 @@ from resume_as_code.models.certification import Certification
 from resume_as_code.models.education import Education
 from resume_as_code.models.errors import NotFoundError
 from resume_as_code.models.output import JSONResponse
-from resume_as_code.models.position import EmploymentType, Position
+from resume_as_code.models.position import EmploymentType, Position, PositionScope
 from resume_as_code.models.publication import Publication, PublicationType
 from resume_as_code.services.archetype_service import list_archetypes
 from resume_as_code.services.board_role_service import BoardRoleService
@@ -675,6 +675,14 @@ def _prompt_title_interactive(ctx: click.Context) -> str:
     help="Employment type",
 )
 @click.option("--promoted-from", help="Position ID this was promoted from")
+# Scope indicators for executive positions (AC #6, #7)
+@click.option("--scope-revenue", help="Revenue impact (e.g., '$500M')")
+@click.option("--scope-team-size", type=int, help="Team size (number)")
+@click.option("--scope-direct-reports", type=int, help="Direct reports count")
+@click.option("--scope-budget", help="Budget managed (e.g., '$50M')")
+@click.option("--scope-pl", help="P&L responsibility (e.g., '$100M')")
+@click.option("--scope-geography", help="Geographic reach (e.g., 'Global', 'EMEA')")
+@click.option("--scope-customers", help="Customer scope (e.g., '500K users', 'Fortune 500')")
 @click.pass_context
 @handle_errors
 def new_position(
@@ -687,6 +695,13 @@ def new_position(
     end_date: str | None,
     employment_type: EmploymentType | None,
     promoted_from: str | None,
+    scope_revenue: str | None,
+    scope_team_size: int | None,
+    scope_direct_reports: int | None,
+    scope_budget: str | None,
+    scope_pl: str | None,
+    scope_geography: str | None,
+    scope_customers: str | None,
 ) -> None:
     """Create a new employment position.
 
@@ -694,6 +709,14 @@ def new_position(
     1. Pipe-separated: resume new position "Employer|Title|StartDate|EndDate"
     2. Flags: resume new position --employer "X" --title "Y" --start-date "2022-01"
     3. Interactive: resume new position
+
+    For executive positions, add scope indicators:
+      --scope-revenue "$500M"
+      --scope-team-size 200
+      --scope-budget "$50M"
+      --scope-pl "$100M"
+      --scope-geography "Global (15 countries)"
+      --scope-customers "Fortune 500 clients"
     """
     config = get_config()
     service = PositionService(config.positions_path)
@@ -733,6 +756,17 @@ def new_position(
         existing_ids = set(service.load_positions().keys())
         position_id = generate_unique_position_id(employer, job_title, existing_ids)
 
+        # Build scope from flags (AC #6)
+        scope = _build_position_scope(
+            revenue=scope_revenue,
+            team_size=scope_team_size,
+            direct_reports=scope_direct_reports,
+            budget=scope_budget,
+            pl=scope_pl,
+            geography=scope_geography,
+            customers=scope_customers,
+        )
+
         # Create position
         position = Position(
             id=position_id,
@@ -743,6 +777,7 @@ def new_position(
             end_date=end_date,
             employment_type=employment_type,
             promoted_from=promoted_from,
+            scope=scope,
         )
 
     else:
@@ -809,6 +844,32 @@ def new_position(
             else:
                 console.print("[dim]No existing positions to link as promotion source.[/dim]")
 
+        # Scope indicators for executive positions (AC #6)
+        scope = None
+        if click.confirm("\nAdd scope indicators (for executive roles)?", default=False):
+            console.print("\n[bold]Scope Indicators[/bold]")
+            console.print("[dim]Leave blank to skip any field.[/dim]\n")
+
+            scope_pl_input: str = click.prompt("P&L responsibility (e.g., $100M)", default="")
+            scope_revenue_input: str = click.prompt("Revenue impact (e.g., $500M)", default="")
+            scope_team_input: str = click.prompt("Team size (number)", default="")
+            scope_direct_input: str = click.prompt("Direct reports (number)", default="")
+            scope_budget_input: str = click.prompt("Budget managed (e.g., $50M)", default="")
+            scope_geo_input: str = click.prompt("Geography (e.g., Global, EMEA)", default="")
+            scope_customers_input: str = click.prompt(
+                "Customer scope (e.g., 500K users)", default=""
+            )
+
+            scope = _build_position_scope(
+                revenue=scope_revenue_input or None,
+                team_size=int(scope_team_input) if scope_team_input else None,
+                direct_reports=int(scope_direct_input) if scope_direct_input else None,
+                budget=scope_budget_input or None,
+                pl=scope_pl_input or None,
+                geography=scope_geo_input or None,
+                customers=scope_customers_input or None,
+            )
+
         # Generate unique ID
         existing_ids = set(service.load_positions().keys())
         position_id = generate_unique_position_id(employer, job_title, existing_ids)
@@ -823,26 +884,37 @@ def new_position(
             end_date=end_date,
             employment_type=employment_type,
             promoted_from=promoted_from,
+            scope=scope,
         )
 
     service.save_position(position)
 
     # Output result
     if ctx.obj.json_output:
+        data: dict[str, Any] = {
+            "position_id": position.id,
+            "employer": position.employer,
+            "title": position.title,
+            "file": str(config.positions_path),
+        }
+        if position.scope:
+            data["has_scope"] = True
         response = JSONResponse(
             status="success",
             command="new position",
-            data={
-                "position_id": position.id,
-                "employer": position.employer,
-                "title": position.title,
-                "file": str(config.positions_path),
-            },
+            data=data,
         )
         click.echo(response.to_json())
     else:
         success(f"Position created: {position.id}")
         info(f"Use this ID in work units: position_id: {position.id}")
+        if position.scope:
+            # Import format_scope_line to display the formatted scope
+            from resume_as_code.services.position_service import format_scope_line
+
+            scope_line = format_scope_line(position)
+            if scope_line:
+                info(f"Scope: {scope_line}")
 
 
 def _prompt_position_interactive(
@@ -968,6 +1040,33 @@ def _create_position_inline(ctx: click.Context, config: Any, service: PositionSe
 def _validate_date_format(date_str: str) -> bool:
     """Validate YYYY-MM date format."""
     return bool(re.match(r"^\d{4}-\d{2}$", date_str))
+
+
+def _build_position_scope(
+    revenue: str | None,
+    team_size: int | None,
+    direct_reports: int | None,
+    budget: str | None,
+    pl: str | None,
+    geography: str | None,
+    customers: str | None = None,
+) -> PositionScope | None:
+    """Build PositionScope from individual scope flags.
+
+    Returns None if no scope fields are populated.
+    """
+    if not any([revenue, team_size, direct_reports, budget, pl, geography, customers]):
+        return None
+
+    return PositionScope(
+        revenue=revenue,
+        team_size=team_size,
+        direct_reports=direct_reports,
+        budget=budget,
+        pl_responsibility=pl,
+        geography=geography,
+        customers=customers,
+    )
 
 
 def _validate_year_format(year_str: str) -> bool:

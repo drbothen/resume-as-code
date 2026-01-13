@@ -185,12 +185,13 @@ h2 {
     color: #333;
 }
 
-/* Scope indicators - Executive feature */
+/* Scope indicators - Executive feature (Story 6.16: Enhanced Scope) */
 .scope-line {
     font-size: 10pt;
-    color: #2c3e50;
+    color: #5a6a7a;
     font-weight: 500;
-    margin: 0.5em 0;
+    margin: 0.25em 0 0.5em 0;
+    font-style: italic;
 }
 
 /* Achievement bullets */

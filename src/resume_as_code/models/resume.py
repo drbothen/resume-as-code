@@ -52,6 +52,7 @@ class ResumeItem(BaseModel):
     scope_budget: str | None = None
     scope_team_size: int | None = None
     scope_revenue: str | None = None
+    scope_line: str | None = None  # Formatted scope line for display
 
 
 class ResumeSection(BaseModel):
@@ -258,6 +259,8 @@ class ResumeData(BaseModel):
         Returns:
             ResumeItem populated from position and work unit data.
         """
+        from resume_as_code.services.position_service import format_scope_line
+
         # Collect all bullets from work units
         all_bullets: list[ResumeBullet] = []
         scope_budget: str | None = None
@@ -269,6 +272,7 @@ class ResumeData(BaseModel):
             all_bullets.extend(bullets)
 
             # Aggregate scope from work units (take first non-None values)
+            # These are legacy fields - position.scope takes precedence for scope_line
             scope = wu.get("scope", {}) or {}
             if not scope_budget:
                 scope_budget = scope.get("budget_managed")
@@ -276,6 +280,9 @@ class ResumeData(BaseModel):
                 scope_team_size = scope.get("team_size")
             if not scope_revenue:
                 scope_revenue = scope.get("revenue_influenced")
+
+        # Position scope takes precedence for the formatted scope_line (AC #5)
+        scope_line = format_scope_line(position)
 
         return ResumeItem(
             title=position.title,
@@ -287,6 +294,7 @@ class ResumeData(BaseModel):
             scope_budget=scope_budget,
             scope_team_size=scope_team_size,
             scope_revenue=scope_revenue,
+            scope_line=scope_line,
         )
 
     @classmethod

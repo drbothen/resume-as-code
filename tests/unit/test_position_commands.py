@@ -28,7 +28,8 @@ class TestNewPositionCommand:
         # 5. Is current? y
         # 6. Employment type: 1 (full-time)
         # 7. Was promotion? n
-        input_data = "Test Corp\nEngineer\nAustin, TX\n2022-01\ny\n1\nn\n"
+        # 8. Add scope? n
+        input_data = "Test Corp\nEngineer\nAustin, TX\n2022-01\ny\n1\nn\nn\n"
 
         result = runner.invoke(main, ["new", "position"], input=input_data)
 
@@ -52,7 +53,8 @@ class TestNewPositionCommand:
         runner = CliRunner()
 
         # Not current position, provide end date
-        input_data = "Past Corp\nFormer Role\nNew York\n2020-01\nn\n2022-06\n1\nn\n"
+        # 8. Add scope? n
+        input_data = "Past Corp\nFormer Role\nNew York\n2020-01\nn\n2022-06\n1\nn\nn\n"
 
         result = runner.invoke(main, ["new", "position"], input=input_data)
 
@@ -90,7 +92,8 @@ positions:
         # 6. Type: 1 (full-time)
         # 7. Promotion: y
         # 8. Select previous: 1
-        input_data = "TechCorp\nSenior Engineer\n\n2022-01\ny\n1\ny\n1\n"
+        # 9. Add scope? n
+        input_data = "TechCorp\nSenior Engineer\n\n2022-01\ny\n1\ny\n1\nn\n"
 
         result = runner.invoke(main, ["new", "position"], input=input_data)
 
@@ -104,7 +107,8 @@ positions:
         monkeypatch.chdir(tmp_path)
         runner = CliRunner()
 
-        input_data = "My Company\nDeveloper\n\n2023-06\ny\n1\nn\n"
+        # 8. Add scope? n
+        input_data = "My Company\nDeveloper\n\n2023-06\ny\n1\nn\nn\n"
 
         result = runner.invoke(main, ["new", "position"], input=input_data)
 
@@ -117,7 +121,8 @@ positions:
         runner = CliRunner()
 
         # In JSON mode, we need non-interactive defaults
-        input_data = "JSON Corp\nTest Role\n\n2023-01\ny\n1\nn\n"
+        # 8. Add scope? n
+        input_data = "JSON Corp\nTest Role\n\n2023-01\ny\n1\nn\nn\n"
 
         result = runner.invoke(main, ["--json", "new", "position"], input=input_data)
 
@@ -317,3 +322,161 @@ positions:
 
         assert result.exit_code != 0
         assert "not found" in result.output.lower() or "error" in result.output.lower()
+
+
+class TestPositionScopeFlags:
+    """Tests for position scope CLI flags (Story 6.16 AC #7)."""
+
+    def test_creates_position_with_all_scope_flags(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should create position with all scope flags (non-interactive)."""
+        monkeypatch.chdir(tmp_path)
+        runner = CliRunner()
+
+        result = runner.invoke(
+            main,
+            [
+                "new",
+                "position",
+                "--employer",
+                "Acme Corp",
+                "--title",
+                "CTO",
+                "--start-date",
+                "2020-01",
+                "--scope-revenue",
+                "$500M",
+                "--scope-team-size",
+                "200",
+                "--scope-direct-reports",
+                "15",
+                "--scope-budget",
+                "$50M",
+                "--scope-pl",
+                "$100M",
+                "--scope-geography",
+                "Global (15 countries)",
+                "--scope-customers",
+                "Fortune 500 clients",
+            ],
+        )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        assert "Position created" in result.output
+
+        # Verify positions.yaml content
+        positions_file = tmp_path / "positions.yaml"
+        assert positions_file.exists()
+        content = positions_file.read_text()
+        assert "scope:" in content
+        assert "$500M" in content
+        assert "team_size: 200" in content
+        assert "direct_reports: 15" in content
+        assert "$50M" in content
+        assert "$100M" in content
+        assert "Global (15 countries)" in content
+        assert "Fortune 500 clients" in content
+
+    def test_creates_position_with_partial_scope_flags(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should create position with only some scope flags."""
+        monkeypatch.chdir(tmp_path)
+        runner = CliRunner()
+
+        result = runner.invoke(
+            main,
+            [
+                "new",
+                "position",
+                "--employer",
+                "Tech Corp",
+                "--title",
+                "VP Engineering",
+                "--start-date",
+                "2021-06",
+                "--scope-team-size",
+                "50",
+                "--scope-geography",
+                "EMEA",
+            ],
+        )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+
+        content = (tmp_path / "positions.yaml").read_text()
+        assert "scope:" in content
+        assert "team_size: 50" in content
+        assert "EMEA" in content
+        # Should NOT have unset fields
+        assert "pl_responsibility" not in content or "pl_responsibility: null" in content
+
+    def test_creates_position_without_scope_flags(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should create position without scope when no scope flags provided."""
+        monkeypatch.chdir(tmp_path)
+        runner = CliRunner()
+
+        result = runner.invoke(
+            main,
+            [
+                "new",
+                "position",
+                "--employer",
+                "Startup Inc",
+                "--title",
+                "Engineer",
+                "--start-date",
+                "2022-01",
+            ],
+        )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+
+        content = (tmp_path / "positions.yaml").read_text()
+        # No scope section when no scope data provided
+        assert "scope:" not in content or content.count("scope:") == 0
+
+    def test_interactive_scope_prompts(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should prompt for scope fields in interactive mode (AC #6)."""
+        monkeypatch.chdir(tmp_path)
+        runner = CliRunner()
+
+        # Interactive input with scope data:
+        # 1. Employer: Executive Corp
+        # 2. Title: CEO
+        # 3. Location: (empty)
+        # 4. Start date: 2019-01
+        # 5. Current: y
+        # 6. Type: 1 (full-time)
+        # 7. Promotion: n
+        # 8. Add scope: y
+        # 9. P&L: $500M (prompted first per AC #3)
+        # 10. Revenue: $1B
+        # 11. Team size: 500
+        # 12. Direct reports: 10
+        # 13. Budget: $200M
+        # 14. Geography: Global
+        # 15. Customers: 10M users
+        input_data = (
+            "Executive Corp\nCEO\n\n2019-01\ny\n1\nn\n"
+            "y\n$500M\n$1B\n500\n10\n$200M\nGlobal\n10M users\n"
+        )
+
+        result = runner.invoke(main, ["new", "position"], input=input_data)
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+
+        content = (tmp_path / "positions.yaml").read_text()
+        assert "scope:" in content
+        assert "$500M" in content  # P&L
+        assert "$1B" in content  # Revenue
+        assert "team_size: 500" in content
+        assert "direct_reports: 10" in content
+        assert "$200M" in content  # Budget
+        assert "Global" in content
+        assert "10M users" in content

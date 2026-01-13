@@ -75,8 +75,11 @@
             </div>
             <p class="role">{{ item.title }}{% if item.organization and item.location %}, {{ item.location }}{% elif item.location %} | {{ item.location }}{% endif %}</p>
 
-            {# Scope indicators line: "Led team of X | $YM budget | ZM revenue" #}
-            {% if item.scope_budget or item.scope_team_size or item.scope_revenue %}
+            {# Scope indicators line: preferring pre-formatted scope_line from position #}
+            {% if item.scope_line %}
+            <p class="scope-line">{{ item.scope_line }}</p>
+            {% elif item.scope_budget or item.scope_team_size or item.scope_revenue %}
+            {# Legacy fallback for work unit scope data #}
             <p class="scope-line">
                 {% set scope_parts = [] %}
                 {% if item.scope_team_size %}{% set _ = scope_parts.append('Led team of ' ~ item.scope_team_size) %}{% endif %}

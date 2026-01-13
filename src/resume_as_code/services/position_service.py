@@ -17,6 +17,45 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
+def format_scope_line(position: Position) -> str | None:
+    """Format scope indicators for display in resume.
+
+    Builds a pipe-separated line of leadership metrics.
+    Order: P&L first (most important for CTO), then revenue, team size,
+    direct reports, budget, geography, customers.
+
+    Args:
+        position: Position with optional scope data.
+
+    Returns:
+        Formatted scope line (e.g., "$100M P&L | $500M revenue | 200+ engineers")
+        or None if no scope data populated.
+    """
+    if not position.scope:
+        return None
+
+    parts: list[str] = []
+    scope = position.scope
+
+    # Order: P&L first (AC #3), then revenue, team_size, direct_reports, budget, geography
+    if scope.pl_responsibility:
+        parts.append(f"{scope.pl_responsibility} P&L")
+    if scope.revenue:
+        parts.append(f"{scope.revenue} revenue")
+    if scope.team_size:
+        parts.append(f"{scope.team_size}+ engineers")
+    if scope.direct_reports:
+        parts.append(f"{scope.direct_reports} direct reports")
+    if scope.budget:
+        parts.append(f"{scope.budget} budget")
+    if scope.geography:
+        parts.append(scope.geography)
+    if scope.customers:
+        parts.append(scope.customers)
+
+    return " | ".join(parts) if parts else None
+
+
 class PositionService:
     """Service for managing employment positions."""
 

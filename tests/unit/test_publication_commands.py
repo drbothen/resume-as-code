@@ -451,9 +451,7 @@ publications:
         assert "Zero Trust Guide" in result.output
         assert "Publications" in result.output
 
-    def test_list_publications_empty(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_list_publications_empty(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should handle empty publications list."""
         config_path = tmp_path / ".resume.yaml"
         config_path.write_text("output_dir: ./dist\n")
