@@ -6,10 +6,12 @@ from pathlib import Path
 from typing import Any
 
 import click
+from ruamel.yaml import YAML
 
 from resume_as_code.config import get_config
 from resume_as_code.models.errors import NotFoundError
 from resume_as_code.models.output import JSONResponse
+from resume_as_code.services.certification_service import CertificationService
 from resume_as_code.services.position_service import PositionService
 from resume_as_code.utils.console import console, json_output
 from resume_as_code.utils.errors import handle_errors
@@ -37,9 +39,7 @@ def show_position(ctx: click.Context, position_id: str) -> None:
         raise NotFoundError(f"Position not found: {position_id}")
 
     # Find related work units
-    related_work_units = _find_work_units_for_position(
-        position_id, config.work_units_dir
-    )
+    related_work_units = _find_work_units_for_position(position_id, config.work_units_dir)
 
     # Get promotion chain
     chain = service.get_promotion_chain(position_id)
@@ -50,12 +50,8 @@ def show_position(ctx: click.Context, position_id: str) -> None:
         _output_position_rich(position, related_work_units, chain)
 
 
-def _find_work_units_for_position(
-    position_id: str, work_units_dir: Path
-) -> list[dict[str, Any]]:
+def _find_work_units_for_position(position_id: str, work_units_dir: Path) -> list[dict[str, Any]]:
     """Find work units that reference a position."""
-    from ruamel.yaml import YAML
-
     if not work_units_dir.exists():
         return []
 
@@ -152,5 +148,223 @@ def _output_position_rich(
             prefix = "  └─" if i == len(chain) - 1 else "  ├─"
             marker = " [cyan](current)[/cyan]" if pos.id == position.id else ""
             console.print(f"{prefix} {pos.title}{marker}")
+
+    console.print("")
+
+
+@show_group.command("work-unit")
+@click.argument("work_unit_id")
+@click.pass_context
+@handle_errors
+def show_work_unit(ctx: click.Context, work_unit_id: str) -> None:
+    """Show details of a specific work unit.
+
+    WORK_UNIT_ID is the work unit identifier (e.g., wu-2024-01-30-project).
+    """
+    config = get_config()
+    work_units_dir = config.work_units_dir
+
+    # Find the work unit file
+    file_path = work_units_dir / f"{work_unit_id}.yaml"
+
+    if not file_path.exists():
+        # Try partial match
+        matching_files = list(work_units_dir.glob(f"*{work_unit_id}*.yaml"))
+        if not matching_files:
+            raise NotFoundError(f"Work unit not found: {work_unit_id}")
+        if len(matching_files) > 1:
+            console.print(f"[yellow]Multiple work units match '{work_unit_id}':[/yellow]")
+            for match in matching_files:
+                console.print(f"  - {match.stem}")
+            console.print("[yellow]Please be more specific.[/yellow]")
+            raise SystemExit(1)
+        file_path = matching_files[0]
+
+    # Load the work unit
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    with file_path.open() as wu_file:
+        work_unit = yaml.load(wu_file)
+
+    if not work_unit:
+        raise NotFoundError(f"Work unit file is empty: {work_unit_id}")
+
+    if ctx.obj.json_output:
+        _output_work_unit_json(work_unit, file_path)
+    else:
+        _output_work_unit_rich(work_unit, file_path)
+
+
+def _output_work_unit_json(work_unit: dict[str, Any], file_path: Path) -> None:
+    """Output work unit details as JSON."""
+    response = JSONResponse(
+        status="success",
+        command="show work-unit",
+        data={
+            "work_unit": {
+                "id": work_unit.get("id"),
+                "title": work_unit.get("title"),
+                "position_id": work_unit.get("position_id"),
+                "date": work_unit.get("date"),
+                "problem": work_unit.get("problem"),
+                "actions": work_unit.get("actions", []),
+                "result": work_unit.get("result"),
+                "skills": work_unit.get("skills", []),
+                "tags": work_unit.get("tags", []),
+                "archetype": work_unit.get("archetype"),
+            },
+            "file": str(file_path),
+        },
+    )
+    json_output(response.to_json())
+
+
+def _output_work_unit_rich(work_unit: dict[str, Any], file_path: Path) -> None:
+    """Output work unit details with Rich formatting."""
+    # Header
+    console.print(f"\n[bold cyan]{work_unit.get('title', 'Untitled')}[/bold cyan]")
+
+    if work_unit.get("id"):
+        console.print(f"[dim]ID: {work_unit.get('id')}[/dim]")
+
+    if work_unit.get("position_id"):
+        console.print(f"[green]Position: {work_unit.get('position_id')}[/green]")
+
+    if work_unit.get("date"):
+        console.print(f"Date: {work_unit.get('date')}")
+
+    if work_unit.get("archetype"):
+        console.print(f"Archetype: {work_unit.get('archetype')}")
+
+    # PAR sections
+    console.print("")
+    if work_unit.get("problem"):
+        console.print("[bold]Problem:[/bold]")
+        console.print(f"  {work_unit.get('problem')}")
+
+    if work_unit.get("actions"):
+        console.print("\n[bold]Actions:[/bold]")
+        actions = work_unit.get("actions", [])
+        if isinstance(actions, list):
+            for action in actions:
+                console.print(f"  • {action}")
+        else:
+            console.print(f"  {actions}")
+
+    if work_unit.get("result"):
+        console.print("\n[bold]Result:[/bold]")
+        console.print(f"  {work_unit.get('result')}")
+
+    # Skills and tags
+    if work_unit.get("skills"):
+        console.print("\n[bold]Skills:[/bold]")
+        skills = work_unit.get("skills", [])
+        console.print(f"  {', '.join(skills)}")
+
+    if work_unit.get("tags"):
+        console.print("\n[bold]Tags:[/bold]")
+        tags = work_unit.get("tags", [])
+        console.print(f"  {', '.join(tags)}")
+
+    console.print(f"\n[dim]File: {file_path}[/dim]")
+    console.print("")
+
+
+@show_group.command("certification")
+@click.argument("name")
+@click.pass_context
+@handle_errors
+def show_certification(ctx: click.Context, name: str) -> None:
+    """Show details of a specific certification.
+
+    NAME is the certification name (partial match supported).
+    """
+    service = CertificationService(config_path=Path.cwd() / ".resume.yaml")
+    matching = service.find_certifications_by_name(name)
+
+    if not matching:
+        raise NotFoundError(f"Certification not found: {name}")
+
+    if len(matching) > 1:
+        console.print(f"[yellow]Multiple certifications match '{name}':[/yellow]")
+        for cert in matching:
+            console.print(f"  - {cert.name}")
+        console.print("[yellow]Please be more specific.[/yellow]")
+        raise SystemExit(1)
+
+    cert = matching[0]
+
+    if ctx.obj.json_output:
+        _output_certification_json(cert)
+    else:
+        _output_certification_rich(cert)
+
+
+def _output_certification_json(cert: Any) -> None:
+    """Output certification details as JSON."""
+    from resume_as_code.models.certification import Certification
+
+    if isinstance(cert, Certification):
+        cert_data = {
+            "name": cert.name,
+            "issuer": cert.issuer,
+            "date": cert.date,
+            "expires": cert.expires,
+            "credential_id": cert.credential_id,
+            "url": str(cert.url) if cert.url else None,
+            "display": cert.display,
+            "status": cert.get_status(),
+        }
+
+        response = JSONResponse(
+            status="success",
+            command="show certification",
+            data={"certification": cert_data},
+        )
+        json_output(response.to_json())
+
+
+def _output_certification_rich(cert: Any) -> None:
+    """Output certification details with Rich formatting."""
+    from resume_as_code.models.certification import Certification
+
+    if not isinstance(cert, Certification):
+        return
+
+    # Header
+    console.print(f"\n[bold cyan]{cert.name}[/bold cyan]")
+
+    if cert.issuer:
+        console.print(f"[green]{cert.issuer}[/green]")
+
+    # Dates
+    console.print("")
+    if cert.date:
+        console.print(f"[bold]Obtained:[/bold] {cert.date}")
+
+    if cert.expires:
+        console.print(f"[bold]Expires:[/bold] {cert.expires}")
+    else:
+        console.print("[bold]Expires:[/bold] [dim]Never[/dim]")
+
+    # Status with highlighting
+    status = cert.get_status()
+    if status == "expired":
+        console.print("[bold]Status:[/bold] [red]Expired[/red]")
+    elif status == "expires_soon":
+        console.print("[bold]Status:[/bold] [yellow]Expires Soon[/yellow]")
+    else:
+        console.print("[bold]Status:[/bold] [green]Active[/green]")
+
+    # Credential details
+    if cert.credential_id:
+        console.print(f"\n[bold]Credential ID:[/bold] {cert.credential_id}")
+
+    if cert.url:
+        console.print(f"[bold]URL:[/bold] {cert.url}")
+
+    # Display setting
+    if not cert.display:
+        console.print("\n[dim]Note: This certification is hidden from resume output[/dim]")
 
     console.print("")

@@ -1,6 +1,6 @@
 # Story 6.11: Certification Management Commands
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -47,7 +47,19 @@ So that **I can easily add, update, and remove credentials without editing YAML*
    **Then** it is removed from `.resume.yaml`
    **And** confirmation shows: "Removed certification: CISSP"
 
-7. **Given** I run non-interactively (LLM mode):
+7. **Given** I run `resume show certification "AWS Solutions"`
+   **When** the certification exists (partial match on name)
+   **Then** detailed information displays:
+     - Name: AWS Solutions Architect - Professional
+     - Issuer: Amazon Web Services
+     - Date: 2024-06
+     - Expires: 2027-06
+     - Credential ID: ABC123XYZ
+     - URL: (if present)
+     - Status: Active
+   **And** JSON output via `--json` includes all fields
+
+8. **Given** I run non-interactively (LLM mode):
    ```bash
    resume new certification \
      --name "AWS Solutions Architect - Professional" \
@@ -59,80 +71,90 @@ So that **I can easily add, update, and remove credentials without editing YAML*
    **When** the command executes
    **Then** the certification is added without prompts
 
-8. **Given** I run `resume --json list certifications`
+9. **Given** I run `resume --json list certifications`
    **When** certifications exist
    **Then** JSON output includes all certification fields
    **And** includes computed `status` field (active/expires_soon/expired)
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create `new certification` subcommand (AC: #1, #2, #7)
-  - [ ] 1.1: Add `certification` subcommand to `commands/new.py`
-  - [ ] 1.2: Implement Rich prompts for interactive input:
-    - Name (required, text prompt)
-    - Issuer (optional, text prompt)
-    - Date obtained (YYYY-MM, validated)
-    - Expiration date (optional, YYYY-MM)
-    - Credential ID (optional, text)
-    - Verification URL (optional, URL validated)
-  - [ ] 1.3: Add non-interactive flags: `--name`, `--issuer`, `--date`, `--expires`, `--credential-id`, `--url`
-  - [ ] 1.4: Implement config file update: read → modify → write `.resume.yaml`
-  - [ ] 1.5: Display confirmation message with certification name
+- [x] Task 1: Create `new certification` subcommand (AC: #1, #2, #7)
+  - [x] 1.1: Add `certification` subcommand to `commands/new.py`
+  - [x] 1.2: Implement Rich prompts for interactive input
+  - [x] 1.3: Add non-interactive flags and pipe-separated format support
+  - [x] 1.4: Implement config file update via CertificationService
+  - [x] 1.5: Display confirmation message with certification name
 
-- [ ] Task 2: Create `list certifications` command (AC: #3, #4, #5, #8)
-  - [ ] 2.1: Create `commands/certifications.py` module
-  - [ ] 2.2: Add `list_certifications()` command function
-  - [ ] 2.3: Implement Rich table with columns: Name, Issuer, Date, Expires, Status
-  - [ ] 2.4: Implement status calculation logic:
-    ```python
-    def get_status(cert: Certification) -> str:
-        if not cert.expires:
-            return "active"
-        expires = parse_date(cert.expires)
-        if expires < today:
-            return "expired"
-        if expires < today + timedelta(days=90):
-            return "expires_soon"
-        return "active"
-    ```
-  - [ ] 2.5: Add yellow highlighting for "Expires Soon" status
-  - [ ] 2.6: Add red highlighting for "Expired" status with suggestion
-  - [ ] 2.7: Implement JSON output with computed status field
+- [x] Task 2: Create `list certifications` command (AC: #3, #4, #5, #8)
+  - [x] 2.1: Add `list certifications` subcommand to `commands/list_cmd.py`
+  - [x] 2.2: Implement Rich table with columns: Name, Issuer, Date, Expires, Status
+  - [x] 2.3: Implement status calculation (active/expires_soon/expired)
+  - [x] 2.4: Add yellow highlighting for "Expires Soon" status
+  - [x] 2.5: Add red highlighting for "Expired" status with tip
+  - [x] 2.6: Implement JSON output with computed status field
 
-- [ ] Task 3: Create `remove certification` command (AC: #6)
-  - [ ] 3.1: Add `remove_certification()` command function
-  - [ ] 3.2: Accept certification name as argument
-  - [ ] 3.3: Search certifications by name (case-insensitive partial match)
-  - [ ] 3.4: Confirm removal in interactive mode (skip with `--yes`)
-  - [ ] 3.5: Update `.resume.yaml` with certification removed
-  - [ ] 3.6: Display confirmation message
+- [x] Task 3: Create `remove certification` command (AC: #6)
+  - [x] 3.1: Create `commands/remove.py` with remove command group
+  - [x] 3.2: Accept certification name as argument
+  - [x] 3.3: Search certifications by name (case-insensitive partial match)
+  - [x] 3.4: Confirm removal in interactive mode (skip with `--yes`)
+  - [x] 3.5: Update `.resume.yaml` with certification removed
+  - [x] 3.6: Display confirmation message
 
-- [ ] Task 4: Register commands in CLI (AC: all)
-  - [ ] 4.1: Register `new certification` in main CLI group
-  - [ ] 4.2: Register `list certifications` in main CLI group
-  - [ ] 4.3: Register `remove certification` in main CLI group
-  - [ ] 4.4: Add help text for all commands
+- [x] Task 4: Register commands in CLI (AC: all)
+  - [x] 4.1: Register `new certification` in main CLI group
+  - [x] 4.2: Register `list certifications` in main CLI group
+  - [x] 4.3: Register `remove certification` via remove_group in main CLI
+  - [x] 4.4: Add help text for all commands
 
-- [ ] Task 5: Config file update utilities (AC: #2, #6)
-  - [ ] 5.1: Create/update `services/config_writer.py` for safe YAML updates
-  - [ ] 5.2: Implement read-modify-write pattern with backup
-  - [ ] 5.3: Preserve YAML comments and formatting where possible
-  - [ ] 5.4: Handle missing certifications array (create if needed)
+- [x] Task 5: CertificationService updates (AC: #2, #6)
+  - [x] 5.1: Add `remove_certification()` method to CertificationService
+  - [x] 5.2: Add `find_certifications_by_name()` method for partial matching
+  - [x] 5.3: Preserve YAML formatting with ruamel.yaml
+  - [x] 5.4: Handle missing certifications array (create if needed)
 
-- [ ] Task 6: Testing (AC: all)
-  - [ ] 6.1: Add unit tests for status calculation
-  - [ ] 6.2: Add unit tests for certification name matching
-  - [ ] 6.3: Add integration tests for `new certification` (interactive mock)
-  - [ ] 6.4: Add integration tests for `new certification` (non-interactive)
-  - [ ] 6.5: Add integration tests for `list certifications`
-  - [ ] 6.6: Add integration tests for `remove certification`
-  - [ ] 6.7: Add tests for JSON output format
-  - [ ] 6.8: Add tests for empty certifications handling
+- [x] Task 6: Testing (AC: all)
+  - [x] 6.1: Add unit tests for certification name matching
+  - [x] 6.2: Add unit tests for remove_certification service
+  - [x] 6.3: Add CLI tests for `new certification` (non-interactive + pipe-separated)
+  - [x] 6.4: Add CLI tests for `list certifications` (table + JSON + empty)
+  - [x] 6.5: Add CLI tests for `remove certification` (success, not found, multiple matches)
+  - [x] 6.6: Add tests for JSON output format
+  - [x] 6.7: Add tests for interactive confirmation
 
-- [ ] Task 7: Code quality verification
-  - [ ] 7.1: Run `ruff check src tests --fix`
-  - [ ] 7.2: Run `mypy src --strict` with zero errors
-  - [ ] 7.3: Run `pytest` - all tests pass
+- [x] Task 7: Code quality verification
+  - [x] 7.1: Run `ruff check src tests --fix` - all checks passed
+  - [x] 7.2: Run `mypy src --strict` - no issues in 56 source files
+  - [x] 7.3: Run `pytest` - 1311 tests pass
+
+## Additional Parity Work (Scope Extension)
+
+During implementation, CLI parity was added for positions and work units:
+
+- [x] Task 8: Position parity
+  - [x] 8.1: Add `remove_position()` method to PositionService
+  - [x] 8.2: Add `find_positions_by_query()` method for search
+  - [x] 8.3: Add `remove position` command to remove.py
+  - [x] 8.4: Add tests for position removal
+
+- [x] Task 9: Work Unit parity
+  - [x] 9.1: Add `remove work-unit` command (deletes YAML file)
+  - [x] 9.2: Add `show work-unit` command for details view
+  - [x] 9.3: Add tests for work unit commands
+
+- [x] Task 10: Documentation
+  - [x] 10.1: Update CLAUDE.md Quick Reference table
+  - [x] 10.2: Add Certification Management section to CLAUDE.md
+  - [x] 10.3: Add Work Unit Management section to CLAUDE.md
+  - [x] 10.4: Update Position Management section with remove command
+
+- [x] Task 11: Create `show certification` command (AC: #7) - CLI Consistency
+  - [x] 11.1: Add `show certification` subcommand to `commands/show.py`
+  - [x] 11.2: Support partial name matching via CertificationService
+  - [x] 11.3: Rich output with status highlighting
+  - [x] 11.4: JSON output with all certification fields
+  - [x] 11.5: Add 7 unit tests for show certification
+  - [x] 11.6: Update CLAUDE.md Quick Reference and Certification Management sections
 
 ## Dev Notes
 
@@ -561,11 +583,93 @@ uv run resume remove certification "Test Cert"
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A - No significant debugging required
+
 ### Completion Notes List
+
+1. Task 1 (`new certification`) was already implemented in previous work - verified working
+2. Used CertificationService pattern instead of separate ConfigWriter
+3. Added pipe-separated format support (`Name|Issuer|Date|Expires`) for LLM-friendly input
+4. Extended scope to add CLI parity for positions and work units per user request
+5. All 1311 tests pass (41 new tests from this story), mypy strict mode clean, ruff checks pass
+6. Code review remediation: Updated File List, fixed AC#5 tip, added empty name validation
+7. Post-review: Added `show certification` command (Task 11) for CLI consistency pattern - 7 new tests
 
 ### File List
 
+**Created:**
+- `src/resume_as_code/commands/remove.py` - Remove command group (certification, position, work-unit)
+- `tests/unit/test_certification_commands.py` - 48 tests for all commands (41 original + 7 for show certification)
+
+**Modified:**
+- `src/resume_as_code/commands/new.py` - Contains `new certification` command (AC#1, #2, #8)
+- `src/resume_as_code/commands/list_cmd.py` - Added `list certifications` subcommand (AC#3, #4, #5, #9)
+- `src/resume_as_code/commands/show.py` - Added `show work-unit` and `show certification` commands (AC#7)
+- `src/resume_as_code/services/certification_service.py` - Added remove_certification, find_certifications_by_name
+- `src/resume_as_code/services/position_service.py` - Added remove_position, find_positions_by_query
+- `src/resume_as_code/cli.py` - Registered remove_group
+
+**Documentation:**
+- `CLAUDE.md` - Updated Quick Reference, added Certification/Work Unit Management sections
+
+**Test Files Modified (pre-existing tests updated for compatibility):**
+- `tests/unit/test_inline_certification.py`
+- `tests/unit/test_inline_education.py`
+- `tests/unit/test_inline_position.py`
+- `tests/unit/test_inline_work_unit.py`
+- `tests/unit/test_position_commands.py`
+- `tests/unit/test_resume_model.py`
+- `tests/unit/test_template_certifications.py`
+
+**Example Files (formatting/position_id updates):**
+- `examples/work-units/wu-*.yaml` - 8 files updated with position_id references
+
+## Senior Developer Review (AI)
+
+**Reviewer:** Joshua Magady
+**Date:** 2026-01-12
+**Outcome:** APPROVED (after remediation)
+
+### Findings Summary
+
+| Severity | Count | Status |
+|----------|-------|--------|
+| CRITICAL | 2 | Fixed |
+| MEDIUM | 4 | Fixed |
+| LOW | 3 | Fixed |
+
+### Issues Found & Remediated
+
+1. **CRITICAL-1: Story File List Incomplete**
+   - Story claimed 8 files modified, git showed 27+
+   - **Fix:** Updated File List with all modified files including test files and examples
+
+2. **CRITICAL-2: AC#5 Tip Showed Generic `[N]` Index**
+   - AC specified showing actual certification index, code showed `[N]`
+   - **Fix:** Updated `list_cmd.py` to track expired indices and show first expired index
+
+3. **MEDIUM-3: Empty Name Validation Missing**
+   - `resume new certification --name ""` could create cert with empty name
+   - **Fix:** Added validation in `new.py` to reject empty names
+
+4. **LOW-1: Duplicate YAML Import**
+   - `show.py` had redundant local import of YAML
+   - **Fix:** Removed duplicate import
+
+5. **LOW-2: Test Count Not Documented**
+   - Completion notes didn't specify new test count
+   - **Fix:** Updated notes to specify "41 new tests from this story"
+
+### Test Added
+
+- `test_new_certification_empty_name_rejected` - validates empty name rejection
+
+### Verification
+
+- `uv run ruff check src tests` - PASSED
+- `uv run mypy src --strict` - PASSED (56 source files)
+- `uv run pytest tests/unit/` - PASSED (1087 tests)

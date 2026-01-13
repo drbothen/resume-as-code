@@ -142,10 +142,18 @@ CLI tool for git-native resume generation from structured Work Units.
 | `resume new position "Employer\|Title\|Start\|End"` | Inline position creation |
 | `resume list positions` | List all positions |
 | `resume show position <id>` | Show position details |
+| `resume remove position <id>` | Remove a position |
 | `resume new work-unit` | Create new Work Unit |
 | `resume new work-unit --position "..."` | Create with inline position |
-| `resume validate [PATH]` | Validate Work Units against schema |
 | `resume list` | List all Work Units |
+| `resume show work-unit <id>` | Show work unit details |
+| `resume remove work-unit <id>` | Remove a work unit |
+| `resume new certification` | Create new certification |
+| `resume new certification "Name\|Issuer\|Date\|Expires"` | Inline certification |
+| `resume list certifications` | List all certifications with status |
+| `resume show certification <name>` | Show certification details |
+| `resume remove certification <name>` | Remove a certification |
+| `resume validate [PATH]` | Validate Work Units against schema |
 | `resume plan --jd <file>` | Analyze JD, select Work Units |
 | `resume build --jd <file>` | Generate resume files |
 
@@ -294,12 +302,53 @@ TechCorp Industries - Senior Platform Engineer (2022-Present)
 | `resume new position "Employer\|Title\|Start\|End"` | Inline creation |
 | `resume list positions` | List all positions |
 | `resume show position <id>` | Show position details |
+| `resume remove position <id>` | Remove a position (prompts for confirmation) |
 
 ### Position ID Format
 
 Auto-generated: `pos-{employer-slug}-{title-slug}`
 
 Example: `pos-techcorp-senior-engineer`
+
+---
+
+## Certification Management
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `resume new certification` | Create certification (interactive or pipe-separated) |
+| `resume new certification "Name\|Issuer\|Date\|Expires"` | Inline creation |
+| `resume list certifications` | List all certifications with expiration status |
+| `resume show certification <name>` | Show certification details (partial match supported) |
+| `resume remove certification <name>` | Remove by name (partial match supported) |
+
+### Status Indicators
+
+`list certifications` shows expiration status:
+- **Active** - Valid certification
+- **Expires Soon** - Expires within 90 days
+- **Expired** - Past expiration date
+
+---
+
+## Work Unit Management
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `resume new work-unit` | Create work unit (interactive or with flags) |
+| `resume list` | List all work units |
+| `resume show work-unit <id>` | Show work unit details (PAR, skills, tags) |
+| `resume remove work-unit <id>` | Remove work unit file |
+
+### Work Unit ID Format
+
+Files stored as: `work-units/{id}.yaml`
+
+Example: `wu-2024-01-30-ics-assessment`
 
 ---
 
@@ -394,5 +443,75 @@ Work units can optionally reference positions. To resolve:
 # Find position ID for employer
 resume --json list positions | jq '.data[] | select(.employer | contains("TechCorp"))'
 ```
+
+---
+
+## CLI Resource Management Pattern
+
+When implementing new resource types (models stored in `.resume.yaml` or external files), **always implement all four CRUD commands** for consistency:
+
+### Required Commands (CRUD)
+
+| Command | Pattern | Description |
+|---------|---------|-------------|
+| `new <resource>` | `resume new <resource>` | Create (interactive + pipe-separated) |
+| `list <resources>` | `resume list <resources>` | List all (plural subcommand name) |
+| `show <resource>` | `resume show <resource> <id>` | Show details of one |
+| `remove <resource>` | `resume remove <resource> <id>` | Delete one |
+
+### Implementation Checklist
+
+For each new resource type, implement:
+
+1. **`new` subcommand** in `commands/new.py`
+   - Interactive mode with Rich prompts
+   - Non-interactive mode with `--field` flags
+   - Pipe-separated format: `"Field1|Field2|Field3"`
+   - Validation before saving
+
+2. **`list` subcommand** in `commands/list_cmd.py`
+   - Rich table output (human-friendly)
+   - JSON output via `--json` flag
+   - Count summary at bottom
+
+3. **`show` subcommand** in `commands/show.py`
+   - Detailed view of single resource
+   - Rich formatted output
+   - JSON output via `--json` flag
+   - Related resources (e.g., work units for position)
+
+4. **`remove` subcommand** in `commands/remove.py`
+   - Confirmation prompt (unless `--force`)
+   - Partial match support for name-based lookups
+   - Exit code 4 (NOT_FOUND) if resource doesn't exist
+
+### Current Resource Coverage
+
+| Resource | `new` | `list` | `show` | `remove` | Notes |
+|----------|:-----:|:------:|:------:|:--------:|-------|
+| work-unit | ✓ | ✓ | ✓ | ✓ | Complete |
+| position | ✓ | ✓ | ✓ | ✓ | Complete |
+| certification | ✓ | ✓ | ✓ | ✓ | Complete |
+| education | ✓ | ✗ | ✗ | ✗ | Story 6.12 |
+
+### Naming Conventions
+
+- Subcommand names use **singular** form: `new position`, `show certification`
+- List subcommand uses **plural** form: `list positions`, `list certifications`
+- Resource IDs use slug format: `pos-employer-title`, `wu-YYYY-MM-DD-slug`
+
+### Pipe-Separated Format
+
+For LLM-optimized non-interactive creation:
+
+```bash
+# Pattern: "Required1|Required2|Optional1|Optional2"
+resume new position "Employer|Title|Start|End"
+resume new certification "Name|Issuer|Date|Expires"
+resume new education "Degree|Institution|Year|Honors"
+```
+
+- Empty trailing fields can be omitted
+- Use empty string for optional middle fields: `"Name|Issuer||Expires"`
 
 <!-- Keep CLAUDE.md in sync when adding new commands. Update Quick Reference table and add workflow examples. -->

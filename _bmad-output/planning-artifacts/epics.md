@@ -2385,6 +2385,18 @@ So that **I can easily add, update, and remove credentials without editing YAML*
 **Then** it is removed from `.resume.yaml`
 **And** confirmation shows: "Removed certification: CISSP"
 
+**Given** I run `resume show certification "AWS Solutions"`
+**When** the certification exists (partial match on name)
+**Then** detailed information displays:
+  - Name: AWS Solutions Architect - Professional
+  - Issuer: Amazon Web Services
+  - Date: 2024-06
+  - Expires: 2027-06
+  - Credential ID: ABC123XYZ
+  - URL: (if present)
+  - Status: Active
+**And** JSON output via `--json` includes all fields
+
 **Given** I run non-interactively (LLM mode):
 ```bash
 resume new certification \
@@ -2404,7 +2416,11 @@ resume new certification \
 
 **Technical Notes:**
 - Extend `commands/new.py` with `new certification` subcommand
-- Create `commands/certifications.py` for `list certifications` and `remove certification`
+- Extend `commands/list_cmd.py` with `list certifications` subcommand
+- Extend `commands/show.py` with `show certification` subcommand
+- Extend `commands/remove.py` with `remove certification` subcommand
+- Support pipe-separated format: `"Name|Issuer|Date|Expires"`
+- Follow CLI Resource Management Pattern in CLAUDE.md
 - Certification status calculation:
   ```python
   def get_status(cert: Certification) -> str:
@@ -2458,6 +2474,16 @@ So that **I can easily add degrees without editing YAML**.
 **Then** it is removed from `.resume.yaml`
 **And** confirmation shows: "Removed education: BS Computer Science"
 
+**Given** I run `resume show education "BS Computer Science"`
+**When** the education entry exists
+**Then** detailed information displays:
+  - Degree: BS Computer Science
+  - Institution: UT Austin
+  - Year: 2012
+  - Honors: Magna Cum Laude
+  - GPA: 3.8 (if present)
+**And** JSON output via `--json` includes all fields
+
 **Given** I run non-interactively (LLM mode):
 ```bash
 resume new education \
@@ -2479,11 +2505,14 @@ resume new education \
 
 **Technical Notes:**
 - Extend `commands/new.py` with `new education` subcommand
-- Create `commands/education.py` for `list education` and `remove education`
+- Extend `commands/list_cmd.py` with `list education` subcommand
+- Extend `commands/show.py` with `show education` subcommand
+- Extend `commands/remove.py` with `remove education` subcommand
 - Use Rich prompts for interactive input
-- Support `--non-interactive` fallback with all fields as flags
+- Support pipe-separated format: `"Degree|Institution|Year|Honors"`
 - Config file update: read → modify → write `.resume.yaml`
 - Reuse patterns from Story 6.11 (certifications)
+- Follow CLI Resource Management Pattern in CLAUDE.md
 
 ---
 
@@ -2559,6 +2588,25 @@ resume new highlight --text "$50M revenue growth through digital transformation"
 ```
 **When** the command executes
 **Then** the highlight is added without prompts
+
+**Given** I run `resume list highlights`
+**When** career highlights exist
+**Then** a numbered list shows all highlights with their index:
+  | # | Highlight |
+  |---|-----------|
+  | 0 | $50M revenue growth through digital transformation |
+  | 1 | Built engineering org from 12 to 150+ engineers |
+**And** JSON output via `--json` includes all highlights with indices
+
+**Given** I run `resume show highlight 0`
+**When** the highlight exists at index 0
+**Then** the full highlight text displays
+**And** character count shows (for length validation)
+
+**Given** I run `resume remove highlight 0`
+**When** the highlight exists at index 0
+**Then** it is removed from `career_highlights` array
+**And** confirmation shows the removed text
 
 **Technical Notes:**
 - Add `career_highlights: list[str]` to `ResumeConfig`
@@ -2653,6 +2701,24 @@ resume new board-role \
 **Given** I run `resume list board-roles`
 **When** board roles exist
 **Then** a formatted table shows all roles with status (Active/Past)
+**And** JSON output via `--json` includes all fields
+
+**Given** I run `resume show board-role "Tech Nonprofit"`
+**When** the board role exists (partial match on organization)
+**Then** detailed information displays:
+  - Organization: Tech Nonprofit Foundation
+  - Role: Board Advisor
+  - Type: Advisory
+  - Dates: 2023-01 - Present
+  - Focus: Technology strategy and digital transformation
+  - Status: Active
+**And** JSON output via `--json` includes all fields
+
+**Given** I run `resume remove board-role "Tech Nonprofit"`
+**When** the board role exists (partial match on organization)
+**Then** confirmation prompt shows role details
+**And** upon confirmation, role is removed from config
+**And** success message confirms removal
 
 **Technical Notes:**
 - Create `models/board_role.py`:
@@ -2762,6 +2828,23 @@ resume new publication \
 **Given** I run `resume list publications`
 **When** publications exist
 **Then** a formatted table shows all entries sorted by date
+**And** JSON output via `--json` includes all fields
+
+**Given** I run `resume show publication "Securing Industrial"`
+**When** the publication exists (partial match on title)
+**Then** detailed information displays:
+  - Title: Securing Industrial Control Systems at Scale
+  - Type: Conference
+  - Venue: DEF CON 30
+  - Date: 2022-08
+  - URL: https://example.com/talk (clickable)
+**And** JSON output via `--json` includes all fields
+
+**Given** I run `resume remove publication "Securing Industrial"`
+**When** the publication exists (partial match on title)
+**Then** confirmation prompt shows publication details
+**And** upon confirmation, publication is removed from config
+**And** success message confirms removal
 
 **Technical Notes:**
 - Create `models/publication.py`:
