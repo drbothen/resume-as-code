@@ -289,10 +289,10 @@ class TestInlineWorkUnitValidation:
 class TestInlineVsTemplateMode:
     """Tests for mode detection between inline and template modes."""
 
-    def test_falls_back_to_template_without_all_fields(
+    def test_errors_with_partial_inline_fields(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Should use template mode if not all inline fields provided."""
+        """Should error if only some inline fields provided (prevents silent fallback)."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / "work-units").mkdir()
 
@@ -307,13 +307,14 @@ class TestInlineVsTemplateMode:
                 "Test work unit",
                 "--problem",
                 "This is a problem but no actions",
-                "--from-memory",  # Use from-memory to avoid interactive prompts
+                "--from-memory",  # from-memory shouldn't prevent inline validation
             ],
         )
 
-        assert result.exit_code == 0, f"Failed: {result.output}"
-        # Should use template mode (from-memory uses minimal archetype)
-        # and not inline mode
+        assert result.exit_code != 0
+        assert "Missing" in result.output
+        assert "--action" in result.output
+        assert "--result" in result.output
 
     def test_inline_mode_takes_precedence(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

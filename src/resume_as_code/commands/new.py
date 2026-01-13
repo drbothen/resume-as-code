@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
 import click
+from pydantic import HttpUrl
 
 from resume_as_code.config import get_config
 from resume_as_code.models.certification import Certification
@@ -252,6 +254,25 @@ def new_work_unit(
             position_service.save_position(new_pos)
             actual_position_id = new_pos.id
             position_created = True
+
+    # Validate partial inline flags - if any inline-specific flag is provided,
+    # require all of them to avoid silent fallback to template mode
+    has_inline_flags = problem is not None or len(actions) > 0 or result is not None
+    if has_inline_flags:
+        missing = []
+        if title is None:
+            missing.append("--title")
+        if problem is None:
+            missing.append("--problem")
+        if len(actions) == 0:
+            missing.append("--action")
+        if result is None:
+            missing.append("--result")
+        if missing:
+            raise click.UsageError(
+                f"Inline creation requires all of: --title, --problem, --action, --result. "
+                f"Missing: {', '.join(missing)}"
+            )
 
     # Determine if we're in full inline creation mode
     # (all required fields provided: title, problem, actions, result)
@@ -729,76 +750,12 @@ def _create_position_inline(ctx: click.Context, config: Any, service: PositionSe
 
 def _validate_date_format(date_str: str) -> bool:
     """Validate YYYY-MM date format."""
-    import re
-
     return bool(re.match(r"^\d{4}-\d{2}$", date_str))
 
 
 def _validate_year_format(year_str: str) -> bool:
     """Validate YYYY year format."""
-    import re
-
     return bool(re.match(r"^\d{4}$", year_str))
-
-
-def parse_certification_flag(value: str) -> dict[str, str | None]:
-    """Parse --certification flag value.
-
-    Format: "Name|Issuer|Date|Expires"
-    Date and Expires can be empty.
-
-    Args:
-        value: The certification flag value in pipe-separated format.
-
-    Returns:
-        Dictionary with name, issuer, date, expires keys.
-
-    Raises:
-        click.BadParameter: If format is invalid.
-    """
-    parts = value.split("|")
-    if len(parts) != 4:
-        raise click.BadParameter(
-            "Certification must be in format: 'Name|Issuer|Date|Expires'"
-        )
-
-    name, issuer, cert_date, expires = parts
-    return {
-        "name": name.strip(),
-        "issuer": issuer.strip() or None,
-        "date": cert_date.strip() or None,
-        "expires": expires.strip() or None,
-    }
-
-
-def parse_education_flag(value: str) -> dict[str, str | None]:
-    """Parse --education flag value.
-
-    Format: "Degree|Institution|Year|Honors"
-    Year and Honors can be empty.
-
-    Args:
-        value: The education flag value in pipe-separated format.
-
-    Returns:
-        Dictionary with degree, institution, year, honors keys.
-
-    Raises:
-        click.BadParameter: If format is invalid.
-    """
-    parts = value.split("|")
-    if len(parts) != 4:
-        raise click.BadParameter(
-            "Education must be in format: 'Degree|Institution|Year|Honors'"
-        )
-
-    degree, institution, year, honors = parts
-    return {
-        "degree": degree.strip(),
-        "institution": institution.strip(),
-        "year": year.strip() or None,
-        "honors": honors.strip() or None,
-    }
 
 
 @new_group.command("certification")
@@ -864,7 +821,7 @@ def new_certification(
             date=cert_date,
             expires=expires,
             credential_id=credential_id,
-            url=url,  # type: ignore[arg-type]
+            url=HttpUrl(url) if url else None,
         )
 
     else:
@@ -903,7 +860,7 @@ def new_certification(
             date=cert_date,
             expires=expires,
             credential_id=credential_id,
-            url=url,  # type: ignore[arg-type]
+            url=HttpUrl(url) if url else None,
         )
 
     service.save_certification(certification)

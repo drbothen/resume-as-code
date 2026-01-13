@@ -115,7 +115,7 @@ development_status:
   6-6-education-model-rendering: done
   6-7-positions-data-model-employment-history: done  # Renamed: normalized architecture
   6-8-position-management-commands: done  # Human-friendly UX
-  6-9-inline-position-creation: ready-for-dev  # LLM-optimized UX
+  6-9-inline-position-creation: review  # LLM-optimized UX
   6-10-claude-md-documentation-update: ready-for-dev
   6-11-certification-management-commands: ready-for-dev
   6-12-education-management-commands: ready-for-dev

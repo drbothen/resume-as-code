@@ -831,7 +831,7 @@ N/A - Implementation completed without issues.
 ### File List
 
 **Modified Files:**
-- src/resume_as_code/commands/new.py - Added --position flag, position matching, non-interactive position/certification/education/work-unit creation, inline work unit flags
+- src/resume_as_code/commands/new.py - Added --position flag, position matching, non-interactive position/certification/education/work-unit creation, inline work unit flags, partial inline flag validation
 - src/resume_as_code/services/work_unit_service.py - Added create_work_unit_from_data() for inline creation
 - tests/integration/test_new_command.py - Updated test to create position before referencing
 
@@ -839,5 +839,6 @@ N/A - Implementation completed without issues.
 - tests/unit/test_inline_position.py - 16 tests for inline position creation
 - src/resume_as_code/services/certification_service.py - Service for certification CRUD in .resume.yaml
 - src/resume_as_code/services/education_service.py - Service for education CRUD in .resume.yaml
-- tests/unit/test_inline_certification_education.py - 15 tests for inline certification/education creation
+- tests/unit/test_inline_certification.py - 8 tests for inline certification creation
+- tests/unit/test_inline_education.py - 7 tests for inline education creation
 - tests/unit/test_inline_work_unit.py - 11 tests for inline work unit creation
