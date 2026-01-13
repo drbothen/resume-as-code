@@ -1,4 +1,4 @@
-"""List command for browsing Work Units."""
+"""List command for browsing Work Units and Positions."""
 
 from __future__ import annotations
 
@@ -11,13 +11,14 @@ from ruamel.yaml import YAML
 
 from resume_as_code.config import get_config
 from resume_as_code.models.output import JSONResponse
+from resume_as_code.services.position_service import PositionService
 from resume_as_code.utils.console import console, info, json_output
 from resume_as_code.utils.errors import handle_errors
 
 SortField = Literal["date", "title", "confidence"]
 
 
-@click.command("list")
+@click.group("list", invoke_without_command=True)
 @click.option(
     "--filter",
     "-f",
@@ -46,15 +47,30 @@ def list_command(
     sort: SortField,
     reverse: bool,
 ) -> None:
-    """List all Work Units with optional filtering.
+    """List resources (work-units by default, or use subcommands).
 
-    Filter syntax:
+    Without a subcommand, lists Work Units.
+    Use 'resume list positions' to list employment positions.
+
+    Filter syntax for work units:
       tag:<value>        - Filter by tag
       confidence:<value> - Filter by confidence level
       <text>             - Free text search in ID, title, date
 
     Multiple --filter options use AND logic (all must match).
     """
+    # If no subcommand was invoked, list work units (backward compatible)
+    if ctx.invoked_subcommand is None:
+        _list_work_units(ctx, filter_strs, sort, reverse)
+
+
+def _list_work_units(
+    ctx: click.Context,
+    filter_strs: tuple[str, ...],
+    sort: SortField,
+    reverse: bool,
+) -> None:
+    """List work units with filtering and sorting."""
     config = get_config()
 
     # Load all Work Units
@@ -85,6 +101,92 @@ def list_command(
         _output_json(work_units)
     else:
         _output_table(work_units)
+
+
+@list_command.command("positions")
+@click.pass_context
+@handle_errors
+def list_positions(ctx: click.Context) -> None:
+    """List all employment positions."""
+    config = get_config()
+    service = PositionService(config.positions_path)
+    positions = service.load_positions()
+
+    if not positions:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="success",
+                command="list positions",
+                data={"positions": [], "count": 0},
+            )
+            json_output(response.to_json())
+        else:
+            info("No positions found.")
+            console.print("[dim]Create one with: resume new position[/dim]")
+        return
+
+    # Sort by start_date descending (most recent first)
+    sorted_positions = sorted(
+        positions.values(),
+        key=lambda p: p.start_date,
+        reverse=True,
+    )
+
+    if ctx.obj.json_output:
+        _output_positions_json(sorted_positions)
+    else:
+        _output_positions_table(sorted_positions)
+
+
+def _output_positions_json(positions: list[Any]) -> None:
+    """Output positions as JSON."""
+    from resume_as_code.models.position import Position
+
+    pos_data = [
+        {
+            "id": pos.id,
+            "employer": pos.employer,
+            "title": pos.title,
+            "location": pos.location,
+            "dates": pos.format_date_range(),
+            "employment_type": pos.employment_type,
+            "promoted_from": pos.promoted_from,
+        }
+        for pos in positions
+        if isinstance(pos, Position)
+    ]
+
+    response = JSONResponse(
+        status="success",
+        command="list positions",
+        data={"positions": pos_data, "count": len(pos_data)},
+    )
+    json_output(response.to_json())
+
+
+def _output_positions_table(positions: list[Any]) -> None:
+    """Output positions as Rich table."""
+    from resume_as_code.models.position import Position
+
+    table = Table(title="Employment Positions")
+    table.add_column("ID", style="cyan", no_wrap=True)
+    table.add_column("Employer", style="green")
+    table.add_column("Title")
+    table.add_column("Dates")
+    table.add_column("Type", style="dim")
+
+    for pos in positions:
+        if isinstance(pos, Position):
+            table.add_row(
+                pos.id,
+                pos.employer,
+                pos.title,
+                pos.format_date_range(),
+                pos.employment_type or "",
+            )
+
+    console.print(table)
+    console.print(f"\n[dim]{len(positions)} Position(s)[/dim]")
 
 
 def _load_all_work_units(work_units_dir: Path) -> list[dict[str, Any]]:

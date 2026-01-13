@@ -81,8 +81,16 @@ def create_work_unit_file(
     work_unit_id: str,
     title: str,
     work_units_dir: Path,
+    position_id: str | None = None,
 ) -> Path:
     """Create a new Work Unit file from archetype.
+
+    Args:
+        archetype: Name of archetype template to use.
+        work_unit_id: Generated work unit ID.
+        title: Work unit title.
+        work_units_dir: Directory to create file in.
+        position_id: Optional position ID to link to.
 
     Returns:
         Path to the created file.
@@ -111,6 +119,15 @@ def create_work_unit_file(
         content,
         count=1,
     )
+
+    # Add position_id after title if provided
+    if position_id:
+        content = re.sub(
+            r'(title:\s*"[^"]*")',
+            lambda m: f'{m.group(1)}\nposition_id: "{position_id}"',
+            content,
+            count=1,
+        )
 
     # Write file
     file_path = work_units_dir / f"{work_unit_id}.yaml"

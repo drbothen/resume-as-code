@@ -55,6 +55,7 @@ def _register_commands() -> None:
     from resume_as_code.commands.list_cmd import list_command
     from resume_as_code.commands.new import new_group
     from resume_as_code.commands.plan import plan_command
+    from resume_as_code.commands.show import show_group
     from resume_as_code.commands.test_errors import test_errors
     from resume_as_code.commands.test_output import test_output
     from resume_as_code.commands.validate import validate_command
@@ -65,6 +66,7 @@ def _register_commands() -> None:
     main.add_command(list_command)
     main.add_command(new_group)
     main.add_command(plan_command)
+    main.add_command(show_group)
     main.add_command(test_errors)
     main.add_command(test_output)
     main.add_command(validate_command)

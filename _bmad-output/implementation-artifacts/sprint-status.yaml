@@ -114,7 +114,7 @@ development_status:
   6-5-template-certifications-section: done
   6-6-education-model-rendering: done
   6-7-positions-data-model-employment-history: review  # Renamed: normalized architecture
-  6-8-position-management-commands: ready-for-dev  # Human-friendly UX
+  6-8-position-management-commands: review  # Human-friendly UX
   6-9-inline-position-creation: ready-for-dev  # LLM-optimized UX
   6-10-claude-md-documentation-update: ready-for-dev
   6-11-certification-management-commands: ready-for-dev
@@ -124,4 +124,8 @@ development_status:
   6-15-publications-speaking: ready-for-dev  # Thought leadership - FR51
   6-16-enhanced-scope-indicators: ready-for-dev  # P&L, revenue, geography - FR52
   6-17-cto-resume-template: ready-for-dev  # CTO template variant - FR53
+  6-18-enhanced-plan-data-model-preview: ready-for-dev  # Full data preview in plan - builds on 6.2, 6.6, 6.7
+  6-19-philosophy-documentation: ready-for-dev  # docs/ folder with philosophy, diagrams, data model docs
+  6-20-readme-update: ready-for-dev  # Comprehensive README with features, quick start, examples (depends on 6.19)
+  6-21-github-pages-site: ready-for-dev  # Docusaurus marketing site with interactive demos (depends on 6.19)
   epic-6-retrospective: optional

@@ -533,3 +533,174 @@ class TestFromMemoryMode:
 
         # Should fail with error, not crash
         assert result.exit_code != 0
+
+
+class TestNewWorkUnitPositionSelection:
+    """Tests for position selection during work unit creation (Story 6.8)."""
+
+    def test_position_id_flag_adds_position_to_file(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should add position_id to file when --position-id provided."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create positions file first
+        (tmp_path / "positions.yaml").write_text(
+            """schema_version: "1.0.0"
+positions:
+  pos-techcorp-engineer:
+    employer: TechCorp
+    title: Engineer
+    start_date: "2022-01"
+"""
+        )
+
+        result = runner.invoke(
+            main,
+            [
+                "new",
+                "work-unit",
+                "--archetype",
+                "greenfield",
+                "--title",
+                "Test Project",
+                "--position-id",
+                "pos-techcorp-engineer",
+                "--no-edit",
+            ],
+        )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        files = list((tmp_path / "work-units").glob("*.yaml"))
+        content = files[0].read_text()
+        assert 'position_id: "pos-techcorp-engineer"' in content
+
+    def test_position_id_in_json_output(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should include position_id in JSON output."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(
+            main,
+            [
+                "--json",
+                "new",
+                "work-unit",
+                "--archetype",
+                "incident",
+                "--title",
+                "Test",
+                "--position-id",
+                "pos-test",
+            ],
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["data"]["position_id"] == "pos-test"
+
+    def test_interactive_position_selection_shows_positions(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should show position selection menu when positions exist."""
+        monkeypatch.chdir(tmp_path)
+
+        (tmp_path / "positions.yaml").write_text(
+            """schema_version: "1.0.0"
+positions:
+  pos-techcorp-senior:
+    employer: TechCorp
+    title: Senior Engineer
+    start_date: "2022-01"
+"""
+        )
+
+        # Select "No position" (last option)
+        # Options: 1. Position, 2. Create new..., 3. No position
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--archetype", "greenfield", "--title", "Test", "--no-edit"],
+            input="3\n",  # "No position" is option 3 when 1 position exists
+        )
+
+        assert result.exit_code == 0
+        assert "Select Position" in result.output
+        assert "Senior Engineer at TechCorp" in result.output
+
+    def test_interactive_position_selection_with_selection(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should add position_id when user selects a position."""
+        monkeypatch.chdir(tmp_path)
+
+        (tmp_path / "positions.yaml").write_text(
+            """schema_version: "1.0.0"
+positions:
+  pos-techcorp-senior:
+    employer: TechCorp
+    title: Senior Engineer
+    start_date: "2022-01"
+"""
+        )
+
+        # Select first position (option 1)
+        result = runner.invoke(
+            main,
+            ["new", "work-unit", "--archetype", "greenfield", "--title", "Test", "--no-edit"],
+            input="1\n",  # Select first position
+        )
+
+        assert result.exit_code == 0
+        files = list((tmp_path / "work-units").glob("*.yaml"))
+        content = files[0].read_text()
+        assert 'position_id: "pos-techcorp-senior"' in content
+
+    def test_no_position_selection_when_quiet(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should skip position prompt in quiet mode."""
+        monkeypatch.chdir(tmp_path)
+
+        (tmp_path / "positions.yaml").write_text(
+            """schema_version: "1.0.0"
+positions:
+  pos-test:
+    employer: Test
+    title: Dev
+    start_date: "2022-01"
+"""
+        )
+
+        result = runner.invoke(
+            main,
+            ["--quiet", "new", "work-unit", "--archetype", "greenfield", "--title", "Test"],
+        )
+
+        assert result.exit_code == 0
+        assert "Select Position" not in result.output
+
+    def test_no_position_selection_when_json(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should skip position prompt in JSON mode."""
+        monkeypatch.chdir(tmp_path)
+
+        (tmp_path / "positions.yaml").write_text(
+            """schema_version: "1.0.0"
+positions:
+  pos-test:
+    employer: Test
+    title: Dev
+    start_date: "2022-01"
+"""
+        )
+
+        result = runner.invoke(
+            main,
+            ["--json", "new", "work-unit", "--archetype", "greenfield", "--title", "Test"],
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "position_id" not in data["data"]  # Not added when not provided
