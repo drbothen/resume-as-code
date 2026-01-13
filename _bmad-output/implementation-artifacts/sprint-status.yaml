@@ -117,7 +117,7 @@ development_status:
   6-8-position-management-commands: done  # Human-friendly UX
   6-9-inline-position-creation: done  # LLM-optimized UX
   6-10-claude-md-documentation-update: done
-  6-11-certification-management-commands: ready-for-dev
+  6-11-certification-management-commands: done
   6-12-education-management-commands: ready-for-dev
   6-13-career-highlights-section: ready-for-dev  # CTO hybrid format - FR49
   6-14-board-advisory-roles: ready-for-dev  # Governance experience - FR50
