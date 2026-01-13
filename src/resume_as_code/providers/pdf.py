@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
@@ -10,6 +11,19 @@ from weasyprint import CSS, HTML  # type: ignore[import-untyped]
 from resume_as_code.models.errors import RenderError
 from resume_as_code.models.resume import ResumeData
 from resume_as_code.services.template_service import TemplateService
+
+
+@dataclass
+class PDFRenderResult:
+    """Result of PDF rendering including metadata.
+
+    Attributes:
+        output_path: Path to generated PDF file.
+        page_count: Number of pages in the generated PDF.
+    """
+
+    output_path: Path
+    page_count: int
 
 
 class PDFProvider:
@@ -29,7 +43,7 @@ class PDFProvider:
         self.template_service = template_service or TemplateService()
         self.template_name = template_name
 
-    def render(self, resume: ResumeData, output_path: Path) -> Path:
+    def render(self, resume: ResumeData, output_path: Path) -> PDFRenderResult:
         """Render resume to PDF file.
 
         Args:
@@ -37,7 +51,7 @@ class PDFProvider:
             output_path: Path for output PDF file.
 
         Returns:
-            Path to generated PDF.
+            PDFRenderResult with path and page count (Story 6.17: AC #6).
 
         Raises:
             RenderError: If PDF generation fails.
@@ -56,10 +70,13 @@ class PDFProvider:
             html = HTML(string=html_content)
             css = CSS(string=css_content)
 
-            html.write_pdf(
-                output_path,
-                stylesheets=[css],
-            )
+            # Render to get Document object with page count (AC #6)
+            document = html.render(stylesheets=[css])
+            page_count = len(document.pages)
+
+            # Write PDF to file
+            document.write_pdf(output_path)
+
         except OSError as e:
             raise RenderError(
                 message=f"PDF generation failed: {e}",
@@ -73,7 +90,7 @@ class PDFProvider:
                 suggestion="Check the resume data and template for issues",
             ) from e
 
-        return output_path
+        return PDFRenderResult(output_path=output_path, page_count=page_count)
 
     def render_to_bytes(self, resume: ResumeData) -> bytes:
         """Render resume to PDF bytes.

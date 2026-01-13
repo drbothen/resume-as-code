@@ -109,8 +109,8 @@ class TestPDFGeneration:
 
         result = provider.render(sample_resume, output_path)
 
-        assert result.exists()
-        assert result.suffix == ".pdf"
+        assert result.output_path.exists()
+        assert result.output_path.suffix == ".pdf"
 
     def test_pdf_has_valid_header(self, sample_resume: ResumeData, tmp_path: Path) -> None:
         """Generated file should be a valid PDF (starts with %PDF)."""
@@ -129,7 +129,7 @@ class TestPDFGeneration:
 
         result = provider.render(sample_resume, output_path)
 
-        assert result.exists()
+        assert result.output_path.exists()
 
     def test_overwrites_existing_file(self, sample_resume: ResumeData, tmp_path: Path) -> None:
         """Should overwrite existing file gracefully."""
@@ -139,18 +139,27 @@ class TestPDFGeneration:
         provider = PDFProvider()
         result = provider.render(sample_resume, output_path)
 
-        assert result.exists()
-        with open(result, "rb") as f:
+        assert result.output_path.exists()
+        with open(result.output_path, "rb") as f:
             assert f.read(4) == b"%PDF"
 
     def test_returns_output_path(self, sample_resume: ResumeData, tmp_path: Path) -> None:
-        """Should return the output path."""
+        """Should return PDFRenderResult with output path."""
         output_path = tmp_path / "resume.pdf"
         provider = PDFProvider()
 
         result = provider.render(sample_resume, output_path)
 
-        assert result == output_path
+        assert result.output_path == output_path
+
+    def test_returns_page_count(self, sample_resume: ResumeData, tmp_path: Path) -> None:
+        """Should return page count in result (Story 6.17 AC #6)."""
+        output_path = tmp_path / "resume.pdf"
+        provider = PDFProvider()
+
+        result = provider.render(sample_resume, output_path)
+
+        assert result.page_count >= 1
 
 
 class TestPDFContent:
@@ -173,8 +182,8 @@ class TestPDFContent:
 
         result = provider.render(detailed_resume, output_path)
 
-        assert result.exists()
-        with open(result, "rb") as f:
+        assert result.output_path.exists()
+        with open(result.output_path, "rb") as f:
             assert f.read(4) == b"%PDF"
 
 
@@ -238,8 +247,8 @@ class TestPDFTemplates:
 
         result = provider.render(sample_resume, output_path)
 
-        assert result.exists()
-        with open(result, "rb") as f:
+        assert result.output_path.exists()
+        with open(result.output_path, "rb") as f:
             assert f.read(4) == b"%PDF"
 
     def test_render_with_ats_safe_template(self, sample_resume: ResumeData, tmp_path: Path) -> None:
@@ -249,9 +258,21 @@ class TestPDFTemplates:
 
         result = provider.render(sample_resume, output_path)
 
-        assert result.exists()
-        with open(result, "rb") as f:
+        assert result.output_path.exists()
+        with open(result.output_path, "rb") as f:
             assert f.read(4) == b"%PDF"
+
+    def test_render_with_cto_template(self, sample_resume: ResumeData, tmp_path: Path) -> None:
+        """Should render PDF with CTO template (Story 6.17)."""
+        output_path = tmp_path / "resume.pdf"
+        provider = PDFProvider(template_name="cto")
+
+        result = provider.render(sample_resume, output_path)
+
+        assert result.output_path.exists()
+        with open(result.output_path, "rb") as f:
+            assert f.read(4) == b"%PDF"
+        assert result.page_count >= 1
 
 
 class TestErrorHandling:
@@ -295,8 +316,8 @@ class TestFontHandling:
 
         result = provider.render(resume, output_path)
 
-        assert result.exists()
-        with open(result, "rb") as f:
+        assert result.output_path.exists()
+        with open(result.output_path, "rb") as f:
             assert f.read(4) == b"%PDF"
 
     def test_renders_unicode_symbols(self, tmp_path: Path) -> None:
@@ -314,6 +335,6 @@ class TestFontHandling:
 
         result = provider.render(resume, output_path)
 
-        assert result.exists()
-        with open(result, "rb") as f:
+        assert result.output_path.exists()
+        with open(result.output_path, "rb") as f:
             assert f.read(4) == b"%PDF"

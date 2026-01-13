@@ -1,0 +1,61 @@
+/* CTO Resume Template Styles - Additions to executive.css
+ * Story: 6-17-cto-resume-template
+ * Note: This CSS is loaded AFTER executive.css (see template_service.py)
+ * AC #7: CTO and executive share base styling; CTO adds emphasis
+ */
+
+/* CTO-specific emphasis for Career Highlights (AC #4)
+ * Research: Career Highlights is prominent in CTO resumes for board-level positions
+ */
+.career-highlights.cto-emphasis {
+    background-color: #f8f9fa;
+    padding: 0.75em 1em;
+    border-left: 3px solid #2c3e50;
+    margin-bottom: 1.5em;
+    page-break-inside: avoid;
+}
+
+.career-highlights.cto-emphasis h2 {
+    margin-top: 0;
+    margin-bottom: 0.5em;
+}
+
+.career-highlights.cto-emphasis .highlights-list {
+    margin-bottom: 0;
+}
+
+.career-highlights.cto-emphasis .highlights-list li {
+    font-size: 11pt;
+    line-height: 1.5;
+    margin-bottom: 0.4em;
+}
+
+/* Larger scope indicators for CTO positions (AC #3)
+ * Format: "$500M revenue | 200+ engineers | $50M technology budget | Global"
+ * Note: Simple selector ensures consistent styling regardless of section presence
+ */
+section.experience .scope-line {
+    font-size: 10.5pt;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+/* Ensure scope line stands out in print */
+@media print {
+    .career-highlights.cto-emphasis {
+        background-color: #f8f9fa !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .career-highlights.cto-emphasis .highlights-list li {
+        color: #000;
+    }
+}
+
+/* Screen preview adjustments */
+@media screen {
+    .career-highlights.cto-emphasis {
+        border-radius: 0 4px 4px 0;
+    }
+}

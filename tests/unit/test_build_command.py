@@ -792,9 +792,12 @@ created_at: "2024-01-01T00:00:00"
 
         output_dir = tmp_path / "dist"
 
-        def create_pdf(resume: Any, path: Path) -> None:
-            """Create a dummy PDF file."""
+        from resume_as_code.providers.pdf import PDFRenderResult
+
+        def create_pdf(resume: Any, path: Path) -> PDFRenderResult:
+            """Create a dummy PDF file and return result."""
             path.write_bytes(b"%PDF-1.4 dummy")
+            return PDFRenderResult(output_path=path, page_count=1)
 
         def create_docx(resume: Any, path: Path) -> None:
             """Create a dummy DOCX file."""
@@ -851,9 +854,12 @@ created_at: "2024-01-01T00:00:00"
         work_units_dir.mkdir()
         output_dir = tmp_path / "dist"
 
-        def create_pdf(resume: Any, path: Path) -> None:
-            """Create a dummy PDF file."""
+        from resume_as_code.providers.pdf import PDFRenderResult
+
+        def create_pdf(resume: Any, path: Path) -> PDFRenderResult:
+            """Create a dummy PDF file and return result."""
             path.write_bytes(b"%PDF-1.4 dummy")
+            return PDFRenderResult(output_path=path, page_count=1)
 
         def create_docx(resume: Any, path: Path) -> None:
             """Create a dummy DOCX file."""
@@ -936,12 +942,14 @@ created_at: "2024-01-01T00:00:00"
             }
         ]
 
+        from resume_as_code.providers.pdf import PDFRenderResult
+
         captured_resume_data = None
 
-        def capture_render(resume: Any, output_path: Any) -> Any:
+        def capture_render(resume: Any, output_path: Path) -> PDFRenderResult:
             nonlocal captured_resume_data
             captured_resume_data = resume
-            return output_path
+            return PDFRenderResult(output_path=output_path, page_count=1)
 
         with (
             patch("resume_as_code.config.get_config") as mock_config,
@@ -1032,12 +1040,14 @@ created_at: "2024-01-01T00:00:00"
             },
         ]
 
+        from resume_as_code.providers.pdf import PDFRenderResult
+
         captured_resume_data = None
 
-        def capture_render(resume: Any, output_path: Any) -> Any:
+        def capture_render(resume: Any, output_path: Path) -> PDFRenderResult:
             nonlocal captured_resume_data
             captured_resume_data = resume
-            return output_path
+            return PDFRenderResult(output_path=output_path, page_count=1)
 
         with (
             patch("resume_as_code.config.get_config") as mock_config,
@@ -1096,12 +1106,14 @@ created_at: "2024-01-01T00:00:00"
         work_units_dir = tmp_path / "work-units"
         work_units_dir.mkdir()
 
+        from resume_as_code.providers.pdf import PDFRenderResult
+
         captured_resume_data = None
 
-        def capture_render(resume: Any, output_path: Any) -> Any:
+        def capture_render(resume: Any, output_path: Path) -> PDFRenderResult:
             nonlocal captured_resume_data
             captured_resume_data = resume
-            return output_path
+            return PDFRenderResult(output_path=output_path, page_count=1)
 
         with (
             patch("resume_as_code.commands.build.get_config") as mock_config,
@@ -1242,7 +1254,9 @@ created_at: "2024-01-01T00:00:00"
         def capture_render(resume: Any, output_path: Any) -> Any:
             nonlocal captured_resume_data
             captured_resume_data = resume
-            return output_path
+            from resume_as_code.providers.pdf import PDFRenderResult
+
+            return PDFRenderResult(output_path=output_path, page_count=1)
 
         with (
             patch("resume_as_code.commands.build.get_config") as mock_config,
@@ -1436,3 +1450,216 @@ class TestGetJDKeywordsFromPlan:
             result = _get_jd_keywords_from_plan(plan)
 
         assert result == {"Python", "AWS"}
+
+
+class TestCTOPageCountWarning:
+    """Tests for CTO template page count warning (Story 6.17 AC #6)."""
+
+    def test_cto_template_warns_when_exceeds_two_pages(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """Should display warning when CTO template generates > 2 pages (AC #6)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+        output_dir = tmp_path / "dist"
+
+        from resume_as_code.providers.pdf import PDFRenderResult
+
+        def create_pdf_3_pages(resume: Any, path: Path) -> PDFRenderResult:
+            """Create a PDF result with 3 pages to trigger warning."""
+            path.write_bytes(b"%PDF-1.4 dummy")
+            return PDFRenderResult(output_path=path, page_count=3)
+
+        with (
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+            patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
+            patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
+        ):
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = output_dir
+            config.default_template = "cto"  # CTO template
+            config.default_format = "pdf"  # PDF only to avoid DOCX errors
+            # Profile attributes (needed for _load_contact_info)
+            config.profile.name = "Test User"
+            config.profile.title = "CTO"
+            config.profile.email = "test@test.com"
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = "Test summary"
+            config.positions_path = tmp_path / "positions.yaml"
+            config.skills.curated = []
+            config.skills.max_skills = 10
+            config.skills.prioritize_jd_matches = True
+            config.education = []
+            config.certifications = []
+            config.career_highlights = []
+            config.board_roles = []
+            config.publications = []
+            mock_config.return_value = config
+            mock_load_wus.return_value = []
+            mock_pdf.return_value.render.side_effect = create_pdf_3_pages
+
+            result = runner.invoke(
+                main,
+                ["build", "--plan", str(plan_file)],
+            )
+
+            assert result.exit_code == 0
+            # AC #6: Warning should appear for CTO template exceeding 2 pages
+            assert "CTO resumes should be 2 pages maximum" in result.output
+            assert "3 pages" in result.output
+
+    def test_cto_template_no_warning_when_two_pages_or_less(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """Should NOT display warning when CTO template is 2 pages or less."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+        output_dir = tmp_path / "dist"
+
+        from resume_as_code.providers.pdf import PDFRenderResult
+
+        def create_pdf_2_pages(resume: Any, path: Path) -> PDFRenderResult:
+            """Create a PDF result with 2 pages - should not trigger warning."""
+            path.write_bytes(b"%PDF-1.4 dummy")
+            return PDFRenderResult(output_path=path, page_count=2)
+
+        with (
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+            patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
+            patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
+        ):
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = output_dir
+            config.default_template = "cto"
+            config.default_format = "pdf"
+            config.profile.name = "Test User"
+            config.profile.title = "CTO"
+            config.profile.email = "test@test.com"
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = "Test summary"
+            config.positions_path = tmp_path / "positions.yaml"
+            config.skills.curated = []
+            config.skills.max_skills = 10
+            config.skills.prioritize_jd_matches = True
+            config.education = []
+            config.certifications = []
+            config.career_highlights = []
+            config.board_roles = []
+            config.publications = []
+            mock_config.return_value = config
+            mock_load_wus.return_value = []
+            mock_pdf.return_value.render.side_effect = create_pdf_2_pages
+
+            result = runner.invoke(
+                main,
+                ["build", "--plan", str(plan_file)],
+            )
+
+            assert result.exit_code == 0
+            # No warning for 2 pages or less
+            assert "CTO resumes should be 2 pages maximum" not in result.output
+
+    def test_non_cto_template_no_warning_even_when_exceeds_two_pages(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """Non-CTO templates should NOT show the 2-page warning."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+        output_dir = tmp_path / "dist"
+
+        from resume_as_code.providers.pdf import PDFRenderResult
+
+        def create_pdf_5_pages(resume: Any, path: Path) -> PDFRenderResult:
+            """Create a PDF result with 5 pages."""
+            path.write_bytes(b"%PDF-1.4 dummy")
+            return PDFRenderResult(output_path=path, page_count=5)
+
+        with (
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+            patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
+            patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
+        ):
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = output_dir
+            config.default_template = "executive"  # NOT CTO
+            config.default_format = "pdf"
+            config.profile.name = "Test User"
+            config.profile.title = "VP Engineering"
+            config.profile.email = "test@test.com"
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = "Test summary"
+            config.positions_path = tmp_path / "positions.yaml"
+            config.skills.curated = []
+            config.skills.max_skills = 10
+            config.skills.prioritize_jd_matches = True
+            config.education = []
+            config.certifications = []
+            config.career_highlights = []
+            config.board_roles = []
+            config.publications = []
+            mock_config.return_value = config
+            mock_load_wus.return_value = []
+            mock_pdf.return_value.render.side_effect = create_pdf_5_pages
+
+            result = runner.invoke(
+                main,
+                ["build", "--plan", str(plan_file)],
+            )
+
+            assert result.exit_code == 0
+            # No warning for non-CTO templates
+            assert "CTO resumes should be 2 pages maximum" not in result.output

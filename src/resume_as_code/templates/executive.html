@@ -42,6 +42,7 @@
         {% endif %}
     </section>
 
+    {% block career_highlights %}
     {% if resume.career_highlights %}
     <section class="career-highlights">
         <h2>Career Highlights</h2>
@@ -52,6 +53,7 @@
         </ul>
     </section>
     {% endif %}
+    {% endblock %}
 
     {% if resume.skills %}
     <section class="core-competencies">
@@ -114,6 +116,7 @@
     </section>
     {% endif %}
 
+    {% block board_roles %}
     {% if resume.get_sorted_board_roles() %}
     <section class="board-roles">
         <h2>Board & Advisory Roles</h2>
@@ -131,7 +134,9 @@
         {% endfor %}
     </section>
     {% endif %}
+    {% endblock %}
 
+    {% block publications %}
     {% if resume.get_sorted_publications() %}
     <section class="publications">
         <h2>Publications & Speaking</h2>
@@ -148,6 +153,7 @@
         {% endfor %}
     </section>
     {% endif %}
+    {% endblock %}
 
     {% if resume.education %}
     <section class="education">

@@ -321,13 +321,22 @@ def _generate_outputs(
 
         try:
             # Generate PDF (AC: #4)
+            pdf_page_count: int | None = None
             if output_format in ("pdf", "all"):
                 pdf_provider = PDFProvider(template_name=template_name)
                 tmp_pdf = tmp_path / "resume.pdf"
-                pdf_provider.render(resume, tmp_pdf)
+                result = pdf_provider.render(resume, tmp_pdf)
+                pdf_page_count = result.page_count
                 generated_files.append((tmp_pdf, output_dir / "resume.pdf"))
                 formats_generated.append("pdf")
                 console.print("[green]\u2713[/green] Generated PDF")
+
+                # Story 6.17 AC #6: Warn if CTO template exceeds 2 pages
+                if template_name == "cto" and pdf_page_count > 2:
+                    console.print(
+                        f"[yellow]Warning:[/yellow] CTO resumes should be 2 pages maximum "
+                        f"(generated {pdf_page_count} pages). Consider trimming content."
+                    )
 
             # Generate DOCX (AC: #4)
             if output_format in ("docx", "all"):

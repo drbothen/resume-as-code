@@ -1,0 +1,23 @@
+{# CTO Resume Template - Optimized for board-level executive positions
+   Story: 6-17-cto-resume-template
+   Research Note: CTO resume layout research confirms Classic Executive or Hybrid format
+   is optimal for board-level positions. This template adds CTO-specific emphasis.
+#}
+{% extends "executive.html" %}
+
+{# Override career_highlights to add CTO emphasis styling #}
+{% block career_highlights %}
+{% if resume.career_highlights %}
+<section class="career-highlights cto-emphasis">
+    <h2>Career Highlights</h2>
+    <ul class="highlights-list">
+        {% for highlight in resume.career_highlights %}
+        <li>{{ highlight }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+{% endblock %}
+
+{# Board roles and publications use executive.html's default block implementations.
+   Only career_highlights is overridden to add cto-emphasis styling class. #}
