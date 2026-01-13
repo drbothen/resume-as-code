@@ -76,7 +76,7 @@ class TestSkillCuratorEmptyStrings:
     def test_empty_and_valid_mixed(self) -> None:
         """Should handle mix of empty, whitespace, and valid skills."""
         curator = SkillCurator(max_count=15)
-        result = curator.curate({"", "  ", "Python", "", "Java", "\t"})
+        result = curator.curate({"", "  ", "Python", "Java", "\t"})
 
         assert len(result.included) == 2
         assert "Python" in result.included

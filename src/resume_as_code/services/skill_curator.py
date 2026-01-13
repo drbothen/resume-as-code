@@ -78,9 +78,7 @@ class SkillCurator:
 
         # Step 5: Limit to max_count
         included = sorted_skills[: self.max_count]
-        excluded_by_limit = [
-            (s, "exceeded_max_display") for s in sorted_skills[self.max_count :]
-        ]
+        excluded_by_limit = [(s, "exceeded_max_display") for s in sorted_skills[self.max_count :]]
 
         # Combine exclusions
         all_excluded = excluded_by_config + excluded_by_limit

@@ -127,9 +127,7 @@ def plan_command(
     jd_keywords_lower = {k.lower() for k in jd.keywords}
 
     # Run skills curation
-    skills_curation = _curate_skills_from_work_units(
-        selected_wu_dicts, config, jd_keywords_lower
-    )
+    skills_curation = _curate_skills_from_work_units(selected_wu_dicts, config, jd_keywords_lower)
 
     # Save plan if requested
     if output_path:
@@ -501,8 +499,7 @@ def _output_json(
         skills_curation_data = {
             "included": skills_curation.included,
             "excluded": [
-                {"skill": skill, "reason": reason}
-                for skill, reason in skills_curation.excluded
+                {"skill": skill, "reason": reason} for skill, reason in skills_curation.excluded
             ],
             "stats": skills_curation.stats,
         }

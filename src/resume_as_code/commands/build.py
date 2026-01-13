@@ -161,9 +161,7 @@ def build_command(
         success(f"Build complete! Files in: {actual_output_dir}")
 
 
-def _generate_implicit_plan(
-    jd_path: Path, config: ResumeConfig
-) -> tuple[SavedPlan, set[str]]:
+def _generate_implicit_plan(jd_path: Path, config: ResumeConfig) -> tuple[SavedPlan, set[str]]:
     """Generate plan on-the-fly from JD.
 
     Args:

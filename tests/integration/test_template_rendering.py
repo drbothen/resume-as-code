@@ -132,13 +132,13 @@ class TestEndToEndWorkUnitToHTML:
         service = TemplateService()
         html = service.render(resume, "executive")
 
-        # Verify scope indicators rendered
-        assert "Budget:" in html
+        # Verify scope indicators rendered in new format per Story 6.4 AC#3
+        # Format: "Led team of X | $YM budget | ZM revenue impact"
         assert "$10M" in html
-        assert "Team:" in html
-        assert "80 people" in html
-        assert "Revenue:" in html
+        assert "Led team of 80" in html
         assert "$50M ARR" in html
+        assert "budget" in html.lower()
+        assert "revenue impact" in html.lower()
 
     def test_work_units_to_html_ats_safe_template(self) -> None:
         """ATS-safe template renders Work Unit data with standard formatting."""
@@ -308,13 +308,13 @@ class TestExecutiveTemplateIntegration:
 
         html = service.render(resume, "executive")
 
-        # Verify scope indicators are rendered
-        assert "Budget:" in html
+        # Verify scope indicators rendered in new format per Story 6.4 AC#3
+        # Format: "Led team of X | $YM budget | ZM revenue impact"
         assert "$5M" in html
-        assert "Team:" in html
-        assert "25 people" in html
-        assert "Revenue:" in html
+        assert "Led team of 25" in html
         assert "$100M ARR" in html
+        assert "budget" in html.lower()
+        assert "revenue impact" in html.lower()
 
     def test_executive_template_executive_summary_section(self) -> None:
         """Executive template renders Executive Summary section."""
@@ -379,10 +379,9 @@ class TestExecutiveTemplateIntegration:
         service = TemplateService()
         css = service.get_css("executive")
 
-        assert ".scope-indicators" in css
-        assert ".scope-item" in css
-        assert ".scope-label" in css
-        assert ".scope-value" in css
+        # New executive template uses .scope-line for inline scope format
+        # per Story 6.4 AC#3: "Led team of X | $YM budget | ZM revenue impact"
+        assert ".scope-line" in css
 
     def test_executive_template_valid_html_structure(self) -> None:
         """Executive template produces valid HTML structure."""
