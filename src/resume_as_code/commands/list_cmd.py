@@ -16,6 +16,7 @@ from resume_as_code.services.certification_service import CertificationService
 from resume_as_code.services.education_service import EducationService
 from resume_as_code.services.highlight_service import HighlightService
 from resume_as_code.services.position_service import PositionService
+from resume_as_code.services.publication_service import PublicationService
 from resume_as_code.utils.console import console, info, json_output
 from resume_as_code.utils.errors import handle_errors
 
@@ -707,3 +708,88 @@ def _format_tags(tags: list[Any]) -> str:
     if len(str_tags) <= 3:
         return ", ".join(str_tags)
     return ", ".join(str_tags[:3]) + f" +{len(str_tags) - 3}"
+
+
+@list_command.command("publications")
+@click.pass_context
+@handle_errors
+def list_publications(ctx: click.Context) -> None:
+    """List all publications and speaking engagements."""
+    service = PublicationService(config_path=Path.cwd() / ".resume.yaml")
+    publications = service.load_publications()
+
+    if not publications:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="success",
+                command="list publications",
+                data={"publications": [], "count": 0},
+            )
+            click.echo(response.to_json())
+        else:
+            info("No publications found.")
+        return
+
+    if ctx.obj.json_output:
+        _output_publications_json(publications)
+    else:
+        _output_publications_table(publications)
+
+
+def _output_publications_json(publications: list[Any]) -> None:
+    """Output publications as JSON."""
+    pub_data = []
+    for pub in publications:
+        pub_data.append(
+            {
+                "title": pub.title,
+                "type": pub.type,
+                "venue": pub.venue,
+                "date": pub.date,
+                "url": str(pub.url) if pub.url else None,
+                "display": pub.display,
+            }
+        )
+
+    response = JSONResponse(
+        status="success",
+        command="list publications",
+        data={"publications": pub_data, "count": len(pub_data)},
+    )
+    click.echo(response.to_json())
+
+
+def _output_publications_table(publications: list[Any]) -> None:
+    """Output publications as Rich table."""
+    table = Table(
+        title="Publications & Speaking",
+        show_header=True,
+        header_style="bold",
+    )
+    table.add_column("#", style="dim", width=3)
+    table.add_column("Title", style="cyan", no_wrap=False, max_width=40)
+    table.add_column("Type", style="magenta")
+    table.add_column("Venue", style="white")
+    table.add_column("Date", style="dim")
+
+    # Sort by date descending
+    sorted_pubs = sorted(publications, key=lambda p: p.date, reverse=True)
+
+    for idx, pub in enumerate(sorted_pubs):
+        # Dim if display is False
+        style = "dim" if not pub.display else None
+        title = pub.title
+        if not pub.display:
+            title = f"[dim]{pub.title}[/dim]"
+
+        table.add_row(
+            str(idx + 1),
+            title,
+            pub.type,
+            pub.venue,
+            pub.date,
+            style=style,
+        )
+
+    console.print(table)
+    console.print(f"\n[dim]{len(publications)} Publication(s)[/dim]")

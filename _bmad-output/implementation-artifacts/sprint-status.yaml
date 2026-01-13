@@ -121,7 +121,7 @@ development_status:
   6-12-education-management-commands: done
   6-13-career-highlights-section: done  # CTO hybrid format - FR49
   6-14-board-advisory-roles: done  # Governance experience - FR50
-  6-15-publications-speaking: ready-for-dev  # Thought leadership - FR51
+  6-15-publications-speaking: done  # Thought leadership - FR51
   6-16-enhanced-scope-indicators: ready-for-dev  # P&L, revenue, geography - FR52
   6-17-cto-resume-template: ready-for-dev  # CTO template variant - FR53
   6-18-enhanced-plan-data-model-preview: ready-for-dev  # Full data preview in plan - builds on 6.2, 6.6, 6.7

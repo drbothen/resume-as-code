@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
 from resume_as_code.models.board_role import BoardRole
 from resume_as_code.models.certification import Certification
 from resume_as_code.models.education import Education
+from resume_as_code.models.publication import Publication
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +103,9 @@ class ResumeConfig(BaseModel):
 
     # Board & Advisory Roles
     board_roles: list[BoardRole] = Field(default_factory=list)
+
+    # Publications & Speaking Engagements
+    publications: list[Publication] = Field(default_factory=list)
 
     @field_validator("career_highlights", mode="before")
     @classmethod

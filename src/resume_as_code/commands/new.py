@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import click
 from pydantic import HttpUrl
@@ -17,12 +17,14 @@ from resume_as_code.models.education import Education
 from resume_as_code.models.errors import NotFoundError
 from resume_as_code.models.output import JSONResponse
 from resume_as_code.models.position import EmploymentType, Position
+from resume_as_code.models.publication import Publication, PublicationType
 from resume_as_code.services.archetype_service import list_archetypes
 from resume_as_code.services.board_role_service import BoardRoleService
 from resume_as_code.services.certification_service import CertificationService
 from resume_as_code.services.education_service import EducationService
 from resume_as_code.services.highlight_service import HighlightService
 from resume_as_code.services.position_service import PositionService
+from resume_as_code.services.publication_service import PublicationService
 from resume_as_code.services.work_unit_service import (
     create_work_unit_file,
     create_work_unit_from_data,
@@ -45,6 +47,15 @@ BOARD_ROLE_TYPES: list[BoardRoleType] = [
     "director",
     "advisory",
     "committee",
+]
+
+PUBLICATION_TYPES: list[PublicationType] = [
+    "conference",
+    "article",
+    "whitepaper",
+    "book",
+    "podcast",
+    "webinar",
 ]
 
 
@@ -213,6 +224,53 @@ def parse_board_role_flag(value: str) -> dict[str, str | None]:
         "start_date": start_date,
         "end_date": end_date or None,
         "focus": focus or None,
+    }
+
+
+def parse_publication_flag(value: str) -> dict[str, str | None]:
+    """Parse pipe-separated publication value.
+
+    Format: "Title|Type|Venue|Date|URL"
+    URL is optional.
+
+    Args:
+        value: The publication flag value in pipe-separated format.
+
+    Returns:
+        Dictionary with title, type, venue, date, url keys.
+
+    Raises:
+        click.BadParameter: If format is invalid.
+    """
+    parts = value.split("|")
+    if len(parts) < 4 or len(parts) > 5:
+        raise click.BadParameter(
+            "Publication must be in format: 'Title|Type|Venue|Date|URL' (URL optional)"
+        )
+
+    title = parts[0].strip()
+    pub_type = parts[1].strip()
+    venue = parts[2].strip()
+    pub_date = parts[3].strip()
+    url = parts[4].strip() if len(parts) > 4 else None
+
+    if not title:
+        raise click.BadParameter("Title cannot be empty")
+    if not pub_type:
+        raise click.BadParameter("Type cannot be empty")
+    if pub_type not in PUBLICATION_TYPES:
+        raise click.BadParameter(f"Type must be one of: {', '.join(PUBLICATION_TYPES)}")
+    if not venue:
+        raise click.BadParameter("Venue cannot be empty")
+    if not pub_date:
+        raise click.BadParameter("Date cannot be empty")
+
+    return {
+        "title": title,
+        "type": pub_type,
+        "venue": venue,
+        "date": pub_date,
+        "url": url or None,
     }
 
 
@@ -1449,3 +1507,161 @@ def new_board_role(
         success(f"Board role created: {board_role.role}")
         info(f"Organization: {board_role.organization}")
         info(f"Type: {board_role.type}")
+
+
+@new_group.command("publication")
+@click.argument("publication_spec", required=False)
+@click.option("--title", required=False, help="Publication title")
+@click.option(
+    "--type",
+    "pub_type",
+    type=click.Choice(PUBLICATION_TYPES),
+    help="Publication type",
+)
+@click.option("--venue", help="Venue/publisher name")
+@click.option("--date", "pub_date", help="Publication date (YYYY-MM)")
+@click.option("--url", help="Publication URL")
+@click.pass_context
+@handle_errors
+def new_publication(
+    ctx: click.Context,
+    publication_spec: str | None,
+    title: str | None,
+    pub_type: str | None,
+    venue: str | None,
+    pub_date: str | None,
+    url: str | None,
+) -> None:
+    """Create a new publication or speaking engagement record.
+
+    Can be used in three ways:
+    1. Pipe-separated: resume new publication "Title|Type|Venue|Date|URL"
+    2. Flags: resume new publication --title "Title" --type conference --venue "DEF CON"
+    3. Interactive: resume new publication
+
+    Types: conference, article, whitepaper, book, podcast, webinar
+    """
+    # Use Path.cwd() for config location (publications stored in .resume.yaml)
+    service = PublicationService(config_path=Path.cwd() / ".resume.yaml")
+
+    # Parse pipe-separated format if provided
+    if publication_spec:
+        try:
+            parsed = parse_publication_flag(publication_spec)
+            title = title or parsed["title"]
+            pub_type = pub_type or parsed["type"]
+            venue = venue or parsed["venue"]
+            pub_date = pub_date or parsed["date"]
+            url = url or parsed["url"]
+        except click.BadParameter as e:
+            raise click.UsageError(str(e)) from e
+
+    # Determine interactive vs non-interactive mode
+    non_interactive = title is not None
+
+    if non_interactive:
+        # Non-interactive mode - use provided values directly
+        assert title is not None
+
+        # Validate required fields
+        if not title.strip():
+            raise click.UsageError("Publication title cannot be empty")
+        if not pub_type:
+            raise click.UsageError("Publication type is required")
+        if not venue:
+            raise click.UsageError("Venue is required")
+        if not pub_date:
+            raise click.UsageError("Date is required")
+
+        # Validate date format
+        if not _validate_date_format(pub_date):
+            raise click.UsageError("Invalid date format. Use YYYY-MM.")
+
+        # Check for duplicate
+        existing = service.find_publication(title)
+        if existing:
+            if ctx.obj.json_output:
+                response = JSONResponse(
+                    status="success",
+                    command="new publication",
+                    data={
+                        "publication_created": False,
+                        "message": f"Publication '{title}' already exists",
+                    },
+                )
+                click.echo(response.to_json())
+            else:
+                info(f"Publication '{title}' already exists")
+            return
+
+        # Create publication
+        publication = Publication(
+            title=title,
+            type=cast(PublicationType, pub_type),
+            venue=venue,
+            date=pub_date,
+            url=HttpUrl(url) if url else None,
+        )
+
+    else:
+        # Interactive mode - prompt for values
+        console.print("[bold]Create New Publication / Speaking Engagement[/bold]\n")
+
+        # Required fields
+        title = click.prompt("Title")
+
+        # Type selection
+        console.print("\nPublication types:")
+        for i, t in enumerate(PUBLICATION_TYPES, 1):
+            console.print(f"  {i}. {t}")
+        type_idx_str: str = click.prompt("Select type (number)", default="1")
+        try:
+            type_idx = int(type_idx_str) - 1
+            if type_idx < 0 or type_idx >= len(PUBLICATION_TYPES):
+                console.print("[red]✗ Invalid selection.[/red]")
+                raise SystemExit(1)
+            pub_type = PUBLICATION_TYPES[type_idx]
+        except ValueError:
+            console.print("[red]✗ Invalid selection.[/red]")
+            raise SystemExit(1) from None
+
+        venue = click.prompt("Venue/Publisher")
+
+        pub_date_input: str = click.prompt("Date (YYYY-MM)")
+        if not _validate_date_format(pub_date_input):
+            console.print("[red]✗ Invalid date format. Use YYYY-MM.[/red]")
+            raise SystemExit(1)
+        pub_date = pub_date_input
+
+        url_input: str = click.prompt("URL (optional)", default="")
+        url = url_input if url_input else None
+
+        # Create publication
+        publication = Publication(
+            title=title,
+            type=pub_type,
+            venue=venue,
+            date=pub_date,
+            url=HttpUrl(url) if url else None,
+        )
+
+    service.save_publication(publication)
+
+    # Output result
+    if ctx.obj.json_output:
+        response = JSONResponse(
+            status="success",
+            command="new publication",
+            data={
+                "publication_created": True,
+                "title": publication.title,
+                "type": publication.type,
+                "venue": publication.venue,
+                "file": str(service.config_path),
+            },
+        )
+        click.echo(response.to_json())
+    else:
+        success(f"Publication created: {publication.title}")
+        info(f"Type: {publication.type}")
+        info(f"Venue: {publication.venue}")

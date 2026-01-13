@@ -196,10 +196,7 @@ class TestNewBoardRoleCommand:
         )
 
         assert result.exit_code == 0
-        assert (
-            "Board role created" in result.output
-            or "Tech Nonprofit Foundation" in result.output
-        )
+        assert "Board role created" in result.output or "Tech Nonprofit Foundation" in result.output
 
         # Verify file was created
         config_path = tmp_path / ".resume.yaml"
@@ -411,9 +408,7 @@ board_roles:
         assert "Startup Accelerator" in result.output
         assert "Board" in result.output or "Advisory" in result.output
 
-    def test_list_board_roles_empty(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_list_board_roles_empty(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should handle empty board_roles list."""
         config_path = tmp_path / ".resume.yaml"
         config_path.write_text("output_dir: ./dist\n")
@@ -514,9 +509,7 @@ board_roles:
         monkeypatch.chdir(tmp_path)
         runner = CliRunner()
 
-        result = runner.invoke(
-            main, ["remove", "board-role", "Tech Nonprofit", "--yes"]
-        )
+        result = runner.invoke(main, ["remove", "board-role", "Tech Nonprofit", "--yes"])
 
         assert result.exit_code == 0
         assert "Removed board role" in result.output
@@ -582,9 +575,7 @@ board_roles:
         monkeypatch.chdir(tmp_path)
         runner = CliRunner()
 
-        result = runner.invoke(
-            main, ["--json", "remove", "board-role", "Tech Nonprofit", "--yes"]
-        )
+        result = runner.invoke(main, ["--json", "remove", "board-role", "Tech Nonprofit", "--yes"])
 
         assert result.exit_code == 0
         data = json.loads(result.output)
@@ -609,9 +600,7 @@ board_roles:
         runner = CliRunner()
 
         # Simulate user typing 'y' for confirmation
-        result = runner.invoke(
-            main, ["remove", "board-role", "Tech Nonprofit"], input="y\n"
-        )
+        result = runner.invoke(main, ["remove", "board-role", "Tech Nonprofit"], input="y\n")
 
         assert result.exit_code == 0
         assert "Removed board role" in result.output
@@ -633,9 +622,7 @@ board_roles:
         runner = CliRunner()
 
         # Simulate user typing 'n' to decline
-        result = runner.invoke(
-            main, ["remove", "board-role", "Tech Nonprofit"], input="n\n"
-        )
+        result = runner.invoke(main, ["remove", "board-role", "Tech Nonprofit"], input="n\n")
 
         assert result.exit_code == 0
         assert "Cancelled" in result.output

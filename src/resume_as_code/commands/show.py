@@ -16,6 +16,7 @@ from resume_as_code.services.certification_service import CertificationService
 from resume_as_code.services.education_service import EducationService
 from resume_as_code.services.highlight_service import HighlightService
 from resume_as_code.services.position_service import PositionService
+from resume_as_code.services.publication_service import PublicationService
 from resume_as_code.utils.console import console, json_output
 from resume_as_code.utils.errors import handle_errors
 
@@ -594,5 +595,72 @@ def _output_board_role_rich(board_role: Any) -> None:
     # Display setting
     if not board_role.display:
         console.print("\n[dim]Note: This board role is hidden from resume output[/dim]")
+
+    console.print("")
+
+
+@show_group.command("publication")
+@click.argument("title")
+@click.pass_context
+@handle_errors
+def show_publication(ctx: click.Context, title: str) -> None:
+    """Show details of a publication or speaking engagement.
+
+    TITLE is the publication title (partial match supported).
+    """
+    service = PublicationService(config_path=Path.cwd() / ".resume.yaml")
+    matches = service.find_publications_by_title(title)
+
+    if not matches:
+        raise NotFoundError(f"Publication not found: {title}")
+
+    if len(matches) > 1 and not ctx.obj.json_output:
+        console.print(f"[yellow]Multiple matches found for '{title}':[/yellow]")
+        for i, pub in enumerate(matches, 1):
+            console.print(f"  {i}. {pub.title} ({pub.venue}, {pub.date})")
+        console.print(
+            "\n[dim]Showing first match. Be more specific to view a different publication.[/dim]\n"
+        )
+
+    publication = matches[0]
+
+    if ctx.obj.json_output:
+        _output_publication_json(publication)
+    else:
+        _output_publication_details(publication)
+
+
+def _output_publication_json(publication: Any) -> None:
+    """Output publication details as JSON."""
+    response = JSONResponse(
+        status="success",
+        command="show publication",
+        data={
+            "title": publication.title,
+            "type": publication.type,
+            "venue": publication.venue,
+            "date": publication.date,
+            "url": str(publication.url) if publication.url else None,
+            "display": publication.display,
+        },
+    )
+    click.echo(response.to_json())
+
+
+def _output_publication_details(publication: Any) -> None:
+    """Output publication details in rich format."""
+    console.print(f"[bold cyan]{publication.title}[/bold cyan]")
+    console.print(f"[dim]{'─' * 50}[/dim]")
+
+    console.print(f"[bold]Type:[/bold] {publication.type}")
+    console.print(f"[bold]Venue:[/bold] {publication.venue}")
+    console.print(f"[bold]Date:[/bold] {publication.date}")
+
+    if publication.url:
+        console.print(f"[bold]URL:[/bold] {publication.url}")
+
+    # Display setting
+    if not publication.display:
+        console.print("\n[dim]Note: This publication is hidden from resume output[/dim]")
 
     console.print("")

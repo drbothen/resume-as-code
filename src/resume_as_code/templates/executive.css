@@ -253,6 +253,26 @@ h2 {
     margin: 0.25em 0 0 0;
 }
 
+/* Publications & Speaking */
+.publications {
+    margin-top: 1.25em;
+    page-break-inside: avoid;
+}
+
+.pub-entry {
+    margin-bottom: 0.5em;
+    font-size: 10.5pt;
+}
+
+.pub-entry a {
+    color: #2c3e50;
+    text-decoration: none;
+}
+
+.pub-entry a:hover {
+    text-decoration: underline;
+}
+
 /* Education */
 .education {
     margin-top: 1.25em;
@@ -308,9 +328,14 @@ section {
         color: #2c3e50;
     }
 
+    .pub-entry a {
+        color: #2c3e50;
+    }
+
     /* Ensure page breaks are respected */
     .position,
     .board-entry,
+    .pub-entry,
     section {
         page-break-inside: avoid;
     }

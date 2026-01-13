@@ -14,6 +14,7 @@ from resume_as_code.services.certification_service import CertificationService
 from resume_as_code.services.education_service import EducationService
 from resume_as_code.services.highlight_service import HighlightService
 from resume_as_code.services.position_service import PositionService
+from resume_as_code.services.publication_service import PublicationService
 from resume_as_code.utils.console import console, info, success, warning
 from resume_as_code.utils.errors import handle_errors
 
@@ -548,4 +549,89 @@ def remove_board_role(ctx: click.Context, organization: str, yes: bool) -> None:
             click.echo(response.to_json())
         else:
             console.print("[red]Failed to remove board role[/red]")
+        raise SystemExit(1)
+
+
+@remove_group.command("publication")
+@click.argument("title")
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
+@click.pass_context
+@handle_errors
+def remove_publication(ctx: click.Context, title: str, yes: bool) -> None:
+    """Remove a publication by title.
+
+    Performs case-insensitive partial matching on the publication title.
+    If multiple publications match, asks for clarification.
+    """
+    service = PublicationService(config_path=Path.cwd() / ".resume.yaml")
+
+    # Find matching publications
+    matching = service.find_publications_by_title(title)
+
+    if not matching:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="error",
+                command="remove publication",
+                data={"message": f"No publication found matching '{title}'"},
+            )
+            click.echo(response.to_json())
+        else:
+            warning(f"No publication found matching '{title}'")
+        raise SystemExit(4)  # NOT_FOUND exit code
+
+    if len(matching) > 1 and not ctx.obj.json_output:
+        console.print(f"[yellow]Multiple publications match '{title}':[/yellow]")
+        for i, pub in enumerate(matching, 1):
+            console.print(f"  {i}. {pub.title} ({pub.venue}, {pub.date})")
+        console.print(
+            "\n[dim]Removing first match. Be more specific to remove a different publication.[/dim]"
+        )
+
+    publication = matching[0]
+
+    # Confirm unless --yes flag
+    if not yes:
+        if ctx.obj.json_output:
+            # In JSON mode, --yes is required for actual deletion
+            response = JSONResponse(
+                status="error",
+                command="remove publication",
+                data={
+                    "message": "Confirmation required. Use --yes flag to confirm.",
+                    "publication": publication.title,
+                },
+            )
+            click.echo(response.to_json())
+            raise SystemExit(1)
+
+        if not Confirm.ask(f"Remove publication '{publication.title}'?"):
+            info("Operation cancelled")
+            return
+
+    # Perform removal
+    if service.remove_publication(publication.title):
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="success",
+                command="remove publication",
+                data={
+                    "publication_removed": True,
+                    "title": publication.title,
+                    "venue": publication.venue,
+                },
+            )
+            click.echo(response.to_json())
+        else:
+            success(f"Removed publication: {publication.title}")
+    else:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="error",
+                command="remove publication",
+                data={"message": "Failed to remove publication"},
+            )
+            click.echo(response.to_json())
+        else:
+            console.print("[red]Failed to remove publication[/red]")
         raise SystemExit(1)

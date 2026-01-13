@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from resume_as_code.models.board_role import BoardRole
 from resume_as_code.models.certification import Certification
 from resume_as_code.models.education import Education
+from resume_as_code.models.publication import Publication
 
 if TYPE_CHECKING:
     from resume_as_code.models.config import SkillsConfig
@@ -71,6 +72,7 @@ class ResumeData(BaseModel):
     certifications: list[Certification] = Field(default_factory=list)
     career_highlights: list[str] = Field(default_factory=list)
     board_roles: list[BoardRole] = Field(default_factory=list)
+    publications: list[Publication] = Field(default_factory=list)
 
     def get_active_certifications(self) -> list[Certification]:
         """Get certifications that should be displayed on resume.
@@ -105,6 +107,18 @@ class ResumeData(BaseModel):
             displayable,
             key=lambda role: (type_priority.get(role.type, 1), -(int(role.start_date[:4]))),
         )
+
+    def get_sorted_publications(self) -> list[Publication]:
+        """Get publications sorted for display.
+
+        Sorting: Date descending (most recent first).
+        Only returns publications where display=True.
+
+        Returns:
+            List of displayable publications sorted by date.
+        """
+        displayable = [pub for pub in self.publications if pub.display]
+        return sorted(displayable, key=lambda pub: pub.date, reverse=True)
 
     @classmethod
     def from_work_units(
