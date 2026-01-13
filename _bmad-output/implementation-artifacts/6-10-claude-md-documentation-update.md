@@ -1,6 +1,6 @@
 # Story 6.10: CLAUDE.md System Documentation Update
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -79,55 +79,55 @@ So that **AI agents understand the data model and can help me build my resume ef
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Analyze current CLAUDE.md structure (AC: #5)
-  - [ ] 1.1: Read existing CLAUDE.md to understand current structure
-  - [ ] 1.2: Identify where new sections should be inserted
-  - [ ] 1.3: Plan section ordering for LLM context efficiency
+- [x] Task 1: Analyze current CLAUDE.md structure (AC: #5)
+  - [x] 1.1: Read existing CLAUDE.md to understand current structure
+  - [x] 1.2: Identify where new sections should be inserted
+  - [x] 1.3: Plan section ordering for LLM context efficiency
 
-- [ ] Task 2: Add Data Model section (AC: #3)
-  - [ ] 2.1: Add "## Data Model" heading after CLI Reference
-  - [ ] 2.2: Document Positions (positions.yaml) structure
-  - [ ] 2.3: Document Work Units and position_id relationship
-  - [ ] 2.4: Add relationship diagram (ASCII)
-  - [ ] 2.5: Explain grouping behavior for resume rendering
+- [x] Task 2: Add Data Model section (AC: #3)
+  - [x] 2.1: Add "## Data Model" heading after CLI Reference
+  - [x] 2.2: Document Positions (positions.yaml) structure
+  - [x] 2.3: Document Work Units and position_id relationship
+  - [x] 2.4: Add relationship diagram (ASCII)
+  - [x] 2.5: Explain grouping behavior for resume rendering
 
-- [ ] Task 3: Add Position Management section (AC: #1, #2)
-  - [ ] 3.1: Add "## Position Management" heading
-  - [ ] 3.2: Document `resume new position` command (interactive)
-  - [ ] 3.3: Document `resume list positions` command
-  - [ ] 3.4: Document `resume show position <id>` command
-  - [ ] 3.5: Document position ID format: `pos-{employer-slug}-{title-slug}`
+- [x] Task 3: Add Position Management section (AC: #1, #2)
+  - [x] 3.1: Add "## Position Management" heading
+  - [x] 3.2: Document `resume new position` command (interactive)
+  - [x] 3.3: Document `resume list positions` command
+  - [x] 3.4: Document `resume show position <id>` command
+  - [x] 3.5: Document position ID format: `pos-{employer-slug}-{title-slug}`
 
-- [ ] Task 4: Add AI Agent Workflows section (AC: #2, #4)
-  - [ ] 4.1: Add "## AI Agent Workflows" heading
-  - [ ] 4.2: Add "Adding Work Experience (Inline)" example
-  - [ ] 4.3: Add "Checking Existing Positions" example with JSON
-  - [ ] 4.4: Add "Creating Work Unit for Existing Position" example
-  - [ ] 4.5: Add common patterns table:
+- [x] Task 4: Add AI Agent Workflows section (AC: #2, #4)
+  - [x] 4.1: Add "## AI Agent Workflows" heading
+  - [x] 4.2: Add "Adding Work Experience (Inline)" example
+  - [x] 4.3: Add "Checking Existing Positions" example with JSON
+  - [x] 4.4: Add "Creating Work Unit for Existing Position" example
+  - [x] 4.5: Add common patterns table:
     - "I want to add my job history" → create positions first
     - "I just accomplished something" → quick capture with position reference
     - "Generate resume for this job" → plan + build workflow
 
-- [ ] Task 5: Add Complete Workflow Example (AC: #1, #4)
-  - [ ] 5.1: Add "## Complete Example: Building Resume from Scratch" section
-  - [ ] 5.2: Document full workflow: create profile → positions → work units → plan → build
-  - [ ] 5.3: Show both interactive and non-interactive approaches
+- [x] Task 5: Add Complete Workflow Example (AC: #1, #4)
+  - [x] 5.1: Add "## Complete Example: Building Resume from Scratch" section
+  - [x] 5.2: Document full workflow: create profile → positions → work units → plan → build
+  - [x] 5.3: Show both interactive and non-interactive approaches
 
-- [ ] Task 6: Add Troubleshooting section (AC: #2)
-  - [ ] 6.1: Add "## Troubleshooting" heading
-  - [ ] 6.2: Document "Work unit has no position" warning resolution
-  - [ ] 6.3: Document position ID lookup workflow
+- [x] Task 6: Add Troubleshooting section (AC: #2)
+  - [x] 6.1: Add "## Troubleshooting" heading
+  - [x] 6.2: Document "Work unit has no position" warning resolution
+  - [x] 6.3: Document position ID lookup workflow
 
-- [ ] Task 7: Update existing sections (AC: #5)
-  - [ ] 7.1: Update Quick Reference table with position commands
-  - [ ] 7.2: Update Common Workflows section with position workflow
-  - [ ] 7.3: Ensure all examples use actual command syntax
+- [x] Task 7: Update existing sections (AC: #5)
+  - [x] 7.1: Update Quick Reference table with position commands
+  - [x] 7.2: Update Common Workflows section with position workflow
+  - [x] 7.3: Ensure all examples use actual command syntax
 
-- [ ] Task 8: Review and optimize (AC: #5)
-  - [ ] 8.1: Verify file is under 150 lines for LLM context efficiency
-  - [ ] 8.2: Ensure section ordering prioritizes most common operations
-  - [ ] 8.3: Verify consistency with actual CLI behavior
-  - [ ] 8.4: Run spell check on documentation
+- [x] Task 8: Review and optimize (AC: #5)
+  - [x] 8.1: Verify file is under 150 lines for LLM context efficiency
+  - [x] 8.2: Ensure section ordering prioritizes most common operations
+  - [x] 8.3: Verify consistency with actual CLI behavior
+  - [x] 8.4: Run spell check on documentation
 
 ## Dev Notes
 
@@ -331,11 +331,54 @@ To maintain LLM context efficiency:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+- Verified CLI commands: `resume new position`, `resume list positions`, `resume show position`, `resume new work-unit --position`
+- All documented commands match actual CLI behavior
+
 ### Completion Notes List
 
+- Added Data Model section (lines 248-283) documenting positions.yaml structure, work units, and relationship diagram
+- Added Position Management section (lines 287-302) with commands table and ID format
+- Added AI Agent Workflows section (lines 306-338) with inline creation examples and common patterns table
+- Added Complete Example section (lines 342-361) showing full workflow from scratch
+- Added Troubleshooting section (lines 365-379) for position warnings and ID lookup
+- Updated Quick Reference table (lines 136-150) with position commands
+- Updated Common Workflows section (lines 168-189) with inline position creation example
+- **Note:** File is 381 lines (exceeds 150-line target). Original file was 240 lines. Content reduction out of story scope - would require separate effort to consolidate existing Git/Package Management sections.
+
 ### File List
+
+**Modified:**
+- CLAUDE.md (documentation update - added 141 lines, +17 lines from code review fixes)
+
+## Senior Developer Review (AI)
+
+**Reviewer:** Joshua Magady
+**Date:** 2026-01-12
+**Outcome:** APPROVED with fixes applied
+
+### Issues Found & Resolved
+
+| ID | Severity | Issue | Resolution |
+|----|----------|-------|------------|
+| H2 | HIGH | Task 5.3 claimed "both interactive and non-interactive" but only non-interactive shown | Added "Interactive (Human-friendly)" subsection with `resume new position` and `resume new work-unit --archetype` examples |
+| M1 | MEDIUM | Math error: 80% reduction of 4 hours ≠ 45 minutes | Changed to 48 minutes (240 × 0.20 = 48) |
+| L1 | LOW | Wording mismatch with AC#4 ("I accomplished X" vs "I just accomplished something") | Updated to match AC wording |
+| L2 | LOW | Validate example missing `--check-positions` flag | Added `--check-positions` to validate commands |
+
+### Issues Accepted As-Is
+
+| ID | Severity | Issue | Rationale |
+|----|----------|-------|-----------|
+| H1 | HIGH | File is 381 lines, exceeds 150-line target | User accepted - original file was 240 lines; consolidation is separate effort |
+| H3 | HIGH | Git shows 17 modified files vs 1 in File List | Other changes are from previous stories (6.7-6.9), not part of this documentation-only story |
+
+### Verification
+
+- All CLI commands verified against `--help` output
+- Markdown syntax validated
+- All Acceptance Criteria implemented
 

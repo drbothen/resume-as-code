@@ -138,11 +138,14 @@ CLI tool for git-native resume generation from structured Work Units.
 | `resume --help` | Show all commands |
 | `resume --version` | Show version |
 | `resume config` | Show current configuration |
-| `resume test-errors --type <type>` | Test error handling (dev tool) |
-| `resume test-output` | Test output formatting (dev tool) |
-| `resume new work-unit` | Create new Work Unit (planned) |
+| `resume new position` | Create new employment position |
+| `resume new position "Employer\|Title\|Start\|End"` | Inline position creation |
+| `resume list positions` | List all positions |
+| `resume show position <id>` | Show position details |
+| `resume new work-unit` | Create new Work Unit |
+| `resume new work-unit --position "..."` | Create with inline position |
 | `resume validate [PATH]` | Validate Work Units against schema |
-| `resume list` | List all Work Units (planned) |
+| `resume list` | List all Work Units |
 | `resume plan --jd <file>` | Analyze JD, select Work Units |
 | `resume build --jd <file>` | Generate resume files |
 
@@ -171,11 +174,15 @@ resume config
 # With JSON output for parsing
 resume --json config
 
-# Create Work Unit (when available)
-resume new work-unit --archetype incident
-resume new work-unit --from-memory --title "Quick win"
+# Create position + work unit (LLM-optimized)
+resume new work-unit \
+  --position "Acme Corp|Senior Engineer|2022-01|" \
+  --title "Led migration project"
 
-# Validate → Plan → Build (when available)
+# Create Work Unit with archetype template
+resume new work-unit --archetype incident
+
+# Validate → Plan → Build
 resume validate
 resume plan --jd job-description.txt
 resume build --jd job-description.txt
@@ -235,5 +242,157 @@ Use `--json` for structured output. Response format:
 | `work-units/*.yaml` | Work Unit files |
 | `positions.yaml` | Employment positions (employers, titles, dates) |
 | `dist/` | Generated output |
+
+---
+
+## Data Model
+
+### Positions (positions.yaml)
+
+Employment history - employers, titles, dates. Each position has a unique ID.
+
+```yaml
+- id: pos-techcorp-senior-engineer
+  employer: TechCorp Industries
+  title: Senior Platform Engineer
+  start_date: "2022-01"
+  end_date: null  # current position
+```
+
+### Work Units (work-units/*.yaml)
+
+Individual achievements referencing positions via `position_id`.
+
+```yaml
+id: wu-2024-01-30-ics-assessment
+position_id: pos-techcorp-senior-engineer  # References position
+title: "Led ICS security assessment..."
+```
+
+### Relationship
+
+```
+Position (1) ←── references ──← Work Units (*)
+```
+
+Resume groups work units under positions for rendering:
+```
+TechCorp Industries - Senior Platform Engineer (2022-Present)
+• Achievement from work unit 1
+• Achievement from work unit 2
+```
+
+---
+
+## Position Management
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `resume new position` | Create position (interactive or pipe-separated) |
+| `resume new position "Employer\|Title\|Start\|End"` | Inline creation |
+| `resume list positions` | List all positions |
+| `resume show position <id>` | Show position details |
+
+### Position ID Format
+
+Auto-generated: `pos-{employer-slug}-{title-slug}`
+
+Example: `pos-techcorp-senior-engineer`
+
+---
+
+## AI Agent Workflows
+
+### Adding Work Experience (Inline - Preferred for LLM)
+
+```bash
+# Create position and work unit in one command
+resume new work-unit \
+  --position "Acme Corp|Senior Engineer|2022-01|" \
+  --title "Led migration project reducing costs 40%" \
+  --archetype greenfield
+```
+
+### Checking Existing Positions
+
+```bash
+resume --json list positions
+```
+
+### Creating Work Unit for Existing Position
+
+```bash
+resume new work-unit \
+  --position-id pos-acme-senior-engineer \
+  --title "Implemented security controls"
+```
+
+### Common Patterns
+
+| User Request | Agent Action |
+|--------------|--------------|
+| "Add my job history" | Create positions: `resume new position "..."` |
+| "I just accomplished something" | Quick capture: `resume new work-unit --position "..."` |
+| "Generate resume for this job" | `resume plan --jd file.txt && resume build` |
+
+---
+
+## Complete Example: Building Resume from Scratch
+
+### Non-Interactive (LLM-optimized)
+
+```bash
+# 1. Create positions (your job history)
+resume new position "TechCorp|Senior Engineer|2022-01|"
+resume new position "StartupXYZ|Software Developer|2019-06|2021-12"
+
+# 2. Add work units (achievements)
+resume new work-unit \
+  --position-id pos-techcorp-senior-engineer \
+  --title "Reduced deployment time by 80%" \
+  --problem "Manual deployments took 4 hours" \
+  --action "Built CI/CD pipeline with GitHub Actions" \
+  --result "Deployments now take 48 minutes"
+
+# 3. Validate and generate
+resume validate --check-positions
+resume plan --jd job-description.txt
+resume build --jd job-description.txt
+```
+
+### Interactive (Human-friendly)
+
+```bash
+# 1. Create position (prompts for each field)
+resume new position
+
+# 2. Create work unit (opens editor with template)
+resume new work-unit --archetype greenfield
+
+# 3. Validate and generate
+resume validate --check-positions
+resume plan --jd job-description.txt
+resume build --jd job-description.txt
+```
+
+---
+
+## Troubleshooting
+
+### "Work unit has no position" warning
+
+Work units can optionally reference positions. To resolve:
+1. Check existing positions: `resume list positions`
+2. If position exists, add `position_id` to work unit YAML
+3. If not, create position: `resume new position "..."`
+
+### Position ID lookup
+
+```bash
+# Find position ID for employer
+resume --json list positions | jq '.data[] | select(.employer | contains("TechCorp"))'
+```
 
 <!-- Keep CLAUDE.md in sync when adding new commands. Update Quick Reference table and add workflow examples. -->
