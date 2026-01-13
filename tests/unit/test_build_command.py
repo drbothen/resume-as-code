@@ -1214,6 +1214,157 @@ created_at: "2024-01-01T00:00:00"
             assert captured_resume_data.certifications == []
 
 
+class TestBuildCommandCareerHighlights:
+    """Tests for career highlights in build command (Story 6.13)."""
+
+    def test_career_highlights_passed_to_resume_data(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """Career highlights from config should be passed to ResumeData."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        captured_resume_data = None
+
+        def capture_render(resume: Any, output_path: Any) -> Any:
+            nonlocal captured_resume_data
+            captured_resume_data = resume
+            return output_path
+
+        with (
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+            patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
+            patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
+            patch("resume_as_code.providers.docx.DOCXProvider") as mock_docx,
+        ):
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = Path("dist")
+            config.default_template = "modern"
+            config.default_format = "both"
+            # Profile with defaults
+            config.profile.name = "Test User"
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
+            # Certifications (required for config mock)
+            config.certifications = []
+            # Career highlights from config
+            config.career_highlights = [
+                "$50M revenue growth through digital transformation",
+                "Built engineering org from 12 to 150+ engineers",
+            ]
+            mock_config.return_value = config
+            mock_load_wus.return_value = []
+
+            mock_pdf_instance = MagicMock()
+            mock_pdf_instance.render.side_effect = capture_render
+            mock_pdf.return_value = mock_pdf_instance
+
+            mock_docx_instance = MagicMock()
+            mock_docx.return_value = mock_docx_instance
+
+            runner.invoke(
+                main,
+                ["build", "--plan", str(plan_file), "--output-dir", str(tmp_path / "dist")],
+            )
+
+            # Verify career highlights were passed to ResumeData
+            assert captured_resume_data is not None
+            assert len(captured_resume_data.career_highlights) == 2
+            assert (
+                captured_resume_data.career_highlights[0]
+                == "$50M revenue growth through digital transformation"
+            )
+            assert (
+                captured_resume_data.career_highlights[1]
+                == "Built engineering org from 12 to 150+ engineers"
+            )
+
+    def test_empty_career_highlights_handled_gracefully(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """Empty career highlights list should not cause errors."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        captured_resume_data = None
+
+        def capture_generate_outputs(**kwargs: Any) -> None:
+            nonlocal captured_resume_data
+            captured_resume_data = kwargs.get("resume")
+
+        with (
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+            patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+        ):
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = Path("dist")
+            config.default_template = "modern"
+            config.default_format = "both"
+            # Profile with defaults
+            config.profile.name = "Test User"
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
+            # Empty certifications
+            config.certifications = []
+            # Empty career highlights
+            config.career_highlights = []
+            mock_config.return_value = config
+            mock_load_wus.return_value = []
+            mock_gen.side_effect = capture_generate_outputs
+
+            result = runner.invoke(
+                main,
+                ["build", "--plan", str(plan_file), "--output-dir", str(tmp_path / "dist")],
+            )
+
+            # Should succeed
+            assert result.exit_code == 0
+            # Career highlights should be empty list
+            assert captured_resume_data is not None
+            assert captured_resume_data.career_highlights == []
+
+
 class TestGetJDKeywordsFromPlan:
     """Tests for _get_jd_keywords_from_plan helper function (Issue 6 - exception handling)."""
 

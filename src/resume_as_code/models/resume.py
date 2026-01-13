@@ -68,6 +68,7 @@ class ResumeData(BaseModel):
     skills: list[str] = Field(default_factory=list)
     education: list[Education] = Field(default_factory=list)
     certifications: list[Certification] = Field(default_factory=list)
+    career_highlights: list[str] = Field(default_factory=list)
 
     def get_active_certifications(self) -> list[Certification]:
         """Get certifications that should be displayed on resume.

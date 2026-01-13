@@ -42,6 +42,17 @@
         {% endif %}
     </section>
 
+    {% if resume.career_highlights %}
+    <section class="career-highlights">
+        <h2>Career Highlights</h2>
+        <ul class="highlights-list">
+            {% for highlight in resume.career_highlights %}
+            <li>{{ highlight }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
     {% if resume.skills %}
     <section class="core-competencies">
         <h2>Core Competencies</h2>

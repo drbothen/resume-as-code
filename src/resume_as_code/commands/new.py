@@ -19,6 +19,7 @@ from resume_as_code.models.position import EmploymentType, Position
 from resume_as_code.services.archetype_service import list_archetypes
 from resume_as_code.services.certification_service import CertificationService
 from resume_as_code.services.education_service import EducationService
+from resume_as_code.services.highlight_service import HighlightService
 from resume_as_code.services.position_service import PositionService
 from resume_as_code.services.work_unit_service import (
     create_work_unit_file,
@@ -1129,3 +1130,97 @@ def new_education(
     else:
         success(f"Education created: {education.degree}")
         info(f"Institution: {education.institution}")
+
+
+@new_group.command("highlight")
+@click.option("--text", "-t", required=False, help="Highlight text (single-line achievement)")
+@click.pass_context
+@handle_errors
+def new_highlight(
+    ctx: click.Context,
+    text: str | None,
+) -> None:
+    """Create a new career highlight.
+
+    Career highlights appear prominently on CTO/executive resumes,
+    showcasing top achievements with business impact metrics.
+
+    Examples:
+        # Non-interactive (LLM mode)
+        resume new highlight --text "$50M revenue growth through digital transformation"
+
+        # Interactive
+        resume new highlight
+    """
+    # Use Path.cwd() for config location (highlights stored in .resume.yaml)
+    service = HighlightService(config_path=Path.cwd() / ".resume.yaml")
+
+    # Non-interactive mode if --text provided
+    if text is not None:
+        # Validate text is not empty
+        if not text.strip():
+            raise click.UsageError("Highlight text cannot be empty")
+
+        # Validate length (max 150 chars per config validation)
+        if len(text) > 150:
+            raise click.UsageError(
+                f"Highlight exceeds 150 characters ({len(text)} chars). Keep highlights concise."
+            )
+
+        # Check for duplicates
+        existing = service.load_highlights()
+        if text in existing:
+            if ctx.obj.json_output:
+                response = JSONResponse(
+                    status="success",
+                    command="new highlight",
+                    data={
+                        "highlight_created": False,
+                        "message": "Highlight already exists",
+                    },
+                )
+                click.echo(response.to_json())
+            else:
+                info("Highlight already exists")
+            return
+
+        # Warn if exceeding recommended 4
+        if len(existing) >= 4 and not ctx.obj.quiet and not ctx.obj.json_output:
+            warning(
+                f"You have {len(existing)} highlights. "
+                "Research suggests 4 is optimal for executive resumes."
+            )
+
+        service.save_highlight(text)
+
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="success",
+                command="new highlight",
+                data={
+                    "highlight_created": True,
+                    "text": text,
+                    "count": len(existing) + 1,
+                    "file": str(service.config_path),
+                },
+            )
+            click.echo(response.to_json())
+        else:
+            success("Highlight created")
+            info(f"Total highlights: {len(existing) + 1}")
+
+    else:
+        # Interactive mode
+        console.print("[bold]Create New Career Highlight[/bold]\n")
+        console.print("[dim]Career highlights showcase your top achievements with metrics.[/dim]")
+        console.print("[dim]Keep them concise (max 150 characters).[/dim]\n")
+
+        text = click.prompt("Highlight text")
+
+        if len(text) > 150:
+            console.print("[red]✗ Highlight exceeds 150 characters. Please shorten.[/red]")
+            raise SystemExit(1)
+
+        service.save_highlight(text)
+        success("Highlight created")
+        info(f"Total highlights: {len(service.load_highlights())}")

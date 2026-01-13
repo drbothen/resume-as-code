@@ -11,6 +11,7 @@ from resume_as_code.config import get_config
 from resume_as_code.models.output import JSONResponse
 from resume_as_code.services.certification_service import CertificationService
 from resume_as_code.services.education_service import EducationService
+from resume_as_code.services.highlight_service import HighlightService
 from resume_as_code.services.position_service import PositionService
 from resume_as_code.utils.console import console, info, success, warning
 from resume_as_code.utils.errors import handle_errors
@@ -283,6 +284,86 @@ def remove_education(ctx: click.Context, degree: str, yes: bool) -> None:
             click.echo(response.to_json())
         else:
             console.print("[red]Failed to remove education[/red]")
+        raise SystemExit(1)
+
+
+@remove_group.command("highlight")
+@click.argument("index", type=int)
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
+@click.pass_context
+@handle_errors
+def remove_highlight(ctx: click.Context, index: int, yes: bool) -> None:
+    """Remove a career highlight by index (0-indexed).
+
+    Use 'resume list highlights' to see indices.
+    """
+    service = HighlightService(config_path=Path.cwd() / ".resume.yaml")
+    highlights = service.load_highlights()
+
+    if not highlights:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="error",
+                command="remove highlight",
+                data={"message": "No career highlights found"},
+            )
+            click.echo(response.to_json())
+        else:
+            console.print("[red]No career highlights found[/red]")
+        raise SystemExit(4)  # NOT_FOUND
+
+    if index < 0 or index >= len(highlights):
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="error",
+                command="remove highlight",
+                data={
+                    "message": f"Invalid index {index}. Valid range: 0-{len(highlights) - 1}",
+                },
+            )
+            click.echo(response.to_json())
+        else:
+            console.print(f"[red]Invalid index {index}. Valid range: 0-{len(highlights) - 1}[/red]")
+        raise SystemExit(1)
+
+    highlight_text = highlights[index]
+
+    # Confirm removal unless --yes flag is set
+    if (
+        not yes
+        and not ctx.obj.json_output
+        and not Confirm.ask(f"Remove highlight #{index}: '[cyan]{highlight_text}[/cyan]'?")
+    ):
+        info("Cancelled.")
+        return
+
+    # Remove the highlight
+    removed = service.remove_highlight(index)
+
+    if removed:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="success",
+                command="remove highlight",
+                data={
+                    "removed": True,
+                    "index": index,
+                    "text": highlight_text,
+                },
+            )
+            click.echo(response.to_json())
+        else:
+            success(f"Removed highlight #{index}")
+    else:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="error",
+                command="remove highlight",
+                data={"message": "Failed to remove highlight"},
+            )
+            click.echo(response.to_json())
+        else:
+            console.print("[red]Failed to remove highlight[/red]")
         raise SystemExit(1)
 
 

@@ -1,6 +1,6 @@
 # Story 6.13: Career Highlights Section (CTO/Hybrid Format)
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -55,39 +55,40 @@ So that **recruiters immediately see my business impact before reading detailed 
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add career_highlights to config model (AC: #1)
-  - [ ] 1.1: Add `career_highlights: list[str] = Field(default_factory=list)` to `ResumeConfig`
-  - [ ] 1.2: Add validation for max 4 highlights (warn if more)
-  - [ ] 1.3: Add validation for max 150 characters per highlight
+- [x] Task 1: Add career_highlights to config model (AC: #1)
+  - [x] 1.1: Add `career_highlights: list[str] = Field(default_factory=list)` to `ResumeConfig`
+  - [x] 1.2: Add validation for max 4 highlights (warn if more)
+  - [x] 1.3: Add validation for max 150 characters per highlight
 
-- [ ] Task 2: Update ResumeData model (AC: #1, #2)
-  - [ ] 2.1: Add `career_highlights: list[str]` to `ResumeData`
-  - [ ] 2.2: Update `ResumeData.from_config()` to load career highlights
-  - [ ] 2.3: Pass career_highlights to template context
+- [x] Task 2: Update ResumeData model (AC: #1, #2)
+  - [x] 2.1: Add `career_highlights: list[str]` to `ResumeData`
+  - [x] 2.2: Update `ResumeData.from_config()` to load career highlights
+  - [x] 2.3: Pass career_highlights to template context
 
-- [ ] Task 3: Update executive template (AC: #2, #3)
-  - [ ] 3.1: Add career highlights section to `templates/executive.html`
-  - [ ] 3.2: Position section after Executive Summary, before Experience
-  - [ ] 3.3: Add CSS styling for prominent display in `templates/executive.css`
-  - [ ] 3.4: Ensure graceful absence when no highlights configured
+- [x] Task 3: Update executive template (AC: #2, #3)
+  - [x] 3.1: Add career highlights section to `templates/executive.html`
+  - [x] 3.2: Position section after Executive Summary, before Experience
+  - [x] 3.3: Add CSS styling for prominent display in `templates/executive.css`
+  - [x] 3.4: Ensure graceful absence when no highlights configured
 
-- [ ] Task 4: Create highlight management command (AC: #5, #6)
-  - [ ] 4.1: Add `resume new highlight` command
-  - [ ] 4.2: Support interactive prompt for highlight text
-  - [ ] 4.3: Support `--text` flag for non-interactive mode
-  - [ ] 4.4: Add `resume list highlights` command
-  - [ ] 4.5: Add `resume remove highlight` command
+- [x] Task 4: Create highlight management commands (AC: #5, #6)
+  - [x] 4.1: Add `resume new highlight` command
+  - [x] 4.2: Support interactive prompt for highlight text
+  - [x] 4.3: Support `--text` flag for non-interactive mode
+  - [x] 4.4: Add `resume list highlights` command
+  - [x] 4.5: Add `resume show highlight` command
+  - [x] 4.6: Add `resume remove highlight` command
 
-- [ ] Task 5: Testing
-  - [ ] 5.1: Add unit tests for config loading with career highlights
-  - [ ] 5.2: Add tests for template rendering with/without highlights
-  - [ ] 5.3: Add tests for highlight management commands
-  - [ ] 5.4: Visual inspection of generated PDF
+- [x] Task 5: Testing
+  - [x] 5.1: Add unit tests for config loading with career highlights
+  - [x] 5.2: Add tests for template rendering with/without highlights
+  - [x] 5.3: Add tests for highlight management commands
+  - [ ] 5.4: Visual inspection of generated PDF (manual step)
 
-- [ ] Task 6: Code quality verification
-  - [ ] 6.1: Run `ruff check src tests --fix`
-  - [ ] 6.2: Run `mypy src --strict` with zero errors
-  - [ ] 6.3: Run `pytest` - all tests pass
+- [x] Task 6: Code quality verification
+  - [x] 6.1: Run `ruff check src tests --fix`
+  - [x] 6.2: Run `mypy src --strict` with zero errors
+  - [x] 6.3: Run `pytest` - all tests pass (1388 tests)
 
 ## Dev Notes
 
@@ -199,11 +200,35 @@ uv run resume build --jd examples/job-description.txt --template executive
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+- All acceptance criteria implemented and tested
+- Full CRUD commands for highlights: new, list, show, remove
+- 31 unit tests covering config, service, template, and CLI
+- All 1388 project tests pass
+- Code quality verified (ruff, mypy)
+- Added `show highlight` command for CRUD pattern consistency
+
 ### File List
+
+**Modified Files:**
+- `src/resume_as_code/models/config.py` - Added career_highlights field with validation
+- `src/resume_as_code/models/resume.py` - Added career_highlights to ResumeData
+- `src/resume_as_code/commands/build.py` - Pass career_highlights from config to ResumeData
+- `src/resume_as_code/commands/new.py` - Added `new highlight` command
+- `src/resume_as_code/commands/list_cmd.py` - Added `list highlights` command
+- `src/resume_as_code/commands/show.py` - Added `show highlight` command
+- `src/resume_as_code/commands/remove.py` - Added `remove highlight` command
+- `src/resume_as_code/templates/executive.html` - Added career highlights section
+- `src/resume_as_code/templates/executive.css` - Added career highlights styling
+
+**New Files:**
+- `src/resume_as_code/services/highlight_service.py` - Service for CRUD operations
+- `tests/unit/test_career_highlights.py` - 31 unit tests
 

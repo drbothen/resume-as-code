@@ -13,6 +13,7 @@ from resume_as_code.config import get_config
 from resume_as_code.models.output import JSONResponse
 from resume_as_code.services.certification_service import CertificationService
 from resume_as_code.services.education_service import EducationService
+from resume_as_code.services.highlight_service import HighlightService
 from resume_as_code.services.position_service import PositionService
 from resume_as_code.utils.console import console, info, json_output
 from resume_as_code.utils.errors import handle_errors
@@ -192,6 +193,64 @@ def list_education(ctx: click.Context) -> None:
         _output_education_json(education)
     else:
         _output_education_table(education)
+
+
+@list_command.command("highlights")
+@click.pass_context
+@handle_errors
+def list_highlights(ctx: click.Context) -> None:
+    """List all career highlights."""
+    service = HighlightService(config_path=Path.cwd() / ".resume.yaml")
+    highlights = service.load_highlights()
+
+    if not highlights:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="success",
+                command="list highlights",
+                data={"highlights": [], "count": 0},
+            )
+            json_output(response.to_json())
+        else:
+            info("No career highlights found.")
+            console.print("[dim]Create one with: resume new highlight[/dim]")
+        return
+
+    if ctx.obj.json_output:
+        _output_highlights_json(highlights)
+    else:
+        _output_highlights_table(highlights)
+
+
+def _output_highlights_json(highlights: list[str]) -> None:
+    """Output highlights as JSON."""
+    highlight_data = [{"index": idx, "text": text} for idx, text in enumerate(highlights)]
+
+    response = JSONResponse(
+        status="success",
+        command="list highlights",
+        data={"highlights": highlight_data, "count": len(highlight_data)},
+    )
+    json_output(response.to_json())
+
+
+def _output_highlights_table(highlights: list[str]) -> None:
+    """Output highlights as Rich table."""
+    table = Table(title="Career Highlights")
+    table.add_column("#", style="dim", width=3)
+    table.add_column("Highlight", style="cyan")
+
+    for idx, highlight in enumerate(highlights):
+        table.add_row(str(idx), highlight)
+
+    console.print(table)
+    console.print(f"\n[dim]{len(highlights)} Career Highlight(s)[/dim]")
+
+    if len(highlights) > 4:
+        console.print(
+            "\n[yellow]Tip: Research suggests a maximum of 4 career highlights "
+            "for optimal impact.[/yellow]"
+        )
 
 
 def _output_education_json(education: list[Any]) -> None:

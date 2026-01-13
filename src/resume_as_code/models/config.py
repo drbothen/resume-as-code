@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import logging
+import warnings
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
 
 from resume_as_code.models.certification import Certification
 from resume_as_code.models.education import Education
+
+logger = logging.getLogger(__name__)
 
 
 class ProfileConfig(BaseModel):
@@ -91,6 +95,43 @@ class ResumeConfig(BaseModel):
 
     # Skills curation
     skills: SkillsConfig = Field(default_factory=SkillsConfig)
+
+    # Career highlights (CTO/executive hybrid format)
+    career_highlights: list[str] = Field(default_factory=list)
+
+    @field_validator("career_highlights", mode="before")
+    @classmethod
+    def validate_career_highlights(cls, v: list[str] | None) -> list[str]:
+        """Validate career highlights list."""
+        if v is None:
+            return []
+        if not isinstance(v, list):
+            raise ValueError("career_highlights must be a list")
+        for i, highlight in enumerate(v):
+            if not isinstance(highlight, str):
+                raise ValueError(f"career_highlights[{i}] must be a string")
+            if not highlight.strip():
+                raise ValueError(f"career_highlights[{i}] cannot be empty")
+            if len(highlight) > 150:
+                raise ValueError(
+                    f"career_highlights[{i}] exceeds 150 characters ({len(highlight)} chars)"
+                )
+        return v
+
+    @model_validator(mode="after")
+    def warn_excess_highlights(self) -> ResumeConfig:
+        """Warn if more than 4 career highlights provided."""
+        if len(self.career_highlights) > 4:
+            warnings.warn(
+                f"Research suggests maximum 4 career highlights for optimal impact. "
+                f"You have {len(self.career_highlights)}.",
+                UserWarning,
+                stacklevel=2,
+            )
+            logger.warning(
+                "More than 4 career highlights configured. Research suggests 4 is optimal."
+            )
+        return self
 
     @field_validator("output_dir", "work_units_dir", "positions_path", mode="before")
     @classmethod

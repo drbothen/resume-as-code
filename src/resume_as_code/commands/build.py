@@ -138,7 +138,7 @@ def build_command(
         jd_keywords=jd_keywords if jd_keywords else None,  # Pass JD keywords for prioritization
         positions_path=positions_path if positions_path.exists() else None,  # Position grouping
     )
-    # Add certifications and education from config (Story 6.2, 6.6)
+    # Add certifications, education, and career highlights from config (Story 6.2, 6.6, 6.13)
     resume = ResumeData(
         contact=resume.contact,
         summary=resume.summary,
@@ -146,6 +146,7 @@ def build_command(
         skills=resume.skills,
         education=list(config.education),
         certifications=list(config.certifications),
+        career_highlights=list(config.career_highlights),
     )
 
     # Generate outputs atomically (AC: #4, #5, #7)

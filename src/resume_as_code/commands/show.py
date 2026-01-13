@@ -13,6 +13,7 @@ from resume_as_code.models.errors import NotFoundError
 from resume_as_code.models.output import JSONResponse
 from resume_as_code.services.certification_service import CertificationService
 from resume_as_code.services.education_service import EducationService
+from resume_as_code.services.highlight_service import HighlightService
 from resume_as_code.services.position_service import PositionService
 from resume_as_code.utils.console import console, json_output
 from resume_as_code.utils.errors import handle_errors
@@ -452,4 +453,55 @@ def _output_education_rich(edu: Any) -> None:
     if not edu.display:
         console.print("\n[dim]Note: This education is hidden from resume output[/dim]")
 
+    console.print("")
+
+
+@show_group.command("highlight")
+@click.argument("index", type=int)
+@click.pass_context
+@handle_errors
+def show_highlight(ctx: click.Context, index: int) -> None:
+    """Show details of a specific career highlight.
+
+    INDEX is the 0-based index of the highlight (use 'list highlights' to see indices).
+    """
+    service = HighlightService(config_path=Path.cwd() / ".resume.yaml")
+    highlights = service.load_highlights()
+
+    if not highlights:
+        raise NotFoundError("No career highlights found")
+
+    if index < 0 or index >= len(highlights):
+        console.print(f"[red]Invalid index {index}. Valid range: 0-{len(highlights) - 1}[/red]")
+        raise SystemExit(1)
+
+    highlight_text = highlights[index]
+
+    if ctx.obj.json_output:
+        _output_highlight_json(index, highlight_text, len(highlights))
+    else:
+        _output_highlight_rich(index, highlight_text, len(highlights))
+
+
+def _output_highlight_json(index: int, text: str, total: int) -> None:
+    """Output highlight details as JSON."""
+    response = JSONResponse(
+        status="success",
+        command="show highlight",
+        data={
+            "highlight": {
+                "index": index,
+                "text": text,
+            },
+            "total_highlights": total,
+        },
+    )
+    json_output(response.to_json())
+
+
+def _output_highlight_rich(index: int, text: str, total: int) -> None:
+    """Output highlight details with Rich formatting."""
+    console.print(f"\n[bold cyan]Career Highlight #{index}[/bold cyan]")
+    console.print(f"\n{text}")
+    console.print(f"\n[dim]Highlight {index + 1} of {total}[/dim]")
     console.print("")
