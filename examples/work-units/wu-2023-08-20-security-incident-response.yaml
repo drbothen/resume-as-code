@@ -2,6 +2,7 @@
 schema_version: "1.0.0"
 
 id: "wu-2023-08-20-security-incident-response"
+position_id: "pos-industrialtech-senior"
 
 title: "Led incident response containing ransomware threat in OT environment"
 

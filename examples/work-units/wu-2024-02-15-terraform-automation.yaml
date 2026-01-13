@@ -2,6 +2,7 @@
 schema_version: "1.0.0"
 
 id: "wu-2024-02-15-terraform-automation"
+position_id: "pos-industrialtech-senior"
 
 title: "Developed Terraform module library standardizing multi-cloud deployments"
 

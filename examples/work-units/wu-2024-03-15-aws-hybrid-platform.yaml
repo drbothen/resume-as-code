@@ -2,6 +2,7 @@
 schema_version: "1.0.0"
 
 id: "wu-2024-03-15-aws-hybrid-platform"
+position_id: "pos-industrialtech-senior"
 
 title: "Architected hybrid AWS-on-prem platform reducing infrastructure costs by 40%"
 

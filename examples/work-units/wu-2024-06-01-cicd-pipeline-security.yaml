@@ -2,6 +2,7 @@
 schema_version: "1.0.0"
 
 id: "wu-2024-06-01-cicd-pipeline-security"
+position_id: "pos-industrialtech-senior"
 
 title: "Built secure CI/CD pipeline with integrated security scanning reducing deployment time 60%"
 

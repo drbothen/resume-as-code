@@ -2,6 +2,7 @@
 schema_version: "1.0.0"
 
 id: "wu-2024-01-30-ics-security-assessment"
+position_id: "pos-industrialtech-senior"
 
 title: "Conducted ICS security assessment identifying 23 critical vulnerabilities in SCADA systems"
 

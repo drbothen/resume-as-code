@@ -2,6 +2,7 @@
 schema_version: "1.0.0"
 
 id: "wu-2022-06-01-legacy-webapp"
+position_id: "pos-industrialtech-engineer"
 
 title: "Modernized legacy PHP web application to React SPA"
 
