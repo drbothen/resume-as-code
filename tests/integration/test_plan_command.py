@@ -1629,3 +1629,344 @@ class TestPlanCommandSkillsCuration:
         assert "skills_curation" in data["data"]
         assert "included" in data["data"]["skills_curation"]
         assert "stats" in data["data"]["skills_curation"]
+
+
+class TestPlanExecutiveSectionsPreview:
+    """Tests for executive resume sections preview (Story 6.18, AC9-AC15)."""
+
+    def _create_config_with_executive_sections(
+        self,
+        path: Path,
+        career_highlights: list[str] | None = None,
+        board_roles: list[dict[str, str | None]] | None = None,
+        publications: list[dict[str, str | None]] | None = None,
+    ) -> None:
+        """Helper to create config with executive sections."""
+        import yaml
+
+        config: dict[str, object] = {"work_units_dir": "work-units"}
+
+        if career_highlights is not None:
+            config["career_highlights"] = career_highlights
+        if board_roles is not None:
+            config["board_roles"] = board_roles
+        if publications is not None:
+            config["publications"] = publications
+
+        (path / ".resume.yaml").write_text(yaml.dump(config))
+
+    def test_plan_shows_career_highlights_preview(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC9: Should show Career Highlights section when configured."""
+        monkeypatch.chdir(tmp_path)
+
+        self._create_config_with_executive_sections(
+            tmp_path,
+            career_highlights=[
+                "Led security transformation saving $2M annually",
+                "Built team from 3 to 25 engineers",
+                "Achieved 99.99% uptime across 50+ services",
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Engineer", "Requirements:\n- Python")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        assert "Career Highlights" in result.output
+        assert "security transformation" in result.output
+
+    def test_plan_shows_board_roles_preview(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC10: Should show Board & Advisory Roles section when configured."""
+        monkeypatch.chdir(tmp_path)
+
+        self._create_config_with_executive_sections(
+            tmp_path,
+            board_roles=[
+                {
+                    "organization": "ICS-ISAC",
+                    "role": "Technical Advisory Board Member",
+                    "type": "advisory",
+                    "start_date": "2023-01",
+                    "end_date": None,
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Engineer", "Requirements:\n- Python")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        assert "Board" in result.output or "Advisory" in result.output
+        assert "ICS-ISAC" in result.output
+
+    def test_plan_shows_publications_preview(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC11: Should show Publications & Speaking section when configured."""
+        monkeypatch.chdir(tmp_path)
+
+        self._create_config_with_executive_sections(
+            tmp_path,
+            publications=[
+                {
+                    "title": "Securing Industrial Control Systems",
+                    "type": "conference",
+                    "venue": "S4 Conference",
+                    "date": "2024-01",
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Engineer", "Requirements:\n- Python")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        assert "Publications" in result.output or "Speaking" in result.output
+        assert "S4 Conference" in result.output
+
+    def test_plan_json_includes_executive_sections(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC12: JSON output should include career_highlights, board_roles, publications."""
+        monkeypatch.chdir(tmp_path)
+
+        self._create_config_with_executive_sections(
+            tmp_path,
+            career_highlights=["Led transformation", "Built team"],
+            board_roles=[
+                {
+                    "organization": "Tech Board",
+                    "role": "Advisor",
+                    "type": "advisory",
+                    "start_date": "2023-01",
+                    "end_date": None,
+                },
+            ],
+            publications=[
+                {
+                    "title": "Test Article",
+                    "type": "article",
+                    "venue": "Tech Blog",
+                    "date": "2024-06",
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Engineer", "Requirements:\n- Python")
+
+        result = cli_runner.invoke(main, ["--json", "plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+
+        # Check career_highlights in JSON (AC12)
+        assert "career_highlights" in data["data"]
+        assert data["data"]["career_highlights"]["count"] == 2
+
+        # Check board_roles in JSON (AC12)
+        assert "board_roles" in data["data"]
+        assert data["data"]["board_roles"]["count"] == 1
+
+        # Check publications in JSON (AC12)
+        assert "publications" in data["data"]
+        assert data["data"]["publications"]["count"] == 1
+
+    def test_plan_handles_no_career_highlights_gracefully(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC13: Should show helpful message when no career highlights configured."""
+        monkeypatch.chdir(tmp_path)
+
+        # Config with no career_highlights
+        self._create_config_with_executive_sections(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "CTO", "Requirements:\n- Executive leadership")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should show helpful message about adding career_highlights
+        output_lower = result.output.lower()
+        assert "career" in output_lower or "highlight" in output_lower
+
+    def test_plan_handles_no_board_roles_gracefully(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC14: Should show helpful message when no board roles configured."""
+        monkeypatch.chdir(tmp_path)
+
+        # Config with no board_roles
+        self._create_config_with_executive_sections(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "CTO", "Requirements:\n- Board experience")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should show helpful message about adding board_roles
+        output_lower = result.output.lower()
+        assert "board" in output_lower or "advisory" in output_lower
+
+    def test_plan_handles_no_publications_gracefully(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC15: Should show helpful message when no publications configured."""
+        monkeypatch.chdir(tmp_path)
+
+        # Config with no publications
+        self._create_config_with_executive_sections(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "CTO", "Requirements:\n- Thought leadership")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should show helpful message about adding publications
+        output_lower = result.output.lower()
+        assert "publication" in output_lower or "thought leadership" in output_lower
+
+    def test_career_highlights_warns_if_over_4(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC9: Should warn if more than 4 career highlights configured."""
+        monkeypatch.chdir(tmp_path)
+
+        self._create_config_with_executive_sections(
+            tmp_path,
+            career_highlights=[
+                "Achievement one",
+                "Achievement two",
+                "Achievement three",
+                "Achievement four",
+                "Achievement five",  # 5th highlight - should trigger warning
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Engineer", "Requirements:\n- Python")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should show 5 highlights count
+        assert "5" in result.output
+
+    def test_publications_groups_speaking_and_written(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC11: Publications should group speaking vs written works."""
+        monkeypatch.chdir(tmp_path)
+
+        self._create_config_with_executive_sections(
+            tmp_path,
+            publications=[
+                {
+                    "title": "Conference Talk",
+                    "type": "conference",
+                    "venue": "Tech Conf",
+                    "date": "2024-01",
+                },
+                {
+                    "title": "Blog Article",
+                    "type": "article",
+                    "venue": "Tech Blog",
+                    "date": "2024-02",
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-test.yaml",
+            "wu-2026-01-01-test",
+            "Test Project",
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Engineer", "Requirements:\n- Python")
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should show both publications
+        assert "Tech Conf" in result.output
+        assert "Tech Blog" in result.output

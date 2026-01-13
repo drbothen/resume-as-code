@@ -3,7 +3,7 @@
 ## Story Info
 
 - **Epic**: Epic 6 - Executive Resume Template & Profile System
-- **Status**: ready-for-dev
+- **Status**: in-review
 - **Priority**: Medium
 - **Estimation**: Medium (3-4 story points)
 - **Dependencies**: Story 6.2 (Certifications), Story 6.6 (Education), Story 6.7 (Positions)
@@ -207,15 +207,16 @@ Match certifications and education against JD requirements using keyword extract
 ## Technical Notes
 
 ### Files to Create
-1. `src/resume_as_code/services/certification_matcher.py` - New service for JD cert matching
-2. `src/resume_as_code/services/education_matcher.py` - New service for JD education matching
-3. `tests/unit/services/test_certification_matcher.py` - Unit tests
-4. `tests/unit/services/test_education_matcher.py` - Unit tests
+1. `src/resume_as_code/services/certification_matcher.py` - New service for JD cert matching ✅
+2. `src/resume_as_code/services/education_matcher.py` - New service for JD education matching ✅
+3. `tests/unit/test_certification_matcher.py` - Unit tests ✅
+4. `tests/unit/test_education_matcher.py` - Unit tests ✅
 
 ### Files to Modify
-1. `src/resume_as_code/commands/plan.py` - Add new analysis sections
-2. `src/resume_as_code/models/plan.py` - Extend PlanResult with new fields
-3. `src/resume_as_code/services/jd_parser.py` - Add certification/education extraction patterns
+1. `src/resume_as_code/commands/plan.py` - Add new analysis sections (dataclasses defined inline) ✅
+2. `tests/integration/test_plan_command.py` - Integration tests for new sections ✅
+
+_Note: Implementation used inline dataclasses in plan.py rather than separate models/plan.py file. JD extraction patterns integrated directly into matcher services._
 
 ### CertificationMatcher Service
 ```python
