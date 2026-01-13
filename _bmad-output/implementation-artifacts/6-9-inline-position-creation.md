@@ -1,12 +1,25 @@
 # Story 6.9: Inline Position Creation (LLM-Optimized UX)
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
 As an **AI agent (Claude Code) helping a user build their resume**,
-I want **non-interactive flags to create positions and work units in one command**,
+I want **non-interactive flags to create positions, certifications, education, and work units**,
 So that **I can efficiently build the resume library without interactive prompts**.
+
+### Extended Scope (Phase 2)
+
+This story was extended to support inline creation for all data models:
+- **Positions** (stored in `positions.yaml`)
+- **Certifications** (stored in `.resume.yaml`)
+- **Education** (stored in `.resume.yaml`)
+
+### Extended Scope (Phase 3)
+
+Full inline work unit creation - create complete work units without editing template files:
+- **Work Units** with `--problem`, `--action`, `--result` flags
+- Optional `--skill`, `--tag`, `--impact`, `--start-date`, `--end-date`
 
 ## Acceptance Criteria
 
@@ -86,62 +99,209 @@ So that **I can efficiently build the resume library without interactive prompts
    **Then** positions are returned as a JSON array
    **And** includes all fields for each position
 
+### Extended Acceptance Criteria (Phase 2 - Certifications & Education)
+
+8. **Given** I run `resume new certification` non-interactively:
+   ```bash
+   resume new certification \
+     --name "AWS Solutions Architect" \
+     --issuer "Amazon Web Services" \
+     --date 2023-06 \
+     --expires 2026-06
+   ```
+   **When** the command executes
+   **Then** the certification is added to `.resume.yaml`
+   **And** duplicate detection prevents re-adding same cert
+
+9. **Given** I run `resume new education` non-interactively:
+   ```bash
+   resume new education \
+     --degree "BS Computer Science" \
+     --institution "MIT" \
+     --year 2015 \
+     --honors "Magna Cum Laude"
+   ```
+   **When** the command executes
+   **Then** the education record is added to `.resume.yaml`
+   **And** duplicate detection prevents re-adding same degree+institution
+
+10. **Given** I run with JSON output:
+    ```bash
+    resume --json new certification --name "CISSP" --issuer "ISC2"
+    ```
+    **When** the command succeeds
+    **Then** JSON output includes:
+    ```json
+    {
+      "status": "success",
+      "data": {
+        "certification_created": true,
+        "name": "CISSP",
+        "issuer": "ISC2",
+        "file": ".resume.yaml"
+      }
+    }
+    ```
+
+### Extended Acceptance Criteria (Phase 3 - Work Unit Inline Creation)
+
+11. **Given** I run `resume new work-unit` with all inline flags:
+    ```bash
+    resume new work-unit \
+      --position "TechCorp|Engineer|2022-01|" \
+      --title "Led ICS security assessment" \
+      --problem "Legacy ICS systems lacked security monitoring across 50 PLCs" \
+      --action "Deployed network sensors across industrial control systems" \
+      --action "Built custom detection rules for Modbus protocol anomalies" \
+      --result "Achieved 99.9% visibility into previously dark ICS traffic" \
+      --impact "Prevented potential $2M breach" \
+      --skill "ICS Security" \
+      --skill "Network Analysis" \
+      --tag "security"
+    ```
+    **When** the command executes
+    **Then** a complete work unit YAML file is created
+    **And** no editor is opened (file is ready-to-use)
+    **And** position is auto-created if needed
+
+12. **Given** I provide inline data that doesn't meet minimums
+    **When** problem < 20 chars OR result < 10 chars OR any action < 10 chars
+    **Then** clear validation error is shown with expected lengths
+
+13. **Given** I run with JSON output:
+    ```bash
+    resume --json new work-unit --title "Test" --problem "..." --action "..." --result "..."
+    ```
+    **When** the command succeeds
+    **Then** JSON includes `inline_created: true` and counts for skills/tags
+
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add --position flag to new work-unit (AC: #1, #2)
-  - [ ] 1.1: Add `--position` option with pipe-separated format
-  - [ ] 1.2: Parse format: "Employer|Title|StartDate|EndDate"
-  - [ ] 1.3: Implement position matching (find existing by employer+title)
-  - [ ] 1.4: Auto-create position if not found
-  - [ ] 1.5: Set position_id on work unit
-  - [ ] 1.6: Return both IDs in output
+- [x] Task 1: Add --position flag to new work-unit (AC: #1, #2)
+  - [x] 1.1: Add `--position` option with pipe-separated format
+  - [x] 1.2: Parse format: "Employer|Title|StartDate|EndDate"
+  - [x] 1.3: Implement position matching (find existing by employer+title)
+  - [x] 1.4: Auto-create position if not found
+  - [x] 1.5: Set position_id on work unit
+  - [x] 1.6: Return both IDs in output
 
-- [ ] Task 2: Add --position-id flag to new work-unit (AC: #3)
-  - [ ] 2.1: Add `--position-id` option
-  - [ ] 2.2: Validate position exists
-  - [ ] 2.3: Show clear error if not found
-  - [ ] 2.4: Set position_id on work unit
+- [x] Task 2: Add --position-id flag to new work-unit (AC: #3)
+  - [x] 2.1: Add `--position-id` option
+  - [x] 2.2: Validate position exists
+  - [x] 2.3: Show clear error if not found
+  - [x] 2.4: Set position_id on work unit
 
-- [ ] Task 3: Add JSON output for work-unit creation (AC: #4)
-  - [ ] 3.1: Detect --json global flag
-  - [ ] 3.2: Return structured JSON response
-  - [ ] 3.3: Include work_unit_id, position_id, position_created, file_path
-  - [ ] 3.4: Suppress Rich output in JSON mode
+- [x] Task 3: Add JSON output for work-unit creation (AC: #4)
+  - [x] 3.1: Detect --json global flag
+  - [x] 3.2: Return structured JSON response
+  - [x] 3.3: Include work_unit_id, position_id, position_created, file_path
+  - [x] 3.4: Suppress Rich output in JSON mode
 
-- [ ] Task 4: Add non-interactive flags to new position (AC: #5, #6)
-  - [ ] 4.1: Add `--employer` option (required in non-interactive)
-  - [ ] 4.2: Add `--title` option (required in non-interactive)
-  - [ ] 4.3: Add `--location` option
-  - [ ] 4.4: Add `--start-date` option
-  - [ ] 4.5: Add `--end-date` option
-  - [ ] 4.6: Add `--employment-type` option
-  - [ ] 4.7: Add `--promoted-from` option
-  - [ ] 4.8: Detect non-interactive mode (all required flags provided)
-  - [ ] 4.9: Skip prompts when non-interactive
+- [x] Task 4: Add non-interactive flags to new position (AC: #5, #6)
+  - [x] 4.1: Add `--employer` option (required in non-interactive)
+  - [x] 4.2: Add `--title` option (required in non-interactive)
+  - [x] 4.3: Add `--location` option
+  - [x] 4.4: Add `--start-date` option
+  - [x] 4.5: Add `--end-date` option
+  - [x] 4.6: Add `--employment-type` option
+  - [x] 4.7: Add `--promoted-from` option
+  - [x] 4.8: Detect non-interactive mode (all required flags provided)
+  - [x] 4.9: Skip prompts when non-interactive
 
-- [ ] Task 5: Add JSON output for list positions (AC: #7)
-  - [ ] 5.1: Detect --json global flag
-  - [ ] 5.2: Return positions as JSON array
-  - [ ] 5.3: Include all position fields
-  - [ ] 5.4: Suppress Rich table in JSON mode
+- [x] Task 5: Add JSON output for list positions (AC: #7)
+  - [x] 5.1: Detect --json global flag
+  - [x] 5.2: Return positions as JSON array
+  - [x] 5.3: Include all position fields
+  - [x] 5.4: Suppress Rich table in JSON mode
 
-- [ ] Task 6: Position matching logic
-  - [ ] 6.1: Implement case-insensitive employer+title matching
-  - [ ] 6.2: Normalize strings for comparison
-  - [ ] 6.3: Return existing position if match found
+- [x] Task 6: Position matching logic
+  - [x] 6.1: Implement case-insensitive employer+title matching
+  - [x] 6.2: Normalize strings for comparison
+  - [x] 6.3: Return existing position if match found
 
-- [ ] Task 7: Testing
-  - [ ] 7.1: Add tests for --position flag parsing
-  - [ ] 7.2: Add tests for position auto-creation
-  - [ ] 7.3: Add tests for position reuse
-  - [ ] 7.4: Add tests for --position-id validation
-  - [ ] 7.5: Add tests for JSON output format
-  - [ ] 7.6: Add tests for non-interactive position creation
+- [x] Task 7: Testing
+  - [x] 7.1: Add tests for --position flag parsing
+  - [x] 7.2: Add tests for position auto-creation
+  - [x] 7.3: Add tests for position reuse
+  - [x] 7.4: Add tests for --position-id validation
+  - [x] 7.5: Add tests for JSON output format
+  - [x] 7.6: Add tests for non-interactive position creation
 
-- [ ] Task 8: Code quality verification
-  - [ ] 8.1: Run `ruff check src tests --fix`
-  - [ ] 8.2: Run `mypy src --strict` with zero errors
-  - [ ] 8.3: Run `pytest` - all tests pass
+- [x] Task 8: Code quality verification
+  - [x] 8.1: Run `ruff check src tests --fix`
+  - [x] 8.2: Run `mypy src --strict` with zero errors
+  - [x] 8.3: Run `pytest` - all tests pass
+
+### Extended Tasks (Phase 2 - Certifications & Education)
+
+- [x] Task 9: Create CertificationService (AC: #8, #10)
+  - [x] 9.1: Create `services/certification_service.py`
+  - [x] 9.2: Implement `load_certifications()` from .resume.yaml
+  - [x] 9.3: Implement `save_certification()` to .resume.yaml
+  - [x] 9.4: Implement `find_certification()` for duplicate detection
+
+- [x] Task 10: Create EducationService (AC: #9)
+  - [x] 10.1: Create `services/education_service.py`
+  - [x] 10.2: Implement `load_education()` from .resume.yaml
+  - [x] 10.3: Implement `save_education()` to .resume.yaml
+  - [x] 10.4: Implement `find_education()` for duplicate detection
+
+- [x] Task 11: Add `new certification` command (AC: #8, #10)
+  - [x] 11.1: Add `--name` option (required for non-interactive)
+  - [x] 11.2: Add `--issuer`, `--date`, `--expires`, `--credential-id`, `--url` options
+  - [x] 11.3: Detect non-interactive mode (--name provided)
+  - [x] 11.4: Check for duplicates before creating
+  - [x] 11.5: Return JSON output with `certification_created` boolean
+
+- [x] Task 12: Add `new education` command (AC: #9)
+  - [x] 12.1: Add `--degree`, `--institution` options (required for non-interactive)
+  - [x] 12.2: Add `--year`, `--honors`, `--gpa` options
+  - [x] 12.3: Detect non-interactive mode (--degree and --institution provided)
+  - [x] 12.4: Check for duplicates before creating
+  - [x] 12.5: Return JSON output with `education_created` boolean
+
+- [x] Task 13: Testing for Phase 2
+  - [x] 13.1: Add tests for `new certification` command
+  - [x] 13.2: Add tests for `new education` command
+  - [x] 13.3: Add tests for CertificationService
+  - [x] 13.4: Add tests for EducationService
+  - [x] 13.5: Add tests for duplicate detection
+  - [x] 13.6: Add tests for JSON output format
+
+- [x] Task 14: Code quality verification (Phase 2)
+  - [x] 14.1: Run `ruff check src tests --fix`
+  - [x] 14.2: Run `mypy src --strict` with zero errors
+  - [x] 14.3: Run `pytest` - all 1244 tests pass
+
+### Extended Tasks (Phase 3 - Work Unit Inline Creation)
+
+- [x] Task 15: Add inline flags to `new work-unit` (AC: #11, #12, #13)
+  - [x] 15.1: Add `--problem` option for problem statement
+  - [x] 15.2: Add `--action` option (multiple=True for multiple actions)
+  - [x] 15.3: Add `--result` option for outcome result
+  - [x] 15.4: Add `--impact` option for quantified impact
+  - [x] 15.5: Add `--skill` option (multiple=True)
+  - [x] 15.6: Add `--tag` option (multiple=True)
+  - [x] 15.7: Add `--start-date` and `--end-date` options
+
+- [x] Task 16: Implement inline mode logic (AC: #11, #12)
+  - [x] 16.1: Detect inline mode (all of: title, problem, action(s), result)
+  - [x] 16.2: Validate minimum lengths (problem >= 20, result >= 10, actions >= 10)
+  - [x] 16.3: Call `create_work_unit_from_data()` for inline creation
+  - [x] 16.4: Return JSON with `inline_created: true` and counts
+
+- [x] Task 17: Testing for Phase 3
+  - [x] 17.1: Test full inline work unit creation
+  - [x] 17.2: Test inline with all optional fields (impact, skills, tags, dates)
+  - [x] 17.3: Test inline with position auto-creation
+  - [x] 17.4: Test validation errors for short strings
+  - [x] 17.5: Test mode detection (inline vs template fallback)
+  - [x] 17.6: Test JSON output format with inline_created flag
+
+- [x] Task 18: Code quality verification (Phase 3)
+  - [x] 18.1: Run `ruff check src tests --fix`
+  - [x] 18.2: Run `mypy src --strict` with zero errors
+  - [x] 18.3: Run `pytest` - all 1255 tests pass
 
 ## Dev Notes
 
@@ -613,10 +773,71 @@ uv run resume --json list positions
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A - Implementation completed without issues.
+
 ### Completion Notes List
 
+**Phase 1 - Position Inline Creation:**
+- Implemented `parse_position_flag()` function for pipe-separated format parsing
+- Implemented `find_existing_position()` for case-insensitive employer+title matching
+- Added `--position` flag to `new work-unit` command for inline position creation
+- Added `--position-id` validation that returns exit code 4 if position doesn't exist
+- Mutual exclusion between `--position` and `--position-id` flags enforced
+- JSON output includes `position_created` boolean and `position_id`
+- Added non-interactive mode to `new position` command with flags:
+  - `--employer`, `--title`, `--start-date` (required for non-interactive)
+  - `--location`, `--end-date`, `--employment-type`, `--promoted-from` (optional)
+- `list positions` already supported JSON output via existing implementation
+- All 16 new tests pass, 1229 total tests pass
+- Mypy strict mode passes with no errors
+- Ruff linting passes
+
+**Phase 2 - Certification & Education Inline Creation (Extension):**
+- Created `CertificationService` with load/save for `.resume.yaml` config
+- Created `EducationService` with load/save for `.resume.yaml` config
+- Added `new certification` command with non-interactive flags:
+  - `--name` (required for non-interactive)
+  - `--issuer`, `--date`, `--expires`, `--credential-id`, `--url` (optional)
+- Added `new education` command with non-interactive flags:
+  - `--degree`, `--institution` (required for non-interactive)
+  - `--year`, `--honors`, `--gpa` (optional)
+- Duplicate detection for both certifications and education (case-insensitive)
+- JSON output with `certification_created`/`education_created` boolean
+- All 15 new tests pass, 1244 total tests pass
+- Mypy strict mode passes with no errors
+- Ruff linting passes
+
+**Phase 3 - Work Unit Inline Creation (Extension):**
+- Added `create_work_unit_from_data()` to `work_unit_service.py` for programmatic work unit creation
+- Added inline flags to `new work-unit` command:
+  - `--problem` for problem statement (min 20 chars)
+  - `--action` (multiple) for actions taken (min 10 chars each)
+  - `--result` for outcome result (min 10 chars)
+  - `--impact` for quantified impact (optional)
+  - `--skill` (multiple) for skills demonstrated (optional)
+  - `--tag` (multiple) for tags (optional)
+  - `--start-date`, `--end-date` for time bounds (optional)
+- Inline mode detection: if `title + problem + action(s) + result` all provided, creates file directly
+- Validation with clear error messages for minimum length requirements
+- JSON output includes `inline_created: true` and skill/tag counts
+- All 11 new tests pass, 1255 total tests pass
+- Mypy strict mode passes with no errors
+- Ruff linting passes
+
 ### File List
+
+**Modified Files:**
+- src/resume_as_code/commands/new.py - Added --position flag, position matching, non-interactive position/certification/education/work-unit creation, inline work unit flags
+- src/resume_as_code/services/work_unit_service.py - Added create_work_unit_from_data() for inline creation
+- tests/integration/test_new_command.py - Updated test to create position before referencing
+
+**New Files:**
+- tests/unit/test_inline_position.py - 16 tests for inline position creation
+- src/resume_as_code/services/certification_service.py - Service for certification CRUD in .resume.yaml
+- src/resume_as_code/services/education_service.py - Service for education CRUD in .resume.yaml
+- tests/unit/test_inline_certification_education.py - 15 tests for inline certification/education creation
+- tests/unit/test_inline_work_unit.py - 11 tests for inline work unit creation

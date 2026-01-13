@@ -581,6 +581,17 @@ positions:
         """Should include position_id in JSON output."""
         monkeypatch.chdir(tmp_path)
 
+        # Create position first (required since AC#3 validates position ID exists)
+        (tmp_path / "positions.yaml").write_text(
+            """schema_version: "1.0.0"
+positions:
+  pos-test:
+    employer: "Test Corp"
+    title: "Engineer"
+    start_date: "2022-01"
+"""
+        )
+
         result = runner.invoke(
             main,
             [
@@ -596,7 +607,7 @@ positions:
             ],
         )
 
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"Failed: {result.output}"
         data = json.loads(result.output)
         assert data["data"]["position_id"] == "pos-test"
 

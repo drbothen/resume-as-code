@@ -136,6 +136,90 @@ def create_work_unit_file(
     return file_path
 
 
+def create_work_unit_from_data(
+    work_unit_id: str,
+    title: str,
+    problem_statement: str,
+    actions: list[str],
+    result: str,
+    work_units_dir: Path,
+    position_id: str | None = None,
+    quantified_impact: str | None = None,
+    skills: list[str] | None = None,
+    tags: list[str] | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> Path:
+    """Create a Work Unit file from provided data (inline creation).
+
+    Args:
+        work_unit_id: Generated work unit ID.
+        title: Work unit title.
+        problem_statement: The problem being solved.
+        actions: List of actions taken.
+        result: The outcome result.
+        work_units_dir: Directory to create file in.
+        position_id: Optional position ID to link to.
+        quantified_impact: Optional quantified impact string.
+        skills: Optional list of skill names.
+        tags: Optional list of tags.
+        start_date: Optional start date (YYYY-MM-DD or YYYY-MM).
+        end_date: Optional end date (YYYY-MM-DD or YYYY-MM).
+
+    Returns:
+        Path to the created file.
+    """
+    # Ensure directory exists
+    work_units_dir = get_work_units_dir(work_units_dir)
+
+    yaml = YAML()
+    yaml.default_flow_style = False
+
+    # Build the work unit data structure
+    data: dict[str, Any] = {
+        "id": work_unit_id,
+        "title": title,
+        "schema_version": "1.0.0",
+    }
+
+    # Add position_id if provided
+    if position_id:
+        data["position_id"] = position_id
+
+    # Add time fields if provided
+    if start_date:
+        data["time_started"] = start_date
+    if end_date:
+        data["time_ended"] = end_date
+
+    # Add problem
+    data["problem"] = {"statement": problem_statement}
+
+    # Add actions
+    data["actions"] = actions
+
+    # Add outcome
+    outcome: dict[str, str] = {"result": result}
+    if quantified_impact:
+        outcome["quantified_impact"] = quantified_impact
+    data["outcome"] = outcome
+
+    # Add skills if provided
+    if skills:
+        data["skills_demonstrated"] = [{"name": skill} for skill in skills]
+
+    # Add tags if provided
+    if tags:
+        data["tags"] = tags
+
+    # Write file
+    file_path = work_units_dir / f"{work_unit_id}.yaml"
+    with open(file_path, "w") as f:
+        yaml.dump(data, f)
+
+    return file_path
+
+
 def load_all_work_units(work_units_dir: Path) -> list[dict[str, Any]]:
     """Load all Work Units from directory.
 
