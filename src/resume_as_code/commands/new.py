@@ -43,7 +43,7 @@ def parse_position_flag(value: str) -> dict[str, str | None]:
     """Parse --position flag value.
 
     Format: "Employer|Title|StartDate|EndDate"
-    EndDate can be empty for current position.
+    EndDate is optional (can be omitted for current position).
 
     Args:
         value: The position flag value in pipe-separated format.
@@ -55,15 +55,29 @@ def parse_position_flag(value: str) -> dict[str, str | None]:
         click.BadParameter: If format is invalid.
     """
     parts = value.split("|")
-    if len(parts) != 4:
-        raise click.BadParameter("Position must be in format: 'Employer|Title|StartDate|EndDate'")
+    if len(parts) < 3 or len(parts) > 4:
+        raise click.BadParameter(
+            "Position must be in format: 'Employer|Title|StartDate|EndDate' "
+            "(EndDate optional)"
+        )
 
-    employer, title, start_date, end_date = parts
+    employer = parts[0].strip()
+    title = parts[1].strip()
+    start_date = parts[2].strip()
+    end_date = parts[3].strip() if len(parts) > 3 else None
+
+    if not employer:
+        raise click.BadParameter("Employer cannot be empty")
+    if not title:
+        raise click.BadParameter("Title cannot be empty")
+    if not start_date:
+        raise click.BadParameter("StartDate cannot be empty")
+
     return {
-        "employer": employer.strip(),
-        "title": title.strip(),
-        "start_date": start_date.strip(),
-        "end_date": end_date.strip() or None,
+        "employer": employer,
+        "title": title,
+        "start_date": start_date,
+        "end_date": end_date or None,
     }
 
 
@@ -540,6 +554,7 @@ def _prompt_title_interactive(ctx: click.Context) -> str:
 
 
 @new_group.command("position")
+@click.argument("position_spec", required=False)
 @click.option("--employer", help="Employer name")
 @click.option("--title", "job_title", help="Job title")
 @click.option("--location", help="Location (city, state)")
@@ -555,6 +570,7 @@ def _prompt_title_interactive(ctx: click.Context) -> str:
 @handle_errors
 def new_position(
     ctx: click.Context,
+    position_spec: str | None,
     employer: str | None,
     job_title: str | None,
     location: str | None,
@@ -565,11 +581,24 @@ def new_position(
 ) -> None:
     """Create a new employment position.
 
-    Can be used interactively (no flags) or non-interactively (with flags).
-    For non-interactive mode, provide at least --employer, --title, and --start-date.
+    Can be used in three ways:
+    1. Pipe-separated: resume new position "Employer|Title|StartDate|EndDate"
+    2. Flags: resume new position --employer "X" --title "Y" --start-date "2022-01"
+    3. Interactive: resume new position
     """
     config = get_config()
     service = PositionService(config.positions_path)
+
+    # Parse pipe-separated format if provided
+    if position_spec:
+        try:
+            parsed = parse_position_flag(position_spec)
+            employer = employer or parsed["employer"]
+            job_title = job_title or parsed["title"]
+            start_date = start_date or parsed["start_date"]
+            end_date = end_date or parsed["end_date"]
+        except click.BadParameter as e:
+            raise click.UsageError(str(e)) from e
 
     # Determine interactive vs non-interactive mode
     non_interactive = employer is not None and job_title is not None and start_date is not None

@@ -450,6 +450,146 @@ positions:
         assert "position_id" in data["data"] or "id" in data["data"]
 
 
+class TestPositionPipeSeparated:
+    """Tests for pipe-separated position creation."""
+
+    def test_creates_position_pipe_separated(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should create position with pipe-separated format."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "position",
+                "TechCorp Industries|Senior Engineer|2022-01|2024-06",
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Position created" in result.output
+        assert (tmp_path / "positions.yaml").exists()
+
+        import yaml
+
+        with open(tmp_path / "positions.yaml") as f:
+            data = yaml.safe_load(f)
+
+        pos = list(data["positions"].values())[0]
+        assert pos["employer"] == "TechCorp Industries"
+        assert pos["title"] == "Senior Engineer"
+        assert pos["start_date"] == "2022-01"
+        assert pos["end_date"] == "2024-06"
+
+    def test_creates_position_pipe_without_end_date(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should create current position (no end date) with pipe format."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "position",
+                "Acme Corp|Consultant|2023-06",  # No end date (3 segments)
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Position created" in result.output
+
+        import yaml
+
+        with open(tmp_path / "positions.yaml") as f:
+            data = yaml.safe_load(f)
+
+        pos = list(data["positions"].values())[0]
+        assert pos["employer"] == "Acme Corp"
+        assert pos["title"] == "Consultant"
+        assert pos["start_date"] == "2023-06"
+        assert pos.get("end_date") is None
+
+    def test_pipe_format_json_output(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should return JSON output with pipe-separated format."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "--json",
+                "new",
+                "position",
+                "TestCorp|Developer|2024-01",
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        data = json.loads(result.output)
+        assert data["status"] == "success"
+        assert "position_id" in data["data"]
+
+    def test_flags_override_pipe_values(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should allow flags to override pipe-separated values."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "position",
+                "Pipe Employer|Pipe Title|2020-01|2022-01",
+                "--employer",
+                "Flag Employer",  # Override employer
+                "--title",
+                "Flag Title",  # Override title
+            ],
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+
+        import yaml
+
+        with open(tmp_path / "positions.yaml") as f:
+            data = yaml.safe_load(f)
+
+        pos = list(data["positions"].values())[0]
+        assert pos["employer"] == "Flag Employer"
+        assert pos["title"] == "Flag Title"
+        # These should still come from pipe since not overridden
+        assert pos["start_date"] == "2020-01"
+        assert pos["end_date"] == "2022-01"
+
+    def test_pipe_format_invalid_too_few_segments(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should error if too few segments in pipe format."""
+        monkeypatch.chdir(tmp_path)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "position",
+                "TechCorp|Engineer",  # Only 2 segments, need at least 3
+            ],
+        )
+
+        assert result.exit_code != 0
+        assert "format" in result.output.lower() or "StartDate" in result.output
+
+
 class TestListPositionsJson:
     """Tests for JSON output in list positions (AC#7)."""
 
