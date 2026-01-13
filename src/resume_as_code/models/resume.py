@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
+from resume_as_code.models.board_role import BoardRole
 from resume_as_code.models.certification import Certification
 from resume_as_code.models.education import Education
 
@@ -69,6 +70,7 @@ class ResumeData(BaseModel):
     education: list[Education] = Field(default_factory=list)
     certifications: list[Certification] = Field(default_factory=list)
     career_highlights: list[str] = Field(default_factory=list)
+    board_roles: list[BoardRole] = Field(default_factory=list)
 
     def get_active_certifications(self) -> list[Certification]:
         """Get certifications that should be displayed on resume.
@@ -81,6 +83,28 @@ class ResumeData(BaseModel):
         return [
             cert for cert in self.certifications if cert.display and cert.get_status() != "expired"
         ]
+
+    def get_sorted_board_roles(self) -> list[BoardRole]:
+        """Get board roles sorted for display.
+
+        Sorting priority:
+        1. Directors first (higher governance level)
+        2. Then by start_date descending (most recent first)
+
+        Only returns roles where display=True.
+
+        Returns:
+            List of displayable board roles sorted by type and date.
+        """
+        displayable = [role for role in self.board_roles if role.display]
+
+        # Define type priority: director=0, advisory=1, committee=2
+        type_priority = {"director": 0, "advisory": 1, "committee": 2}
+
+        return sorted(
+            displayable,
+            key=lambda role: (type_priority.get(role.type, 1), -(int(role.start_date[:4]))),
+        )
 
     @classmethod
     def from_work_units(

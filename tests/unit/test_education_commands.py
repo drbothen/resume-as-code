@@ -329,9 +329,7 @@ education:
         assert "UT Austin" in result.output
         assert "2012" in result.output
 
-    def test_list_education_empty(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_list_education_empty(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should handle empty education list."""
         config_path = tmp_path / ".resume.yaml"
         config_path.write_text("output_dir: ./dist\n")
@@ -532,9 +530,7 @@ education:
 class TestShowEducationCommand:
     """Tests for `resume show education` command."""
 
-    def test_show_education_success(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_show_education_success(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should show education details."""
         config_path = tmp_path / ".resume.yaml"
         config_path.write_text(

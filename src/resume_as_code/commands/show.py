@@ -11,6 +11,7 @@ from ruamel.yaml import YAML
 from resume_as_code.config import get_config
 from resume_as_code.models.errors import NotFoundError
 from resume_as_code.models.output import JSONResponse
+from resume_as_code.services.board_role_service import BoardRoleService
 from resume_as_code.services.certification_service import CertificationService
 from resume_as_code.services.education_service import EducationService
 from resume_as_code.services.highlight_service import HighlightService
@@ -504,4 +505,94 @@ def _output_highlight_rich(index: int, text: str, total: int) -> None:
     console.print(f"\n[bold cyan]Career Highlight #{index}[/bold cyan]")
     console.print(f"\n{text}")
     console.print(f"\n[dim]Highlight {index + 1} of {total}[/dim]")
+    console.print("")
+
+
+@show_group.command("board-role")
+@click.argument("organization")
+@click.pass_context
+@handle_errors
+def show_board_role(ctx: click.Context, organization: str) -> None:
+    """Show details of a specific board role.
+
+    ORGANIZATION is the organization name (partial match supported).
+    """
+    service = BoardRoleService(config_path=Path.cwd() / ".resume.yaml")
+    matching = service.find_board_roles_by_organization(organization)
+
+    if not matching:
+        raise NotFoundError(f"Board role not found: {organization}")
+
+    if len(matching) > 1:
+        console.print(f"[yellow]Multiple board roles match '{organization}':[/yellow]")
+        for br in matching:
+            console.print(f"  - {br.organization}: {br.role}")
+        console.print("[yellow]Please be more specific.[/yellow]")
+        raise SystemExit(1)
+
+    board_role = matching[0]
+
+    if ctx.obj.json_output:
+        _output_board_role_json(board_role)
+    else:
+        _output_board_role_rich(board_role)
+
+
+def _output_board_role_json(board_role: Any) -> None:
+    """Output board role details as JSON."""
+    from resume_as_code.models.board_role import BoardRole
+
+    if isinstance(board_role, BoardRole):
+        role_data = {
+            "organization": board_role.organization,
+            "role": board_role.role,
+            "type": board_role.type,
+            "start_date": board_role.start_date,
+            "end_date": board_role.end_date,
+            "focus": board_role.focus,
+            "display": board_role.display,
+            "is_current": board_role.is_current,
+            "date_range": board_role.format_date_range(),
+        }
+
+        response = JSONResponse(
+            status="success",
+            command="show board-role",
+            data={"board_role": role_data},
+        )
+        json_output(response.to_json())
+
+
+def _output_board_role_rich(board_role: Any) -> None:
+    """Output board role details with Rich formatting."""
+    from resume_as_code.models.board_role import BoardRole
+
+    if not isinstance(board_role, BoardRole):
+        return
+
+    # Header
+    console.print(f"\n[bold cyan]{board_role.role}[/bold cyan]")
+    console.print(f"[green]{board_role.organization}[/green]")
+
+    # Type
+    console.print("")
+    console.print(f"[bold]Type:[/bold] {board_role.type}")
+
+    # Dates
+    console.print(f"[bold]Dates:[/bold] {board_role.format_date_range()}")
+
+    # Status
+    if board_role.is_current:
+        console.print("[bold]Status:[/bold] [green]Current[/green]")
+    else:
+        console.print("[bold]Status:[/bold] [dim]Past[/dim]")
+
+    # Focus
+    if board_role.focus:
+        console.print(f"\n[bold]Focus:[/bold]\n  {board_role.focus}")
+
+    # Display setting
+    if not board_role.display:
+        console.print("\n[dim]Note: This board role is hidden from resume output[/dim]")
+
     console.print("")

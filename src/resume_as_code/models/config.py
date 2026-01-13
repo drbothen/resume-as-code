@@ -9,6 +9,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
 
+from resume_as_code.models.board_role import BoardRole
 from resume_as_code.models.certification import Certification
 from resume_as_code.models.education import Education
 
@@ -98,6 +99,9 @@ class ResumeConfig(BaseModel):
 
     # Career highlights (CTO/executive hybrid format)
     career_highlights: list[str] = Field(default_factory=list)
+
+    # Board & Advisory Roles
+    board_roles: list[BoardRole] = Field(default_factory=list)
 
     @field_validator("career_highlights", mode="before")
     @classmethod

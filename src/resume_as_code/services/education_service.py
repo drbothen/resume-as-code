@@ -131,11 +131,7 @@ class EducationService:
         education = self.load_education()
         query_lower = query.lower().strip()
 
-        return [
-            edu
-            for edu in education
-            if query_lower in edu.degree.lower()
-        ]
+        return [edu for edu in education if query_lower in edu.degree.lower()]
 
     def remove_education(self, degree: str) -> bool:
         """Remove an education record by degree name.
@@ -164,8 +160,7 @@ class EducationService:
         degree_lower = degree.lower().strip()
 
         data["education"] = [
-            e for e in data["education"]
-            if e.get("degree", "").lower().strip() != degree_lower
+            e for e in data["education"] if e.get("degree", "").lower().strip() != degree_lower
         ]
 
         if len(data["education"]) == original_count:

@@ -11,6 +11,7 @@ from ruamel.yaml import YAML
 
 from resume_as_code.config import get_config
 from resume_as_code.models.output import JSONResponse
+from resume_as_code.services.board_role_service import BoardRoleService
 from resume_as_code.services.certification_service import CertificationService
 from resume_as_code.services.education_service import EducationService
 from resume_as_code.services.highlight_service import HighlightService
@@ -222,6 +223,33 @@ def list_highlights(ctx: click.Context) -> None:
         _output_highlights_table(highlights)
 
 
+@list_command.command("board-roles")
+@click.pass_context
+@handle_errors
+def list_board_roles(ctx: click.Context) -> None:
+    """List all board and advisory roles."""
+    service = BoardRoleService(config_path=Path.cwd() / ".resume.yaml")
+    board_roles = service.load_board_roles()
+
+    if not board_roles:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="success",
+                command="list board-roles",
+                data={"board_roles": [], "count": 0},
+            )
+            json_output(response.to_json())
+        else:
+            info("No board roles found.")
+            console.print("[dim]Create one with: resume new board-role[/dim]")
+        return
+
+    if ctx.obj.json_output:
+        _output_board_roles_json(board_roles)
+    else:
+        _output_board_roles_table(board_roles)
+
+
 def _output_highlights_json(highlights: list[str]) -> None:
     """Output highlights as JSON."""
     highlight_data = [{"index": idx, "text": text} for idx, text in enumerate(highlights)]
@@ -251,6 +279,61 @@ def _output_highlights_table(highlights: list[str]) -> None:
             "\n[yellow]Tip: Research suggests a maximum of 4 career highlights "
             "for optimal impact.[/yellow]"
         )
+
+
+def _output_board_roles_json(board_roles: list[Any]) -> None:
+    """Output board roles as JSON."""
+    from resume_as_code.models.board_role import BoardRole
+
+    role_data = []
+    for role in board_roles:
+        if isinstance(role, BoardRole):
+            data = {
+                "organization": role.organization,
+                "role": role.role,
+                "type": role.type,
+                "start_date": role.start_date,
+                "end_date": role.end_date,
+                "focus": role.focus,
+                "display": role.display,
+                "is_current": role.is_current,
+                "date_range": role.format_date_range(),
+            }
+            role_data.append(data)
+
+    response = JSONResponse(
+        status="success",
+        command="list board-roles",
+        data={"board_roles": role_data, "count": len(role_data)},
+    )
+    json_output(response.to_json())
+
+
+def _output_board_roles_table(board_roles: list[Any]) -> None:
+    """Output board roles as Rich table."""
+    from resume_as_code.models.board_role import BoardRole
+
+    table = Table(title="Board & Advisory Roles")
+    table.add_column("Organization", style="cyan", no_wrap=True)
+    table.add_column("Role")
+    table.add_column("Type", style="dim")
+    table.add_column("Dates")
+    table.add_column("Status")
+
+    for role in board_roles:
+        if isinstance(role, BoardRole):
+            status_display = "[green]Current[/green]" if role.is_current else "[dim]Past[/dim]"
+
+            table.add_row(
+                role.organization,
+                role.role,
+                role.type,
+                role.format_date_range(),
+                status_display,
+            )
+
+    console.print(table)
+    console.print(f"\n[dim]{len(board_roles)} Board Role(s)[/dim]")
 
 
 def _output_education_json(education: list[Any]) -> None:

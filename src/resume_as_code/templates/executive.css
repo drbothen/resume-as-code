@@ -224,6 +224,35 @@ h2 {
     margin-bottom: 0.35em;
 }
 
+/* Board & Advisory Roles */
+.board-roles {
+    page-break-inside: avoid;
+    margin-top: 1.25em;
+}
+
+.board-entry {
+    margin-bottom: 0.75em;
+    page-break-inside: avoid;
+}
+
+.board-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.board-entry .role-title {
+    font-style: italic;
+    margin: 0.25em 0 0 0;
+    color: #333;
+}
+
+.board-entry .focus {
+    font-size: 10pt;
+    color: #555;
+    margin: 0.25em 0 0 0;
+}
+
 /* Education */
 .education {
     margin-top: 1.25em;
@@ -281,12 +310,17 @@ section {
 
     /* Ensure page breaks are respected */
     .position,
+    .board-entry,
     section {
         page-break-inside: avoid;
     }
 
     .position {
         page-break-after: auto;
+    }
+
+    .board-entry .focus {
+        color: #555;
     }
 }
 

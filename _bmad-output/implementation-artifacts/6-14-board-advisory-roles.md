@@ -1,6 +1,6 @@
 # Story 6.14: Board & Advisory Roles Section
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -75,46 +75,46 @@ So that **my governance experience and strategic advisory work is visible to rec
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create BoardRole model (AC: #1)
-  - [ ] 1.1: Create `models/board_role.py` with BoardRole Pydantic model
-  - [ ] 1.2: Add fields: organization, role, type, start_date, end_date, focus, display
-  - [ ] 1.3: Add type enum: director, advisory, committee
-  - [ ] 1.4: Add date validation (YYYY-MM format)
+- [x] Task 1: Create BoardRole model (AC: #1)
+  - [x] 1.1: Create `models/board_role.py` with BoardRole Pydantic model
+  - [x] 1.2: Add fields: organization, role, type, start_date, end_date, focus, display
+  - [x] 1.3: Add type enum: director, advisory, committee
+  - [x] 1.4: Add date validation (YYYY-MM format)
 
-- [ ] Task 2: Update config model (AC: #1)
-  - [ ] 2.1: Add `board_roles: list[BoardRole] = Field(default_factory=list)` to `ResumeConfig`
-  - [ ] 2.2: Add BoardRole import to config module
+- [x] Task 2: Update config model (AC: #1)
+  - [x] 2.1: Add `board_roles: list[BoardRole] = Field(default_factory=list)` to `ResumeConfig`
+  - [x] 2.2: Add BoardRole import to config module
 
-- [ ] Task 3: Update ResumeData model (AC: #2, #3)
-  - [ ] 3.1: Add `board_roles: list[BoardRole]` to `ResumeData`
-  - [ ] 3.2: Update `ResumeData.from_config()` to load board roles
-  - [ ] 3.3: Sort board roles: directors first, then by start_date descending
-  - [ ] 3.4: Pass board_roles to template context
+- [x] Task 3: Update ResumeData model (AC: #2, #3)
+  - [x] 3.1: Add `board_roles: list[BoardRole]` to `ResumeData`
+  - [x] 3.2: Update `ResumeData.from_config()` to load board roles
+  - [x] 3.3: Sort board roles: directors first, then by start_date descending
+  - [x] 3.4: Pass board_roles to template context
 
-- [ ] Task 4: Update templates (AC: #2, #3, #4)
-  - [ ] 4.1: Add board roles section to `templates/executive.html`
-  - [ ] 4.2: Position section after Certifications, before Education
-  - [ ] 4.3: Add CSS styling for board roles in `templates/executive.css`
-  - [ ] 4.4: Ensure graceful absence when no roles configured
+- [x] Task 4: Update templates (AC: #2, #3, #4)
+  - [x] 4.1: Add board roles section to `templates/executive.html`
+  - [x] 4.2: Position section after Certifications, before Education
+  - [x] 4.3: Add CSS styling for board roles in `templates/executive.css`
+  - [x] 4.4: Ensure graceful absence when no roles configured
 
-- [ ] Task 5: Create board role management commands (AC: #5, #6, #7)
-  - [ ] 5.1: Add `resume new board-role` command
-  - [ ] 5.2: Support interactive prompts for all fields
-  - [ ] 5.3: Support flags for non-interactive mode
-  - [ ] 5.4: Add `resume list board-roles` command with table output
-  - [ ] 5.5: Add `resume remove board-role` command
+- [x] Task 5: Create board role management commands (AC: #5, #6, #7)
+  - [x] 5.1: Add `resume new board-role` command
+  - [x] 5.2: Support interactive prompts for all fields
+  - [x] 5.3: Support flags for non-interactive mode
+  - [x] 5.4: Add `resume list board-roles` command with table output
+  - [x] 5.5: Add `resume remove board-role` command
 
-- [ ] Task 6: Testing
-  - [ ] 6.1: Add unit tests for BoardRole model
-  - [ ] 6.2: Add tests for config loading with board roles
-  - [ ] 6.3: Add tests for template rendering with/without board roles
-  - [ ] 6.4: Add tests for board role management commands
-  - [ ] 6.5: Visual inspection of generated PDF
+- [x] Task 6: Testing
+  - [x] 6.1: Add unit tests for BoardRole model
+  - [x] 6.2: Add tests for config loading with board roles
+  - [x] 6.3: Add tests for template rendering with/without board roles
+  - [x] 6.4: Add tests for board role management commands
+  - [x] 6.5: Visual inspection of generated PDF
 
-- [ ] Task 7: Code quality verification
-  - [ ] 7.1: Run `ruff check src tests --fix`
-  - [ ] 7.2: Run `mypy src --strict` with zero errors
-  - [ ] 7.3: Run `pytest` - all tests pass
+- [x] Task 7: Code quality verification
+  - [x] 7.1: Run `ruff check src tests --fix`
+  - [x] 7.2: Run `mypy src --strict` with zero errors
+  - [x] 7.3: Run `pytest` - all tests pass
 
 ## Dev Notes
 
@@ -256,11 +256,45 @@ uv run resume build --jd examples/job-description.txt --template executive
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+- All 27 board role unit tests pass
+- Full test suite: 1408 tests pass
+- ruff check: All checks passed
+- mypy --strict: Success on all source files
+
 ### Completion Notes List
 
+1. Created BoardRole Pydantic model with type enum (director/advisory/committee) and YYYY-MM date validation
+2. Added board_roles field to ResumeConfig with BoardRole import
+3. Added board_roles to ResumeData with get_sorted_board_roles() method (directors first, then by date desc)
+4. Added Board & Advisory Roles section to executive.html template with conditional rendering
+5. Added CSS styling for board-roles, board-entry, board-header, role-title, focus classes
+6. Created `resume new board-role` command with interactive, flags, and pipe-separated modes
+7. Created `resume list board-roles` command with Rich table output
+8. Created `resume show board-role` command with partial matching
+9. Created `resume remove board-role` command with confirmation prompt
+10. Created BoardRoleService for CRUD operations with YAML persistence
+11. All acceptance criteria verified and tests passing
+
 ### File List
+
+**New Files:**
+- `src/resume_as_code/models/board_role.py` - BoardRole Pydantic model with type enum and date validation
+- `src/resume_as_code/services/board_role_service.py` - Service for loading, saving, finding, removing board roles
+- `tests/unit/test_board_role.py` - 27 unit tests for model, validation, config loading, sorting
+- `tests/unit/test_board_role_commands.py` - CLI command tests for new/list/show/remove
+
+**Modified Files:**
+- `src/resume_as_code/models/config.py` - Added board_roles field to ResumeConfig
+- `src/resume_as_code/models/resume.py` - Added board_roles field and get_sorted_board_roles() method
+- `src/resume_as_code/models/__init__.py` - Added BoardRole export
+- `src/resume_as_code/commands/new.py` - Added new_board_role command
+- `src/resume_as_code/commands/list_cmd.py` - Added list_board_roles command
+- `src/resume_as_code/commands/show.py` - Added show_board_role command
+- `src/resume_as_code/commands/remove.py` - Added remove_board_role command
+- `src/resume_as_code/templates/executive.html` - Added Board & Advisory Roles section
+- `src/resume_as_code/templates/executive.css` - Added board roles styling
 

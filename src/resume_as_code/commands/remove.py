@@ -9,6 +9,7 @@ from rich.prompt import Confirm
 
 from resume_as_code.config import get_config
 from resume_as_code.models.output import JSONResponse
+from resume_as_code.services.board_role_service import BoardRoleService
 from resume_as_code.services.certification_service import CertificationService
 from resume_as_code.services.education_service import EducationService
 from resume_as_code.services.highlight_service import HighlightService
@@ -459,3 +460,92 @@ def remove_work_unit(ctx: click.Context, work_unit_id: str, yes: bool) -> None:
         else:
             console.print(f"[red]Failed to remove work unit: {e}[/red]")
         raise SystemExit(1) from e
+
+
+@remove_group.command("board-role")
+@click.argument("organization")
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
+@click.pass_context
+@handle_errors
+def remove_board_role(ctx: click.Context, organization: str, yes: bool) -> None:
+    """Remove a board role by organization name.
+
+    Performs case-insensitive partial matching on the organization name.
+    If multiple board roles match, asks for clarification.
+    """
+    service = BoardRoleService(config_path=Path.cwd() / ".resume.yaml")
+
+    # Find matching board roles
+    matching = service.find_board_roles_by_organization(organization)
+
+    if not matching:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="error",
+                command="remove board-role",
+                data={"message": f"No board role found matching '{organization}'"},
+            )
+            click.echo(response.to_json())
+        else:
+            console.print(f"[red]No board role found matching '{organization}'[/red]")
+        raise SystemExit(4)  # NOT_FOUND
+
+    if len(matching) > 1:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="error",
+                command="remove board-role",
+                data={
+                    "message": f"Multiple board roles match '{organization}'",
+                    "matches": [br.organization for br in matching],
+                },
+            )
+            click.echo(response.to_json())
+        else:
+            console.print(f"[yellow]Multiple board roles match '{organization}':[/yellow]")
+            for br in matching:
+                console.print(f"  - {br.organization}: {br.role}")
+            console.print("[yellow]Please be more specific.[/yellow]")
+        raise SystemExit(1)
+
+    board_role = matching[0]
+
+    # Confirm removal unless --yes flag is set
+    if (
+        not yes
+        and not ctx.obj.json_output
+        and not Confirm.ask(
+            f"Remove board role '[cyan]{board_role.role}[/cyan]' at '{board_role.organization}'?"
+        )
+    ):
+        info("Cancelled.")
+        return
+
+    # Remove the board role
+    removed = service.remove_board_role(board_role.organization)
+
+    if removed:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="success",
+                command="remove board-role",
+                data={
+                    "removed": True,
+                    "organization": board_role.organization,
+                    "role": board_role.role,
+                },
+            )
+            click.echo(response.to_json())
+        else:
+            success(f"Removed board role: {board_role.role}")
+    else:
+        if ctx.obj.json_output:
+            response = JSONResponse(
+                status="error",
+                command="remove board-role",
+                data={"message": "Failed to remove board role"},
+            )
+            click.echo(response.to_json())
+        else:
+            console.print("[red]Failed to remove board role[/red]")
+        raise SystemExit(1)

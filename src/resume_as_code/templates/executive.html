@@ -98,6 +98,37 @@
     </section>
     {% endfor %}
 
+    {% if resume.get_active_certifications() %}
+    <section class="certifications">
+        <h2>Certifications</h2>
+        <ul class="cert-list">
+            {% for cert in resume.get_active_certifications() %}
+            <li>
+                <strong>{{ cert.name }}</strong>{% if cert.issuer %}, {{ cert.issuer }}{% endif %}{% if cert.date %}, {{ cert.date[:4] }}{% endif %}{% if cert.expires %} (expires {{ cert.expires[:4] }}){% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    {% if resume.get_sorted_board_roles() %}
+    <section class="board-roles">
+        <h2>Board & Advisory Roles</h2>
+        {% for role in resume.get_sorted_board_roles() %}
+        <div class="board-entry">
+            <div class="board-header">
+                <strong>{{ role.organization }}</strong>
+                <span class="dates">{{ role.format_date_range() }}</span>
+            </div>
+            <p class="role-title">{{ role.role }}</p>
+            {% if role.focus %}
+            <p class="focus">{{ role.focus }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
     {% if resume.education %}
     <section class="education">
         <h2>Education</h2>
@@ -110,19 +141,6 @@
         </p>
         {% endif %}
         {% endfor %}
-    </section>
-    {% endif %}
-
-    {% if resume.get_active_certifications() %}
-    <section class="certifications">
-        <h2>Certifications</h2>
-        <ul class="cert-list">
-            {% for cert in resume.get_active_certifications() %}
-            <li>
-                <strong>{{ cert.name }}</strong>{% if cert.issuer %}, {{ cert.issuer }}{% endif %}{% if cert.date %}, {{ cert.date[:4] }}{% endif %}{% if cert.expires %} (expires {{ cert.expires[:4] }}){% endif %}
-            </li>
-            {% endfor %}
-        </ul>
     </section>
     {% endif %}
 </body>

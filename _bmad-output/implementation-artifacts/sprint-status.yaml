@@ -118,9 +118,9 @@ development_status:
   6-9-inline-position-creation: done  # LLM-optimized UX
   6-10-claude-md-documentation-update: done
   6-11-certification-management-commands: done
-  6-12-education-management-commands: review
-  6-13-career-highlights-section: review  # CTO hybrid format - FR49
-  6-14-board-advisory-roles: ready-for-dev  # Governance experience - FR50
+  6-12-education-management-commands: done
+  6-13-career-highlights-section: done  # CTO hybrid format - FR49
+  6-14-board-advisory-roles: done  # Governance experience - FR50
   6-15-publications-speaking: ready-for-dev  # Thought leadership - FR51
   6-16-enhanced-scope-indicators: ready-for-dev  # P&L, revenue, geography - FR52
   6-17-cto-resume-template: ready-for-dev  # CTO template variant - FR53
