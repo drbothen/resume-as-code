@@ -1,48 +1,283 @@
 # Resume as Code
 
-CLI tool for git-native resume generation from structured work units.
+> Treat your career data as structured, queryable truth.
 
-## Documentation
+CLI tool for git-native resume generation from structured Work Units.
 
-- [Philosophy](./docs/philosophy.md) — Why "Resume as Code" works
-- [Data Model](./docs/data-model.md) — Work Units, Positions, and other entities
-- [Workflow Guide](./docs/workflow.md) — The Capture → Validate → Plan → Build pipeline
+## The Philosophy
 
-See the [docs folder](./docs/) for the complete documentation.
+Your career accomplishments are **immutable facts** — what you've done doesn't change. But every job application requires a different view of your experience.
 
-## Installation
+Resume as Code inverts the traditional model: instead of editing documents, you maintain structured **Work Units** and generate targeted resumes as **queries** against your capability graph. The resume becomes a view, not a source of truth.
+
+[Read the full philosophy](./docs/philosophy.md)
+
+## Features
+
+- **Work Unit Capture** — Record accomplishments with Problem-Action-Result structure and archetype templates
+- **Schema Validation** — Ensure data quality with actionable feedback on weak verbs, missing metrics, and incomplete fields
+- **Hybrid Ranking** — BM25 keyword matching + semantic similarity for intelligent Work Unit selection
+- **Skill Coverage Analysis** — See which skills are covered and identify gaps before submitting
+- **Multiple Output Formats** — Generate PDF and DOCX with consistent formatting
+- **Executive Templates** — CTO/VP-level templates with career highlights, board roles, and publications
+- **Position Management** — Track employment history with scope indicators (revenue, team size, P&L)
+- **Certification Tracking** — Manage credentials with expiration status monitoring
+- **Full Provenance** — Manifest tracks exactly which Work Units were included and why
+
+## Quick Start
+
+### Installation
 
 ```bash
+# Clone and install
+git clone https://github.com/your-org/resume-as-code
+cd resume-as-code
 uv sync --all-extras
 ```
 
-### Platform Requirements
-
-**macOS (PDF Generation):**
-
-WeasyPrint requires system libraries for PDF generation. Install via Homebrew:
+**macOS PDF Generation** — WeasyPrint requires system libraries:
 
 ```bash
 brew install pango cairo
-```
-
-If you encounter `OSError: cannot load library 'libpango-1.0-0'`, set the library path:
-
-```bash
 export DYLD_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_LIBRARY_PATH"
 ```
 
-Add this to your shell profile (`~/.zshrc` or `~/.bashrc`) for persistence.
-
-## Usage
+### Create Your First Work Unit
 
 ```bash
-uv run resume --help
+# Interactive mode with archetype template
+uv run resume new work-unit --archetype greenfield
 ```
+
+### Validate Your Data
+
+```bash
+uv run resume validate
+```
+
+### Generate a Resume
+
+```bash
+# Preview what will be selected
+uv run resume plan --jd job-description.txt
+
+# Generate PDF and DOCX
+uv run resume build --jd job-description.txt
+```
+
+Check `dist/` for your generated resume files.
+
+## Command Reference
+
+### Resource Creation
+
+| Command | Description |
+|---------|-------------|
+| `resume new work-unit` | Create a Work Unit (use `--archetype` for templates) |
+| `resume new position` | Create an employment position |
+| `resume new certification` | Add a professional certification |
+| `resume new education` | Add an education entry |
+| `resume new publication` | Add a publication or speaking engagement |
+| `resume new board-role` | Add a board or advisory position |
+| `resume new highlight` | Add a career highlight (executive format) |
+
+### Resource Management
+
+| Command | Description |
+|---------|-------------|
+| `resume list` | List all Work Units |
+| `resume list positions` | List employment positions |
+| `resume list certifications` | List certifications with expiration status |
+| `resume show work-unit <id>` | Show Work Unit details |
+| `resume show position <id>` | Show position details |
+| `resume remove work-unit <id>` | Remove a Work Unit |
+
+### Validation and Generation
+
+| Command | Description |
+|---------|-------------|
+| `resume validate` | Validate Work Units against schema |
+| `resume validate --content-quality` | Check weak verbs and quantification |
+| `resume validate --check-positions` | Verify position references exist |
+| `resume plan --jd <file>` | Preview Work Unit selection for a JD |
+| `resume build --jd <file>` | Generate resume files |
+
+### Utility Commands
+
+| Command | Description |
+|---------|-------------|
+| `resume config` | View current configuration |
+| `resume config --list` | Show all config values with sources |
+| `resume cache stats` | Show embedding cache statistics |
+| `resume cache clear` | Clear stale cache entries |
+
+### Global Flags
+
+| Flag | Description |
+|------|-------------|
+| `--json` | Output in JSON format for scripting |
+| `-v, --verbose` | Show verbose debug output |
+| `-q, --quiet` | Suppress output, exit code only |
+
+## Examples
+
+### Creating Work Units for Different Scenarios
+
+```bash
+# Project from scratch
+uv run resume new work-unit --archetype greenfield \
+  --title "Built multi-region deployment platform"
+
+# Incident response
+uv run resume new work-unit --archetype incident \
+  --title "Resolved P1 outage affecting 50K users"
+
+# Leadership/team building
+uv run resume new work-unit --archetype leadership \
+  --title "Scaled engineering team from 5 to 25 engineers"
+```
+
+### Creating Position History
+
+```bash
+# Pipe-separated format (LLM-friendly)
+uv run resume new position "TechCorp|Senior Platform Engineer|2022-01|"
+
+# With executive scope indicators
+uv run resume new position \
+  --employer "Acme Corp" \
+  --title "CTO" \
+  --start-date 2020-01 \
+  --scope-revenue "\$500M" \
+  --scope-team-size 150 \
+  --scope-pl "\$100M"
+```
+
+### Linking Work Units to Positions
+
+```bash
+# Check position IDs
+uv run resume --json list positions | jq '.[].id'
+
+# Create work unit linked to position
+uv run resume new work-unit \
+  --position-id pos-techcorp-senior-platform-engineer \
+  --title "Reduced deployment time by 80%"
+
+# Or create both together
+uv run resume new work-unit \
+  --position "StartupXYZ|Lead Engineer|2023-01|" \
+  --title "Led cloud migration saving \$2M annually"
+```
+
+### Using JSON Output for Scripting
+
+```bash
+# Get work units as JSON
+uv run resume --json list | jq '.data[] | .id'
+
+# Validate and check for errors
+uv run resume --json validate
+if [ $? -ne 0 ]; then echo "Validation failed"; fi
+
+# Plan and extract selected work units
+uv run resume --json plan --jd job.txt | jq '.selected_work_units[].id'
+```
+
+### Adding Certifications and Education
+
+```bash
+# Certification with expiration
+uv run resume new certification "CISSP|ISC2|2023-06|2026-06"
+
+# Education
+uv run resume new education "BS Computer Science|UT Austin|2012|Magna Cum Laude"
+```
+
+## Configuration
+
+### Project Configuration (`.resume.yaml`)
+
+```yaml
+# Profile (resume header)
+profile:
+  name: "Your Name"
+  email: "you@example.com"
+  phone: "+1-555-123-4567"
+  location: "Austin, TX"
+  linkedin: https://linkedin.com/in/yourprofile
+  github: https://github.com/yourhandle
+  title: "Senior Software Engineer"
+
+# Output settings
+output_dir: ./dist
+default_format: both  # pdf, docx, or both
+default_template: modern
+
+# Ranking weights (adjust for different JD styles)
+scoring_weights:
+  bm25_weight: 1.0      # Keyword matching
+  semantic_weight: 1.0  # Meaning similarity
+
+# Skills curation
+skills:
+  max_display: 15
+  exclude:
+    - "Microsoft Office"
+  prioritize:
+    - "Kubernetes"
+    - "AWS"
+
+# Executive format additions
+career_highlights:
+  - "Led $500M digital transformation"
+  - "Built engineering org from 15 to 150"
+
+certifications:
+  - name: "AWS Solutions Architect"
+    issuer: "Amazon"
+    date: "2023-01"
+
+education:
+  - degree: "BS Computer Science"
+    institution: "UT Austin"
+    year: "2012"
+```
+
+### Configuration Hierarchy
+
+Resume as Code loads configuration from multiple sources (highest priority first):
+
+1. **CLI flags** — `--output-dir ./custom`
+2. **Environment variables** — `RESUME_OUTPUT_DIR`
+3. **Project config** — `.resume.yaml` in project root
+4. **User config** — `~/.config/resume-as-code/config.yaml`
+5. **Defaults** — Built-in defaults
+
+See [Data Model Reference](./docs/data-model.md) for complete schema documentation.
+
+## Documentation
+
+For detailed documentation, see the [docs/](./docs/) folder:
+
+| Document | Description |
+|----------|-------------|
+| [Philosophy](./docs/philosophy.md) | Why "Resume as Code" works — the data-centric approach |
+| [Data Model](./docs/data-model.md) | Work Units, Positions, and entity schemas |
+| [Workflow](./docs/workflow.md) | The Capture → Validate → Plan → Build pipeline |
 
 ## Development
 
+### Setup
+
 ```bash
+# Clone repository
+git clone https://github.com/your-org/resume-as-code
+cd resume-as-code
+
+# Install dependencies
+uv sync --all-extras
+
 # Run tests
 uv run pytest
 
@@ -51,3 +286,54 @@ uv run ruff check src tests --fix
 uv run ruff format src tests
 uv run mypy src --strict
 ```
+
+### Project Structure
+
+```
+src/resume_as_code/
+├── commands/     # CLI commands (Click)
+├── models/       # Pydantic data models
+├── services/     # Business logic
+├── providers/    # Output generation (PDF, DOCX)
+└── utils/        # Utility functions
+```
+
+## Contributing
+
+### Development Workflow
+
+1. **Fork and clone** the repository
+2. **Create a feature branch** from `develop`: `git checkout -b feature/your-feature`
+3. **Make changes** with tests
+4. **Run quality checks**: `uv run ruff check && uv run mypy src --strict && uv run pytest`
+5. **Submit a PR** to `develop`
+
+### Code Quality Requirements
+
+- Type hints on all public functions (`mypy --strict` must pass)
+- Tests for new functionality (`pytest` with good coverage)
+- Linting compliance (`ruff check` with zero errors)
+- Conventional commit messages
+
+### Commit Message Format
+
+```
+<type>(<scope>): <description>
+
+feat(cli): add --format flag to build command
+fix(ranking): handle empty job descriptions
+docs(readme): add configuration examples
+```
+
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`
+
+### Branch Strategy
+
+- `main` — Production releases
+- `develop` — Integration branch (PR target)
+- `feature/*` — New features
+- `fix/*` — Bug fixes
+
+## License
+
+MIT License

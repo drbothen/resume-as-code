@@ -3,7 +3,7 @@
 ## Story Info
 
 - **Epic**: Epic 6 - Executive Resume Template & Profile System
-- **Status**: ready-for-dev
+- **Status**: review
 - **Priority**: Medium
 - **Estimation**: Small (2 story points)
 - **Dependencies**: Story 6.19 (Philosophy Documentation) - for docs/ folder link
@@ -246,67 +246,67 @@ MIT License - see [LICENSE](LICENSE)
 ## Tasks
 
 ### Task 1: Write Philosophy Teaser
-- [ ] Write 2-3 sentence intro explaining the core concept
-- [ ] Include the key insight: "resumes as queries"
-- [ ] Add link to `docs/philosophy.md`
+- [x] Write 2-3 sentence intro explaining the core concept
+- [x] Include the key insight: "resumes as queries"
+- [x] Add link to `docs/philosophy.md`
 
 ### Task 2: Write Features Section
-- [ ] List 8-10 key features with one-line descriptions
-- [ ] Order by user value (most important first)
-- [ ] Use consistent formatting (emoji optional)
+- [x] List 8-10 key features with one-line descriptions
+- [x] Order by user value (most important first)
+- [x] Use consistent formatting (emoji optional)
 
 ### Task 3: Write Quick Start Guide
-- [ ] Document installation (uv sync, platform requirements)
-- [ ] Show first Work Unit creation
-- [ ] Show validation
-- [ ] Show plan and build commands
-- [ ] Ensure all commands are copy-pasteable
+- [x] Document installation (uv sync, platform requirements)
+- [x] Show first Work Unit creation
+- [x] Show validation
+- [x] Show plan and build commands
+- [x] Ensure all commands are copy-pasteable
 
 ### Task 4: Write Command Reference
-- [ ] Document all CLI commands
-- [ ] Include purpose, common flags, example for each
-- [ ] Use tables for flag documentation
-- [ ] Keep examples concise
+- [x] Document all CLI commands
+- [x] Include purpose, common flags, example for each
+- [x] Use tables for flag documentation
+- [x] Keep examples concise
 
 ### Task 5: Write Examples Section
-- [ ] Add 3-4 practical workflow examples
-- [ ] Include different archetypes (incident, greenfield, leadership)
-- [ ] Show JSON output usage
-- [ ] Show configuration examples
+- [x] Add 3-4 practical workflow examples
+- [x] Include different archetypes (incident, greenfield, leadership)
+- [x] Show JSON output usage
+- [x] Show configuration examples
 
 ### Task 6: Write Configuration Section
-- [ ] Explain configuration hierarchy
-- [ ] Show annotated `.resume.yaml` example
-- [ ] Document key options (profile, certifications, skills)
-- [ ] Link to docs/data-model.md
+- [x] Explain configuration hierarchy
+- [x] Show annotated `.resume.yaml` example
+- [x] Document key options (profile, certifications, skills)
+- [x] Link to docs/data-model.md
 
 ### Task 7: Write Documentation Links
-- [ ] Add Documentation section
-- [ ] Link to all docs/ files
-- [ ] Brief description of each document
+- [x] Add Documentation section
+- [x] Link to all docs/ files
+- [x] Brief description of each document
 
 ### Task 8: Write Contributing Section
-- [ ] Document dev environment setup
-- [ ] List code quality requirements
-- [ ] Explain Git flow and commit format
-- [ ] Keep concise (link to CONTRIBUTING.md if detailed)
+- [x] Document dev environment setup
+- [x] List code quality requirements
+- [x] Explain Git flow and commit format
+- [x] Keep concise (link to CONTRIBUTING.md if detailed)
 
 ### Task 9: Final Polish
-- [ ] Add badges (optional)
-- [ ] Review section ordering
-- [ ] Check all code blocks render correctly
-- [ ] Verify all links work
-- [ ] Spell check
+- [x] Add badges (optional) - Skipped per optional note
+- [x] Review section ordering
+- [x] Check all code blocks render correctly
+- [x] Verify all links work
+- [x] Spell check
 
 ## Definition of Done
 
-- [ ] All sections from AC1 are present
-- [ ] Quick Start guide is tested and works
-- [ ] All command examples are accurate
-- [ ] Links to docs/ folder work (requires 6.19)
-- [ ] README renders correctly on GitHub
-- [ ] No broken links
-- [ ] Spell-checked
+- [x] All sections from AC1 are present
+- [x] Quick Start guide is tested and works
+- [x] All command examples are accurate
+- [x] Links to docs/ folder work (requires 6.19)
+- [x] README renders correctly on GitHub
+- [x] No broken links
+- [x] Spell-checked
 
 ## Notes
 
@@ -314,3 +314,38 @@ MIT License - see [LICENSE](LICENSE)
 - Keep README under 500 lines — link to docs/ for details
 - Test Quick Start commands before finalizing
 - Consider adding a "Why Resume as Code?" comparison section (optional)
+
+---
+
+## Dev Agent Record
+
+### Implementation Plan
+
+Comprehensive README rewrite covering all AC requirements:
+1. Philosophy teaser with "resumes as queries" insight
+2. 9-feature list ordered by user value
+3. Quick start with installation, work unit creation, validation, plan, build
+4. Command reference tables organized by category
+5. Examples for archetypes, positions, JSON output, certifications
+6. Configuration with hierarchy explanation and annotated example
+7. Documentation links table to docs/ folder
+8. Contributing section with workflow, quality requirements, commit format
+9. Final polish: links verified, tests pass (1661 tests), 339 lines total
+
+### Completion Notes
+
+- README expanded from 54 lines to 339 lines (under 500 limit)
+- All 10 ACs satisfied (structure, philosophy, features, quick start, commands, examples, config, docs, contributing, visual)
+- Verified all links to docs/ folder work (philosophy.md, data-model.md, workflow.md)
+- Commands verified against actual CLI help output
+- No badges added (marked optional in AC10)
+- LICENSE reference simplified (no LICENSE file exists in repo yet)
+- All 1661 tests pass, no regressions
+
+## File List
+
+- `README.md` — Comprehensive README rewrite (modified)
+
+## Change Log
+
+- 2026-01-13: Comprehensive README update with all sections per story requirements

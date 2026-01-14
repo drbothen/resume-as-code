@@ -126,6 +126,6 @@ development_status:
   6-17-cto-resume-template: done  # CTO template variant - FR53
   6-18-enhanced-plan-data-model-preview: done  # Full data preview in plan - builds on 6.2, 6.6, 6.7
   6-19-philosophy-documentation: ready-for-review  # docs/ folder with philosophy, diagrams, data model docs
-  6-20-readme-update: ready-for-dev  # Comprehensive README with features, quick start, examples (depends on 6.19)
+  6-20-readme-update: review  # Comprehensive README with features, quick start, examples (depends on 6.19)
   6-21-github-pages-site: ready-for-dev  # Docusaurus marketing site with interactive demos (depends on 6.19)
   epic-6-retrospective: optional
