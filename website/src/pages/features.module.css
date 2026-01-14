@@ -1,0 +1,85 @@
+.featuresPage {
+  padding: 4rem 0;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  color: var(--ifm-color-emphasis-700);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.featureCol {
+  margin-bottom: 2rem;
+}
+
+.featureCard {
+  background: var(--ifm-background-surface-color);
+  border-radius: 12px;
+  padding: 2rem;
+  height: 100%;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.featureCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.featureHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.featureEmoji {
+  font-size: 2rem;
+}
+
+.featureHeader h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.featureDescription {
+  color: var(--ifm-color-emphasis-700);
+  margin-bottom: 1rem;
+}
+
+.featureDetails {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+}
+
+.featureDetails li {
+  padding: 0.25rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+  font-size: 0.9rem;
+  color: var(--ifm-color-emphasis-600);
+}
+
+.featureDetails li::before {
+  content: "•";
+  position: absolute;
+  left: 0.5rem;
+  color: var(--ifm-color-primary);
+}
+
+.featureLink {
+  font-weight: 500;
+  font-size: 0.9rem;
+}

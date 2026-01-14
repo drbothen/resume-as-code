@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://drbothen.github.io/resume-as-code/sitemap.xml

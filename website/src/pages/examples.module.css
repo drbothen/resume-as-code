@@ -1,0 +1,130 @@
+.examplesPage {
+  padding: 4rem 0;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  color: var(--ifm-color-emphasis-700);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.examplesList {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.exampleCard {
+  background: var(--ifm-background-surface-color);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  transition: box-shadow 0.2s ease;
+}
+
+.exampleCard:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.exampleCard.open {
+  border-color: var(--ifm-color-primary);
+}
+
+.exampleHeader {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.exampleTitle {
+  flex: 1;
+}
+
+.exampleTitle h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.125rem;
+}
+
+.exampleTitle p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.9rem;
+}
+
+.expandIcon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ifm-color-emphasis-100);
+  border-radius: 50%;
+  font-size: 1.25rem;
+  font-weight: 300;
+  color: var(--ifm-color-emphasis-600);
+}
+
+.open .expandIcon {
+  background: var(--ifm-color-primary);
+  color: white;
+}
+
+.exampleContent {
+  padding: 0 1.5rem 1.5rem;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.scenario {
+  padding: 1rem;
+  background: var(--ifm-color-emphasis-100);
+  border-radius: 6px;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+
+.scenario strong {
+  color: var(--ifm-color-primary);
+}
+
+.codeSection,
+.outputSection {
+  margin-top: 1.5rem;
+}
+
+.codeLabel,
+.outputLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ifm-color-emphasis-600);
+  margin-bottom: 0.5rem;
+}
+
+.codeLabel {
+  color: var(--ifm-color-primary);
+}
+
+.outputLabel {
+  color: var(--ifm-color-secondary);
+}

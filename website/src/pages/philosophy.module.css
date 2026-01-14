@@ -1,0 +1,211 @@
+.philosophyPage {
+  padding: 4rem 0;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  color: var(--ifm-color-emphasis-700);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.section {
+  margin-bottom: 4rem;
+  padding-bottom: 4rem;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.lead {
+  font-size: 1.125rem;
+  color: var(--ifm-color-emphasis-700);
+  margin-bottom: 2rem;
+}
+
+.codeExample {
+  background: var(--ifm-color-emphasis-100);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.codeExample pre {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.problemGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+  .problemGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.problemCard {
+  background: var(--ifm-background-surface-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  border-left: 4px solid var(--ifm-color-danger);
+}
+
+.problemCard h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.problemCard p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.9rem;
+}
+
+.comparisonTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+}
+
+.comparisonTable th,
+.comparisonTable td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.comparisonTable th {
+  font-weight: 600;
+  background: var(--ifm-color-emphasis-100);
+}
+
+.comparisonTable th:first-child {
+  color: var(--ifm-color-emphasis-600);
+}
+
+.comparisonTable th:last-child {
+  color: var(--ifm-color-primary);
+}
+
+.comparisonTable td:last-child {
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.concept {
+  margin-bottom: 3rem;
+}
+
+.concept h3 {
+  margin-bottom: 1rem;
+}
+
+.concept ul {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.concept li {
+  margin-bottom: 0.5rem;
+}
+
+.parGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .parGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.parCard {
+  background: var(--ifm-background-surface-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-top: 4px solid var(--ifm-color-primary);
+}
+
+.parLabel {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--ifm-color-primary);
+}
+
+.parQuestion {
+  font-size: 0.875rem;
+  color: var(--ifm-color-emphasis-600);
+}
+
+.parExample {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.8rem;
+  background: var(--ifm-color-emphasis-100);
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+.benefitsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.benefitCard {
+  background: var(--ifm-background-surface-color);
+  border-radius: 12px;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.benefitNumber {
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  width: 32px;
+  height: 32px;
+  background: var(--ifm-color-primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.benefitCard h3 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.benefitCard p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}

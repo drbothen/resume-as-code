@@ -1,0 +1,294 @@
+/**
+ * Resume as Code - Custom CSS
+ * Design system based on professional, developer-focused aesthetic
+ */
+
+/* Color palette from design guidelines */
+:root {
+  /* Primary: Blue - trust, professionalism */
+  --ifm-color-primary: #2563eb;
+  --ifm-color-primary-dark: #1d4ed8;
+  --ifm-color-primary-darker: #1e40af;
+  --ifm-color-primary-darkest: #1e3a8a;
+  --ifm-color-primary-light: #3b82f6;
+  --ifm-color-primary-lighter: #60a5fa;
+  --ifm-color-primary-lightest: #93c5fd;
+
+  /* Secondary: Green - success, growth */
+  --ifm-color-secondary: #10b981;
+
+  /* Accent: Purple - creativity, innovation */
+  --ifm-color-accent: #8b5cf6;
+
+  /* Typography */
+  --ifm-font-family-base: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ifm-font-family-monospace: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --ifm-code-font-size: 95%;
+
+  /* Spacing */
+  --ifm-spacing-horizontal: 1.5rem;
+
+  /* Code highlighting */
+  --docusaurus-highlighted-code-line-bg: rgba(37, 99, 235, 0.1);
+}
+
+/* Dark mode palette */
+[data-theme='dark'] {
+  --ifm-color-primary: #60a5fa;
+  --ifm-color-primary-dark: #3b82f6;
+  --ifm-color-primary-darker: #2563eb;
+  --ifm-color-primary-darkest: #1d4ed8;
+  --ifm-color-primary-light: #93c5fd;
+  --ifm-color-primary-lighter: #bfdbfe;
+  --ifm-color-primary-lightest: #dbeafe;
+
+  --ifm-color-secondary: #34d399;
+  --ifm-color-accent: #a78bfa;
+
+  --docusaurus-highlighted-code-line-bg: rgba(96, 165, 250, 0.2);
+}
+
+/* Hero section styling */
+.hero {
+  background: linear-gradient(135deg, var(--ifm-color-primary-darkest) 0%, var(--ifm-color-primary-dark) 100%);
+  padding: 4rem 0;
+}
+
+.hero__title {
+  font-size: 3rem;
+  font-weight: 700;
+}
+
+.hero__subtitle {
+  font-size: 1.5rem;
+  opacity: 0.9;
+}
+
+/* Feature cards */
+.feature-card {
+  background: var(--ifm-background-surface-color);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.feature-card__icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.feature-card__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.feature-card__description {
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.6;
+}
+
+/* Code blocks */
+pre {
+  border-radius: 8px;
+}
+
+/* Demo containers */
+.demo-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  padding: 2rem;
+  background: var(--ifm-background-surface-color);
+  border-radius: 12px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+}
+
+@media (max-width: 768px) {
+  .demo-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Form styling for demos */
+.demo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.demo-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.demo-form__label {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.demo-form__input,
+.demo-form__textarea {
+  padding: 0.75rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.demo-form__input:focus,
+.demo-form__textarea:focus {
+  outline: none;
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.demo-form__textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Buttons */
+.button--primary {
+  background: var(--ifm-color-primary);
+  border: none;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.button--primary:hover {
+  background: var(--ifm-color-primary-dark);
+}
+
+.button--secondary {
+  background: transparent;
+  border: 2px solid var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button--secondary:hover {
+  background: var(--ifm-color-primary);
+  color: white;
+}
+
+/* Preview section */
+.preview-section {
+  background: var(--ifm-color-emphasis-100);
+  border-radius: 8px;
+  padding: 1rem;
+  overflow: auto;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge--success {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--ifm-color-secondary);
+}
+
+.badge--warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.badge--info {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--ifm-color-primary);
+}
+
+/* Comparison tables */
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.comparison-table th {
+  font-weight: 600;
+  background: var(--ifm-color-emphasis-100);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 996px) {
+  .hero__title {
+    font-size: 2.5rem;
+  }
+
+  .hero__subtitle {
+    font-size: 1.25rem;
+  }
+}
+
+/* Copy button styling */
+.copy-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--ifm-color-emphasis-100);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+  background: var(--ifm-color-emphasis-200);
+}
+
+.copy-button--success {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--ifm-color-secondary);
+  color: var(--ifm-color-secondary);
+}
