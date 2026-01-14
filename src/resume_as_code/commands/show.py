@@ -80,6 +80,7 @@ def _output_position_json(
 ) -> None:
     """Output position details as JSON."""
     from resume_as_code.models.position import Position
+    from resume_as_code.services.position_service import format_scope_line
 
     pos_data = {
         "id": position.id,
@@ -92,6 +93,9 @@ def _output_position_json(
         "employment_type": position.employment_type,
         "promoted_from": position.promoted_from,
         "is_current": position.is_current,
+        "has_scope": position.scope is not None,
+        "scope": position.scope.model_dump(exclude_none=True) if position.scope else None,
+        "scope_line": format_scope_line(position) if position.scope else None,
     }
 
     wu_data = [{"id": wu.get("id"), "title": wu.get("title")} for wu in work_units]
@@ -119,12 +123,20 @@ def _output_position_rich(
     position: Any, work_units: list[dict[str, Any]], chain: list[Any]
 ) -> None:
     """Output position details with Rich formatting."""
+    from resume_as_code.services.position_service import format_scope_line
+
     # Position header
     console.print(f"\n[bold cyan]{position.title}[/bold cyan]")
     console.print(f"[green]{position.employer}[/green]")
 
     if position.location:
         console.print(f"[dim]{position.location}[/dim]")
+
+    # Scope indicators (executive positions)
+    if position.scope:
+        scope_line = format_scope_line(position)
+        if scope_line:
+            console.print(f"[italic magenta]{scope_line}[/italic magenta]")
 
     console.print(f"\n{position.format_date_range()}")
 

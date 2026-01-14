@@ -469,6 +469,8 @@ def _output_positions_json(positions: list[Any]) -> None:
             "dates": pos.format_date_range(),
             "employment_type": pos.employment_type,
             "promoted_from": pos.promoted_from,
+            "has_scope": pos.scope is not None,
+            "scope": pos.scope.model_dump(exclude_none=True) if pos.scope else None,
         }
         for pos in positions
         if isinstance(pos, Position)
@@ -492,15 +494,18 @@ def _output_positions_table(positions: list[Any]) -> None:
     table.add_column("Title")
     table.add_column("Dates")
     table.add_column("Type", style="dim")
+    table.add_column("Scope", style="magenta", justify="center")
 
     for pos in positions:
         if isinstance(pos, Position):
+            scope_indicator = "✓" if pos.scope else "-"
             table.add_row(
                 pos.id,
                 pos.employer,
                 pos.title,
                 pos.format_date_range(),
                 pos.employment_type or "",
+                scope_indicator,
             )
 
     console.print(table)

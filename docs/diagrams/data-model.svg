@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1443.171875 752.0056994608984"
+     width="1443.171875" height="752.0056994608984">
+  <rect x="0" y="0" width="1443.171875" height="752.0056994608984" fill="#ffffff" />
+  <rect x="274.54018430720475" y="80" width="240" height="280"
+    fill="#e3f2fd" stroke="#1e1e1e" stroke-width="2"
+    
+    rx="8" ry="8" opacity="1" />
+  <text x="394.54018430720475" y="90" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="20"
+    fill="#1e1e1e" text-anchor="middle" opacity="1">
+    <tspan x="394.54018430720475" y="110">Work Unit</tspan>
+  </text>
+  <path d="M274.54018430720475,120 L514.5401843072048,120" fill="none" stroke="#1e1e1e"
+    stroke-width="1" 
+    opacity="1" />
+  <text x="284.54018430720475" y="130" font-family="Cascadia, monospace" font-size="14"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="284.54018430720475" y="144">id: string (PK)</tspan>
+    <tspan x="284.54018430720475" y="160.8">title: string</tspan>
+    <tspan x="284.54018430720475" y="177.6">problem: Problem</tspan>
+    <tspan x="284.54018430720475" y="194.4">actions: Action[]</tspan>
+    <tspan x="284.54018430720475" y="211.2">outcome: Outcome</tspan>
+    <tspan x="284.54018430720475" y="228">metrics: Metric[]</tspan>
+    <tspan x="284.54018430720475" y="244.8">skills_demonstrated: Skill[]</tspan>
+    <tspan x="284.54018430720475" y="261.6">tags: string[]</tspan>
+    <tspan x="284.54018430720475" y="278.4">evidence: Evidence[]</tspan>
+    <tspan x="284.54018430720475" y="295.20000000000005">position_id: string (FK)</tspan>
+  </text>
+  <rect x="614.5401843072048" y="80" width="220" height="200"
+    fill="#e8f5e9" stroke="#1e1e1e" stroke-width="2"
+    
+    rx="8" ry="8" opacity="1" />
+  <text x="724.5401843072048" y="90" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="20"
+    fill="#1e1e1e" text-anchor="middle" opacity="1">
+    <tspan x="724.5401843072048" y="110">Position</tspan>
+  </text>
+  <path d="M614.5401843072048,120 L834.5401843072048,120" fill="none" stroke="#1e1e1e"
+    stroke-width="1" 
+    opacity="1" />
+  <text x="624.5401843072048" y="130" font-family="Cascadia, monospace" font-size="14"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="624.5401843072048" y="144">id: string (PK)</tspan>
+    <tspan x="624.5401843072048" y="160.8">employer: string</tspan>
+    <tspan x="624.5401843072048" y="177.6">title: string</tspan>
+    <tspan x="624.5401843072048" y="194.4">start_date: string</tspan>
+    <tspan x="624.5401843072048" y="211.2">end_date: string?</tspan>
+    <tspan x="624.5401843072048" y="228">location: string?</tspan>
+    <tspan x="624.5401843072048" y="244.8">promoted_from: string?</tspan>
+  </text>
+  <path d="M514.5401843072048,180 L614.5401843072048,180" fill="none" stroke="#1e1e1e"
+    stroke-width="2" opacity="1" />
+  <path d="M605.8799302693603,185 L614.5401843072048,180 L605.8799302693603,175"
+    fill="none" stroke="#1e1e1e" stroke-width="2" />
+  <text x="564.5401843072048" y="155" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="16"
+    fill="#1e1e1e" text-anchor="middle" opacity="1">
+    <tspan x="564.5401843072048" y="171">*:1</tspan>
+  </text>
+  <rect x="274.54018430720475" y="420" width="220" height="140"
+    fill="#fff3e0" stroke="#1e1e1e" stroke-width="2"
+    
+    rx="8" ry="8" opacity="1" />
+  <text x="944.5401843072048" y="175" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="14"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="944.5401843072048" y="189">Profile Data</tspan>
+  </text>
+  <text x="384.54018430720475" y="430" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="20"
+    fill="#1e1e1e" text-anchor="middle" opacity="1">
+    <tspan x="384.54018430720475" y="450">Certification</tspan>
+  </text>
+  <rect x="914.5401843072048" y="205" width="20" height="20"
+    fill="#b3e5fc" stroke="#1e1e1e" stroke-width="1"
+    
+    rx="0" ry="0" opacity="1" />
+  <path d="M274.54018430720475,460 L494.54018430720475,460" fill="none" stroke="#1e1e1e"
+    stroke-width="1" 
+    opacity="1" />
+  <text x="944.5401843072048" y="205" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="14"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="944.5401843072048" y="219">Executive Features</tspan>
+  </text>
+  <text x="284.54018430720475" y="470" font-family="Cascadia, monospace" font-size="14"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="284.54018430720475" y="484">name: string (PK)</tspan>
+    <tspan x="284.54018430720475" y="500.8">issuer: string</tspan>
+    <tspan x="284.54018430720475" y="517.6">date_earned: string</tspan>
+    <tspan x="284.54018430720475" y="534.4">expiration_date: string?</tspan>
+  </text>
+  <rect x="914.5401843072048" y="235" width="20" height="20"
+    fill="#f5f5f5" stroke="#1e1e1e" stroke-width="1"
+    stroke-dasharray="8,4"
+    rx="0" ry="0" opacity="1" />
+  <rect x="514.5401843072048" y="420" width="200" height="140"
+    fill="#e1bee7" stroke="#1e1e1e" stroke-width="2"
+    
+    rx="8" ry="8" opacity="1" />
+  <text x="944.5401843072048" y="235" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="14"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="944.5401843072048" y="249">Configuration</tspan>
+  </text>
+  <text x="614.5401843072048" y="430" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="20"
+    fill="#1e1e1e" text-anchor="middle" opacity="1">
+    <tspan x="614.5401843072048" y="450">Education</tspan>
+  </text>
+  <text x="274.54018430720475" y="40" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="24"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="274.54018430720475" y="64">Resume as Code - Data Model</tspan>
+  </text>
+  <text x="274.54018430720475" y="390" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="14"
+    fill="#666666" text-anchor="start" opacity="1">
+    <tspan x="274.54018430720475" y="404">Profile Entities</tspan>
+  </text>
+  <path d="M514.5401843072048,460 L714.5401843072048,460" fill="none" stroke="#1e1e1e"
+    stroke-width="1" 
+    opacity="1" />
+  <text x="524.5401843072048" y="470" font-family="Cascadia, monospace" font-size="14"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="524.5401843072048" y="484">degree: string (PK)</tspan>
+    <tspan x="524.5401843072048" y="500.8">institution: string</tspan>
+    <tspan x="524.5401843072048" y="517.6">graduation_year: int</tspan>
+    <tspan x="524.5401843072048" y="534.4">honors: string?</tspan>
+  </text>
+  <rect x="734.5401843072048" y="420" width="220" height="140"
+    fill="#b3e5fc" stroke="#1e1e1e" stroke-width="2"
+    
+    rx="8" ry="8" opacity="1" />
+  <text x="844.5401843072048" y="430" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="20"
+    fill="#1e1e1e" text-anchor="middle" opacity="1">
+    <tspan x="844.5401843072048" y="450">Publication</tspan>
+  </text>
+  <path d="M734.5401843072048,460 L954.5401843072048,460" fill="none" stroke="#1e1e1e"
+    stroke-width="1" 
+    opacity="1" />
+  <text x="744.5401843072048" y="470" font-family="Cascadia, monospace" font-size="14"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="744.5401843072048" y="484">title: string (PK)</tspan>
+    <tspan x="744.5401843072048" y="500.8">type: article|talk|patent</tspan>
+    <tspan x="744.5401843072048" y="517.6">venue: string</tspan>
+    <tspan x="744.5401843072048" y="534.4">date: string</tspan>
+    <tspan x="744.5401843072048" y="551.2">url: string?</tspan>
+  </text>
+  <rect x="974.5401843072048" y="420" width="220" height="140"
+    fill="#c8e6c9" stroke="#1e1e1e" stroke-width="2"
+    
+    rx="8" ry="8" opacity="1" />
+  <text x="1084.5401843072048" y="430" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="20"
+    fill="#1e1e1e" text-anchor="middle" opacity="1">
+    <tspan x="1084.5401843072048" y="450">Board Role</tspan>
+  </text>
+  <path d="M974.5401843072048,460 L1194.5401843072048,460" fill="none" stroke="#1e1e1e"
+    stroke-width="1" 
+    opacity="1" />
+  <text x="984.5401843072048" y="470" font-family="Cascadia, monospace" font-size="14"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="984.5401843072048" y="484">organization: string (PK)</tspan>
+    <tspan x="984.5401843072048" y="500.8">role: string</tspan>
+    <tspan x="984.5401843072048" y="517.6">type: board|advisory</tspan>
+    <tspan x="984.5401843072048" y="534.4">start_date: string</tspan>
+    <tspan x="984.5401843072048" y="551.2">end_date: string?</tspan>
+  </text>
+  <rect x="40" y="603.0102850587245" width="1363.171875" height="108.9954144021739"
+    fill="#f5f5f5" stroke="#1e1e1e" stroke-width="2"
+    stroke-dasharray="8,4"
+    rx="8" ry="8" opacity="1" />
+  <text x="721.5859375" y="608.0102850587245" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="21.79908288043478"
+    fill="#1e1e1e" text-anchor="middle" opacity="1">
+    <tspan x="721.5859375" y="629.8093679391593">.resume.yaml</tspan>
+  </text>
+  <path d="M40,646.6084508195942 L1042.7578125,646.6084508195942" fill="none" stroke="#1e1e1e"
+    stroke-width="1" 
+    opacity="1" />
+  <text x="50.89954144021738" y="657.5079922598115" font-family="Cascadia, monospace" font-size="15.259358016304347"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="50.89954144021738" y="672.7673502761158">profile: Profile | certifications: Cert[] | education: Edu[] | positions: Position[] | skills: Skill[] | publications: Pub[] | board_roles: BoardRole[]</tspan>
+  </text>
+  <text x="914.5401843072048" y="80" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="18"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="914.5401843072048" y="98">Legend</tspan>
+  </text>
+  <rect x="914.5401843072048" y="115" width="20" height="20"
+    fill="#e3f2fd" stroke="#1e1e1e" stroke-width="1"
+    
+    rx="0" ry="0" opacity="1" />
+  <text x="944.5401843072048" y="115" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="14"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="944.5401843072048" y="129">Primary Entity</tspan>
+  </text>
+  <rect x="914.5401843072048" y="145" width="20" height="20"
+    fill="#e8f5e9" stroke="#1e1e1e" stroke-width="1"
+    
+    rx="0" ry="0" opacity="1" />
+  <text x="944.5401843072048" y="145" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="14"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="944.5401843072048" y="159">Reference Entity</tspan>
+  </text>
+  <rect x="914.5401843072048" y="175" width="20" height="20"
+    fill="#fff3e0" stroke="#1e1e1e" stroke-width="1"
+    
+    rx="0" ry="0" opacity="1" />
+</svg>

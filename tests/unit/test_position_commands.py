@@ -480,3 +480,149 @@ class TestPositionScopeFlags:
         assert "$200M" in content  # Budget
         assert "Global" in content
         assert "10M users" in content
+
+
+class TestPositionScopeDisplay:
+    """Tests for position scope display in show and list commands."""
+
+    @pytest.fixture
+    def position_with_scope(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> str:
+        """Create a position with scope data and return the position ID."""
+        monkeypatch.chdir(tmp_path)
+        positions_yaml = tmp_path / "positions.yaml"
+        positions_yaml.write_text(
+            """schema_version: "1.0.0"
+positions:
+  pos-executive-cto:
+    employer: Executive Corp
+    title: Chief Technology Officer
+    start_date: "2020-01"
+    scope:
+      pl_responsibility: "$100M"
+      revenue: "$500M"
+      team_size: 200
+      budget: "$50M"
+      geography: "Global"
+"""
+        )
+        return "pos-executive-cto"
+
+    def test_show_position_displays_scope_in_rich_output(
+        self, position_with_scope: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Verify show position displays scope in Rich output."""
+        monkeypatch.chdir(tmp_path)
+        runner = CliRunner()
+
+        result = runner.invoke(main, ["show", "position", position_with_scope])
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        # Should show formatted scope line
+        assert "$100M P&L" in result.output or "P&L" in result.output
+        assert "$500M" in result.output
+
+    def test_show_position_includes_scope_in_json_output(
+        self, position_with_scope: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Verify show position includes scope in JSON output."""
+        import json
+
+        monkeypatch.chdir(tmp_path)
+        runner = CliRunner()
+
+        result = runner.invoke(main, ["--json", "show", "position", position_with_scope])
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        data = json.loads(result.output)
+
+        position_data = data["data"]["position"]
+        assert position_data["has_scope"] is True
+        assert position_data["scope"] is not None
+        assert position_data["scope"]["pl_responsibility"] == "$100M"
+        assert position_data["scope"]["revenue"] == "$500M"
+        assert position_data["scope"]["team_size"] == 200
+        assert position_data["scope_line"] is not None
+
+    def test_show_position_without_scope_shows_no_scope(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Verify show position handles positions without scope gracefully."""
+        import json
+
+        monkeypatch.chdir(tmp_path)
+        positions_yaml = tmp_path / "positions.yaml"
+        positions_yaml.write_text(
+            """schema_version: "1.0.0"
+positions:
+  pos-simple-engineer:
+    employer: Simple Corp
+    title: Software Engineer
+    start_date: "2022-01"
+"""
+        )
+        runner = CliRunner()
+
+        result = runner.invoke(main, ["--json", "show", "position", "pos-simple-engineer"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["data"]["position"]["has_scope"] is False
+        assert data["data"]["position"]["scope"] is None
+
+    def test_list_positions_shows_scope_indicator_in_table(
+        self, position_with_scope: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Verify list positions shows scope indicator in table output."""
+        monkeypatch.chdir(tmp_path)
+        runner = CliRunner()
+
+        result = runner.invoke(main, ["list", "positions"])
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        # Should show checkmark for position with scope
+        assert "✓" in result.output
+
+    def test_list_positions_includes_scope_in_json_output(
+        self, position_with_scope: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Verify list positions includes scope in JSON output."""
+        import json
+
+        monkeypatch.chdir(tmp_path)
+        runner = CliRunner()
+
+        result = runner.invoke(main, ["--json", "list", "positions"])
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        data = json.loads(result.output)
+
+        positions = data["data"]["positions"]
+        assert len(positions) == 1
+
+        pos = positions[0]
+        assert pos["has_scope"] is True
+        assert pos["scope"]["pl_responsibility"] == "$100M"
+
+    def test_list_positions_shows_dash_for_no_scope(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Verify list positions shows dash when position has no scope."""
+        monkeypatch.chdir(tmp_path)
+        positions_yaml = tmp_path / "positions.yaml"
+        positions_yaml.write_text(
+            """schema_version: "1.0.0"
+positions:
+  pos-no-scope:
+    employer: Basic Corp
+    title: Developer
+    start_date: "2023-01"
+"""
+        )
+        runner = CliRunner()
+
+        result = runner.invoke(main, ["list", "positions"])
+
+        assert result.exit_code == 0
+        # Table should show dash in scope column (not checkmark)
+        # The output contains the position row with "-" for scope
+        assert "Basic Corp" in result.output

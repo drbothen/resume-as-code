@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 980 465"
+     width="980" height="465">
+  <rect x="0" y="0" width="980" height="465" fill="#ffffff" />
+  <text x="40" y="40" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="24"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="40" y="64">Resume as Code - Workflow Pipeline</tspan>
+  </text>
+  <rect x="40" y="120" width="180" height="120"
+    fill="#e3f2fd" stroke="#1e1e1e" stroke-width="2"
+    
+    rx="8" ry="8" opacity="1" />
+  <text x="130" y="130" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="18"
+    fill="#1e1e1e" text-anchor="middle" opacity="1">
+    <tspan x="130" y="148">1. Capture</tspan>
+  </text>
+  <text x="130" y="165" font-family="Cascadia, monospace" font-size="12"
+    fill="#1976d2" text-anchor="middle" opacity="1">
+    <tspan x="130" y="177">resume new work-unit</tspan>
+  </text>
+  <text x="130" y="190" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="12"
+    fill="#666666" text-anchor="middle" opacity="1">
+    <tspan x="130" y="202">Record accomplishments</tspan>
+    <tspan x="130" y="217">as structured YAML</tspan>
+  </text>
+  <path d="M220,180 L280,180" fill="none" stroke="#1e1e1e"
+    stroke-width="2" opacity="1" />
+  <path d="M271.33974596215563,185 L280,180 L271.33974596215563,175"
+    fill="none" stroke="#1e1e1e" stroke-width="2" />
+  <rect x="280" y="120" width="180" height="120"
+    fill="#e8f5e9" stroke="#1e1e1e" stroke-width="2"
+    
+    rx="8" ry="8" opacity="1" />
+  <text x="370" y="130" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="18"
+    fill="#1e1e1e" text-anchor="middle" opacity="1">
+    <tspan x="370" y="148">2. Validate</tspan>
+  </text>
+  <text x="370" y="165" font-family="Cascadia, monospace" font-size="12"
+    fill="#1976d2" text-anchor="middle" opacity="1">
+    <tspan x="370" y="177">resume validate</tspan>
+  </text>
+  <text x="370" y="190" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="12"
+    fill="#666666" text-anchor="middle" opacity="1">
+    <tspan x="370" y="202">Schema validation</tspan>
+    <tspan x="370" y="217">+ content quality checks</tspan>
+  </text>
+  <path d="M460,180 L520,180" fill="none" stroke="#1e1e1e"
+    stroke-width="2" opacity="1" />
+  <path d="M511.33974596215563,185 L520,180 L511.33974596215563,175"
+    fill="none" stroke="#1e1e1e" stroke-width="2" />
+  <rect x="520" y="120" width="180" height="120"
+    fill="#fff3e0" stroke="#1e1e1e" stroke-width="2"
+    
+    rx="8" ry="8" opacity="1" />
+  <text x="610" y="130" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="18"
+    fill="#1e1e1e" text-anchor="middle" opacity="1">
+    <tspan x="610" y="148">3. Plan</tspan>
+  </text>
+  <text x="610" y="165" font-family="Cascadia, monospace" font-size="12"
+    fill="#1976d2" text-anchor="middle" opacity="1">
+    <tspan x="610" y="177">resume plan --jd</tspan>
+  </text>
+  <text x="610" y="190" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="12"
+    fill="#666666" text-anchor="middle" opacity="1">
+    <tspan x="610" y="202">Match Work Units to JD</tspan>
+    <tspan x="610" y="217">using BM25 + semantic</tspan>
+  </text>
+  <path d="M700,180 L760,180" fill="none" stroke="#1e1e1e"
+    stroke-width="2" opacity="1" />
+  <path d="M751.3397459621556,185 L760,180 L751.3397459621556,175"
+    fill="none" stroke="#1e1e1e" stroke-width="2" />
+  <rect x="760" y="120" width="180" height="120"
+    fill="#e1bee7" stroke="#1e1e1e" stroke-width="2"
+    
+    rx="8" ry="8" opacity="1" />
+  <text x="850" y="130" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="18"
+    fill="#1e1e1e" text-anchor="middle" opacity="1">
+    <tspan x="850" y="148">4. Build</tspan>
+  </text>
+  <text x="850" y="165" font-family="Cascadia, monospace" font-size="12"
+    fill="#1976d2" text-anchor="middle" opacity="1">
+    <tspan x="850" y="177">resume build --jd</tspan>
+  </text>
+  <text x="850" y="190" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="12"
+    fill="#666666" text-anchor="middle" opacity="1">
+    <tspan x="850" y="202">Generate PDF/DOCX</tspan>
+    <tspan x="850" y="217">with manifest</tspan>
+  </text>
+  <text x="40" y="280" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="14"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="40" y="294">Input:</tspan>
+  </text>
+  <text x="130" y="305" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="12"
+    fill="#666666" text-anchor="middle" opacity="1">
+    <tspan x="130" y="317">Accomplishment details</tspan>
+    <tspan x="130" y="332">(interactive or flags)</tspan>
+  </text>
+  <text x="370" y="305" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="12"
+    fill="#666666" text-anchor="middle" opacity="1">
+    <tspan x="370" y="317">work-units/*.yaml</tspan>
+    <tspan x="370" y="332">positions.yaml</tspan>
+  </text>
+  <text x="610" y="305" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="12"
+    fill="#666666" text-anchor="middle" opacity="1">
+    <tspan x="610" y="317">Job description file</tspan>
+    <tspan x="610" y="332">+ Work Units</tspan>
+  </text>
+  <text x="850" y="305" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="12"
+    fill="#666666" text-anchor="middle" opacity="1">
+    <tspan x="850" y="317">Plan output</tspan>
+    <tspan x="850" y="332">+ template config</tspan>
+  </text>
+  <text x="40" y="360" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="14"
+    fill="#1e1e1e" text-anchor="start" opacity="1">
+    <tspan x="40" y="374">Output:</tspan>
+  </text>
+  <text x="130" y="385" font-family="Cascadia, monospace" font-size="12"
+    fill="#388e3c" text-anchor="middle" opacity="1">
+    <tspan x="130" y="397">work-units/</tspan>
+    <tspan x="130" y="412">wu-YYYY-MM-DD-*.yaml</tspan>
+  </text>
+  <text x="370" y="385" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="12"
+    fill="#388e3c" text-anchor="middle" opacity="1">
+    <tspan x="370" y="397">Validation report</tspan>
+    <tspan x="370" y="412">(pass/fail + suggestions)</tspan>
+  </text>
+  <text x="610" y="385" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="12"
+    fill="#388e3c" text-anchor="middle" opacity="1">
+    <tspan x="610" y="397">Ranked Work Units</tspan>
+    <tspan x="610" y="412">+ scores + gap analysis</tspan>
+  </text>
+  <text x="850" y="385" font-family="Cascadia, monospace" font-size="12"
+    fill="#388e3c" text-anchor="middle" opacity="1">
+    <tspan x="850" y="397">dist/resume.pdf</tspan>
+    <tspan x="850" y="412">dist/manifest.yaml</tspan>
+  </text>
+  <rect x="580" y="260" width="60" height="40"
+    fill="#ffcdd2" stroke="#d32f2f" stroke-width="1"
+    
+    rx="8" ry="8" opacity="1" />
+  <text x="610" y="270" font-family="Virgil, Segoe UI Emoji, Apple Color Emoji, serif" font-size="14"
+    fill="#d32f2f" text-anchor="middle" opacity="1">
+    <tspan x="610" y="284">JD</tspan>
+  </text>
+  <path d="M610,260 L610,240" fill="none" stroke="#d32f2f"
+    stroke-width="2" opacity="1" />
+  <path d="M615,248.6602540378444 L610,240 L605,248.6602540378444"
+    fill="none" stroke="#d32f2f" stroke-width="2" />
+</svg>

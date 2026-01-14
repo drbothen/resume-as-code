@@ -310,6 +310,33 @@ Auto-generated: `pos-{employer-slug}-{title-slug}`
 
 Example: `pos-techcorp-senior-engineer`
 
+### Scope Flags (Executive Positions)
+
+For executive-level positions with leadership scale indicators:
+
+| Flag | Description |
+|------|-------------|
+| `--scope-revenue` | Revenue impact (e.g., "$500M") |
+| `--scope-team-size` | Team size (number) |
+| `--scope-direct-reports` | Direct reports count |
+| `--scope-budget` | Budget managed (e.g., "$50M") |
+| `--scope-pl` | P&L responsibility (e.g., "$100M") |
+| `--scope-geography` | Geographic reach (e.g., "Global", "EMEA") |
+| `--scope-customers` | Customer scope (e.g., "Fortune 500", "500K users") |
+
+Example:
+```bash
+resume new position \
+  --employer "Acme Corp" \
+  --title "CTO" \
+  --start-date 2020-01 \
+  --scope-pl "$100M" \
+  --scope-revenue "$500M" \
+  --scope-team-size 200 \
+  --scope-budget "$50M" \
+  --scope-geography "Global"
+```
+
 ---
 
 ## Certification Management
