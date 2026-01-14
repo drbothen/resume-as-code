@@ -2,6 +2,14 @@
 
 CLI tool for git-native resume generation from structured work units.
 
+## Documentation
+
+- [Philosophy](./docs/philosophy.md) — Why "Resume as Code" works
+- [Data Model](./docs/data-model.md) — Work Units, Positions, and other entities
+- [Workflow Guide](./docs/workflow.md) — The Capture → Validate → Plan → Build pipeline
+
+See the [docs folder](./docs/) for the complete documentation.
+
 ## Installation
 
 ```bash
