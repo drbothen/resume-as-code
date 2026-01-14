@@ -38,7 +38,7 @@ Visual guides to key concepts. SVG files are exported from Excalidraw source fil
 | [Workflow Pipeline](./diagrams/workflow-pipeline.svg) | The Capture → Validate → Plan → Build pipeline |
 | [Philosophy Concept](./diagrams/philosophy-concept.svg) | Traditional vs Resume as Code comparison |
 
-> **Editing diagrams**: Open `.excalidraw` files in [Excalidraw](https://excalidraw.com/) to edit, then export to SVG.
+> **Editing diagrams**: See the [Diagram Management Guide](./diagrams/README.md) for instructions on editing and exporting diagrams.
 
 ---
 
