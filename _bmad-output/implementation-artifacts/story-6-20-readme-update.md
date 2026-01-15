@@ -3,7 +3,7 @@
 ## Story Info
 
 - **Epic**: Epic 6 - Executive Resume Template & Profile System
-- **Status**: review
+- **Status**: done
 - **Priority**: Medium
 - **Estimation**: Small (2 story points)
 - **Dependencies**: Story 6.19 (Philosophy Documentation) - for docs/ folder link
@@ -345,7 +345,45 @@ Comprehensive README rewrite covering all AC requirements:
 ## File List
 
 - `README.md` — Comprehensive README rewrite (modified)
+- `LICENSE` — MIT license file (created)
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` — Sprint status updated (modified)
+- `_bmad-output/implementation-artifacts/story-6-20-readme-update.md` — This story file (modified)
 
 ## Change Log
 
 - 2026-01-13: Comprehensive README update with all sections per story requirements
+- 2026-01-13: Code review remediation - fixed 9 issues (3 HIGH, 4 MEDIUM, 2 LOW)
+
+---
+
+## Senior Developer Review (AI)
+
+### Review Date: 2026-01-13
+
+### Issues Found and Remediated
+
+**HIGH SEVERITY (3):**
+1. ✅ H1: Placeholder repo URL `your-org` → Fixed to `drbothen/resume-as-code`
+2. ✅ H2: Incomplete command reference (14 commands missing) → Added all list/show/remove subcommands
+3. ✅ H3: Missing `--content-density` validate flag → Added to documentation
+
+**MEDIUM SEVERITY (4):**
+1. ✅ M1: Story File List incomplete → Updated to include all modified files
+2. ✅ M2: LICENSE file missing → Created MIT LICENSE file
+3. ✅ M3: Branch strategy incomplete → Added spike/hotfix/release branches
+4. ✅ M4: Plan command flags undocumented → Added --top, --output, --load, --show-excluded
+
+**LOW SEVERITY (2):**
+1. ✅ L1: Remove --yes flag undocumented → Added to Global Flags section
+2. ✅ L2: List filter syntax undocumented → Added filter examples section
+
+### Review Outcome: APPROVED
+
+All 9 issues identified and remediated. Story ready for final validation.
+
+### Reviewer Notes
+
+- README expanded from 339 to 383 lines (still under 500 limit)
+- All CLI commands now fully documented
+- LICENSE file added for legal clarity
+- Git branch strategy matches CLAUDE.md documentation

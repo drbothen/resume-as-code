@@ -30,7 +30,7 @@ Resume as Code inverts the traditional model: instead of editing documents, you 
 
 ```bash
 # Clone and install
-git clone https://github.com/your-org/resume-as-code
+git clone https://github.com/drbothen/resume-as-code
 cd resume-as-code
 uv sync --all-extras
 ```
@@ -85,12 +85,43 @@ Check `dist/` for your generated resume files.
 
 | Command | Description |
 |---------|-------------|
-| `resume list` | List all Work Units |
+| `resume list` | List all Work Units (supports filtering) |
 | `resume list positions` | List employment positions |
 | `resume list certifications` | List certifications with expiration status |
+| `resume list education` | List education entries |
+| `resume list highlights` | List career highlights |
+| `resume list board-roles` | List board and advisory roles |
+| `resume list publications` | List publications and speaking engagements |
 | `resume show work-unit <id>` | Show Work Unit details |
 | `resume show position <id>` | Show position details |
+| `resume show certification <name>` | Show certification details |
+| `resume show education <degree>` | Show education entry details |
+| `resume show highlight <index>` | Show career highlight details |
+| `resume show board-role <org>` | Show board role details |
+| `resume show publication <title>` | Show publication details |
 | `resume remove work-unit <id>` | Remove a Work Unit |
+| `resume remove position <id>` | Remove a position |
+| `resume remove certification <name>` | Remove a certification |
+| `resume remove education <degree>` | Remove an education entry |
+| `resume remove highlight <index>` | Remove a career highlight |
+| `resume remove board-role <org>` | Remove a board role |
+| `resume remove publication <title>` | Remove a publication |
+
+**Work Unit Filtering** — The `resume list` command supports filtering:
+
+```bash
+# Filter by tag
+resume list --filter tag:kubernetes
+
+# Filter by confidence level
+resume list --filter confidence:high
+
+# Free text search (ID, title, date)
+resume list --filter "migration"
+
+# Combine filters (AND logic)
+resume list --filter tag:aws --filter confidence:high
+```
 
 ### Validation and Generation
 
@@ -98,9 +129,17 @@ Check `dist/` for your generated resume files.
 |---------|-------------|
 | `resume validate` | Validate Work Units against schema |
 | `resume validate --content-quality` | Check weak verbs and quantification |
+| `resume validate --content-density` | Check bullet point character limits |
 | `resume validate --check-positions` | Verify position references exist |
 | `resume plan --jd <file>` | Preview Work Unit selection for a JD |
+| `resume plan --top <n>` | Select top N Work Units (default: 8) |
+| `resume plan --show-excluded` | Show top 5 excluded Work Units with reasons |
+| `resume plan --output <file>` | Save plan to file for later use |
+| `resume plan --load <file>` | Load and display a saved plan |
 | `resume build --jd <file>` | Generate resume files |
+| `resume build --plan <file>` | Build from a saved plan file |
+| `resume build --format <type>` | Output format: pdf, docx, or all |
+| `resume build --template <name>` | Template to use (modern, executive) |
 
 ### Utility Commands
 
@@ -118,6 +157,7 @@ Check `dist/` for your generated resume files.
 | `--json` | Output in JSON format for scripting |
 | `-v, --verbose` | Show verbose debug output |
 | `-q, --quiet` | Suppress output, exit code only |
+| `-y, --yes` | Skip confirmation prompts (remove commands) |
 
 ## Examples
 
@@ -272,7 +312,7 @@ For detailed documentation, see the [docs/](./docs/) folder:
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/resume-as-code
+git clone https://github.com/drbothen/resume-as-code
 cd resume-as-code
 
 # Install dependencies
@@ -333,7 +373,10 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`
 - `develop` — Integration branch (PR target)
 - `feature/*` — New features
 - `fix/*` — Bug fixes
+- `spike/*` — Research and exploration
+- `hotfix/*` — Emergency production fixes
+- `release/*` — Release preparation
 
 ## License
 
-MIT License
+MIT License — see [LICENSE](LICENSE)
