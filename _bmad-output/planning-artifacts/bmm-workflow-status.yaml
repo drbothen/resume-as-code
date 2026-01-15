@@ -115,10 +115,10 @@ workflow_status:
         completed: "2026-01-10"
 
       create-epics-and-stories:
-        status: "_bmad-output/planning-artifacts/epics.md"
+        status: "_bmad-output/planning-artifacts/epics/index.md"
         agent: "pm"
         command: "/bmad:bmm:workflows:create-epics-and-stories"
-        note: "Break down PRD into implementable epics and stories"
+        note: "Break down PRD into implementable epics and stories (sharded 2026-01-14)"
         completed: "2026-01-10"
 
       test-design:
