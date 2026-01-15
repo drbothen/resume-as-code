@@ -3993,6 +3993,627 @@ Evidence = LinkEvidence | GitHubEvidence | MetricsEvidence | NarrativeEvidence |
 
 ---
 
+### Story 7.8: Field-Weighted BM25 Scoring
+
+As a **job seeker**,
+I want **my job titles and skills weighted higher than general experience text**,
+So that **resumes with matching titles rank higher than those with incidental keyword matches**.
+
+**Story Points:** 3
+**Priority:** P1 (high ROI - uses existing config)
+
+**Research Basis:** Harvard Business Review 2023 study shows field-weighted matching improves hire quality by 27%. Industry standard is 2-4x boost for job titles.
+
+**Acceptance Criteria:**
+
+**Given** `scoring_weights.title_weight` is set to 2.0 in config
+**When** a work unit title matches JD keywords
+**Then** that match contributes 2x to the BM25 score vs body text matches
+
+**Given** `scoring_weights.skills_weight` is set to 1.5 in config
+**When** work unit skills/tags match JD skills
+**Then** that match contributes 1.5x to the BM25 score
+
+**Given** default config (all weights = 1.0)
+**When** ranking runs
+**Then** behavior is unchanged from current implementation
+
+**Given** I run `resume plan --jd job.txt`
+**When** results display
+**Then** match_reasons indicate which field matched (title, skills, experience)
+
+**Technical Notes:**
+```python
+# Modify ranker.py to use field-specific BM25 scoring
+def _bm25_rank_weighted(self, jd: JobDescription, work_units: list[WorkUnit]) -> list[int]:
+    """BM25 with field-specific weighting."""
+    weights = self.config.scoring_weights
+    
+    # Create separate corpora for each field
+    title_corpus = [wu.title.lower().split() for wu in work_units]
+    skills_corpus = [' '.join(wu.tags + [s.name for s in wu.skills_demonstrated]).lower().split() for wu in work_units]
+    body_corpus = [extract_work_unit_text(wu).lower().split() for wu in work_units]
+    
+    # Score each field separately
+    title_scores = BM25Okapi(title_corpus).get_scores(jd_tokens)
+    skills_scores = BM25Okapi(skills_corpus).get_scores(jd_tokens)
+    body_scores = BM25Okapi(body_corpus).get_scores(jd_tokens)
+    
+    # Weighted combination
+    combined = (
+        weights.title_weight * title_scores +
+        weights.skills_weight * skills_scores +
+        weights.experience_weight * body_scores
+    )
+    return combined
+```
+
+**Files to Modify:**
+- Modify: `src/resume_as_code/services/ranker.py` (implement field weighting)
+- Modify: `src/resume_as_code/utils/work_unit_text.py` (add field extraction helpers)
+
+**Definition of Done:**
+- [ ] title_weight, skills_weight, experience_weight are used in BM25 scoring
+- [ ] Default weights (1.0) produce identical results to current behavior
+- [ ] Match reasons indicate which field matched
+- [ ] Unit tests for field weighting
+
+---
+
+### Story 7.9: Recency Decay for Work Units
+
+As a **job seeker**,
+I want **my recent work experience weighted higher than older experience**,
+So that **my current skills and relevance are properly reflected in rankings**.
+
+**Story Points:** 3
+**Priority:** P2
+
+**Research Basis:** Eightfold AI uses "recent skill vector similarity" as distinct signal. Exponential decay with configurable half-life is industry standard.
+
+**Acceptance Criteria:**
+
+**Given** a work unit with `time_ended: 2024-01` (1 year ago)
+**When** ranking against a JD with `recency_half_life: 5` years
+**Then** the work unit receives ~87% recency weight
+
+**Given** a work unit with `time_ended: 2019-01` (5 years ago)
+**When** ranking with 5-year half-life
+**Then** the work unit receives ~50% recency weight
+
+**Given** a work unit with `time_ended: null` (current position)
+**When** ranking runs
+**Then** the work unit receives 100% recency weight
+
+**Given** recency decay is disabled (`recency_half_life: null`)
+**When** ranking runs
+**Then** all work units weighted equally (current behavior)
+
+**Given** the final score calculation
+**When** combining relevance and recency
+**Then** formula is: `final = (0.8 × relevance) + (0.2 × recency_decay)` (configurable)
+
+**Technical Notes:**
+```python
+# Add to config.py
+class ScoringWeights(BaseModel):
+    # ... existing fields ...
+    recency_half_life: float | None = Field(
+        default=5.0, 
+        ge=1.0, 
+        le=20.0,
+        description="Years for experience to decay to 50% weight. None disables decay."
+    )
+    recency_blend: float = Field(
+        default=0.2,
+        ge=0.0,
+        le=0.5,
+        description="How much recency affects final score (0.2 = 20%)"
+    )
+
+# Add to ranker.py
+import math
+from datetime import date
+
+def _calculate_recency_score(self, work_unit: WorkUnit) -> float:
+    """Calculate recency decay score for a work unit."""
+    if self.config.scoring_weights.recency_half_life is None:
+        return 1.0
+    
+    end_date = work_unit.time_ended or date.today()
+    years_ago = (date.today() - end_date).days / 365.25
+    
+    half_life = self.config.scoring_weights.recency_half_life
+    decay_constant = math.log(2) / half_life
+    
+    return math.exp(-decay_constant * years_ago)
+```
+
+**Files to Modify:**
+- Modify: `src/resume_as_code/models/config.py` (add recency config)
+- Modify: `src/resume_as_code/services/ranker.py` (apply recency decay)
+- Modify: `schemas/config.schema.json` (auto-generated)
+
+**Definition of Done:**
+- [ ] Recency decay applied to work unit scores
+- [ ] Configurable half-life (default 5 years)
+- [ ] Current positions get 100% weight
+- [ ] Can be disabled via config
+- [ ] Unit tests for decay formula
+
+---
+
+### Story 7.10: Improved BM25 Tokenization
+
+As a **job seeker**,
+I want **"engineering" to match "engineer" and "ML" to match "machine learning"**,
+So that **keyword matching is more intelligent and less brittle**.
+
+**Story Points:** 5
+**Priority:** P2
+
+**Research Basis:** Current `.lower().split()` misses stemming, compound terms, and abbreviations. Industry systems use lemmatization and domain-specific normalization.
+
+**Acceptance Criteria:**
+
+**Given** a JD containing "engineering"
+**When** matching against work unit with "engineer"
+**Then** they match (lemmatization)
+
+**Given** a JD containing "machine learning"
+**When** matching against work unit with "ML"
+**Then** they match (abbreviation expansion)
+
+**Given** a JD containing "project-management"
+**When** matching against work unit with "project management"
+**Then** they match (hyphen normalization)
+
+**Given** a JD containing "CI/CD pipeline"
+**When** matching against work unit with "CICD" or "CI CD"
+**Then** they match (slash normalization)
+
+**Given** tokenization runs
+**When** processing text
+**Then** domain stop words are filtered ("responsibilities", "requirements", "experience", "ability to")
+
+**Technical Notes:**
+```python
+# src/resume_as_code/utils/tokenizer.py (new file)
+import re
+from functools import lru_cache
+
+# Technical abbreviation mappings
+TECH_EXPANSIONS = {
+    "ml": "machine learning",
+    "ai": "artificial intelligence", 
+    "k8s": "kubernetes",
+    "js": "javascript",
+    "ts": "typescript",
+    "cicd": "continuous integration continuous deployment",
+    "ci/cd": "continuous integration continuous deployment",
+    "aws": "amazon web services",
+    "gcp": "google cloud platform",
+}
+
+DOMAIN_STOP_WORDS = {
+    "responsibilities", "requirements", "experience", "ability", 
+    "strong", "excellent", "preferred", "required", "including",
+    "work", "working", "team", "role", "position",
+}
+
+class ResumeTokenizer:
+    def __init__(self, use_lemmatization: bool = True):
+        self.use_lemmatization = use_lemmatization
+        self._nlp = None  # Lazy load spaCy
+    
+    @property
+    def nlp(self):
+        if self._nlp is None and self.use_lemmatization:
+            import spacy
+            self._nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
+        return self._nlp
+    
+    def tokenize(self, text: str) -> list[str]:
+        # Normalize hyphens and slashes
+        text = re.sub(r'[-/]', ' ', text.lower())
+        
+        # Expand abbreviations
+        for abbrev, expansion in TECH_EXPANSIONS.items():
+            text = re.sub(rf'\b{abbrev}\b', expansion, text)
+        
+        # Lemmatize if enabled
+        if self.use_lemmatization and self.nlp:
+            doc = self.nlp(text)
+            tokens = [token.lemma_ for token in doc if token.is_alpha]
+        else:
+            tokens = text.split()
+        
+        # Filter stop words
+        tokens = [t for t in tokens if t not in DOMAIN_STOP_WORDS and len(t) > 2]
+        
+        return tokens
+```
+
+**Files to Create/Modify:**
+- Create: `src/resume_as_code/utils/tokenizer.py`
+- Modify: `src/resume_as_code/services/ranker.py` (use new tokenizer)
+- Modify: `pyproject.toml` (add spacy dependency, optional)
+
+**Definition of Done:**
+- [ ] Lemmatization reduces "engineering" → "engineer"
+- [ ] Technical abbreviations expanded
+- [ ] Hyphen/slash normalization
+- [ ] Domain stop words filtered
+- [ ] Optional spaCy dependency (graceful fallback)
+- [ ] Unit tests for tokenization
+
+---
+
+### Story 7.11: Section-Level Semantic Embeddings
+
+As a **job seeker**,
+I want **my skills section matched against JD requirements and my outcomes matched against JD responsibilities**,
+So that **semantic matching is more precise and relevant**.
+
+**Story Points:** 8
+**Priority:** P3 (complex but high value)
+
+**Research Basis:** Pinecone research shows section-level embeddings reduce noise and improve precision. Full-document embedding dilutes significance of individual sections.
+
+**Acceptance Criteria:**
+
+**Given** a work unit with distinct sections (problem, actions, outcome, skills)
+**When** embedding for semantic search
+**Then** each section is embedded separately
+
+**Given** section embeddings are computed
+**When** matching against JD
+**Then** work unit skills embed against JD skills section
+**And** work unit outcomes embed against JD requirements section
+
+**Given** section-level similarity scores
+**When** aggregating to final score
+**Then** weighted formula applies:
+- Requirements match: 40%
+- Experience match: 30%
+- Skills match: 20%
+- Education match: 10%
+
+**Given** a work unit with strong skills match but weak experience match
+**When** ranking
+**Then** the weighted aggregate reflects partial relevance
+
+**Given** embedding cache exists
+**When** section embeddings are computed
+**Then** each section is cached separately with section identifier
+
+**Technical Notes:**
+```python
+# Modify embedder.py
+class SectionEmbedding(BaseModel):
+    """Embedding for a specific section of a work unit."""
+    section: Literal["title", "problem", "actions", "outcome", "skills"]
+    embedding: list[float]
+
+def embed_work_unit_sections(self, work_unit: WorkUnit) -> dict[str, list[float]]:
+    """Generate separate embeddings for each work unit section."""
+    sections = {
+        "title": work_unit.title,
+        "problem": f"{work_unit.problem.statement} {work_unit.problem.context or ''}",
+        "actions": " ".join(work_unit.actions),
+        "outcome": f"{work_unit.outcome.result} {work_unit.outcome.quantified_impact or ''}",
+        "skills": " ".join([s.name for s in work_unit.skills_demonstrated] + work_unit.tags),
+    }
+    
+    return {
+        section: self.embed_query(text)
+        for section, text in sections.items()
+        if text.strip()
+    }
+
+# Modify ranker.py
+def _semantic_rank_sectioned(
+    self, 
+    jd: JobDescription, 
+    work_units: list[WorkUnit]
+) -> list[float]:
+    """Semantic ranking with section-level matching."""
+    weights = {
+        "requirements": 0.4,
+        "skills": 0.2,
+        "experience": 0.3,
+        "general": 0.1,
+    }
+    
+    # Embed JD sections
+    jd_requirements_emb = self.embedder.embed_passage(jd.requirements_text)
+    jd_skills_emb = self.embedder.embed_passage(" ".join(jd.skills))
+    
+    scores = []
+    for wu in work_units:
+        wu_sections = self.embedder.embed_work_unit_sections(wu)
+        
+        # Cross-section matching
+        req_score = cosine_sim(wu_sections.get("outcome", []), jd_requirements_emb)
+        skill_score = cosine_sim(wu_sections.get("skills", []), jd_skills_emb)
+        exp_score = cosine_sim(wu_sections.get("actions", []), jd_requirements_emb)
+        
+        # Weighted aggregate
+        final = (
+            weights["requirements"] * req_score +
+            weights["skills"] * skill_score +
+            weights["experience"] * exp_score
+        )
+        scores.append(final)
+    
+    return scores
+```
+
+**Files to Modify:**
+- Modify: `src/resume_as_code/services/embedder.py` (section embedding)
+- Modify: `src/resume_as_code/services/ranker.py` (sectioned semantic ranking)
+- Modify: `src/resume_as_code/services/embedding_cache.py` (section-aware caching)
+- Modify: `src/resume_as_code/models/config.py` (section weights config)
+
+**Definition of Done:**
+- [ ] Work units embedded as multiple section vectors
+- [ ] JD embedded as requirements + skills sections
+- [ ] Cross-section matching implemented
+- [ ] Weighted aggregation to final score
+- [ ] Section-aware embedding cache
+- [ ] Unit tests for section matching
+
+---
+
+### Story 7.12: Seniority Level Matching
+
+As a **job seeker**,
+I want **my career level matched against the job's seniority requirements**,
+So that **I'm not ranked for roles significantly above or below my experience**.
+
+**Story Points:** 5
+**Priority:** P3
+
+**Research Basis:** LinkedIn and Eightfold use title embeddings and career trajectory to predict seniority fit. JD already has `experience_level` detected.
+
+**Acceptance Criteria:**
+
+**Given** a work unit with optional `seniority_level` field
+**When** I set it to "senior"
+**Then** it's stored and used for matching
+
+**Given** a work unit without `seniority_level`
+**When** ranking runs
+**Then** seniority is inferred from position title and scope
+
+**Given** JD with `experience_level: SENIOR`
+**When** matching work units
+**Then** work units with senior-level indicators score higher
+
+**Given** a candidate with mostly mid-level work units
+**When** matching against principal-level JD
+**Then** seniority mismatch reduces overall score (configurable penalty)
+
+**Given** seniority matching is disabled
+**When** ranking runs
+**Then** behavior unchanged (backward compatible)
+
+**Technical Notes:**
+```python
+# Add to work_unit.py
+from typing import Literal
+
+SeniorityLevel = Literal["entry", "mid", "senior", "staff", "principal", "executive"]
+
+class WorkUnit(BaseModel):
+    # ... existing fields ...
+    seniority_level: SeniorityLevel | None = Field(
+        default=None,
+        description="Optional seniority level for explicit matching"
+    )
+
+# Add seniority inference service
+# src/resume_as_code/services/seniority_inference.py
+TITLE_SENIORITY_PATTERNS = {
+    "executive": ["cto", "ceo", "cfo", "vp ", "vice president", "chief"],
+    "principal": ["principal", "distinguished", "fellow"],
+    "staff": ["staff", "architect"],
+    "senior": ["senior", "sr.", "sr ", "lead"],
+    "mid": ["ii", "iii", "developer", "engineer"],
+    "entry": ["junior", "jr.", "jr ", "associate", "intern"],
+}
+
+def infer_seniority(work_unit: WorkUnit, position: Position | None) -> SeniorityLevel:
+    """Infer seniority from work unit title, position, and scope."""
+    if work_unit.seniority_level:
+        return work_unit.seniority_level
+    
+    title = (position.title if position else work_unit.title).lower()
+    
+    for level, patterns in TITLE_SENIORITY_PATTERNS.items():
+        if any(p in title for p in patterns):
+            return level
+    
+    # Check scope for executive indicators
+    if position and position.scope:
+        if position.scope.pl_responsibility or position.scope.revenue:
+            return "executive"
+        if position.scope.team_size and position.scope.team_size > 50:
+            return "staff"
+    
+    return "mid"  # Default
+```
+
+**Schema Addition:**
+```yaml
+# Work unit seniority_level field
+seniority_level:
+  type: string
+  enum: ["entry", "mid", "senior", "staff", "principal", "executive"]
+  description: "Optional seniority level for explicit matching"
+```
+
+**Files to Create/Modify:**
+- Modify: `src/resume_as_code/models/work_unit.py` (add seniority_level)
+- Create: `src/resume_as_code/services/seniority_inference.py`
+- Modify: `src/resume_as_code/services/ranker.py` (seniority scoring)
+- Modify: `schemas/work-unit.schema.json` (auto-generated)
+
+**Definition of Done:**
+- [ ] Optional seniority_level field on WorkUnit
+- [ ] Seniority inference from title patterns
+- [ ] Seniority matching against JD.experience_level
+- [ ] Configurable mismatch penalty
+- [ ] Backward compatible when field not set
+
+---
+
+### Story 7.13: Impact Category Classification
+
+As a **job seeker**,
+I want **my achievements categorized by impact type and matched against role expectations**,
+So that **my financial achievements rank higher for sales roles and my operational achievements rank higher for engineering roles**.
+
+**Story Points:** 5
+**Priority:** P3 (innovative - no existing research)
+
+**Research Basis:** Novel enhancement based on resume best practices. Quantified impacts (with numbers) should weight higher than qualitative claims.
+
+**Acceptance Criteria:**
+
+**Given** a work unit outcome with financial metrics ("$500K revenue")
+**When** impact classification runs
+**Then** it's tagged as `financial` impact
+
+**Given** a work unit outcome with operational metrics ("reduced latency 40%")
+**When** impact classification runs
+**Then** it's tagged as `operational` impact
+
+**Given** JD for a sales role
+**When** role type is inferred
+**Then** `financial` and `customer` impacts are prioritized
+
+**Given** JD for an engineering role
+**When** role type is inferred
+**Then** `operational` and `technical` impacts are prioritized
+
+**Given** a work unit with quantified impact ("saved $2M annually")
+**When** scoring
+**Then** it receives boost over qualitative claims ("improved efficiency")
+
+**Given** impact category matching
+**When** generating match_reasons
+**Then** reasons include impact alignment ("Financial impact aligns with Sales role")
+
+**Technical Notes:**
+```python
+# src/resume_as_code/services/impact_classifier.py
+from typing import Literal
+import re
+
+ImpactCategory = Literal["financial", "operational", "talent", "customer", "organizational", "technical"]
+
+# Pattern-based classification
+IMPACT_PATTERNS = {
+    "financial": [
+        r"\$[\d,]+[KMB]?",  # Dollar amounts
+        r"revenue", r"cost sav", r"roi", r"profit", r"budget",
+    ],
+    "operational": [
+        r"\d+%\s*(reduc|improv|increas|faster|efficiency)",
+        r"automat", r"streamlin", r"optimiz", r"latency", r"uptime",
+    ],
+    "talent": [
+        r"hired?\s+\d+", r"mentor", r"team\s+of\s+\d+", r"retention",
+        r"onboard", r"train", r"coach",
+    ],
+    "customer": [
+        r"nps", r"csat", r"customer\s+satisfaction", r"user\s+growth",
+        r"churn", r"acquisition", r"retention",
+    ],
+    "organizational": [
+        r"transform", r"culture", r"strategy", r"restructur",
+        r"merger", r"acquisition", r"initiative",
+    ],
+    "technical": [
+        r"architect", r"design", r"implement", r"deploy", r"scale",
+        r"migration", r"infrastructure",
+    ],
+}
+
+# Role type to expected impacts
+ROLE_IMPACT_PRIORITY = {
+    "sales": ["financial", "customer"],
+    "engineering": ["operational", "technical"],
+    "product": ["customer", "operational"],
+    "hr": ["talent", "organizational"],
+    "executive": ["organizational", "financial"],
+    "marketing": ["customer", "financial"],
+}
+
+def classify_impact(outcome_text: str) -> list[tuple[ImpactCategory, float]]:
+    """Classify outcome text into impact categories with confidence."""
+    results = []
+    text = outcome_text.lower()
+    
+    for category, patterns in IMPACT_PATTERNS.items():
+        matches = sum(1 for p in patterns if re.search(p, text))
+        if matches > 0:
+            confidence = min(1.0, matches * 0.3)
+            results.append((category, confidence))
+    
+    return sorted(results, key=lambda x: -x[1])
+
+def has_quantified_impact(outcome_text: str) -> bool:
+    """Check if outcome contains quantified metrics."""
+    return bool(re.search(r'\d+[%$KMB]|\$[\d,]+|\d+x', outcome_text))
+```
+
+**Scoring Integration:**
+```python
+def _impact_alignment_score(
+    self, 
+    work_unit: WorkUnit, 
+    jd: JobDescription
+) -> float:
+    """Score work unit impact alignment with role type."""
+    outcome_text = f"{work_unit.outcome.result} {work_unit.outcome.quantified_impact or ''}"
+    
+    # Classify work unit impacts
+    wu_impacts = classify_impact(outcome_text)
+    
+    # Infer role type from JD title
+    role_type = infer_role_type(jd.title)
+    expected_impacts = ROLE_IMPACT_PRIORITY.get(role_type, [])
+    
+    # Score alignment
+    alignment_score = 0.0
+    for impact, confidence in wu_impacts:
+        if impact in expected_impacts:
+            alignment_score += confidence * (1.0 if impact == expected_impacts[0] else 0.5)
+    
+    # Boost for quantified impacts
+    if has_quantified_impact(outcome_text):
+        alignment_score *= 1.25
+    
+    return min(1.0, alignment_score)
+```
+
+**Files to Create/Modify:**
+- Create: `src/resume_as_code/services/impact_classifier.py`
+- Modify: `src/resume_as_code/services/ranker.py` (integrate impact scoring)
+- Modify: `src/resume_as_code/models/work_unit.py` (optional impact_category field)
+
+**Definition of Done:**
+- [ ] Impact classification from outcome text
+- [ ] Role type inference from JD title
+- [ ] Impact alignment scoring
+- [ ] Quantified impact boost (25%)
+- [ ] Match reasons include impact alignment
+- [ ] Unit tests for classification patterns
+
+---
+
 ## Epic 7 Summary
 
 | Story | Title | Points | Priority | Dependencies |
@@ -4004,10 +4625,18 @@ Evidence = LinkEvidence | GitHubEvidence | MetricsEvidence | NarrativeEvidence |
 | 7.5 | O*NET API Integration | 8 | P3 | 7.4 |
 | 7.6 | Position Reference Integrity | 2 | P2 | None |
 | 7.7 | Evidence Model Enhancement | 3 | P3 | None |
+| 7.8 | Field-Weighted BM25 Scoring | 3 | P1 | None |
+| 7.9 | Recency Decay for Work Units | 3 | P2 | None |
+| 7.10 | Improved BM25 Tokenization | 5 | P2 | None |
+| 7.11 | Section-Level Semantic Embeddings | 8 | P3 | None |
+| 7.12 | Seniority Level Matching | 5 | P3 | None |
+| 7.13 | Impact Category Classification | 5 | P3 | None |
 
-**Total:** 29 points
+**Original Total:** 29 points
+**New Stories:** 29 points
+**Updated Total:** 58 points
 
 **Recommended Sprint Order:**
-1. Stories 7.1, 7.2 (P1 foundational - 8 points)
-2. Stories 7.3, 7.4, 7.6 (P2 improvements - 10 points)
-3. Stories 7.5, 7.7 (P3 advanced - 11 points)
+1. **Sprint 1** (11 pts): Stories 7.1, 7.2, 7.8 - Foundational + quick wins
+2. **Sprint 2** (16 pts): Stories 7.3, 7.4, 7.6, 7.9, 7.10 - Core improvements
+3. **Sprint 3** (31 pts): Stories 7.5, 7.7, 7.11, 7.12, 7.13 - Advanced features
