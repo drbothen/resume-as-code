@@ -4915,6 +4915,397 @@ class BoardRole(BaseModel):
 
 ---
 
+### Story 7.15: Comprehensive Algorithm Documentation
+
+As a **developer or future maintainer**,
+I want **complete documentation of the matching algorithm, its components, configuration options, and tuning guidance**,
+So that **I can understand, debug, tune, and extend the algorithm with confidence**.
+
+**Story Points:** 3
+**Priority:** P1 (should be done alongside or after algorithm implementation)
+
+**Acceptance Criteria:**
+
+**Given** I am a new developer joining the project
+**When** I read the algorithm documentation
+**Then** I understand the complete matching pipeline end-to-end
+**And** I can trace how a work unit score is calculated
+
+**Given** the documentation exists
+**When** I look for algorithm details
+**Then** I find:
+- Architecture overview with data flow diagram
+- Each scoring component explained (BM25, Semantic, RRF)
+- All configuration parameters with defaults and valid ranges
+- Mathematical formulas with worked examples
+- Tuning guide with recommended starting points
+
+**Given** I want to tune the algorithm for a specific use case
+**When** I consult the tuning guide
+**Then** I find concrete recommendations for:
+- Executive vs IC resumes
+- Technical vs non-technical roles
+- Career changers vs domain experts
+- Entry-level vs senior positions
+
+**Given** the algorithm changes in the future
+**When** developers update the code
+**Then** documentation includes a changelog section
+**And** version compatibility notes
+
+**Documentation Structure:**
+
+```markdown
+# docs/algorithm/README.md - Algorithm Documentation
+
+## Table of Contents
+1. Overview & Architecture
+2. Matching Pipeline
+3. Scoring Components
+4. Content Curation
+5. Configuration Reference
+6. Tuning Guide
+7. Troubleshooting
+8. Changelog
+
+## 1. Overview & Architecture
+
+### Purpose
+The Resume-as-Code matching algorithm selects and ranks Work Units
+based on relevance to a target Job Description (JD). It combines
+lexical matching (BM25) with semantic understanding (embeddings)
+using Reciprocal Rank Fusion (RRF).
+
+### High-Level Flow
+```
+┌─────────────┐    ┌──────────────┐    ┌─────────────────┐
+│ Job         │───▶│ JD Parser    │───▶│ JobDescription  │
+│ Description │    │              │    │ (structured)    │
+└─────────────┘    └──────────────┘    └────────┬────────┘
+                                                │
+┌─────────────┐    ┌──────────────┐             │
+│ Work Units  │───▶│ WU Loader    │─────────────┼─────────┐
+│ (YAML)      │    │              │             │         │
+└─────────────┘    └──────────────┘             ▼         ▼
+                                       ┌─────────────────────────┐
+                                       │   Hybrid Ranker         │
+                                       │ ┌─────────┐ ┌─────────┐ │
+                                       │ │ BM25    │ │Semantic │ │
+                                       │ │ Scorer  │ │ Scorer  │ │
+                                       │ └────┬────┘ └────┬────┘ │
+                                       │      │           │      │
+                                       │      ▼           ▼      │
+                                       │   ┌─────────────────┐   │
+                                       │   │   RRF Fusion    │   │
+                                       │   └────────┬────────┘   │
+                                       └────────────┼────────────┘
+                                                    │
+                                       ┌────────────▼────────────┐
+                                       │   Recency Decay         │
+                                       │   Field Weights         │
+                                       │   Quantified Boost      │
+                                       └────────────┬────────────┘
+                                                    │
+                                       ┌────────────▼────────────┐
+                                       │   Content Curator       │
+                                       │   (Section Limits)      │
+                                       └────────────┬────────────┘
+                                                    ▼
+                                       ┌─────────────────────────┐
+                                       │   Ranked Work Units     │
+                                       │   + Curated Sections    │
+                                       └─────────────────────────┘
+```
+
+## 2. Matching Pipeline
+
+### Step 1: JD Parsing
+Extracts structured data from job description text:
+- `title`: Job title for seniority matching
+- `skills`: Required/preferred skills (explicit + inferred)
+- `experience_level`: junior/mid/senior/staff/principal/executive
+- `keywords`: Important terms for BM25 matching
+- `text_for_ranking`: Concatenated text for embedding
+
+### Step 2: Work Unit Loading
+Loads all Work Units from `work-units/*.yaml`:
+- Validates against schema
+- Enriches with position data (employer, dates)
+- Extracts searchable text fields
+
+### Step 3: Hybrid Scoring
+Each Work Unit receives two independent scores:
+
+#### BM25 Score (Lexical)
+Term frequency-inverse document frequency scoring:
+```
+BM25(wu, jd) = Σ IDF(term) × (tf × (k1 + 1)) / (tf + k1 × (1 - b + b × |D|/avgdl))
+
+Where:
+- k1 = 1.5 (term frequency saturation)
+- b = 0.75 (length normalization)
+- tf = term frequency in work unit
+- |D| = work unit length
+- avgdl = average document length
+```
+
+**Field Weights** (Story 7.8):
+```python
+FIELD_WEIGHTS = {
+    "title": 3.0,        # Job title matches weighted heavily
+    "skills": 2.0,       # Skill matches important
+    "outcome": 1.5,      # Results matter
+    "actions": 1.0,      # Base weight
+    "problem": 1.0,      # Context
+}
+```
+
+#### Semantic Score
+Cosine similarity between embeddings:
+```
+semantic(wu, jd) = cos(embed(wu.text), embed(jd.text_for_ranking))
+
+Where:
+- embed() = sentence-transformers model (all-MiniLM-L6-v2 default)
+- cos() = cosine similarity [-1, 1] normalized to [0, 1]
+```
+
+**Section-Level Embeddings** (Story 7.11):
+```python
+# Embed sections separately, take weighted max
+section_scores = {
+    "title": cos(embed(wu.title), jd_emb) * 2.0,
+    "outcome": cos(embed(wu.outcome.result), jd_emb) * 1.5,
+    "skills": cos(embed(wu.skills_text), jd_emb) * 1.5,
+    "actions": max(cos(embed(action), jd_emb) for action in wu.actions),
+}
+semantic_score = weighted_average(section_scores)
+```
+
+### Step 4: RRF Fusion
+Combines BM25 and Semantic rankings:
+```
+RRF(wu) = 1/(k + rank_bm25(wu)) + 1/(k + rank_semantic(wu))
+
+Where:
+- k = 60 (default, configurable)
+- rank_bm25(wu) = position in BM25-sorted list (1-indexed)
+- rank_semantic(wu) = position in semantic-sorted list (1-indexed)
+```
+
+**Why RRF?**
+- Robust to score scale differences
+- No need to normalize incompatible scoring systems
+- Proven effective in information retrieval research
+
+### Step 5: Score Modifiers
+
+#### Recency Decay (Story 7.9)
+```python
+decay = exp(-λ × years_ago)
+# λ = ln(2) / half_life_years
+# Default half_life = 5 years
+
+# Example: 3 years ago with 5-year half life
+decay = exp(-0.139 × 3) = 0.66  # 66% of original score
+```
+
+#### Quantified Achievement Boost (Story 7.14)
+```python
+if has_quantified_impact(wu.outcome):
+    score *= 1.25  # 25% boost
+
+# Detected patterns:
+# - Percentages: "40%", "reduced by 50%"
+# - Currency: "$2M", "$500K"
+# - Multipliers: "3x faster", "10x growth"
+# - Time savings: "saved 20 hours/week"
+```
+
+#### Seniority Alignment (Story 7.12)
+```python
+# Boost work units matching JD seniority
+if wu.inferred_seniority == jd.experience_level:
+    score *= 1.15  # 15% boost for exact match
+elif adjacent_seniority(wu, jd):
+    score *= 1.05  # 5% boost for adjacent levels
+```
+
+### Step 6: Content Curation (Story 7.14)
+Apply research-backed limits per section:
+
+| Section | Default Max | Research Basis |
+|---------|-------------|----------------|
+| Career Highlights | 4 | 3-5 optimal for cognitive load |
+| Skills | 10 | 6-10 optimal (median 8-9) |
+| Certifications | 5 | 3-5 most relevant |
+| Board Roles | 3 | 2-3 unless executive |
+| Bullets (recent) | 6 | 4-6 for 0-3 year positions |
+| Bullets (mid) | 4 | 3-4 for 3-7 year positions |
+| Bullets (older) | 3 | 2-3 for 7+ year positions |
+
+## 3. Configuration Reference
+
+### .resume.yaml - Complete Options
+```yaml
+matching:
+  # Embedding model selection
+  embedding_model: "all-MiniLM-L6-v2"  # or "all-mpnet-base-v2" for better quality
+
+  # RRF fusion parameter
+  rrf_k: 60  # Higher = more equal weighting, Lower = top ranks dominate
+
+  # BM25 parameters
+  bm25:
+    k1: 1.5          # Term frequency saturation (1.2-2.0)
+    b: 0.75          # Length normalization (0.5-0.8)
+
+  # Field weights for BM25 (Story 7.8)
+  field_weights:
+    title: 3.0       # Job title matches
+    skills: 2.0      # Skill matches
+    outcome: 1.5     # Results/impact
+    actions: 1.0     # What you did
+    problem: 1.0     # Context/challenge
+
+  # Recency decay (Story 7.9)
+  recency:
+    enabled: true
+    half_life_years: 5    # Score halves every N years
+    min_decay: 0.3        # Floor (never below 30%)
+
+  # Seniority matching (Story 7.12)
+  seniority:
+    enabled: true
+    exact_match_boost: 1.15
+    adjacent_boost: 1.05
+
+  # Quantified achievement detection
+  quantified_boost: 1.25  # 25% boost for metrics
+
+curation:
+  career_highlights:
+    max_display: 4
+    min_relevance: 0.3    # Minimum score to include
+  certifications:
+    max_display: 5
+    min_relevance: 0.2
+  board_roles:
+    max_display: 3
+    executive_max: 5      # More for executive roles
+  skills:
+    max_display: 10
+  bullets_per_position:
+    recent_years: 3       # 0-3 years ago
+    recent_max: 6
+    mid_years: 7          # 3-7 years ago
+    mid_max: 4
+    older_max: 3          # 7+ years ago
+```
+
+## 4. Tuning Guide
+
+### Scenario: Executive Resume
+```yaml
+matching:
+  field_weights:
+    title: 4.0           # Executive titles matter more
+    outcome: 2.5         # Results-focused
+  recency:
+    half_life_years: 7   # Longer relevance window
+curation:
+  board_roles:
+    max_display: 5       # Show more governance experience
+  bullets_per_position:
+    older_max: 4         # Senior roles warrant more detail
+```
+
+### Scenario: Technical IC Resume
+```yaml
+matching:
+  field_weights:
+    skills: 3.0          # Technical skills crucial
+    title: 2.0           # Less emphasis on titles
+curation:
+  skills:
+    max_display: 15      # Show more technical skills
+  certifications:
+    max_display: 7       # Technical certs valuable
+```
+
+### Scenario: Career Changer
+```yaml
+matching:
+  recency:
+    half_life_years: 3   # Recent experience more relevant
+    min_decay: 0.2       # Older experience less relevant
+  field_weights:
+    skills: 3.5          # Transferable skills matter most
+```
+
+### Scenario: Entry-Level
+```yaml
+curation:
+  bullets_per_position:
+    recent_max: 4        # Fewer bullets (less experience)
+    mid_max: 3
+    older_max: 2
+  skills:
+    max_display: 8       # Focused skill set
+```
+
+## 5. Troubleshooting
+
+### "Wrong work units selected"
+1. Check `resume plan --jd job.txt --verbose` for scores
+2. Verify JD parsing extracted correct skills/keywords
+3. Adjust field_weights if certain fields over/under-represented
+
+### "Too few results"
+1. Lower `min_relevance` thresholds in curation config
+2. Check if recency decay is too aggressive
+3. Verify work units have required fields populated
+
+### "Irrelevant skills showing"
+1. Add to `skills.exclude` list in config
+2. Check if skill appears in multiple work units (boosting score)
+3. Adjust `skills.max_display` lower
+
+### "Old experience ranking too high"
+1. Enable recency decay: `recency.enabled: true`
+2. Lower `half_life_years` (e.g., 3 instead of 5)
+3. Increase `min_decay` floor if too aggressive
+
+## 6. Changelog
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | TBD | Initial algorithm: BM25 + Semantic + RRF |
+| 1.1.0 | TBD | Added field-weighted BM25 (Story 7.8) |
+| 1.2.0 | TBD | Added recency decay (Story 7.9) |
+| 1.3.0 | TBD | Added content curation (Story 7.14) |
+| 1.4.0 | TBD | Added seniority matching (Story 7.12) |
+```
+
+**Files to Create:**
+- `docs/algorithm/README.md` - Main documentation
+- `docs/algorithm/architecture.excalidraw` - Visual diagrams
+- `docs/algorithm/formulas.md` - Mathematical reference
+- `docs/algorithm/tuning-guide.md` - Scenario-based tuning
+- `docs/algorithm/CHANGELOG.md` - Version history
+
+**Definition of Done:**
+- [ ] Architecture diagram showing complete pipeline
+- [ ] All scoring formulas documented with examples
+- [ ] Configuration reference with all parameters
+- [ ] Tuning guide with 4+ scenarios (executive, IC, career changer, entry-level)
+- [ ] Troubleshooting section with common issues
+- [ ] Changelog template for future updates
+- [ ] Documentation reviewed for accuracy against code
+- [ ] Cross-referenced with all algorithm stories (7.8-7.14)
+
+---
+
 ## Epic 7 Summary
 
 | Story | Title | Points | Priority | Dependencies |
@@ -4933,10 +5324,11 @@ class BoardRole(BaseModel):
 | 7.12 | Seniority Level Matching | 5 | P3 | None |
 | 7.13 | Impact Category Classification | 5 | P3 | None |
 | 7.14 | JD-Relevant Content Curation | 5 | P2 | None |
+| 7.15 | Comprehensive Algorithm Documentation | 3 | P1 | 7.8-7.14 |
 
-**Total:** 63 points (14 stories)
+**Total:** 66 points (15 stories)
 
 **Recommended Sprint Order:**
-1. **Sprint 1** (11 pts): Stories 7.1, 7.2, 7.8 - Foundational + quick wins
+1. **Sprint 1** (14 pts): Stories 7.1, 7.2, 7.8, 7.15 - Foundational + documentation
 2. **Sprint 2** (21 pts): Stories 7.3, 7.4, 7.6, 7.9, 7.10, 7.14 - Core improvements
 3. **Sprint 3** (31 pts): Stories 7.5, 7.7, 7.11, 7.12, 7.13 - Advanced features
