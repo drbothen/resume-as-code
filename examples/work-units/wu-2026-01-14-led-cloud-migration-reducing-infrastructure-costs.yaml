@@ -1,0 +1,22 @@
+id: wu-2026-01-14-led-cloud-migration-reducing-infrastructure-costs
+title: Led cloud migration reducing infrastructure costs by $8M annually
+schema_version: 1.0.0
+position_id: pos-datascale-systems-vp-of-engineering
+problem:
+  statement: On-premise data centers required $15M annual maintenance; scaling 
+    was slow and expensive
+actions:
+- Developed multi-year cloud migration strategy with business case
+- Executed lift-and-shift followed by cloud-native optimization
+- Implemented FinOps practices and automated cost optimization
+outcome:
+  result: Reduced infrastructure costs by $8M annually; improved deployment 
+    frequency 10x
+skills_demonstrated:
+- name: Cloud Migration
+- name: AWS
+- name: FinOps
+tags:
+- cloud
+- cost-optimization
+- migration

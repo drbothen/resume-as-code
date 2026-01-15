@@ -1,0 +1,38 @@
+Chief Technology Officer
+
+Company: Global Enterprise Corp
+Location: San Francisco, CA (Hybrid)
+Reports to: CEO
+
+About Us:
+Global Enterprise Corp is a high-growth SaaS company serving Fortune 500 clients. We're looking for a visionary CTO to lead our technology strategy and scale our engineering organization.
+
+Responsibilities:
+- Define and execute technology vision aligned with business strategy
+- Scale engineering organization from 150 to 300+ engineers
+- Lead digital transformation initiatives driving revenue growth
+- Oversee cloud infrastructure and platform reliability at scale
+- Build and mentor high-performing engineering leadership team
+- Partner with CEO and board on technology investment decisions
+- Drive M&A technical due diligence and integration
+
+Requirements:
+- 15+ years of software engineering experience, 8+ years in senior leadership
+- Track record of scaling engineering organizations in high-growth environments
+- Experience with cloud-native architectures at scale (millions of transactions)
+- Strong background in platform engineering and DevOps practices
+- MBA or technical graduate degree preferred
+- Experience presenting to boards and executive stakeholders
+- Proven ability to drive digital transformation with measurable business impact
+
+Technical Requirements:
+- Cloud platforms (AWS, GCP, Azure)
+- Kubernetes and container orchestration
+- Data engineering and real-time analytics
+- Security and compliance frameworks
+- AI/ML platform experience
+
+Compensation:
+- Base: $450K - $550K
+- Equity: 0.5% - 1.0%
+- Bonus: 50% target

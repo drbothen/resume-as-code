@@ -31,3 +31,4 @@ dist/
 # Python packaging
 *.egg-info/
 .coverage
+node_modules/

@@ -1,0 +1,42 @@
+schema_version: 1.0.0
+positions:
+  pos-techventures-global-chief-technology-off:
+    employer: TechVentures Global
+    title: Chief Technology Officer
+    location: San Francisco, CA
+    start_date: 2021-01
+    scope:
+      revenue: $850M
+      team_size: 250
+      direct_reports: 8
+      budget: $75M
+      pl_responsibility: $150M
+      geography: Global (NA, EMEA, APAC)
+  pos-datascale-systems-vp-of-engineering:
+    employer: DataScale Systems
+    title: VP of Engineering
+    location: Seattle, WA
+    start_date: 2017-06
+    end_date: 2020-12
+    scope:
+      revenue: $320M
+      team_size: 120
+      direct_reports: 5
+      budget: $28M
+      geography: North America
+  pos-cloudfirst-technolog-director-of-platform:
+    employer: CloudFirst Technologies
+    title: Director of Platform Engineering
+    location: Austin, TX
+    start_date: 2014-03
+    end_date: 2017-05
+    scope:
+      team_size: 45
+      direct_reports: 4
+      budget: $8M
+  pos-innosoft-corp-senior-software-engi:
+    employer: InnoSoft Corp
+    title: Senior Software Engineer
+    location: Boston, MA
+    start_date: 2010-08
+    end_date: 2014-02

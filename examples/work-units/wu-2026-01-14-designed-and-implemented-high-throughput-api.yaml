@@ -1,0 +1,21 @@
+id: wu-2026-01-14-designed-and-implemented-high-throughput-api
+title: Designed and implemented high-throughput API serving 10M requests daily
+schema_version: 1.0.0
+position_id: pos-innosoft-corp-senior-software-engi
+problem:
+  statement: Existing API had 500ms latency and frequent timeouts during peak 
+    traffic
+actions:
+- Redesigned API architecture with caching layers and connection pooling
+- Implemented rate limiting and circuit breaker patterns
+outcome:
+  result: Reduced latency to under 50ms; handled 10M daily requests with zero 
+    downtime
+skills_demonstrated:
+- name: API Design
+- name: Performance Optimization
+- name: System Design
+tags:
+- api
+- performance
+- backend

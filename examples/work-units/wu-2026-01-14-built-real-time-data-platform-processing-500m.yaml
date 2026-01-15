@@ -1,0 +1,22 @@
+id: wu-2026-01-14-built-real-time-data-platform-processing-500m
+title: Built real-time data platform processing 500M events daily
+schema_version: 1.0.0
+position_id: pos-datascale-systems-vp-of-engineering
+problem:
+  statement: Batch processing delays of 4+ hours prevented timely business 
+    insights
+actions:
+- Architected streaming data pipeline using Apache Kafka and Flink
+- Led team of 40 engineers to deliver platform in 8 months
+- Implemented data quality monitoring and automated anomaly detection
+outcome:
+  result: Reduced data latency from 4 hours to under 60 seconds; enabled 
+    real-time business decisions
+skills_demonstrated:
+- name: Data Engineering
+- name: Apache Kafka
+- name: Stream Processing
+tags:
+- data-platform
+- real-time
+- kafka
