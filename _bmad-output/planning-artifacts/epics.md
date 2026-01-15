@@ -5306,6 +5306,121 @@ curation:
 
 ---
 
+### Story 7.16: CLI Config File Override
+
+As a **power user or CI/CD pipeline**,
+I want **to specify a custom config file path via CLI flag**,
+So that **I can use different configurations for different job applications, environments, or automation scenarios**.
+
+**Story Points:** 2
+**Priority:** P1
+
+**Acceptance Criteria:**
+
+**Given** I have multiple config files (e.g., `executive.yaml`, `technical.yaml`)
+**When** I run `resume plan --config executive.yaml --jd job.txt`
+**Then** the executive config is used instead of `.resume.yaml`
+**And** all settings from that config apply
+
+**Given** I run `resume build --config /path/to/custom.yaml`
+**When** the command executes
+**Then** absolute paths are supported
+**And** relative paths resolve from current directory
+
+**Given** I specify `--config` with a non-existent file
+**When** the command runs
+**Then** a clear error message is shown: "Config file not found: {path}"
+**And** exit code 2 (CONFIG_ERROR) is returned
+
+**Given** I run any command without `--config`
+**When** the command executes
+**Then** default behavior is preserved (`.resume.yaml` in project root)
+**And** no breaking changes to existing workflows
+
+**Given** I set `RESUME_CONFIG` environment variable
+**When** I run a command without `--config`
+**Then** the env var path is used as default
+**And** `--config` flag takes precedence over env var
+
+**Given** I run `resume config --config custom.yaml`
+**When** displaying configuration
+**Then** shows which config file is being used
+**And** displays the resolved absolute path
+
+**Technical Notes:**
+```python
+# src/resume_as_code/cli.py
+import typer
+from pathlib import Path
+
+app = typer.Typer()
+
+# Global option callback for config
+def config_callback(ctx: typer.Context, config_path: Path | None):
+    """Load config from specified path or default."""
+    if config_path:
+        if not config_path.exists():
+            raise typer.BadParameter(f"Config file not found: {config_path}")
+        ctx.obj = {"config_path": config_path.resolve()}
+    else:
+        # Check env var
+        env_config = os.environ.get("RESUME_CONFIG")
+        if env_config:
+            ctx.obj = {"config_path": Path(env_config).resolve()}
+        else:
+            ctx.obj = {"config_path": None}  # Use default discovery
+
+@app.callback()
+def main(
+    ctx: typer.Context,
+    config: Annotated[
+        Path | None,
+        typer.Option(
+            "--config", "-c",
+            help="Path to config file (default: .resume.yaml)",
+            callback=config_callback,
+            is_eager=True,
+        ),
+    ] = None,
+):
+    """Resume-as-Code CLI."""
+    pass
+
+# Update ConfigService to accept explicit path
+class ConfigService:
+    def __init__(self, config_path: Path | None = None):
+        self.config_path = config_path or self._discover_config()
+
+    def _discover_config(self) -> Path:
+        """Default config discovery logic."""
+        # Current behavior: look for .resume.yaml in cwd and parents
+        ...
+```
+
+**Config Precedence Order:**
+1. `--config` CLI flag (highest)
+2. `RESUME_CONFIG` environment variable
+3. `.resume.yaml` in current directory
+4. `.resume.yaml` in parent directories (up to git root)
+5. `~/.config/resume-as-code/config.yaml` (user default)
+
+**Files to Modify:**
+- `src/resume_as_code/cli.py` - Add global `--config` option
+- `src/resume_as_code/services/config_service.py` - Accept explicit path
+- `src/resume_as_code/commands/*.py` - Pass config through context
+
+**Definition of Done:**
+- [ ] `--config` / `-c` flag added to CLI
+- [ ] Absolute and relative paths supported
+- [ ] Clear error on missing config file
+- [ ] `RESUME_CONFIG` env var support
+- [ ] `resume config` shows active config path
+- [ ] Existing behavior unchanged without flag
+- [ ] Unit tests for config resolution order
+- [ ] CLAUDE.md updated with new flag
+
+---
+
 ## Epic 7 Summary
 
 | Story | Title | Points | Priority | Dependencies |
@@ -5325,10 +5440,11 @@ curation:
 | 7.13 | Impact Category Classification | 5 | P3 | None |
 | 7.14 | JD-Relevant Content Curation | 5 | P2 | None |
 | 7.15 | Comprehensive Algorithm Documentation | 3 | P1 | 7.8-7.14 |
+| 7.16 | CLI Config File Override | 2 | P1 | None |
 
-**Total:** 66 points (15 stories)
+**Total:** 68 points (16 stories)
 
 **Recommended Sprint Order:**
-1. **Sprint 1** (14 pts): Stories 7.1, 7.2, 7.8, 7.15 - Foundational + documentation
+1. **Sprint 1** (16 pts): Stories 7.1, 7.2, 7.8, 7.15, 7.16 - Foundational + documentation
 2. **Sprint 2** (21 pts): Stories 7.3, 7.4, 7.6, 7.9, 7.10, 7.14 - Core improvements
 3. **Sprint 3** (31 pts): Stories 7.5, 7.7, 7.11, 7.12, 7.13 - Advanced features
