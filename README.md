@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/brand/lockup-horizontal.svg" alt="rac.me" width="280">
+</p>
+
 # Resume as Code
 
 > Treat your career data as structured, queryable truth.
