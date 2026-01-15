@@ -3,6 +3,7 @@ stepsCompleted: ["step-01-validate-prerequisites", "step-02-design-epics", "step
 inputDocuments:
   - "_bmad-output/planning-artifacts/prd.md"
   - "_bmad-output/planning-artifacts/architecture.md"
+  - "_bmad-output/planning-artifacts/research/schema-refactoring-analysis-2026-01-14.md"
 ---
 
 # Resume as Code - Epic Breakdown
@@ -3432,3 +3433,581 @@ Home (Hero + Marketing)
 └── GitHub (external)
 ```
 
+
+---
+
+## Epic 7: Schema & Data Model Refactoring
+
+**Goal:** Eliminate technical debt in schema/model layer, establish single source of truth, and enable O*NET skill standardization
+
+**User Outcome:** Users benefit from consistent validation, normalized skill names across ATS systems, and reliable position references in work units
+
+**Technical Debt Analysis (2026-01-14):**
+This epic addresses schema inconsistencies identified during deep codebase analysis:
+- JSON schemas drift from Pydantic models (manual sync prone to errors)
+- Three incompatible Scope models (PositionScope, WorkUnit.scope, ResumeItem.scope_*)
+- Date handling varies across models (strings, dates, nullable patterns)
+- Skills scattered across 4 places with no normalization
+- Position references lack integrity enforcement
+- Evidence model requires URL even for local-only artifacts
+
+**Priority:** P1-P3 (foundational to advanced integration)
+**Total Points:** 29
+
+---
+
+### Story 7.1: JSON Schema Auto-Generation
+
+As a **developer**,
+I want **JSON schemas to be auto-generated from Pydantic models**,
+So that **schemas never drift from implementation and documentation stays accurate**.
+
+**Story Points:** 3
+**Priority:** P1 (foundational)
+
+**Acceptance Criteria:**
+
+**Given** the Pydantic models in `src/resume_as_code/models/`
+**When** I run the pre-commit hooks
+**Then** JSON schemas are regenerated in `schemas/` directory
+
+**Given** a Pydantic model changes (new field, type change, validation)
+**When** I commit the change
+**Then** the corresponding JSON schema is updated automatically
+**And** the commit includes both the model change and schema update
+
+**Given** I run `uv run python scripts/generate_schemas.py`
+**When** it completes
+**Then** all schemas in `schemas/` are regenerated
+**And** `$id` URLs follow pattern `https://resume-as-code.dev/schemas/{name}.schema.json`
+
+**Given** a generated schema
+**When** I inspect it
+**Then** it includes:
+- `$schema: "https://json-schema.org/draft/2020-12/schema"`
+- Proper `$defs` for nested models
+- `description` from docstrings
+- All validation constraints (minLength, pattern, enum, etc.)
+
+**Technical Notes:**
+```python
+# scripts/generate_schemas.py
+from pydantic import TypeAdapter
+from resume_as_code.models.work_unit import WorkUnit
+from resume_as_code.models.position import Position
+from resume_as_code.models.config import ResumeConfig
+
+MODELS = {
+    "work-unit": WorkUnit,
+    "positions": Position,
+    "config": ResumeConfig,
+}
+
+for name, model in MODELS.items():
+    adapter = TypeAdapter(model)
+    schema = adapter.json_schema(mode="serialization")
+    schema["$id"] = f"https://resume-as-code.dev/schemas/{name}.schema.json"
+    # Write to schemas/{name}.schema.json
+```
+
+**Files to Create/Modify:**
+- Create: `scripts/generate_schemas.py`
+- Modify: `.pre-commit-config.yaml` (add schema generation hook)
+- Delete: Manual schema maintenance workflow
+
+**Definition of Done:**
+- [ ] Schema generation script exists and runs without errors
+- [ ] Pre-commit hook triggers schema regeneration
+- [ ] All existing tests pass with new schemas
+- [ ] Generated schemas validate against JSON Schema 2020-12
+
+---
+
+### Story 7.2: Unified Scope Model
+
+As a **resume builder**,
+I want **a single Scope model used consistently across positions and work units**,
+So that **executive metrics are reliable and don't conflict between data sources**.
+
+**Story Points:** 5
+**Priority:** P1 (foundational)
+
+**Acceptance Criteria:**
+
+**Given** a position with scope data
+**When** I create work units for that position
+**Then** I don't need to duplicate scope in work units
+**And** scope from position is used for resume rendering
+
+**Given** the unified Scope model
+**When** I inspect its fields
+**Then** it contains:
+- `revenue: str | None` - Revenue impact (e.g., "$500M")
+- `team_size: int | None` - Total team/org size
+- `direct_reports: int | None` - Direct reports count
+- `budget: str | None` - Budget managed
+- `pl_responsibility: str | None` - P&L responsibility
+- `geography: str | None` - Geographic reach
+- `customers: str | None` - Customer scope
+
+**Given** existing work units with legacy scope fields
+**When** validation runs
+**Then** a deprecation warning is logged (not an error)
+**And** legacy fields are mapped to unified model internally
+
+**Given** ResumeItem renders a position
+**When** scope data exists
+**Then** scope_line is formatted consistently using unified model
+
+**Technical Notes:**
+```python
+# src/resume_as_code/models/scope.py (new file)
+from pydantic import BaseModel, ConfigDict
+
+class Scope(BaseModel):
+    """Unified scope model for positions and work units."""
+    model_config = ConfigDict(extra="forbid")
+    
+    revenue: str | None = None
+    team_size: int | None = None
+    direct_reports: int | None = None
+    budget: str | None = None
+    pl_responsibility: str | None = None
+    geography: str | None = None
+    customers: str | None = None
+```
+
+**Migration:**
+- Position.scope already uses PositionScope → rename to Scope
+- WorkUnit.scope uses different fields → deprecate, migrate to position-level scope
+- ResumeItem.scope_* fields → derive from Position.scope only
+
+**Files to Create/Modify:**
+- Create: `src/resume_as_code/models/scope.py`
+- Modify: `src/resume_as_code/models/position.py` (use unified Scope)
+- Modify: `src/resume_as_code/models/work_unit.py` (deprecate scope)
+- Modify: `src/resume_as_code/models/resume.py` (use Position.scope)
+- Modify: `src/resume_as_code/services/position_service.py` (update format_scope_line)
+
+**Definition of Done:**
+- [ ] Single Scope class defined in models/scope.py
+- [ ] Position uses unified Scope
+- [ ] Work unit scope deprecated with warning
+- [ ] ResumeItem scope fields derived from Position.scope
+- [ ] All tests pass
+
+---
+
+### Story 7.3: Standardized Date Types
+
+As a **developer**,
+I want **consistent date handling with reusable annotated types**,
+So that **date validation is centralized and dates display consistently**.
+
+**Story Points:** 3
+**Priority:** P2
+
+**Acceptance Criteria:**
+
+**Given** a YearMonth field (e.g., "2024-01")
+**When** I set it with various formats
+**Then** it normalizes to YYYY-MM string
+**And** invalid formats raise ValidationError
+
+**Given** a Year field (e.g., "2024" or 2024)
+**When** I set it with string or integer
+**Then** it normalizes to 4-digit string
+**And** invalid formats raise ValidationError
+
+**Given** Position.start_date and Position.end_date
+**When** I inspect their types
+**Then** they use `YearMonth` annotated type
+**And** validation is automatic (no custom validators needed)
+
+**Given** Education.graduation_year
+**When** I inspect its type
+**Then** it uses `Year` annotated type
+
+**Technical Notes:**
+```python
+# src/resume_as_code/models/types.py (new file)
+import re
+from typing import Annotated
+from pydantic import BeforeValidator
+
+def normalize_year_month(v: str | None) -> str | None:
+    if v is None:
+        return None
+    if not re.match(r"^\d{4}-\d{2}$", str(v)):
+        raise ValueError("Date must be in YYYY-MM format")
+    return str(v)
+
+def normalize_year(v: str | int | None) -> str | None:
+    if v is None:
+        return None
+    year_str = str(v)
+    if not re.match(r"^\d{4}$", year_str):
+        raise ValueError("Year must be 4-digit format (YYYY)")
+    return year_str
+
+YearMonth = Annotated[str, BeforeValidator(normalize_year_month)]
+Year = Annotated[str, BeforeValidator(normalize_year)]
+```
+
+**Files to Create/Modify:**
+- Create: `src/resume_as_code/models/types.py`
+- Modify: `src/resume_as_code/models/position.py` (use YearMonth)
+- Modify: `src/resume_as_code/models/education.py` (use Year)
+- Modify: `src/resume_as_code/models/certification.py` (use YearMonth for date fields)
+
+**Definition of Done:**
+- [ ] types.py with YearMonth and Year annotated types
+- [ ] Position uses YearMonth for start_date/end_date
+- [ ] Remove duplicate date validators from models
+- [ ] All date fields validate consistently
+
+---
+
+### Story 7.4: Skills Registry & Normalization
+
+As a **job seeker**,
+I want **my skills normalized to standard names with aliases**,
+So that **ATS systems recognize my skills regardless of how I typed them**.
+
+**Story Points:** 5
+**Priority:** P2
+
+**Acceptance Criteria:**
+
+**Given** I enter skill "k8s" in a work unit
+**When** the resume renders
+**Then** it displays "Kubernetes" (canonical name)
+**And** original alias is preserved for search matching
+
+**Given** the skills registry
+**When** I inspect it
+**Then** each skill has:
+- `canonical: str` - Display name
+- `aliases: list[str]` - Alternative spellings/abbreviations
+- `category: str | None` - Optional category
+- `onet_code: str | None` - O*NET mapping (if available)
+
+**Given** I call `SkillRegistry.normalize("typescript")`
+**When** it returns
+**Then** I get `"TypeScript"` (proper casing)
+
+**Given** I call `SkillRegistry.normalize("unknown-skill")`
+**When** it returns
+**Then** I get the original string back (passthrough)
+
+**Given** skills are extracted from work units
+**When** curated for resume
+**Then** duplicates are removed by canonical name
+**And** both aliases and canonical names match JD keywords
+
+**Technical Notes:**
+```python
+# src/resume_as_code/services/skill_registry.py
+from pydantic import BaseModel
+
+class SkillEntry(BaseModel):
+    canonical: str
+    aliases: list[str] = []
+    category: str | None = None
+    onet_code: str | None = None
+
+class SkillRegistry:
+    def __init__(self, entries: list[SkillEntry]):
+        self._by_alias: dict[str, SkillEntry] = {}
+        for entry in entries:
+            self._by_alias[entry.canonical.lower()] = entry
+            for alias in entry.aliases:
+                self._by_alias[alias.lower()] = entry
+    
+    def normalize(self, skill: str) -> str:
+        entry = self._by_alias.get(skill.lower())
+        return entry.canonical if entry else skill
+    
+    @classmethod
+    def load_default(cls) -> "SkillRegistry":
+        # Load from data/skills.yaml
+        ...
+```
+
+**Files to Create/Modify:**
+- Create: `src/resume_as_code/services/skill_registry.py`
+- Create: `data/skills.yaml` (initial registry with ~50 common tech skills)
+- Modify: `src/resume_as_code/services/skill_curator.py` (integrate registry)
+- Modify: `src/resume_as_code/models/resume.py` (normalize during extraction)
+
+**Definition of Done:**
+- [ ] SkillRegistry class with normalize() method
+- [ ] Initial skills.yaml with 50+ common tech skills
+- [ ] SkillCurator uses registry for normalization
+- [ ] Aliases counted for JD matching
+- [ ] Unit tests for normalization
+
+---
+
+### Story 7.5: O*NET API Integration
+
+As a **job seeker**,
+I want **my skills mapped to O*NET standardized competencies**,
+So that **my resume uses industry-recognized skill terminology**.
+
+**Story Points:** 8
+**Priority:** P3 (advanced integration)
+
+**Dependencies:** Story 7.4 (Skills Registry)
+
+**Acceptance Criteria:**
+
+**Given** O*NET credentials in config or environment
+**When** I run skill normalization
+**Then** unmapped skills are looked up via O*NET API
+**And** matches are cached locally
+
+**Given** I call `ONetService.search_skills("python programming")`
+**When** the API returns
+**Then** I get O*NET skill codes and titles
+**And** response is cached for 24 hours
+
+**Given** no O*NET credentials configured
+**When** skill normalization runs
+**Then** it falls back to local registry only
+**And** no errors are raised
+
+**Given** O*NET API rate limit is hit
+**When** making requests
+**Then** exponential backoff is applied
+**And** graceful degradation to local registry
+
+**Given** a successful O*NET lookup
+**When** the skill is added to registry
+**Then** onet_code is populated
+**And** skill is persisted for future use
+
+**Technical Notes:**
+```python
+# src/resume_as_code/services/onet_service.py
+import httpx
+from functools import lru_cache
+
+class ONetService:
+    BASE_URL = "https://services.onetcenter.org/ws"
+    
+    def __init__(self, username: str, password: str):
+        self._auth = (username, password)
+        self._client = httpx.Client(
+            base_url=self.BASE_URL,
+            auth=self._auth,
+            headers={"Accept": "application/json"},
+        )
+    
+    @lru_cache(maxsize=1000)
+    def search_skills(self, keyword: str) -> list[dict]:
+        resp = self._client.get("/online/search", params={
+            "keyword": keyword,
+            "start": 1,
+            "end": 10,
+        })
+        resp.raise_for_status()
+        return resp.json().get("occupation", [])
+```
+
+**Configuration:**
+```yaml
+# .resume.yaml
+onet:
+  username: ${ONET_USERNAME}  # from environment
+  password: ${ONET_PASSWORD}
+  cache_ttl: 86400  # 24 hours
+```
+
+**Files to Create/Modify:**
+- Create: `src/resume_as_code/services/onet_service.py`
+- Modify: `src/resume_as_code/models/config.py` (add ONetConfig)
+- Modify: `src/resume_as_code/services/skill_registry.py` (integrate O*NET lookup)
+- Create: `tests/unit/services/test_onet_service.py`
+
+**Definition of Done:**
+- [ ] ONetService with search_skills() method
+- [ ] Config supports ONET credentials (env vars)
+- [ ] Caching with configurable TTL
+- [ ] Graceful fallback when API unavailable
+- [ ] Rate limiting with backoff
+- [ ] Integration tests (mocked API)
+
+---
+
+### Story 7.6: Position Reference Integrity
+
+As a **developer**,
+I want **work unit position_id references validated at load time**,
+So that **invalid references are caught early, not during resume generation**.
+
+**Story Points:** 2
+**Priority:** P2
+
+**Acceptance Criteria:**
+
+**Given** a work unit with `position_id: pos-nonexistent`
+**When** I run `resume validate --check-positions`
+**Then** validation fails with error message
+**And** error includes the invalid position_id and suggestions
+
+**Given** a work unit without position_id
+**When** validation runs
+**Then** it passes (position_id is optional for standalone projects)
+
+**Given** WorkUnitLoader loads work units
+**When** positions are available
+**Then** each position_id is validated against positions.yaml
+**And** Position objects are attached to WorkUnit for efficient access
+
+**Given** I call `work_unit.position`
+**When** position_id is valid
+**Then** I get the Position object directly
+**And** no separate lookup is needed
+
+**Technical Notes:**
+```python
+# Modify WorkUnit model
+class WorkUnit(BaseModel):
+    position_id: str | None = None
+    _position: Position | None = PrivateAttr(default=None)
+    
+    @property
+    def position(self) -> Position | None:
+        return self._position
+    
+    def attach_position(self, position: Position) -> None:
+        if self.position_id and position.id != self.position_id:
+            raise ValueError(f"Position ID mismatch")
+        self._position = position
+
+# In WorkUnitLoader
+def load_with_positions(self, positions: dict[str, Position]) -> list[WorkUnit]:
+    work_units = self.load_all()
+    for wu in work_units:
+        if wu.position_id:
+            if wu.position_id not in positions:
+                raise ValidationError(f"Invalid position_id: {wu.position_id}")
+            wu.attach_position(positions[wu.position_id])
+    return work_units
+```
+
+**Files to Modify:**
+- Modify: `src/resume_as_code/models/work_unit.py` (add position attachment)
+- Modify: `src/resume_as_code/services/work_unit_loader.py` (validate references)
+- Modify: `src/resume_as_code/commands/validate.py` (integrate position check)
+
+**Definition of Done:**
+- [ ] WorkUnit has position property
+- [ ] Loader validates position_id references
+- [ ] `--check-positions` flag works
+- [ ] Clear error messages for invalid references
+
+---
+
+### Story 7.7: Evidence Model Enhancement
+
+As a **job seeker**,
+I want **to store evidence without requiring URLs**,
+So that **I can reference local artifacts, file hashes, and descriptions**.
+
+**Story Points:** 3
+**Priority:** P3
+
+**Acceptance Criteria:**
+
+**Given** evidence with only description (no URL)
+**When** I create a work unit
+**Then** validation passes
+**And** evidence is stored with type "narrative"
+
+**Given** evidence with a URL
+**When** I create a work unit
+**Then** validation passes
+**And** evidence type is inferred (github, metrics, etc.)
+
+**Given** evidence with file hash
+**When** I create a work unit
+**Then** it stores hash and optional local path
+**And** can be verified later
+
+**Given** evidence types
+**When** I inspect the discriminated union
+**Then** supported types are:
+- `link` - External URL (any http/https)
+- `github` - GitHub PR/commit/repo
+- `metrics` - Dashboard/analytics URL
+- `narrative` - Text description only
+- `artifact` - Local file with hash
+
+**Technical Notes:**
+```python
+# Enhanced Evidence model with discriminated union
+from typing import Literal
+from pydantic import BaseModel, HttpUrl
+
+class LinkEvidence(BaseModel):
+    type: Literal["link"] = "link"
+    url: HttpUrl
+    description: str | None = None
+
+class GitHubEvidence(BaseModel):
+    type: Literal["github"] = "github"
+    url: HttpUrl  # Must be github.com
+    description: str | None = None
+
+class MetricsEvidence(BaseModel):
+    type: Literal["metrics"] = "metrics"
+    url: HttpUrl
+    description: str | None = None
+
+class NarrativeEvidence(BaseModel):
+    type: Literal["narrative"] = "narrative"
+    description: str
+
+class ArtifactEvidence(BaseModel):
+    type: Literal["artifact"] = "artifact"
+    path: str | None = None
+    sha256: str | None = None
+    description: str | None = None
+
+Evidence = LinkEvidence | GitHubEvidence | MetricsEvidence | NarrativeEvidence | ArtifactEvidence
+```
+
+**Files to Modify:**
+- Modify: `src/resume_as_code/models/work_unit.py` (enhance Evidence)
+- Modify: `schemas/work-unit.schema.json` (auto-generated)
+- Create: `tests/unit/models/test_evidence.py`
+
+**Definition of Done:**
+- [ ] Evidence uses discriminated union
+- [ ] Narrative type allows description-only
+- [ ] Artifact type supports file hash
+- [ ] Schema auto-generated with oneOf
+- [ ] Backward compatible with existing data
+
+---
+
+## Epic 7 Summary
+
+| Story | Title | Points | Priority | Dependencies |
+|-------|-------|--------|----------|--------------|
+| 7.1 | JSON Schema Auto-Generation | 3 | P1 | None |
+| 7.2 | Unified Scope Model | 5 | P1 | None |
+| 7.3 | Standardized Date Types | 3 | P2 | None |
+| 7.4 | Skills Registry & Normalization | 5 | P2 | None |
+| 7.5 | O*NET API Integration | 8 | P3 | 7.4 |
+| 7.6 | Position Reference Integrity | 2 | P2 | None |
+| 7.7 | Evidence Model Enhancement | 3 | P3 | None |
+
+**Total:** 29 points
+
+**Recommended Sprint Order:**
+1. Stories 7.1, 7.2 (P1 foundational - 8 points)
+2. Stories 7.3, 7.4, 7.6 (P2 improvements - 10 points)
+3. Stories 7.5, 7.7 (P3 advanced - 11 points)
