@@ -4614,6 +4614,307 @@ def _impact_alignment_score(
 
 ---
 
+### Story 7.14: JD-Relevant Content Curation
+
+As a **job seeker**,
+I want **my career highlights, certifications, and other sections intelligently selected based on JD relevance**,
+So that **I can maintain a comprehensive profile while the algorithm surfaces the most appropriate items for each application**.
+
+**Story Points:** 5
+**Priority:** P2
+
+**Research Basis:** (2024-2025 resume research, 18.4M resumes analyzed)
+
+Cognitive load research confirms working memory limit of 5-7 items before fatigue:
+- **Career highlights/Summary**: 3-5 bullet points maximum (research: 2-4 sentences)
+- **Bullets per position**: 4-6 recent roles, 2-3 older positions
+- **Skills**: 6-10 optimal (median 8-9), up to 12-15 mid-career, 15-20 senior
+- **Certifications**: 3-5 most relevant to JD
+- **Board roles**: 2-3 unless executive-level position
+
+Key insight: Only 10% of resumes include quantified results despite 78% of recruiters citing this as top differentiator. Prioritizing quantified achievements provides massive competitive advantage.
+
+**Acceptance Criteria:**
+
+**Given** I have 8 career highlights configured
+**When** generating a resume for a specific JD
+**Then** the 4 most JD-relevant highlights are selected
+**And** selection is based on keyword/semantic matching against JD
+
+**Given** I have 10 certifications configured
+**When** generating a resume for a JD requiring "AWS" and "Kubernetes"
+**Then** AWS and Kubernetes certifications rank highest
+**And** output limited to configured max (default 5)
+
+**Given** I have 6 board roles configured
+**When** generating a resume for a non-executive role
+**Then** 2-3 most relevant board roles are selected
+**And** executive roles show more board experience
+
+**Given** the curation algorithm runs
+**When** selecting items
+**Then** each item is scored against JD using:
+- Keyword overlap (BM25-style)
+- Semantic similarity (embedding)
+- Recency (more recent = higher score)
+
+**Given** `resume plan --jd job.txt` runs
+**When** displaying results
+**Then** shows which highlights/certs/roles were selected
+**And** shows relevance scores for transparency
+
+**Given** I want to force-include specific items
+**When** I set `priority: always` on an item
+**Then** it's always included regardless of JD relevance
+
+**Given** a position from 2 years ago with 8 work unit bullets
+**When** generating resume output
+**Then** only the 4-6 most JD-relevant bullets are selected
+
+**Given** a position from 7 years ago with 6 work unit bullets
+**When** generating resume output
+**Then** only the 2-3 most JD-relevant bullets are selected
+**And** recency decay is applied (older positions get fewer bullets)
+
+**Given** work units with quantified outcomes ("saved $2M", "40% faster")
+**When** selecting bullets
+**Then** quantified achievements are boosted 25% in scoring
+**And** they are prioritized for inclusion
+
+**Technical Notes:**
+```python
+# src/resume_as_code/services/content_curator.py
+from dataclasses import dataclass
+from typing import Generic, TypeVar
+
+T = TypeVar("T")
+
+@dataclass
+class CurationResult(Generic[T]):
+    """Result of content curation."""
+    selected: list[T]
+    excluded: list[T]
+    scores: dict[str, float]  # item_id -> relevance score
+
+# Research-backed limits (2024-2025 resume studies)
+SECTION_LIMITS = {
+    "career_highlights": 4,       # Research: 3-5 optimal
+    "certifications": 5,          # Research: 3-5 most relevant
+    "board_roles": 3,             # 2-3 unless executive role
+    "publications": 3,            # Keep focused
+    "skills": 10,                 # Research: 6-10 optimal (median 8-9)
+}
+
+# Bullets per position based on recency
+BULLETS_PER_POSITION = {
+    "recent": (4, 6),    # 0-3 years: 4-6 bullets
+    "mid": (3, 4),       # 3-7 years: 3-4 bullets
+    "older": (2, 3),     # 7+ years: 2-3 bullets
+}
+
+class ContentCurator:
+    """Curates resume content based on JD relevance."""
+    
+    def __init__(
+        self,
+        embedder: EmbeddingService,
+        limits: dict[str, int] | None = None,
+    ):
+        self.embedder = embedder
+        self.limits = limits or SECTION_LIMITS
+    
+    def curate_highlights(
+        self,
+        highlights: list[str],
+        jd: JobDescription,
+        max_count: int | None = None,
+    ) -> CurationResult[str]:
+        """Select most JD-relevant career highlights."""
+        max_count = max_count or self.limits["career_highlights"]
+        
+        # Score each highlight
+        jd_embedding = self.embedder.embed_passage(jd.text_for_ranking)
+        scores = {}
+        
+        for i, highlight in enumerate(highlights):
+            highlight_emb = self.embedder.embed_query(highlight)
+            semantic_score = cosine_similarity(highlight_emb, jd_embedding)
+            
+            # Keyword overlap bonus
+            keyword_score = self._keyword_overlap(highlight, jd.keywords)
+            
+            # Combined score
+            scores[f"highlight_{i}"] = (0.6 * semantic_score) + (0.4 * keyword_score)
+        
+        # Sort and select top N
+        ranked = sorted(
+            enumerate(highlights),
+            key=lambda x: scores[f"highlight_{x[0]}"],
+            reverse=True,
+        )
+        
+        selected = [h for _, h in ranked[:max_count]]
+        excluded = [h for _, h in ranked[max_count:]]
+        
+        return CurationResult(
+            selected=selected,
+            excluded=excluded,
+            scores=scores,
+        )
+    
+    def curate_certifications(
+        self,
+        certifications: list[Certification],
+        jd: JobDescription,
+        max_count: int | None = None,
+    ) -> CurationResult[Certification]:
+        """Select most JD-relevant certifications."""
+        max_count = max_count or self.limits["certifications"]
+        
+        # Priority items always included
+        always_include = [c for c in certifications if getattr(c, "priority", None) == "always"]
+        candidates = [c for c in certifications if c not in always_include]
+        
+        # Score candidates
+        scores = {}
+        jd_skills = set(s.lower() for s in jd.skills)
+        
+        for cert in candidates:
+            # Direct skill match (cert name contains JD skill)
+            skill_match = sum(
+                1 for skill in jd_skills 
+                if skill in cert.name.lower() or skill in (cert.issuer or "").lower()
+            )
+            
+            # Semantic similarity
+            cert_text = f"{cert.name} {cert.issuer or ''}"
+            cert_emb = self.embedder.embed_query(cert_text)
+            jd_emb = self.embedder.embed_passage(jd.text_for_ranking)
+            semantic_score = cosine_similarity(cert_emb, jd_emb)
+            
+            # Recency bonus (active certs score higher)
+            recency_bonus = 1.0 if cert.get_status() == "active" else 0.5
+            
+            scores[cert.name] = (skill_match * 0.5) + (semantic_score * 0.3) + (recency_bonus * 0.2)
+        
+        # Rank and select
+        ranked = sorted(candidates, key=lambda c: scores[c.name], reverse=True)
+        remaining_slots = max(0, max_count - len(always_include))
+        
+        selected = always_include + ranked[:remaining_slots]
+        excluded = ranked[remaining_slots:]
+        
+        return CurationResult(selected=selected, excluded=excluded, scores=scores)
+
+    def curate_position_bullets(
+        self,
+        position: Position,
+        work_units: list[WorkUnit],
+        jd: JobDescription,
+    ) -> CurationResult[WorkUnit]:
+        """Select most JD-relevant work units for a position, respecting recency limits."""
+        from datetime import date
+
+        # Determine position age and bullet limits
+        years_ago = self._position_age_years(position)
+        if years_ago <= 3:
+            min_bullets, max_bullets = BULLETS_PER_POSITION["recent"]
+        elif years_ago <= 7:
+            min_bullets, max_bullets = BULLETS_PER_POSITION["mid"]
+        else:
+            min_bullets, max_bullets = BULLETS_PER_POSITION["older"]
+
+        # Score each work unit
+        jd_embedding = self.embedder.embed_passage(jd.text_for_ranking)
+        scores = {}
+
+        for wu in work_units:
+            wu_text = extract_work_unit_text(wu)
+            wu_emb = self.embedder.embed_query(wu_text)
+            semantic_score = cosine_similarity(wu_emb, jd_embedding)
+
+            # Boost for quantified outcomes
+            quantified_boost = 1.25 if has_quantified_impact(wu.outcome) else 1.0
+
+            scores[wu.id] = semantic_score * quantified_boost
+
+        # Rank and select within limits
+        ranked = sorted(work_units, key=lambda wu: scores[wu.id], reverse=True)
+        selected = ranked[:max_bullets]
+        excluded = ranked[max_bullets:]
+
+        return CurationResult(selected=selected, excluded=excluded, scores=scores)
+
+def has_quantified_impact(outcome) -> bool:
+    """Check if outcome contains quantified metrics."""
+    import re
+    text = f"{outcome.result} {outcome.quantified_impact or ''}"
+    return bool(re.search(r'\d+[%$KMB]|\$[\d,]+|\d+x|\d+\s*(hours?|days?|weeks?)', text))
+```
+
+**Config Extension:**
+```yaml
+# .resume.yaml
+curation:
+  career_highlights:
+    max_display: 4          # Research: 3-5 optimal
+    min_relevance: 0.3      # Minimum score to include
+  certifications:
+    max_display: 5          # Research: 3-5 most relevant
+    min_relevance: 0.2
+  board_roles:
+    max_display: 3
+    executive_max: 5        # More for executive roles
+  publications:
+    max_display: 3
+  skills:
+    max_display: 10         # Research: 6-10 optimal (median 8-9)
+  bullets_per_position:
+    recent_years: 3         # 0-3 years ago
+    recent_max: 6           # 4-6 bullets
+    mid_years: 7            # 3-7 years ago
+    mid_max: 4              # 3-4 bullets
+    older_max: 3            # 7+ years: 2-3 bullets
+  quantified_boost: 1.25    # 25% boost for quantified achievements
+```
+
+**Model Enhancement:**
+```python
+# Add priority field to relevant models
+class Certification(BaseModel):
+    # ... existing fields ...
+    priority: Literal["always", "normal", "low"] | None = Field(
+        default=None,
+        description="Priority for curation: 'always' forces inclusion"
+    )
+
+class BoardRole(BaseModel):
+    # ... existing fields ...
+    priority: Literal["always", "normal", "low"] | None = None
+```
+
+**Files to Create/Modify:**
+- Create: `src/resume_as_code/services/content_curator.py`
+- Modify: `src/resume_as_code/models/config.py` (add CurationConfig)
+- Modify: `src/resume_as_code/models/certification.py` (add priority field)
+- Modify: `src/resume_as_code/models/board_role.py` (add priority field)
+- Modify: `src/resume_as_code/commands/plan.py` (integrate curation)
+- Modify: `src/resume_as_code/models/resume.py` (use curated content)
+
+**Definition of Done:**
+- [ ] ContentCurator service with curate_* methods
+- [ ] Career highlights curation (max 4)
+- [ ] Certification curation with skill matching
+- [ ] Board role curation (context-aware limits)
+- [ ] Position bullets curation based on recency (4-6 recent, 3-4 mid, 2-3 older)
+- [ ] Quantified achievement boost (25% for metrics-backed outcomes)
+- [ ] Priority field for force-inclusion
+- [ ] Plan command shows curation decisions
+- [ ] Configurable limits via .resume.yaml
+- [ ] Unit tests for curation logic
+
+---
+
 ## Epic 7 Summary
 
 | Story | Title | Points | Priority | Dependencies |
@@ -4631,12 +4932,11 @@ def _impact_alignment_score(
 | 7.11 | Section-Level Semantic Embeddings | 8 | P3 | None |
 | 7.12 | Seniority Level Matching | 5 | P3 | None |
 | 7.13 | Impact Category Classification | 5 | P3 | None |
+| 7.14 | JD-Relevant Content Curation | 5 | P2 | None |
 
-**Original Total:** 29 points
-**New Stories:** 29 points
-**Updated Total:** 58 points
+**Total:** 63 points (14 stories)
 
 **Recommended Sprint Order:**
 1. **Sprint 1** (11 pts): Stories 7.1, 7.2, 7.8 - Foundational + quick wins
-2. **Sprint 2** (16 pts): Stories 7.3, 7.4, 7.6, 7.9, 7.10 - Core improvements
+2. **Sprint 2** (21 pts): Stories 7.3, 7.4, 7.6, 7.9, 7.10, 7.14 - Core improvements
 3. **Sprint 3** (31 pts): Stories 7.5, 7.7, 7.11, 7.12, 7.13 - Advanced features
