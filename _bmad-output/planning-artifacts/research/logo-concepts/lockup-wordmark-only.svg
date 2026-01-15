@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 50" width="180" height="50">
+  <!-- Wordmark Only: rac.me
+       For text-only contexts like headers -->
+
+  <text x="10" y="38"
+        font-family="'Geist Mono', 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace"
+        font-size="36"
+        font-weight="600">
+    <tspan fill="#1E2650">rac</tspan><tspan fill="#D34516">.</tspan><tspan fill="#1E2650">me</tspan>
+  </text>
+</svg>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Concept 4: Angle Bracket R
+       Visual metaphor: <R> as in <Resume> tag / markup
+       Meaning: Resume as structured markup/code -->
+
+  <!-- Left angle bracket < -->
+  <path d="M 30 30 L 10 50 L 30 70"
+        fill="none"
+        stroke="#1E2650"
+        stroke-width="6"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- Right angle bracket > -->
+  <path d="M 70 30 L 90 50 L 70 70"
+        fill="none"
+        stroke="#1E2650"
+        stroke-width="6"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- R in center -->
+  <text x="50" y="58"
+        font-family="system-ui, -apple-system, sans-serif"
+        font-size="32"
+        font-weight="700"
+        fill="#D34516"
+        text-anchor="middle">R</text>
+</svg>

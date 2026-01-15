@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Concept 6: Minimal R with integrated bracket
+       Visual metaphor: Letter R that IS a code bracket
+       Meaning: Simplest expression of resume-as-code -->
+
+  <!-- R letterform with bracket integrated into leg -->
+  <path d="M 25 80
+           L 25 20
+           L 55 20
+           Q 75 20, 75 35
+           Q 75 50, 55 50
+           L 25 50
+           M 45 50
+           L 75 80"
+        fill="none"
+        stroke="#1E2650"
+        stroke-width="6"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- Subtle bracket hint on the leg (making it look like } ) -->
+  <path d="M 75 80 Q 85 80, 85 70 L 85 60"
+        fill="none"
+        stroke="#D34516"
+        stroke-width="4"
+        stroke-linecap="round"/>
+</svg>

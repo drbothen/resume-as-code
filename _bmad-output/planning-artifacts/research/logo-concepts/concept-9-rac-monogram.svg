@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Concept 9: RAC Monogram (Resume As Code)
+       Stacked letterforms with code aesthetic -->
+
+  <!-- Background rounded square (like app icon) -->
+  <rect x="5" y="5" width="90" height="90" rx="16" ry="16"
+        fill="#1E2650"/>
+
+  <!-- R -->
+  <path d="M 20 75 L 20 25 L 40 25 Q 52 25, 52 35 Q 52 45, 40 45 L 20 45 M 35 45 L 52 75"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-width="4"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- A (simplified) -->
+  <path d="M 56 75 L 68 25 L 80 75 M 60 55 L 76 55"
+        fill="none"
+        stroke="#D34516"
+        stroke-width="4"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>
