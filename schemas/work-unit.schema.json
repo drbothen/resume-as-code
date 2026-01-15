@@ -1,174 +1,752 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://resume-as-code.dev/schemas/work-unit.schema.json",
-  "title": "Work Unit",
-  "description": "A documented instance of applied capability",
-  "type": "object",
-  "required": ["id", "title", "problem", "actions", "outcome"],
-  "properties": {
-    "schema_version": {
-      "type": "string",
-      "const": "1.0.0"
+  "$defs": {
+    "ArtifactEvidence": {
+      "additionalProperties": false,
+      "description": "Evidence from an artifact or release (package, binary, deployment).",
+      "properties": {
+        "type": {
+          "const": "artifact",
+          "default": "artifact",
+          "title": "Type",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "artifact_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Type"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "ArtifactEvidence",
+      "type": "object"
     },
+    "ConfidenceLevel": {
+      "description": "Confidence level for metrics and outcomes.",
+      "enum": [
+        "exact",
+        "estimated",
+        "approximate",
+        "order_of_magnitude"
+      ],
+      "title": "ConfidenceLevel",
+      "type": "string"
+    },
+    "DocumentEvidence": {
+      "additionalProperties": false,
+      "description": "Evidence from a document or publication (whitepaper, RFC, etc.).",
+      "properties": {
+        "type": {
+          "const": "document",
+          "default": "document",
+          "title": "Type",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "publication_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Publication Date"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "DocumentEvidence",
+      "type": "object"
+    },
+    "Framing": {
+      "additionalProperties": false,
+      "description": "Strategic framing guidance for resume presentation.",
+      "properties": {
+        "action_verb": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Action Verb"
+        },
+        "strategic_context": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Strategic Context"
+        }
+      },
+      "title": "Framing",
+      "type": "object"
+    },
+    "GitRepoEvidence": {
+      "additionalProperties": false,
+      "description": "Evidence from a code repository (GitHub, GitLab, etc.).",
+      "properties": {
+        "type": {
+          "const": "git_repo",
+          "default": "git_repo",
+          "title": "Type",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "branch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Branch"
+        },
+        "commit_sha": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Commit Sha"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "GitRepoEvidence",
+      "type": "object"
+    },
+    "ImpactCategory": {
+      "description": "Category of business impact.",
+      "enum": [
+        "financial",
+        "operational",
+        "talent",
+        "customer",
+        "organizational"
+      ],
+      "title": "ImpactCategory",
+      "type": "string"
+    },
+    "Metrics": {
+      "additionalProperties": false,
+      "description": "Quantified metrics with baseline and outcome for before/after comparison.",
+      "properties": {
+        "baseline": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Baseline"
+        },
+        "outcome": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outcome"
+        },
+        "percentage_change": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Percentage Change"
+        }
+      },
+      "title": "Metrics",
+      "type": "object"
+    },
+    "MetricsEvidence": {
+      "additionalProperties": false,
+      "description": "Evidence from a metrics dashboard (Grafana, Datadog, etc.).",
+      "properties": {
+        "type": {
+          "const": "metrics",
+          "default": "metrics",
+          "title": "Type",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "dashboard_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dashboard Name"
+        },
+        "metric_names": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Metric Names",
+          "type": "array"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "MetricsEvidence",
+      "type": "object"
+    },
+    "OtherEvidence": {
+      "additionalProperties": false,
+      "description": "Evidence that doesn't fit other categories.",
+      "properties": {
+        "type": {
+          "const": "other",
+          "default": "other",
+          "title": "Type",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "OtherEvidence",
+      "type": "object"
+    },
+    "Outcome": {
+      "additionalProperties": false,
+      "description": "Outcome describing the results achieved in a Work Unit.",
+      "properties": {
+        "result": {
+          "minLength": 10,
+          "title": "Result",
+          "type": "string"
+        },
+        "quantified_impact": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quantified Impact"
+        },
+        "business_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Business Value"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConfidenceLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "confidence_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence Note"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "Outcome",
+      "type": "object"
+    },
+    "Problem": {
+      "additionalProperties": false,
+      "description": "Problem statement describing the challenge addressed in a Work Unit.",
+      "properties": {
+        "statement": {
+          "minLength": 20,
+          "title": "Statement",
+          "type": "string"
+        },
+        "constraints": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Constraints",
+          "type": "array"
+        },
+        "context": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Context"
+        }
+      },
+      "required": [
+        "statement"
+      ],
+      "title": "Problem",
+      "type": "object"
+    },
+    "Scope": {
+      "additionalProperties": false,
+      "description": "Scope of responsibility for executive-level work (budget, team, reach).",
+      "properties": {
+        "budget_managed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Budget Managed"
+        },
+        "team_size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Team Size"
+        },
+        "revenue_influenced": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revenue Influenced"
+        },
+        "geographic_reach": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Geographic Reach"
+        }
+      },
+      "title": "Scope",
+      "type": "object"
+    },
+    "Skill": {
+      "additionalProperties": false,
+      "description": "Skill demonstrated in a Work Unit with optional O*NET taxonomy mapping.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "onet_element_id": {
+          "anyOf": [
+            {
+              "pattern": "^\\d+\\.\\w+(\\.\\d+)*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Onet Element Id"
+        },
+        "proficiency_level": {
+          "anyOf": [
+            {
+              "maximum": 7,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proficiency Level"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Skill",
+      "type": "object"
+    },
+    "WorkUnitConfidence": {
+      "description": "Overall confidence in Work Unit accuracy.",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "WorkUnitConfidence",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A documented instance of applied capability (the core resume building block).",
+  "properties": {
     "id": {
-      "type": "string",
       "pattern": "^wu-\\d{4}-\\d{2}-\\d{2}-[a-z0-9-]+$",
-      "description": "Unique identifier: wu-YYYY-MM-DD-slug"
+      "title": "Id",
+      "type": "string"
     },
     "title": {
-      "type": "string",
+      "maxLength": 200,
       "minLength": 10,
-      "maxLength": 200
+      "title": "Title",
+      "type": "string"
     },
     "problem": {
-      "type": "object",
-      "required": ["statement"],
-      "properties": {
-        "statement": { "type": "string", "minLength": 20 },
-        "constraints": { "type": "array", "items": { "type": "string" } },
-        "context": { "type": "string" }
-      }
+      "$ref": "#/$defs/Problem"
     },
     "actions": {
-      "type": "array",
+      "items": {
+        "type": "string"
+      },
       "minItems": 1,
-      "items": { "type": "string", "minLength": 10 }
+      "title": "Actions",
+      "type": "array"
     },
     "outcome": {
-      "type": "object",
-      "required": ["result"],
-      "properties": {
-        "result": { "type": "string", "minLength": 10 },
-        "quantified_impact": { "type": "string" },
-        "business_value": { "type": "string" },
-        "confidence": {
-          "type": "string",
-          "enum": ["exact", "estimated", "approximate", "order_of_magnitude"]
-        },
-        "confidence_note": { "type": "string" }
-      }
+      "$ref": "#/$defs/Outcome"
     },
     "time_started": {
-      "type": "string",
-      "format": "date"
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Time Started"
     },
     "time_ended": {
-      "type": "string",
-      "format": "date"
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Time Ended"
     },
     "position_id": {
-      "type": "string",
-      "description": "Reference to position in positions.yaml for employer grouping"
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Reference to position in positions.yaml for employer grouping",
+      "title": "Position Id"
     },
     "skills_demonstrated": {
-      "type": "array",
       "items": {
-        "type": "object",
-        "required": ["name"],
-        "properties": {
-          "name": { "type": "string" },
-          "onet_element_id": { "type": "string", "pattern": "^\\d+\\.\\w+(\\.\\d+)*$" },
-          "proficiency_level": { "type": "integer", "minimum": 1, "maximum": 7 }
-        }
-      }
+        "$ref": "#/$defs/Skill"
+      },
+      "title": "Skills Demonstrated",
+      "type": "array"
     },
     "confidence": {
-      "type": "string",
-      "enum": ["high", "medium", "low"]
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WorkUnitConfidence"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "tags": {
-      "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
     },
     "evidence": {
-      "type": "array",
       "items": {
+        "discriminator": {
+          "mapping": {
+            "artifact": "#/$defs/ArtifactEvidence",
+            "document": "#/$defs/DocumentEvidence",
+            "git_repo": "#/$defs/GitRepoEvidence",
+            "metrics": "#/$defs/MetricsEvidence",
+            "other": "#/$defs/OtherEvidence"
+          },
+          "propertyName": "type"
+        },
         "oneOf": [
           {
-            "type": "object",
-            "required": ["type", "url"],
-            "properties": {
-              "type": { "const": "git_repo" },
-              "url": { "type": "string", "format": "uri" },
-              "branch": { "type": "string" },
-              "commit_sha": { "type": "string" },
-              "description": { "type": "string" }
-            }
+            "$ref": "#/$defs/GitRepoEvidence"
           },
           {
-            "type": "object",
-            "required": ["type", "url"],
-            "properties": {
-              "type": { "const": "metrics" },
-              "url": { "type": "string", "format": "uri" },
-              "dashboard_name": { "type": "string" },
-              "metric_names": { "type": "array", "items": { "type": "string" } },
-              "description": { "type": "string" }
-            }
+            "$ref": "#/$defs/MetricsEvidence"
           },
           {
-            "type": "object",
-            "required": ["type", "url"],
-            "properties": {
-              "type": { "const": "document" },
-              "url": { "type": "string", "format": "uri" },
-              "title": { "type": "string" },
-              "publication_date": { "type": "string", "format": "date" },
-              "description": { "type": "string" }
-            }
+            "$ref": "#/$defs/DocumentEvidence"
           },
           {
-            "type": "object",
-            "required": ["type", "url"],
-            "properties": {
-              "type": { "const": "artifact" },
-              "url": { "type": "string", "format": "uri" },
-              "artifact_type": { "type": "string" },
-              "description": { "type": "string" }
-            }
+            "$ref": "#/$defs/ArtifactEvidence"
           },
           {
-            "type": "object",
-            "required": ["type", "url"],
-            "properties": {
-              "type": { "const": "other" },
-              "url": { "type": "string", "format": "uri" },
-              "description": { "type": "string" }
-            }
+            "$ref": "#/$defs/OtherEvidence"
           }
         ]
-      }
+      },
+      "title": "Evidence",
+      "type": "array"
     },
     "scope": {
-      "type": "object",
-      "properties": {
-        "budget_managed": { "type": "string" },
-        "team_size": { "type": "integer", "minimum": 0 },
-        "revenue_influenced": { "type": "string" },
-        "geographic_reach": { "type": "string" }
-      }
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Scope"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "impact_category": {
-      "type": "array",
       "items": {
-        "type": "string",
-        "enum": ["financial", "operational", "talent", "customer", "organizational"]
-      }
+        "$ref": "#/$defs/ImpactCategory"
+      },
+      "title": "Impact Category",
+      "type": "array"
     },
     "metrics": {
-      "type": "object",
-      "properties": {
-        "baseline": { "type": "string" },
-        "outcome": { "type": "string" },
-        "percentage_change": { "type": "number" }
-      }
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Metrics"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "framing": {
-      "type": "object",
-      "properties": {
-        "action_verb": { "type": "string" },
-        "strategic_context": { "type": "string" }
-      }
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Framing"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
     }
-  }
+  },
+  "required": [
+    "id",
+    "title",
+    "problem",
+    "actions",
+    "outcome"
+  ],
+  "title": "WorkUnit",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resume-as-code.dev/schemas/work-unit.schema.json"
 }

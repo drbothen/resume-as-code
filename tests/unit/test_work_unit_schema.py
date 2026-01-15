@@ -4,8 +4,49 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
+
+
+def resolve_ref(schema: dict[str, Any], ref: str) -> dict[str, Any]:
+    """Resolve a $ref in a JSON Schema.
+
+    Args:
+        schema: Root schema containing $defs.
+        ref: Reference string like "#/$defs/Problem".
+
+    Returns:
+        The resolved definition.
+    """
+    if ref.startswith("#/$defs/"):
+        def_name = ref.replace("#/$defs/", "")
+        return schema["$defs"][def_name]
+    return schema
+
+
+def get_schema_def(schema: dict[str, Any], prop_value: dict[str, Any]) -> dict[str, Any]:
+    """Get the schema definition for a property value, resolving $ref if present.
+
+    Handles both direct definitions and $ref or anyOf patterns.
+
+    Args:
+        schema: Root schema containing $defs.
+        prop_value: Property value that may contain $ref, anyOf, or direct definition.
+
+    Returns:
+        The resolved schema definition.
+    """
+    if "$ref" in prop_value:
+        return resolve_ref(schema, prop_value["$ref"])
+    if "anyOf" in prop_value:
+        # Find the non-null variant
+        for variant in prop_value["anyOf"]:
+            if variant.get("type") != "null":
+                if "$ref" in variant:
+                    return resolve_ref(schema, variant["$ref"])
+                return variant
+    return prop_value
 
 
 class TestWorkUnitSchemaFile:
@@ -17,7 +58,7 @@ class TestWorkUnitSchemaFile:
         return Path(__file__).parent.parent.parent / "schemas" / "work-unit.schema.json"
 
     @pytest.fixture
-    def schema(self, schema_path: Path) -> dict:
+    def schema(self, schema_path: Path) -> dict[str, Any]:
         """Load and return the JSON Schema."""
         with open(schema_path) as f:
             return json.load(f)
@@ -41,25 +82,29 @@ class TestWorkUnitSchemaFile:
         assert "actions" in required
         assert "outcome" in required
 
-    def test_problem_has_required_statement(self, schema: dict) -> None:
+    def test_problem_has_required_statement(self, schema: dict[str, Any]) -> None:
         """Problem object should have statement as required field."""
-        problem = schema["properties"]["problem"]
+        problem = get_schema_def(schema, schema["properties"]["problem"])
         assert "statement" in problem.get("required", [])
 
-    def test_problem_has_optional_constraints_context(self, schema: dict) -> None:
+    def test_problem_has_optional_constraints_context(self, schema: dict[str, Any]) -> None:
         """Problem object should have optional constraints and context."""
-        problem_props = schema["properties"]["problem"]["properties"]
+        problem = get_schema_def(schema, schema["properties"]["problem"])
+        problem_props = problem["properties"]
         assert "constraints" in problem_props
         assert "context" in problem_props
 
-    def test_outcome_has_required_result(self, schema: dict) -> None:
+    def test_outcome_has_required_result(self, schema: dict[str, Any]) -> None:
         """Outcome object should have result as required field."""
-        outcome = schema["properties"]["outcome"]
+        outcome = get_schema_def(schema, schema["properties"]["outcome"])
         assert "result" in outcome.get("required", [])
 
-    def test_outcome_has_optional_quantified_impact_business_value(self, schema: dict) -> None:
+    def test_outcome_has_optional_quantified_impact_business_value(
+        self, schema: dict[str, Any]
+    ) -> None:
         """Outcome should have optional quantified_impact and business_value."""
-        outcome_props = schema["properties"]["outcome"]["properties"]
+        outcome = get_schema_def(schema, schema["properties"]["outcome"])
+        outcome_props = outcome["properties"]
         assert "quantified_impact" in outcome_props
         assert "business_value" in outcome_props
 
@@ -85,30 +130,33 @@ class TestWorkUnitSchemaFile:
         assert "metrics" in props
         assert "framing" in props
 
-    def test_scope_has_executive_fields(self, schema: dict) -> None:
+    def test_scope_has_executive_fields(self, schema: dict[str, Any]) -> None:
         """Scope should have budget_managed, team_size, revenue_influenced, geographic_reach."""
-        scope_props = schema["properties"]["scope"]["properties"]
+        scope = get_schema_def(schema, schema["properties"]["scope"])
+        scope_props = scope["properties"]
         assert "budget_managed" in scope_props
         assert "team_size" in scope_props
         assert "revenue_influenced" in scope_props
         assert "geographic_reach" in scope_props
 
-    def test_impact_category_enum_values(self, schema: dict) -> None:
+    def test_impact_category_enum_values(self, schema: dict[str, Any]) -> None:
         """Impact category should support all five business impact types."""
-        impact_items = schema["properties"]["impact_category"]["items"]
+        impact_items = get_schema_def(schema, schema["properties"]["impact_category"]["items"])
         expected = ["financial", "operational", "talent", "customer", "organizational"]
         assert impact_items.get("enum") == expected
 
-    def test_outcome_confidence_enum_values(self, schema: dict) -> None:
+    def test_outcome_confidence_enum_values(self, schema: dict[str, Any]) -> None:
         """Outcome confidence should support exact, estimated, approximate, order_of_magnitude."""
-        outcome_props = schema["properties"]["outcome"]["properties"]
-        confidence = outcome_props["confidence"]
+        outcome = get_schema_def(schema, schema["properties"]["outcome"])
+        outcome_props = outcome["properties"]
+        confidence = get_schema_def(schema, outcome_props["confidence"])
         expected = ["exact", "estimated", "approximate", "order_of_magnitude"]
         assert confidence.get("enum") == expected
 
-    def test_outcome_has_confidence_note(self, schema: dict) -> None:
+    def test_outcome_has_confidence_note(self, schema: dict[str, Any]) -> None:
         """Outcome should have optional confidence_note field."""
-        outcome_props = schema["properties"]["outcome"]["properties"]
+        outcome = get_schema_def(schema, schema["properties"]["outcome"])
+        outcome_props = outcome["properties"]
         assert "confidence_note" in outcome_props
 
     def test_schema_has_version_field(self, schema: dict) -> None:
@@ -116,70 +164,80 @@ class TestWorkUnitSchemaFile:
         props = schema["properties"]
         assert "schema_version" in props
 
-    def test_metrics_has_baseline_outcome_percentage(self, schema: dict) -> None:
+    def test_metrics_has_baseline_outcome_percentage(self, schema: dict[str, Any]) -> None:
         """Metrics should have baseline, outcome, percentage_change fields."""
-        metrics_props = schema["properties"]["metrics"]["properties"]
+        metrics = get_schema_def(schema, schema["properties"]["metrics"])
+        metrics_props = metrics["properties"]
         assert "baseline" in metrics_props
         assert "outcome" in metrics_props
         assert "percentage_change" in metrics_props
 
-    def test_framing_has_action_verb_strategic_context(self, schema: dict) -> None:
+    def test_framing_has_action_verb_strategic_context(self, schema: dict[str, Any]) -> None:
         """Framing should have action_verb and strategic_context fields."""
-        framing_props = schema["properties"]["framing"]["properties"]
+        framing = get_schema_def(schema, schema["properties"]["framing"])
+        framing_props = framing["properties"]
         assert "action_verb" in framing_props
         assert "strategic_context" in framing_props
 
-    def test_evidence_has_five_types(self, schema: dict) -> None:
+    def _get_evidence_variant(
+        self, schema: dict[str, Any], type_name: str
+    ) -> dict[str, Any]:
+        """Get evidence variant by type, resolving $ref if needed."""
+        evidence_items = schema["properties"]["evidence"]["items"]
+        for variant in evidence_items["oneOf"]:
+            resolved = resolve_ref(schema, variant["$ref"]) if "$ref" in variant else variant
+            type_prop = resolved["properties"]["type"]
+            if type_prop.get("const") == type_name:
+                return resolved
+        raise ValueError(f"Evidence type {type_name} not found")
+
+    def test_evidence_has_five_types(self, schema: dict[str, Any]) -> None:
         """Evidence should support git_repo, metrics, document, artifact, other types."""
         evidence_items = schema["properties"]["evidence"]["items"]
         # Evidence uses oneOf for discriminated union
         assert "oneOf" in evidence_items
         type_values = []
         for variant in evidence_items["oneOf"]:
-            type_const = variant["properties"]["type"].get("const")
+            resolved = resolve_ref(schema, variant["$ref"]) if "$ref" in variant else variant
+            type_const = resolved["properties"]["type"].get("const")
             type_values.append(type_const)
         expected = ["git_repo", "metrics", "document", "artifact", "other"]
         assert sorted(type_values) == sorted(expected)
 
-    def test_evidence_git_repo_has_type_specific_fields(self, schema: dict) -> None:
+    def test_evidence_git_repo_has_type_specific_fields(self, schema: dict[str, Any]) -> None:
         """Git repo evidence should have url, branch, commit_sha fields."""
-        evidence_items = schema["properties"]["evidence"]["items"]["oneOf"]
-        git_repo = next(v for v in evidence_items if v["properties"]["type"]["const"] == "git_repo")
+        git_repo = self._get_evidence_variant(schema, "git_repo")
         props = git_repo["properties"]
         assert "url" in props
         assert "branch" in props
         assert "commit_sha" in props
 
-    def test_evidence_metrics_has_type_specific_fields(self, schema: dict) -> None:
+    def test_evidence_metrics_has_type_specific_fields(self, schema: dict[str, Any]) -> None:
         """Metrics evidence should have url, dashboard_name, metric_names fields."""
-        evidence_items = schema["properties"]["evidence"]["items"]["oneOf"]
-        metrics = next(v for v in evidence_items if v["properties"]["type"]["const"] == "metrics")
+        metrics = self._get_evidence_variant(schema, "metrics")
         props = metrics["properties"]
         assert "url" in props
         assert "dashboard_name" in props
         assert "metric_names" in props
 
-    def test_evidence_document_has_type_specific_fields(self, schema: dict) -> None:
+    def test_evidence_document_has_type_specific_fields(self, schema: dict[str, Any]) -> None:
         """Document evidence should have url, title, publication_date fields."""
-        evidence_items = schema["properties"]["evidence"]["items"]["oneOf"]
-        document = next(v for v in evidence_items if v["properties"]["type"]["const"] == "document")
+        document = self._get_evidence_variant(schema, "document")
         props = document["properties"]
         assert "url" in props
         assert "title" in props
         assert "publication_date" in props
 
-    def test_evidence_artifact_has_type_specific_fields(self, schema: dict) -> None:
+    def test_evidence_artifact_has_type_specific_fields(self, schema: dict[str, Any]) -> None:
         """Artifact evidence should have url, artifact_type fields."""
-        evidence_items = schema["properties"]["evidence"]["items"]["oneOf"]
-        artifact = next(v for v in evidence_items if v["properties"]["type"]["const"] == "artifact")
+        artifact = self._get_evidence_variant(schema, "artifact")
         props = artifact["properties"]
         assert "url" in props
         assert "artifact_type" in props
 
-    def test_evidence_other_has_type_specific_fields(self, schema: dict) -> None:
+    def test_evidence_other_has_type_specific_fields(self, schema: dict[str, Any]) -> None:
         """Other evidence should have url, description fields."""
-        evidence_items = schema["properties"]["evidence"]["items"]["oneOf"]
-        other = next(v for v in evidence_items if v["properties"]["type"]["const"] == "other")
+        other = self._get_evidence_variant(schema, "other")
         props = other["properties"]
         assert "url" in props
         assert "description" in props

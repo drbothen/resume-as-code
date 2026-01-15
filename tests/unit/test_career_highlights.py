@@ -254,14 +254,20 @@ class TestHighlightCLICommands:
         config_file.write_text("")
         return tmp_path
 
-    def test_list_highlights_empty(self, runner: CliRunner, temp_project: Path) -> None:
+    def test_list_highlights_empty(
+        self, runner: CliRunner, temp_project: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """List highlights with no highlights shows info message."""
+        monkeypatch.chdir(temp_project)
         result = runner.invoke(cli, ["list", "highlights"], catch_exceptions=False)
         assert result.exit_code == 0
         assert "No career highlights found" in result.output
 
-    def test_list_highlights_json_empty(self, runner: CliRunner, temp_project: Path) -> None:
+    def test_list_highlights_json_empty(
+        self, runner: CliRunner, temp_project: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """List highlights JSON output when empty."""
+        monkeypatch.chdir(temp_project)
         result = runner.invoke(cli, ["--json", "list", "highlights"], catch_exceptions=False)
         assert result.exit_code == 0
         data = json.loads(result.output)

@@ -1,0 +1,62 @@
+{
+  "description": "Educational credential record.\n\nStores education information for resume rendering with support\nfor honors, GPA, and display control.",
+  "properties": {
+    "degree": {
+      "title": "Degree",
+      "type": "string"
+    },
+    "institution": {
+      "title": "Institution",
+      "type": "string"
+    },
+    "year": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Year"
+    },
+    "honors": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Honors"
+    },
+    "gpa": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Gpa"
+    },
+    "display": {
+      "default": true,
+      "title": "Display",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "degree",
+    "institution"
+  ],
+  "title": "Education",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resume-as-code.dev/schemas/education.schema.json"
+}

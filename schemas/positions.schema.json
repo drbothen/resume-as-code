@@ -1,108 +1,221 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://resume-as-code.dev/schemas/positions.schema.json",
-  "title": "Positions",
-  "description": "Employment history positions that work units reference for grouping achievements by employer",
-  "type": "object",
-  "required": ["schema_version", "positions"],
-  "properties": {
-    "schema_version": {
-      "type": "string",
-      "const": "1.0.0",
-      "description": "Schema version for backward compatibility"
-    },
-    "positions": {
-      "type": "object",
-      "description": "Map of position ID to position data",
-      "additionalProperties": {
-        "$ref": "#/$defs/position"
-      }
-    }
-  },
   "$defs": {
-    "position": {
-      "type": "object",
-      "description": "Employment position record",
-      "required": ["employer", "title", "start_date"],
-      "properties": {
-        "employer": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Company or organization name"
-        },
-        "title": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Job title"
-        },
-        "location": {
-          "type": "string",
-          "description": "Location (city, state/country)"
-        },
-        "start_date": {
-          "type": "string",
-          "pattern": "^\\d{4}-\\d{2}$",
-          "description": "Start date in YYYY-MM format"
-        },
-        "end_date": {
-          "type": ["string", "null"],
-          "pattern": "^\\d{4}-\\d{2}$",
-          "description": "End date in YYYY-MM format, null for current position"
-        },
-        "employment_type": {
-          "type": "string",
-          "enum": ["full-time", "part-time", "contract", "consulting", "freelance"],
-          "description": "Type of employment"
-        },
-        "promoted_from": {
-          "type": "string",
-          "description": "ID of previous position for promotion tracking"
-        },
-        "description": {
-          "type": "string",
-          "description": "Optional role summary"
-        },
-        "scope": {
-          "$ref": "#/$defs/positionScope",
-          "description": "Scope indicators for executive positions"
-        }
-      }
-    },
-    "positionScope": {
-      "type": "object",
-      "description": "Leadership scope indicators for executive positions",
+    "PositionScope": {
+      "additionalProperties": false,
+      "description": "Scope indicators for executive positions.\n\nCaptures leadership scale: P&L, revenue, team size, budget, geography.\nAll fields are optional - only populated fields render in scope line.",
       "properties": {
         "revenue": {
-          "type": "string",
-          "description": "Revenue impact (e.g., '$500M')"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Revenue impact, e.g., '$500M'",
+          "title": "Revenue"
         },
         "team_size": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "Total team size"
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Total engineers/team members",
+          "title": "Team Size"
         },
         "direct_reports": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "Number of direct reports"
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Direct reports count",
+          "title": "Direct Reports"
         },
         "budget": {
-          "type": "string",
-          "description": "Budget managed (e.g., '$50M')"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Budget managed, e.g., '$50M'",
+          "title": "Budget"
         },
         "pl_responsibility": {
-          "type": "string",
-          "description": "P&L responsibility amount (e.g., '$100M')"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "P&L responsibility amount",
+          "title": "Pl Responsibility"
         },
         "geography": {
-          "type": "string",
-          "description": "Geographic reach (e.g., 'Global', 'EMEA', '15 countries')"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Geographic reach, e.g., 'Global', 'APAC'",
+          "title": "Geography"
         },
         "customers": {
-          "type": "string",
-          "description": "Customer scope (e.g., '500K users', 'Fortune 500')"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Customer scope, e.g., '500K users', 'Fortune 500'",
+          "title": "Customers"
         }
-      }
+      },
+      "title": "PositionScope",
+      "type": "object"
     }
-  }
+  },
+  "additionalProperties": false,
+  "description": "Employment position record.\n\nRepresents a role at an employer. Work units reference positions\nvia position_id to group achievements under employers.",
+  "properties": {
+    "id": {
+      "description": "Unique identifier like 'pos-techcorp-senior'",
+      "title": "Id",
+      "type": "string"
+    },
+    "employer": {
+      "description": "Company/organization name",
+      "title": "Employer",
+      "type": "string"
+    },
+    "title": {
+      "description": "Job title",
+      "title": "Title",
+      "type": "string"
+    },
+    "location": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Location (city, state/country)",
+      "title": "Location"
+    },
+    "start_date": {
+      "description": "Start date in YYYY-MM format",
+      "title": "Start Date",
+      "type": "string"
+    },
+    "end_date": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "End date in YYYY-MM format, None for current",
+      "title": "End Date"
+    },
+    "employment_type": {
+      "anyOf": [
+        {
+          "enum": [
+            "full-time",
+            "part-time",
+            "contract",
+            "consulting",
+            "freelance"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Type of employment",
+      "title": "Employment Type"
+    },
+    "promoted_from": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "ID of previous position (for promotions)",
+      "title": "Promoted From"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional role summary",
+      "title": "Description"
+    },
+    "scope": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PositionScope"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Scope indicators for executive positions"
+    }
+  },
+  "required": [
+    "id",
+    "employer",
+    "title",
+    "start_date"
+  ],
+  "title": "Position",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resume-as-code.dev/schemas/positions.schema.json"
 }

@@ -1,0 +1,65 @@
+{
+  "description": "Board or advisory role record.\n\nStores board and advisory role information for resume rendering\nwith support for role type classification and display control.",
+  "properties": {
+    "organization": {
+      "title": "Organization",
+      "type": "string"
+    },
+    "role": {
+      "title": "Role",
+      "type": "string"
+    },
+    "type": {
+      "default": "advisory",
+      "enum": [
+        "director",
+        "advisory",
+        "committee"
+      ],
+      "title": "Type",
+      "type": "string"
+    },
+    "start_date": {
+      "title": "Start Date",
+      "type": "string"
+    },
+    "end_date": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "End Date"
+    },
+    "focus": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Focus"
+    },
+    "display": {
+      "default": true,
+      "title": "Display",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "organization",
+    "role",
+    "start_date"
+  ],
+  "title": "BoardRole",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resume-as-code.dev/schemas/board-roles.schema.json"
+}

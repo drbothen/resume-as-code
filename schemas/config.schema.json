@@ -1,70 +1,563 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://resume-as-code.dev/schemas/config.schema.json",
-  "title": "Resume as Code Configuration",
-  "description": "Configuration schema for Resume as Code CLI tool",
-  "type": "object",
-  "properties": {
-    "output_dir": {
-      "type": "string",
-      "description": "Directory for generated resume files",
-      "default": "./dist"
-    },
-    "default_format": {
-      "type": "string",
-      "enum": ["pdf", "docx", "both"],
-      "description": "Default output format for resume generation",
-      "default": "both"
-    },
-    "default_template": {
-      "type": "string",
-      "description": "Default template to use for resume generation",
-      "default": "modern"
-    },
-    "work_units_dir": {
-      "type": "string",
-      "description": "Directory containing work unit YAML files",
-      "default": "./work-units"
-    },
-    "scoring_weights": {
-      "type": "object",
-      "description": "Weights for the ranking algorithm",
+  "$defs": {
+    "BoardRole": {
+      "description": "Board or advisory role record.\n\nStores board and advisory role information for resume rendering\nwith support for role type classification and display control.",
       "properties": {
-        "title_weight": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 10,
-          "description": "Weight for job title matching",
-          "default": 1.0
+        "organization": {
+          "title": "Organization",
+          "type": "string"
         },
-        "skills_weight": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 10,
-          "description": "Weight for skills matching",
-          "default": 1.0
+        "role": {
+          "title": "Role",
+          "type": "string"
         },
-        "experience_weight": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 10,
-          "description": "Weight for experience relevance",
-          "default": 1.0
+        "type": {
+          "default": "advisory",
+          "enum": [
+            "director",
+            "advisory",
+            "committee"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "start_date": {
+          "title": "Start Date",
+          "type": "string"
+        },
+        "end_date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Date"
+        },
+        "focus": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Focus"
+        },
+        "display": {
+          "default": true,
+          "title": "Display",
+          "type": "boolean"
         }
       },
-      "additionalProperties": false
+      "required": [
+        "organization",
+        "role",
+        "start_date"
+      ],
+      "title": "BoardRole",
+      "type": "object"
     },
-    "default_top_k": {
-      "type": "integer",
-      "minimum": 1,
-      "maximum": 50,
-      "description": "Default number of work units to include in resume",
-      "default": 8
+    "Certification": {
+      "description": "Professional certification record.\n\nStores certification information for resume rendering with support\nfor expiration tracking and display control.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "issuer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Issuer"
+        },
+        "date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Date"
+        },
+        "expires": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expires"
+        },
+        "credential_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Credential Id"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        },
+        "display": {
+          "default": true,
+          "title": "Display",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Certification",
+      "type": "object"
     },
-    "editor": {
-      "type": ["string", "null"],
-      "description": "Editor to use for work unit creation. Falls back to $EDITOR if not set."
+    "Education": {
+      "description": "Educational credential record.\n\nStores education information for resume rendering with support\nfor honors, GPA, and display control.",
+      "properties": {
+        "degree": {
+          "title": "Degree",
+          "type": "string"
+        },
+        "institution": {
+          "title": "Institution",
+          "type": "string"
+        },
+        "year": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Year"
+        },
+        "honors": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Honors"
+        },
+        "gpa": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gpa"
+        },
+        "display": {
+          "default": true,
+          "title": "Display",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "degree",
+        "institution"
+      ],
+      "title": "Education",
+      "type": "object"
+    },
+    "ProfileConfig": {
+      "description": "User profile information for resume header.\n\nAll fields are optional to support incremental configuration.\nURL fields use HttpUrl for validation.",
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "email": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Email"
+        },
+        "phone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Phone"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location"
+        },
+        "linkedin": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Linkedin"
+        },
+        "github": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Github"
+        },
+        "website": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Website"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summary"
+        }
+      },
+      "title": "ProfileConfig",
+      "type": "object"
+    },
+    "Publication": {
+      "description": "Publication or speaking engagement record.\n\nStores publication and speaking engagement information for resume\nrendering with support for type classification and display control.",
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "conference",
+            "article",
+            "whitepaper",
+            "book",
+            "podcast",
+            "webinar"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "venue": {
+          "title": "Venue",
+          "type": "string"
+        },
+        "date": {
+          "title": "Date",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        },
+        "display": {
+          "default": true,
+          "title": "Display",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "title",
+        "type",
+        "venue",
+        "date"
+      ],
+      "title": "Publication",
+      "type": "object"
+    },
+    "ScoringWeights": {
+      "description": "Weights for ranking algorithm.\n\nBM25 vs Semantic weights control the balance in RRF fusion.\nHigher bm25_weight emphasizes keyword matching.\nHigher semantic_weight emphasizes meaning/context matching.",
+      "properties": {
+        "bm25_weight": {
+          "default": 1.0,
+          "maximum": 2.0,
+          "minimum": 0.0,
+          "title": "Bm25 Weight",
+          "type": "number"
+        },
+        "semantic_weight": {
+          "default": 1.0,
+          "maximum": 2.0,
+          "minimum": 0.0,
+          "title": "Semantic Weight",
+          "type": "number"
+        },
+        "title_weight": {
+          "default": 1.0,
+          "maximum": 10.0,
+          "minimum": 0.0,
+          "title": "Title Weight",
+          "type": "number"
+        },
+        "skills_weight": {
+          "default": 1.0,
+          "maximum": 10.0,
+          "minimum": 0.0,
+          "title": "Skills Weight",
+          "type": "number"
+        },
+        "experience_weight": {
+          "default": 1.0,
+          "maximum": 10.0,
+          "minimum": 0.0,
+          "title": "Experience Weight",
+          "type": "number"
+        }
+      },
+      "title": "ScoringWeights",
+      "type": "object"
+    },
+    "SkillsConfig": {
+      "description": "Configuration for skills curation.\n\nControls how skills are deduplicated, filtered, and prioritized\nfor resume display.",
+      "properties": {
+        "max_display": {
+          "default": 15,
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Max Display",
+          "type": "integer"
+        },
+        "exclude": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Exclude",
+          "type": "array"
+        },
+        "prioritize": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Prioritize",
+          "type": "array"
+        }
+      },
+      "title": "SkillsConfig",
+      "type": "object"
     }
   },
-  "additionalProperties": false
+  "description": "Complete configuration for Resume as Code.",
+  "properties": {
+    "output_dir": {
+      "default": "dist",
+      "format": "path",
+      "title": "Output Dir",
+      "type": "string"
+    },
+    "default_format": {
+      "default": "both",
+      "enum": [
+        "pdf",
+        "docx",
+        "both"
+      ],
+      "title": "Default Format",
+      "type": "string"
+    },
+    "default_template": {
+      "default": "modern",
+      "title": "Default Template",
+      "type": "string"
+    },
+    "work_units_dir": {
+      "default": "work-units",
+      "format": "path",
+      "title": "Work Units Dir",
+      "type": "string"
+    },
+    "positions_path": {
+      "default": "positions.yaml",
+      "format": "path",
+      "title": "Positions Path",
+      "type": "string"
+    },
+    "scoring_weights": {
+      "$ref": "#/$defs/ScoringWeights"
+    },
+    "default_top_k": {
+      "default": 8,
+      "maximum": 50,
+      "minimum": 1,
+      "title": "Default Top K",
+      "type": "integer"
+    },
+    "editor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Editor"
+    },
+    "profile": {
+      "$ref": "#/$defs/ProfileConfig"
+    },
+    "certifications": {
+      "items": {
+        "$ref": "#/$defs/Certification"
+      },
+      "title": "Certifications",
+      "type": "array"
+    },
+    "education": {
+      "items": {
+        "$ref": "#/$defs/Education"
+      },
+      "title": "Education",
+      "type": "array"
+    },
+    "skills": {
+      "$ref": "#/$defs/SkillsConfig"
+    },
+    "career_highlights": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Career Highlights",
+      "type": "array"
+    },
+    "board_roles": {
+      "items": {
+        "$ref": "#/$defs/BoardRole"
+      },
+      "title": "Board Roles",
+      "type": "array"
+    },
+    "publications": {
+      "items": {
+        "$ref": "#/$defs/Publication"
+      },
+      "title": "Publications",
+      "type": "array"
+    }
+  },
+  "title": "ResumeConfig",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resume-as-code.dev/schemas/config.schema.json"
 }

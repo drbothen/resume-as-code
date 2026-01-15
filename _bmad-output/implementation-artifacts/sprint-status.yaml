@@ -135,7 +135,7 @@ development_status:
   # Technical Debt Analysis (2026-01-14): Schema drift, incompatible Scope models, date handling, skill normalization
   # Total Points: 68 (16 stories)
   epic-7: in-progress
-  7-1-json-schema-auto-generation: ready-for-dev  # P1, 3 pts - Auto-generate JSON schemas from Pydantic models
+  7-1-json-schema-auto-generation: review  # P1, 3 pts - Auto-generate JSON schemas from Pydantic models
   7-2-unified-scope-model: ready-for-dev  # P1, 5 pts - Single Scope model for positions and work units
   7-3-standardized-date-types: ready-for-dev  # P2, 3 pts - YearMonth and Year annotated types
   7-4-skills-registry-normalization: ready-for-dev  # P2, 5 pts - Skill aliases and normalization

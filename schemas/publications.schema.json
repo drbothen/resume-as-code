@@ -1,0 +1,59 @@
+{
+  "description": "Publication or speaking engagement record.\n\nStores publication and speaking engagement information for resume\nrendering with support for type classification and display control.",
+  "properties": {
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "type": {
+      "enum": [
+        "conference",
+        "article",
+        "whitepaper",
+        "book",
+        "podcast",
+        "webinar"
+      ],
+      "title": "Type",
+      "type": "string"
+    },
+    "venue": {
+      "title": "Venue",
+      "type": "string"
+    },
+    "date": {
+      "title": "Date",
+      "type": "string"
+    },
+    "url": {
+      "anyOf": [
+        {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Url"
+    },
+    "display": {
+      "default": true,
+      "title": "Display",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "title",
+    "type",
+    "venue",
+    "date"
+  ],
+  "title": "Publication",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resume-as-code.dev/schemas/publications.schema.json"
+}

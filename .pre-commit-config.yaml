@@ -1,0 +1,33 @@
+# Pre-commit hooks for Resume as Code
+# Install: pre-commit install
+# Run all: pre-commit run --all-files
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+
+      - id: mypy
+        name: mypy
+        entry: uv run mypy src --strict
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: generate-schemas
+        name: generate json schemas
+        entry: uv run python scripts/generate_schemas.py
+        language: system
+        files: ^src/resume_as_code/models/.*\.py$
+        pass_filenames: false
+        stages: [pre-commit]

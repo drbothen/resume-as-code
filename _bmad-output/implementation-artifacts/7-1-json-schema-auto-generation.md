@@ -1,6 +1,6 @@
 # Story 7.1: JSON Schema Auto-Generation
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -37,24 +37,24 @@ so that **schemas never drift from implementation and documentation stays accura
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create schema generation script (AC: #1, #3)
-  - [ ] 1.1 Create `scripts/generate_schemas.py` with TypeAdapter pattern
-  - [ ] 1.2 Map models to schema names: WorkUnit→work-unit, Position→positions, ResumeConfig→config, Certification→certifications, Education→education, BoardRole→board-roles, Publication→publications
-  - [ ] 1.3 Add `$id` URL injection post-generation
-  - [ ] 1.4 Add CLI output for generated/updated schemas
-  - [ ] 1.5 Add `--check` mode for CI that fails if schemas would change
+- [x] Task 1: Create schema generation script (AC: #1, #3)
+  - [x] 1.1 Create `scripts/generate_schemas.py` with TypeAdapter pattern
+  - [x] 1.2 Map models to schema names: WorkUnit→work-unit, Position→positions, ResumeConfig→config, Certification→certifications, Education→education, BoardRole→board-roles, Publication→publications
+  - [x] 1.3 Add `$id` URL injection post-generation
+  - [x] 1.4 Add CLI output for generated/updated schemas
+  - [x] 1.5 Add `--check` mode for CI that fails if schemas would change
 
-- [ ] Task 2: Create pre-commit configuration (AC: #2)
-  - [ ] 2.1 Create `.pre-commit-config.yaml` with ruff, mypy, and schema generation hooks
-  - [ ] 2.2 Configure schema generation hook to run on `src/resume_as_code/models/**/*.py` changes
-  - [ ] 2.3 Add `stages: [pre-commit]` to schema hook
-  - [ ] 2.4 Test hook catches schema drift
+- [x] Task 2: Create pre-commit configuration (AC: #2)
+  - [x] 2.1 Create `.pre-commit-config.yaml` with ruff, mypy, and schema generation hooks
+  - [x] 2.2 Configure schema generation hook to run on `src/resume_as_code/models/**/*.py` changes
+  - [x] 2.3 Add `stages: [pre-commit]` to schema hook
+  - [x] 2.4 Test hook catches schema drift
 
-- [ ] Task 3: Update existing schemas or regenerate (AC: #3, #4)
-  - [ ] 3.1 Run generation script to create new baseline
-  - [ ] 3.2 Verify generated schemas match expected format
-  - [ ] 3.3 Add unit test for schema generation script
-  - [ ] 3.4 Add integration test verifying model-schema consistency
+- [x] Task 3: Update existing schemas or regenerate (AC: #3, #4)
+  - [x] 3.1 Run generation script to create new baseline
+  - [x] 3.2 Verify generated schemas match expected format
+  - [x] 3.3 Add unit test for schema generation script
+  - [x] 3.4 Add integration test verifying model-schema consistency
 
 ## Dev Notes
 
@@ -279,11 +279,53 @@ def test_all_models_have_schemas():
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+1. Created `scripts/generate_schemas.py` with TypeAdapter pattern and custom `ResumeSchemaGenerator` class to add `$schema` field
+2. Used `mode="serialization"` for schema generation to match YAML storage format
+3. Created `.pre-commit-config.yaml` with local hooks for ruff, mypy, and schema generation
+4. Regenerated all 7 schemas with proper `$schema` and `$id` fields
+5. Updated `tests/unit/test_work_unit_schema.py` with helper functions (`resolve_ref`, `get_schema_def`) to handle Pydantic's `$ref`/`$defs` schema structure
+6. All 1396 unit tests pass (excluding 2 pre-existing failures in test_career_highlights.py due to missing monkeypatch.chdir)
+
 ### File List
+
+**Created:**
+- `scripts/generate_schemas.py` - Main schema generation script with TypeAdapter pattern
+- `scripts/__init__.py` - Package init for Python imports
+- `.pre-commit-config.yaml` - Pre-commit hooks for ruff, mypy, schema generation
+- `tests/unit/test_generate_schemas.py` - Unit tests for schema generation (9 tests)
+- `schemas/certifications.schema.json` - New schema from Certification model
+- `schemas/education.schema.json` - New schema from Education model
+- `schemas/board-roles.schema.json` - New schema from BoardRole model
+- `schemas/publications.schema.json` - New schema from Publication model
+
+**Modified:**
+- `schemas/work-unit.schema.json` - Regenerated from WorkUnit model
+- `schemas/positions.schema.json` - Regenerated from Position model
+- `schemas/config.schema.json` - Regenerated from ResumeConfig model
+- `tests/unit/test_work_unit_schema.py` - Added helper functions for $ref resolution
+
+### Change Log
+
+| File | Change Type | Description |
+|------|-------------|-------------|
+| scripts/generate_schemas.py | Created | Schema generation script with TypeAdapter, custom generator class |
+| scripts/__init__.py | Created | Package init file |
+| .pre-commit-config.yaml | Created | Pre-commit hooks for ruff, mypy, schema generation |
+| tests/unit/test_generate_schemas.py | Created | 9 unit tests for schema generation |
+| schemas/certifications.schema.json | Created | Auto-generated from Certification model |
+| schemas/education.schema.json | Created | Auto-generated from Education model |
+| schemas/board-roles.schema.json | Created | Auto-generated from BoardRole model |
+| schemas/publications.schema.json | Created | Auto-generated from Publication model |
+| schemas/work-unit.schema.json | Modified | Regenerated with proper $schema, $id, $defs structure |
+| schemas/positions.schema.json | Modified | Regenerated with proper $schema, $id, $defs structure |
+| schemas/config.schema.json | Modified | Regenerated with proper $schema, $id, $defs structure |
+| tests/unit/test_work_unit_schema.py | Modified | Added resolve_ref(), get_schema_def() helpers |
 
