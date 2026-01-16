@@ -54,6 +54,24 @@ class ScoringWeights(BaseModel):
     BM25 vs Semantic weights control the balance in RRF fusion.
     Higher bm25_weight emphasizes keyword matching.
     Higher semantic_weight emphasizes meaning/context matching.
+
+    Recency decay (Story 7.9) uses exponential decay to weight recent
+    experience higher than older experience:
+
+        recency_score = e^(-λ × years_ago)
+
+    Where:
+        λ = ln(2) / recency_half_life  (decay constant)
+        years_ago = (today - time_ended).days / 365.25
+
+    Example with 5-year half-life:
+        Current position → 100% weight
+        1 year ago → ~87% weight
+        5 years ago → 50% weight
+        10 years ago → 25% weight
+
+    Final score blends relevance and recency:
+        final = (1 - recency_blend) × relevance + recency_blend × recency
     """
 
     # BM25 vs Semantic balance for RRF fusion
@@ -64,6 +82,20 @@ class ScoringWeights(BaseModel):
     title_weight: float = Field(default=2.0, ge=0.0, le=10.0)
     skills_weight: float = Field(default=1.5, ge=0.0, le=10.0)
     experience_weight: float = Field(default=1.0, ge=0.0, le=10.0)
+
+    # Recency decay (Story 7.9)
+    recency_half_life: float | None = Field(
+        default=5.0,
+        ge=1.0,
+        le=20.0,
+        description="Years for experience to decay to 50% weight. None disables decay.",
+    )
+    recency_blend: float = Field(
+        default=0.2,
+        ge=0.0,
+        le=0.5,
+        description="Weight of recency in final score (0.2 = 20%).",
+    )
 
 
 class ONetConfig(BaseModel):

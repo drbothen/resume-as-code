@@ -1,6 +1,6 @@
 # Story 7.9: Recency Decay for Work Units
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -35,28 +35,28 @@ So that **my current skills and relevance are properly reflected in rankings**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add recency config to ScoringWeights (AC: #4, #5)
-  - [ ] 1.1 Add `recency_half_life: float | None` field (default 5.0)
-  - [ ] 1.2 Add `recency_blend: float` field (default 0.2)
-  - [ ] 1.3 Add docstrings explaining the decay formula
-  - [ ] 1.4 Add validation constraints (ge=1.0, le=20.0 for half_life)
+- [x] Task 1: Add recency config to ScoringWeights (AC: #4, #5)
+  - [x] 1.1 Add `recency_half_life: float | None` field (default 5.0)
+  - [x] 1.2 Add `recency_blend: float` field (default 0.2)
+  - [x] 1.3 Add docstrings explaining the decay formula
+  - [x] 1.4 Add validation constraints (ge=1.0, le=20.0 for half_life)
 
-- [ ] Task 2: Implement recency decay calculation (AC: #1, #2, #3)
-  - [ ] 2.1 Create `_calculate_recency_score()` method in HybridRanker
-  - [ ] 2.2 Handle `time_ended: null` as current date (100% weight)
-  - [ ] 2.3 Implement exponential decay formula
-  - [ ] 2.4 Return 1.0 when recency decay is disabled
+- [x] Task 2: Implement recency decay calculation (AC: #1, #2, #3)
+  - [x] 2.1 Create `_calculate_recency_score()` method in HybridRanker
+  - [x] 2.2 Handle `time_ended: null` as current date (100% weight)
+  - [x] 2.3 Implement exponential decay formula
+  - [x] 2.4 Return 1.0 when recency decay is disabled
 
-- [ ] Task 3: Integrate recency into ranking (AC: #5)
-  - [ ] 3.1 Modify `rank()` to calculate recency scores
-  - [ ] 3.2 Blend relevance and recency scores using configured weights
-  - [ ] 3.3 Ensure backward compatibility when recency disabled
+- [x] Task 3: Integrate recency into ranking (AC: #5)
+  - [x] 3.1 Modify `rank()` to calculate recency scores
+  - [x] 3.2 Blend relevance and recency scores using configured weights
+  - [x] 3.3 Ensure backward compatibility when recency disabled
 
-- [ ] Task 4: Add tests and quality checks
-  - [ ] 4.1 Unit tests for decay formula at various ages
-  - [ ] 4.2 Test current positions get 100% weight
-  - [ ] 4.3 Test disabled recency produces identical results
-  - [ ] 4.4 Run `ruff check` and `mypy --strict`
+- [x] Task 4: Add tests and quality checks
+  - [x] 4.1 Unit tests for decay formula at various ages
+  - [x] 4.2 Test current positions get 100% weight
+  - [x] 4.3 Test disabled recency produces identical results
+  - [x] 4.4 Run `ruff check` and `mypy --strict`
 
 ## Dev Notes
 
@@ -472,11 +472,26 @@ From `project-context.md`:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None required.
+
 ### Completion Notes List
 
+- Implemented exponential decay formula: `recency_score = e^(-λ × years_ago)` where `λ = ln(2) / half_life`
+- Added `recency_half_life` (default 5.0 years) and `recency_blend` (default 0.2) to ScoringWeights
+- Current positions (`time_ended=None`) receive 100% weight
+- Supports both `date` objects and string formats (YYYY-MM-DD, YYYY-MM)
+- Final score blending: `final = (1 - recency_blend) × relevance + recency_blend × recency`
+- Added 23 new tests across 4 test classes (TestRecencyDecay, TestScoreBlending, TestRecencyConfigValidation, TestRecencyIntegration)
+- All 54 ranker tests pass, ruff check and mypy --strict pass
+- Note: One pre-existing test failure in test_plan_command.py is unrelated to this work
+
 ### File List
+
+- `src/resume_as_code/models/config.py` - Added recency_half_life and recency_blend fields to ScoringWeights with docstrings
+- `src/resume_as_code/services/ranker.py` - Added `_calculate_recency_score()` and `_blend_scores()` methods, integrated into `rank()`
+- `tests/unit/test_ranker.py` - Added 23 new tests for recency decay feature
 

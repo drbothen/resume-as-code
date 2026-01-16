@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
+from datetime import date
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -130,22 +132,28 @@ class HybridRanker:
         # RRF fusion with optional weights (AC: #3)
         rrf_scores = self._rrf_fusion(bm25_ranks, semantic_ranks, scoring_weights)
 
-        # Sort by RRF score (higher is better), then by ID for determinism
-        sorted_indices = sorted(
-            range(len(work_units)),
-            key=lambda i: (rrf_scores[i], wu_ids[i]),
-            reverse=True,
-        )
-
-        # Normalize scores to 0.0-1.0
+        # Normalize relevance scores to 0.0-1.0
         max_score = max(rrf_scores) if rrf_scores else 1.0
         min_score = min(rrf_scores) if rrf_scores else 0.0
 
         # Handle edge case: single work unit or all same scores
         if max_score == min_score:
-            normalized_scores = [1.0] * len(rrf_scores)
+            normalized_relevance = [1.0] * len(rrf_scores)
         else:
-            normalized_scores = [(s - min_score) / (max_score - min_score) for s in rrf_scores]
+            normalized_relevance = [(s - min_score) / (max_score - min_score) for s in rrf_scores]
+
+        # Calculate recency scores for each work unit (Story 7.9)
+        recency_scores = [self._calculate_recency_score(wu, scoring_weights) for wu in work_units]
+
+        # Blend relevance and recency scores (Story 7.9 AC#5)
+        final_scores = self._blend_scores(normalized_relevance, recency_scores, scoring_weights)
+
+        # Sort by final score (higher is better), then by ID for determinism
+        sorted_indices = sorted(
+            range(len(work_units)),
+            key=lambda i: (final_scores[i], wu_ids[i]),
+            reverse=True,
+        )
 
         # Build results - return top_k * 2 for exclusion display
         results: list[RankingResult] = []
@@ -155,7 +163,7 @@ class HybridRanker:
                 RankingResult(
                     work_unit_id=wu_ids[idx],
                     work_unit=work_units[idx],
-                    score=normalized_scores[idx],
+                    score=final_scores[idx],
                     bm25_rank=bm25_ranks[idx],
                     semantic_rank=semantic_ranks[idx],
                     match_reasons=match_reasons,
@@ -366,3 +374,89 @@ class HybridRanker:
 
         # Fallback if no explicit matches found
         return ["Semantic similarity"]
+
+    def _calculate_recency_score(
+        self,
+        work_unit: dict[str, Any],
+        scoring_weights: ScoringWeights | None,
+    ) -> float:
+        """Calculate recency decay score for a work unit.
+
+        Uses exponential decay with configurable half-life.
+        Current positions (time_ended=None) receive 100% weight.
+
+        Args:
+            work_unit: Work Unit dictionary.
+            scoring_weights: Scoring weights with recency config.
+
+        Returns:
+            Recency score between 0.0 and 1.0.
+        """
+        # No decay if disabled
+        if scoring_weights is None or scoring_weights.recency_half_life is None:
+            return 1.0
+
+        # Get end date (None means current/ongoing)
+        time_ended = work_unit.get("time_ended")
+        if time_ended is None:
+            return 1.0  # Current position gets full weight
+
+        # Parse date if string
+        if isinstance(time_ended, str):
+            # Handle YYYY-MM-DD or YYYY-MM format
+            try:
+                if len(time_ended) == 10:  # YYYY-MM-DD
+                    end_date = date.fromisoformat(time_ended)
+                else:  # YYYY-MM
+                    end_date = date.fromisoformat(f"{time_ended}-01")
+            except ValueError:
+                return 1.0  # Invalid date, default to full weight
+        elif isinstance(time_ended, date):
+            end_date = time_ended
+        else:
+            return 1.0  # Unknown format, default to full weight
+
+        # Calculate years ago
+        today = date.today()
+        years_ago = (today - end_date).days / 365.25
+
+        # Handle future dates (shouldn't happen, but be safe)
+        if years_ago < 0:
+            return 1.0
+
+        # Exponential decay: score = e^(-λ × years_ago)
+        # Where λ = ln(2) / half_life
+        half_life = scoring_weights.recency_half_life
+        decay_constant = math.log(2) / half_life
+        recency_score = math.exp(-decay_constant * years_ago)
+
+        return recency_score
+
+    def _blend_scores(
+        self,
+        relevance_scores: list[float],
+        recency_scores: list[float],
+        scoring_weights: ScoringWeights | None,
+    ) -> list[float]:
+        """Blend relevance and recency scores.
+
+        Formula: final = (relevance_blend × relevance) + (recency_blend × recency)
+
+        Args:
+            relevance_scores: Normalized relevance scores (0-1).
+            recency_scores: Recency decay scores (0-1).
+            scoring_weights: Weights configuration.
+
+        Returns:
+            Blended final scores.
+        """
+        if scoring_weights is None:
+            return relevance_scores
+
+        recency_blend = scoring_weights.recency_blend
+        relevance_blend = 1.0 - recency_blend
+
+        return [
+            (relevance_blend * rel) + (recency_blend * rec)
+            for rel, rec in zip(relevance_scores, recency_scores, strict=True)
+        ]
