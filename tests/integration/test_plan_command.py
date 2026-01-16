@@ -224,6 +224,43 @@ class TestPlanCommandRichOutput:
         # Match reasons display as "       > Skills: python, aws" or similar
         assert ">" in result.output or "Skills:" in result.output or "Tags match:" in result.output
 
+    def test_plan_shows_field_prefixed_match_reasons(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Story 7.8 AC#4: Match reasons should indicate which field matched."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit(
+            work_units / "wu-python.yaml",
+            "wu-2026-01-01-python",
+            "Senior Python Developer Project",  # Title contains "Python"
+            tags=["aws", "docker", "kubernetes"],  # Skills
+            problem="Built scalable Python microservices",  # Experience contains "Python"
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Python Developer",
+            "Requirements:\n- Python expert\n- AWS cloud\n- Kubernetes",
+        )
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should show field-prefixed match reasons (Story 7.8 AC#4)
+        # At least one of: "Title match:", "Skills match:", or "Experience match:"
+        output = result.output
+        has_field_prefix = (
+            "Title match:" in output or "Skills match:" in output or "Experience match:" in output
+        )
+        assert has_field_prefix, (
+            f"Expected field-prefixed match reasons (Title/Skills/Experience match:), "
+            f"got output: {output[:500]}"
+        )
+
 
 class TestPlanCommandContentAnalysis:
     """Tests for content analysis (AC #6)."""

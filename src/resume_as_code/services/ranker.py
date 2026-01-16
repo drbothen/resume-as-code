@@ -57,9 +57,24 @@ class HybridRanker:
 
     Combines lexical (BM25) and semantic (embedding similarity) ranking
     using Reciprocal Rank Fusion for robust relevance scoring.
+
+    Field-Weighted BM25 (Story 7.8):
+        When field weights are configured (title_weight, skills_weight,
+        experience_weight differ from 1.0), uses field-weighted BM25 scoring.
+        Default weights (title=2.0, skills=1.5, experience=1.0) are based on
+        HBR 2023 research showing recruiters spend ~7 seconds on initial scan,
+        focusing on title and skills first.
+
+        To use standard BM25 (equal field weights), explicitly set all field
+        weights to 1.0 in ScoringWeights configuration.
     """
 
     RRF_K = 60  # RRF constant (standard value)
+
+    # Maximum match reasons to return per Work Unit.
+    # Limited to 3 to prevent cognitive overload in UI display.
+    # Research suggests 3-5 bullet points optimal for quick scanning.
+    _MAX_MATCH_REASONS = 3
 
     def __init__(self, embedding_service: EmbeddingService | None = None) -> None:
         """Initialize the ranker.
@@ -345,9 +360,9 @@ class HybridRanker:
         if experience_keyword_matches:
             reasons.append(f"Experience match: {', '.join(experience_keyword_matches[:3])}")
 
-        # Limit to top 3 reasons
+        # Limit to max reasons (prevents UI clutter)
         if reasons:
-            return reasons[:3]
+            return reasons[: self._MAX_MATCH_REASONS]
 
         # Fallback if no explicit matches found
         return ["Semantic similarity"]

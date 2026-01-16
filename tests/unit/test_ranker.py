@@ -668,6 +668,25 @@ class TestFieldWeightedBM25:
 
         assert len(output.results) > 0
 
+    def test_weighted_bm25_with_empty_query(
+        self,
+        weighted_work_units: list[dict[str, Any]],
+        mock_embedding_service: MagicMock,
+    ) -> None:
+        """Edge case: _bm25_rank_weighted handles empty query string gracefully."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+        weights = ScoringWeights(title_weight=2.0, skills_weight=1.5)
+
+        # Empty query should not raise
+        ranks = ranker._bm25_rank_weighted(weighted_work_units, "", weights)
+
+        # Should return valid ranks for all work units
+        assert len(ranks) == len(weighted_work_units)
+        assert all(r >= 1 for r in ranks)
+
 
 class TestMatchReasonExtraction:
     """Tests for match reason extraction (includes Story 7.8 AC#4 tests)."""
@@ -800,7 +819,7 @@ class TestMatchReasonExtraction:
         assert len(skills_reason) > 0 or any("python" in r.lower() for r in reasons)
 
     def test_match_reasons_limited_to_max(self, mock_embedding_service: MagicMock) -> None:
-        """AC4: Match reasons limited to 3-5 per Work Unit."""
+        """AC4: Match reasons limited to _MAX_MATCH_REASONS (3) per Work Unit."""
         from resume_as_code.models.job_description import JobDescription
         from resume_as_code.services.ranker import HybridRanker
 
@@ -853,7 +872,7 @@ class TestMatchReasonExtraction:
         output = ranker.rank(work_units, jd)
 
         reasons = output.results[0].match_reasons
-        assert len(reasons) <= 5  # AC4: 3-5 reasons max
+        assert len(reasons) <= 3  # AC4: Limited by _MAX_MATCH_REASONS constant
 
 
 class TestRankingOutput:

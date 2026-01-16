@@ -1,6 +1,6 @@
 # Story 7.8: Field-Weighted BM25 Scoring
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -648,11 +648,18 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 ### File List
 
 - `src/resume_as_code/utils/work_unit_text.py` - Added 3 field extraction functions
-- `src/resume_as_code/services/ranker.py` - Added `_has_field_weights()`, `_bm25_rank_weighted()`, updated `rank()`, updated `_extract_match_reasons()`
+- `src/resume_as_code/services/ranker.py` - Added `_has_field_weights()`, `_bm25_rank_weighted()`, updated `rank()`, updated `_extract_match_reasons()`, added `_MAX_MATCH_REASONS` constant with documentation
 - `tests/unit/test_work_unit_text.py` - New: 14 tests for field extraction
-- `tests/unit/test_ranker.py` - Added 12 new tests for field-weighted BM25 and enhanced match reasons
+- `tests/unit/test_ranker.py` - Added 13 new tests for field-weighted BM25, enhanced match reasons, and empty query edge case
+- `tests/integration/test_plan_command.py` - Added `test_plan_shows_field_prefixed_match_reasons` for AC#4 verification
 
 ## Change Log
 
 - 2026-01-16: Implemented field-weighted BM25 scoring with configurable weights and enhanced match reasons
+- 2026-01-16: Code review completed - remediated 4 of 5 issues:
+  - Added integration test for field-prefixed match reasons (Story 7.8 AC#4)
+  - Documented `_MAX_MATCH_REASONS` constant with rationale
+  - Added docstring clarifying field-weighted BM25 behavior and standard BM25 fallback
+  - Added edge case test for empty query string
+  - Issue #3 (default weights change) deferred per user decision
 
