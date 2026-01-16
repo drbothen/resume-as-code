@@ -40,6 +40,9 @@ llm = [
   "anthropic>=0.25",
   "openai>=1.0",
 ]
+nlp = [
+  "spacy>=3.7",
+]
 
 [build-system]
 requires = ["hatchling"]

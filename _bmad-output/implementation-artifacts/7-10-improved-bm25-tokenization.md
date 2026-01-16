@@ -1,6 +1,6 @@
 # Story 7.10: Improved BM25 Tokenization
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -39,29 +39,29 @@ So that **keyword matching is more intelligent and less brittle**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create ResumeTokenizer class (AC: #1-#5)
-  - [ ] 1.1 Create `src/resume_as_code/utils/tokenizer.py`
-  - [ ] 1.2 Implement abbreviation expansion dictionary
-  - [ ] 1.3 Implement hyphen/slash normalization
-  - [ ] 1.4 Implement domain stop words filtering
-  - [ ] 1.5 Add unit tests for each normalization type
+- [x] Task 1: Create ResumeTokenizer class (AC: #1-#5)
+  - [x] 1.1 Create `src/resume_as_code/utils/tokenizer.py`
+  - [x] 1.2 Implement abbreviation expansion dictionary
+  - [x] 1.3 Implement hyphen/slash normalization
+  - [x] 1.4 Implement domain stop words filtering
+  - [x] 1.5 Add unit tests for each normalization type
 
-- [ ] Task 2: Add optional spaCy lemmatization (AC: #1, #6)
-  - [ ] 2.1 Add spaCy to optional dependencies in pyproject.toml
-  - [ ] 2.2 Implement lazy-loading of spaCy model
-  - [ ] 2.3 Implement graceful fallback when spaCy unavailable
-  - [ ] 2.4 Add lemmatization to tokenization pipeline
+- [x] Task 2: Add optional spaCy lemmatization (AC: #1, #6)
+  - [x] 2.1 Add spaCy to optional dependencies in pyproject.toml
+  - [x] 2.2 Implement lazy-loading of spaCy model
+  - [x] 2.3 Implement graceful fallback when spaCy unavailable
+  - [x] 2.4 Add lemmatization to tokenization pipeline
 
-- [ ] Task 3: Integrate with ranker (AC: #1-#5)
-  - [ ] 3.1 Update `_bm25_rank()` to use ResumeTokenizer
-  - [ ] 3.2 Update `_bm25_rank_weighted()` to use ResumeTokenizer
-  - [ ] 3.3 Ensure backward compatibility with default settings
+- [x] Task 3: Integrate with ranker (AC: #1-#5)
+  - [x] 3.1 Update `_bm25_rank()` to use ResumeTokenizer
+  - [x] 3.2 Update `_bm25_rank_weighted()` to use ResumeTokenizer
+  - [x] 3.3 Ensure backward compatibility with default settings
 
-- [ ] Task 4: Add tests and quality checks
-  - [ ] 4.1 Unit tests for tokenizer
-  - [ ] 4.2 Integration tests with ranker
-  - [ ] 4.3 Test fallback behavior without spaCy
-  - [ ] 4.4 Run `ruff check` and `mypy --strict`
+- [x] Task 4: Add tests and quality checks
+  - [x] 4.1 Unit tests for tokenizer
+  - [x] 4.2 Integration tests with ranker
+  - [x] 4.3 Test fallback behavior without spaCy
+  - [x] 4.4 Run `ruff check` and `mypy --strict`
 
 ## Dev Notes
 

@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 from rank_bm25 import BM25Okapi  # type: ignore[import-untyped]
 
+from resume_as_code.utils.tokenizer import get_tokenizer
 from resume_as_code.utils.work_unit_text import (
     extract_experience_text,
     extract_skills_text,
@@ -173,10 +174,23 @@ class HybridRanker:
         return RankingOutput(results=results, jd_keywords=jd.keywords)
 
     def _bm25_rank(self, documents: list[str], query: str) -> list[int]:
-        """Compute BM25 ranks (1-indexed, lower is better)."""
-        # Tokenize documents and query
-        tokenized_docs = [doc.lower().split() for doc in documents]
-        tokenized_query = query.lower().split()
+        """Compute BM25 ranks (1-indexed, lower is better).
+
+        Uses ResumeTokenizer for intelligent tokenization with:
+        - Technical abbreviation expansion (ML -> machine learning)
+        - Hyphen/slash normalization (CI/CD -> ci cd)
+        - Domain stop word filtering (requirements, experience, etc.)
+        - Optional spaCy lemmatization (engineering -> engineer)
+        """
+        # Use ResumeTokenizer for intelligent tokenization (Story 7.10)
+        tokenizer = get_tokenizer(use_lemmatization=False)
+
+        # Tokenize documents and query with normalization
+        tokenized_docs = [tokenizer.tokenize(doc) for doc in documents]
+        tokenized_query = tokenizer.tokenize(query)
+
+        # Handle empty documents (add placeholder to avoid BM25 errors)
+        tokenized_docs = [doc if doc else ["_empty_"] for doc in tokenized_docs]
 
         # Build BM25 index
         bm25 = BM25Okapi(tokenized_docs)
@@ -214,6 +228,12 @@ class HybridRanker:
         Scores title, skills, and experience fields separately with configurable
         weights, then combines for final ranking.
 
+        Uses ResumeTokenizer for intelligent tokenization with:
+        - Technical abbreviation expansion (ML -> machine learning)
+        - Hyphen/slash normalization (CI/CD -> ci cd)
+        - Domain stop word filtering (requirements, experience, etc.)
+        - Optional spaCy lemmatization (engineering -> engineer)
+
         Args:
             work_units: List of Work Unit dictionaries.
             query: Query text (JD text_for_ranking).
@@ -222,16 +242,23 @@ class HybridRanker:
         Returns:
             List of ranks (1-indexed, lower is better).
         """
+        # Use ResumeTokenizer for intelligent tokenization (Story 7.10)
+        tokenizer = get_tokenizer(use_lemmatization=False)
+
         # Extract field-specific text
         title_texts = [extract_title_text(wu) for wu in work_units]
         skills_texts = [extract_skills_text(wu) for wu in work_units]
         experience_texts = [extract_experience_text(wu) for wu in work_units]
 
-        # Tokenize
-        tokenized_query = query.lower().split()
-        title_corpus = [t.lower().split() if t else [""] for t in title_texts]
-        skills_corpus = [s.lower().split() if s else [""] for s in skills_texts]
-        experience_corpus = [e.lower().split() if e else [""] for e in experience_texts]
+        # Tokenize with normalization
+        tokenized_query = tokenizer.tokenize(query) if query else []
+        title_corpus = [tokenizer.tokenize(t) if t else ["_empty_"] for t in title_texts]
+        skills_corpus = [tokenizer.tokenize(s) if s else ["_empty_"] for s in skills_texts]
+        experience_corpus = [tokenizer.tokenize(e) if e else ["_empty_"] for e in experience_texts]
+
+        # Handle empty query
+        if not tokenized_query:
+            tokenized_query = ["_empty_"]
 
         # Score each field separately
         title_bm25 = BM25Okapi(title_corpus)

@@ -1357,6 +1357,174 @@ class TestRecencyIntegration:
         assert ids_zero == ids_disabled
 
 
+class TestTokenizerIntegration:
+    """Tests for tokenizer integration with BM25 ranking (Story 7.10).
+
+    These tests verify the tokenizer's normalization capabilities directly.
+    Note: BM25's IDF calculation requires larger corpora to differentiate
+    ranking, so we test tokenizer behavior in isolation.
+    """
+
+    def test_abbreviation_expansion_tokenizes_correctly(self) -> None:
+        """AC#2: 'ML' expands to include 'machine learning' tokens."""
+        from resume_as_code.utils.tokenizer import ResumeTokenizer
+
+        tokenizer = ResumeTokenizer(use_lemmatization=False)
+
+        # Query with ML abbreviation
+        query_tokens = tokenizer.tokenize("ML engineer")
+
+        # Document with full form
+        doc_tokens = tokenizer.tokenize("Machine Learning Engineer")
+
+        # Both should have 'machine' and 'learning' tokens
+        assert "machine" in query_tokens, "ML should expand to include 'machine'"
+        assert "learning" in query_tokens, "ML should expand to include 'learning'"
+        assert "machine" in doc_tokens
+        assert "learning" in doc_tokens
+
+        # Verify overlap exists
+        overlap = set(query_tokens) & set(doc_tokens)
+        assert len(overlap) >= 2, f"Expected at least 2 common tokens, got {overlap}"
+
+    def test_hyphen_normalization_tokenizes_correctly(self) -> None:
+        """AC#3: 'project-management' normalizes to 'project management' tokens."""
+        from resume_as_code.utils.tokenizer import ResumeTokenizer
+
+        tokenizer = ResumeTokenizer(use_lemmatization=False)
+
+        # Query with hyphen
+        query_tokens = tokenizer.tokenize("project-management lead")
+
+        # Document with space
+        doc_tokens = tokenizer.tokenize("Project Management Lead")
+
+        # Both should have 'project' and 'management'
+        assert "project" in query_tokens
+        assert "management" in query_tokens
+        assert "project" in doc_tokens
+        assert "management" in doc_tokens
+
+    def test_stop_words_filtered_from_tokenization(self) -> None:
+        """AC#5: Domain stop words are removed from tokens."""
+        from resume_as_code.utils.tokenizer import ResumeTokenizer
+
+        tokenizer = ResumeTokenizer(use_lemmatization=False)
+
+        # Text with many stop words
+        tokens = tokenizer.tokenize("requirements experience skills knowledge ability Python")
+
+        # Stop words should be filtered
+        assert "requirements" not in tokens
+        assert "experience" not in tokens
+        assert "skills" not in tokens
+        assert "knowledge" not in tokens
+        assert "ability" not in tokens
+
+        # Technical term preserved
+        assert "python" in tokens
+
+    def test_cicd_variants_tokenize_consistently(self) -> None:
+        """AC#4: CI/CD, CICD, and 'CI CD' all produce consistent tokens."""
+        from resume_as_code.utils.tokenizer import ResumeTokenizer
+
+        tokenizer = ResumeTokenizer(use_lemmatization=False)
+
+        # Different CI/CD variants
+        slash_tokens = tokenizer.tokenize("CI/CD pipeline")
+        noslash_tokens = tokenizer.tokenize("CICD pipeline")
+        space_tokens = tokenizer.tokenize("CI CD pipeline")
+
+        # All should expand to include 'continuous', 'integration', 'deployment'
+        for tokens in [slash_tokens, noslash_tokens, space_tokens]:
+            assert "continuous" in tokens, f"Expected 'continuous' in {tokens}"
+            assert "integration" in tokens, f"Expected 'integration' in {tokens}"
+            assert "deployment" in tokens, f"Expected 'deployment' in {tokens}"
+
+    def test_bm25_uses_tokenizer_not_simple_split(self) -> None:
+        """Verify _bm25_rank uses tokenizer instead of simple split."""
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker()
+
+        # Use larger corpus to get meaningful BM25 scores
+        # (BM25 IDF is 0 for terms in 1 of 2 docs)
+        documents = [
+            "Python API development with machine learning integration",
+            "Java backend service deployment",
+            "Frontend React application",
+            "Database administration tasks",
+            "Cloud infrastructure management",
+        ]
+
+        # Query with abbreviation that should expand
+        query = "ML python api"
+
+        ranks = ranker._bm25_rank(documents, query)
+
+        # Doc 0 has python, api, and machine learning (expanded from ML)
+        # It should rank first (rank 1)
+        assert ranks[0] == 1, f"Doc 0 should rank first, got rank {ranks[0]}"
+
+    def test_weighted_bm25_uses_tokenizer_not_simple_split(self) -> None:
+        """Verify _bm25_rank_weighted uses tokenizer for normalization."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        # Multiple work units for meaningful BM25 IDF
+        work_units = [
+            {
+                "id": "wu-ml",
+                "title": "Machine Learning Engineer",
+                "tags": ["machine learning", "python"],
+                "skills_demonstrated": [{"name": "Machine Learning"}, {"name": "Python"}],
+                "problem": {"statement": "Built ML models"},
+                "actions": ["Created ML pipeline"],
+                "outcome": {"result": "Improved ML accuracy"},
+            },
+            {
+                "id": "wu-java",
+                "title": "Java Developer",
+                "tags": ["java", "spring"],
+                "skills_demonstrated": [{"name": "Java"}],
+                "problem": {"statement": "Backend services"},
+                "actions": ["Built APIs"],
+                "outcome": {"result": "Improved performance"},
+            },
+            {
+                "id": "wu-frontend",
+                "title": "Frontend Developer",
+                "tags": ["javascript", "react"],
+                "skills_demonstrated": [{"name": "JavaScript"}],
+                "problem": {"statement": "UI development"},
+                "actions": ["Built components"],
+                "outcome": {"result": "Better UX"},
+            },
+            {
+                "id": "wu-devops",
+                "title": "DevOps Engineer",
+                "tags": ["kubernetes", "docker"],
+                "skills_demonstrated": [{"name": "Kubernetes"}],
+                "problem": {"statement": "Infrastructure"},
+                "actions": ["Set up CI/CD"],
+                "outcome": {"result": "Faster deployments"},
+            },
+        ]
+
+        ranker = HybridRanker()
+        weights = ScoringWeights(title_weight=2.0, skills_weight=1.5)
+
+        # Query with ML abbreviation
+        ranks = ranker._bm25_rank_weighted(
+            work_units,
+            "ML engineer python",
+            weights,
+        )
+
+        # ML work unit (index 0) should rank first
+        assert ranks[0] == 1, f"ML work unit should rank first, got rank {ranks[0]}"
+
+
 class TestPerformance:
     """Performance tests for NFR requirements."""
 
