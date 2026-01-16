@@ -19,10 +19,10 @@ class TestScoringWeights:
     """Test ScoringWeights model."""
 
     def test_default_values(self) -> None:
-        """ScoringWeights should have sensible defaults."""
+        """ScoringWeights should have sensible defaults (field-weighted per HBR 2023)."""
         weights = ScoringWeights()
-        assert weights.title_weight == 1.0
-        assert weights.skills_weight == 1.0
+        assert weights.title_weight == 2.0
+        assert weights.skills_weight == 1.5
         assert weights.experience_weight == 1.0
 
     def test_custom_values(self) -> None:
@@ -67,10 +67,10 @@ class TestResumeConfig:
         assert config.work_units_dir == Path("./work-units")
 
     def test_default_scoring_weights(self) -> None:
-        """Default scoring weights should be ScoringWeights defaults."""
+        """Default scoring weights should be ScoringWeights defaults (field-weighted)."""
         config = ResumeConfig()
-        assert config.scoring_weights.title_weight == 1.0
-        assert config.scoring_weights.skills_weight == 1.0
+        assert config.scoring_weights.title_weight == 2.0
+        assert config.scoring_weights.skills_weight == 1.5
         assert config.scoring_weights.experience_weight == 1.0
 
     def test_default_top_k(self) -> None:

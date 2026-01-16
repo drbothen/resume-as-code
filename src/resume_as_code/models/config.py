@@ -60,9 +60,9 @@ class ScoringWeights(BaseModel):
     bm25_weight: float = Field(default=1.0, ge=0.0, le=2.0)
     semantic_weight: float = Field(default=1.0, ge=0.0, le=2.0)
 
-    # Reserved for future field-specific weighting
-    title_weight: float = Field(default=1.0, ge=0.0, le=10.0)
-    skills_weight: float = Field(default=1.0, ge=0.0, le=10.0)
+    # Field-specific BM25 weights (title/skills weighted higher per HBR 2023 research)
+    title_weight: float = Field(default=2.0, ge=0.0, le=10.0)
+    skills_weight: float = Field(default=1.5, ge=0.0, le=10.0)
     experience_weight: float = Field(default=1.0, ge=0.0, le=10.0)
 
 

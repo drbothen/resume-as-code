@@ -2,18 +2,20 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
     from resume_as_code.models.job_description import JobDescription
 
 
 @pytest.fixture
-def sample_work_units() -> list[dict]:
+def sample_work_units() -> list[dict[str, Any]]:
     """Sample Work Unit dictionaries for testing."""
     return [
         {
@@ -61,12 +63,12 @@ def sample_jd() -> JobDescription:
 
 
 @pytest.fixture
-def mock_embedding_service():
+def mock_embedding_service() -> MagicMock:
     """Mock EmbeddingService for tests that don't need real embeddings."""
     mock = MagicMock()
 
     # Return deterministic embeddings based on content
-    def mock_embed_batch(texts: list[str], is_query: bool = True) -> np.ndarray:
+    def mock_embed_batch(texts: list[str], is_query: bool = True) -> NDArray[np.float32]:
         embeddings = []
         for text in texts:
             # Create pseudo-embedding based on text length and hash
@@ -75,7 +77,7 @@ def mock_embedding_service():
             embeddings.append(np.random.rand(384).astype(np.float32))
         return np.array(embeddings)
 
-    def mock_embed_passage(text: str) -> np.ndarray:
+    def mock_embed_passage(text: str) -> NDArray[np.float32]:
         seed = hash(text) % 1000
         np.random.seed(seed)
         return np.random.rand(384).astype(np.float32)
@@ -89,8 +91,11 @@ class TestHybridRanker:
     """Tests for HybridRanker class."""
 
     def test_rank_returns_sorted_results(
-        self, sample_work_units: list[dict], sample_jd: JobDescription, mock_embedding_service
-    ):
+        self,
+        sample_work_units: list[dict[str, Any]],
+        sample_jd: JobDescription,
+        mock_embedding_service: MagicMock,
+    ) -> None:
         """AC1: Work Units are returned sorted by score (highest first)."""
         from resume_as_code.services.ranker import HybridRanker
 
@@ -103,8 +108,11 @@ class TestHybridRanker:
         assert scores == sorted(scores, reverse=True)
 
     def test_scores_normalized_0_to_1(
-        self, sample_work_units: list[dict], sample_jd: JobDescription, mock_embedding_service
-    ):
+        self,
+        sample_work_units: list[dict[str, Any]],
+        sample_jd: JobDescription,
+        mock_embedding_service: MagicMock,
+    ) -> None:
         """AC1: Each Work Unit receives a relevance score (0.0 to 1.0)."""
         from resume_as_code.services.ranker import HybridRanker
 
@@ -115,8 +123,11 @@ class TestHybridRanker:
             assert 0.0 <= result.score <= 1.0, f"Score {result.score} not in range [0, 1]"
 
     def test_keyword_matches_score_higher(
-        self, sample_work_units: list[dict], sample_jd: JobDescription, mock_embedding_service
-    ):
+        self,
+        sample_work_units: list[dict[str, Any]],
+        sample_jd: JobDescription,
+        mock_embedding_service: MagicMock,
+    ) -> None:
         """AC2: Work Units with exact keyword matches score higher."""
         from resume_as_code.services.ranker import HybridRanker
 
@@ -127,7 +138,7 @@ class TestHybridRanker:
         top_ids = [r.work_unit_id for r in output.results[:2]]
         assert "wu-2026-01-10-python-api" in top_ids
 
-    def test_multiple_text_fields_contribute(self, mock_embedding_service):
+    def test_multiple_text_fields_contribute(self, mock_embedding_service: MagicMock) -> None:
         """AC3: Multiple text fields (title, outcome) contribute to score."""
         from resume_as_code.models.job_description import JobDescription
         from resume_as_code.services.ranker import HybridRanker
@@ -170,8 +181,11 @@ class TestHybridRanker:
         assert "wu-2026-01-02-outcome-match" in ids
 
     def test_includes_match_reasons(
-        self, sample_work_units: list[dict], sample_jd: JobDescription, mock_embedding_service
-    ):
+        self,
+        sample_work_units: list[dict[str, Any]],
+        sample_jd: JobDescription,
+        mock_embedding_service: MagicMock,
+    ) -> None:
         """AC4: Each Work Unit has a match_reasons list."""
         from resume_as_code.services.ranker import HybridRanker
 
@@ -184,7 +198,7 @@ class TestHybridRanker:
             if result.score > 0.5:
                 assert len(result.match_reasons) > 0
 
-    def test_empty_work_units_returns_empty(self, sample_jd: JobDescription):
+    def test_empty_work_units_returns_empty(self, sample_jd: JobDescription) -> None:
         """Should handle empty Work Units list gracefully."""
         from resume_as_code.services.ranker import HybridRanker
 
@@ -194,7 +208,9 @@ class TestHybridRanker:
         assert output.results == []
         assert output.jd_keywords == sample_jd.keywords
 
-    def test_single_work_unit_normalized(self, sample_jd: JobDescription, mock_embedding_service):
+    def test_single_work_unit_normalized(
+        self, sample_jd: JobDescription, mock_embedding_service: MagicMock
+    ) -> None:
         """AC1: Single work unit edge case - score should be 1.0."""
         from resume_as_code.services.ranker import HybridRanker
 
@@ -216,7 +232,7 @@ class TestHybridRanker:
         assert len(output.results) == 1
         assert output.results[0].score == 1.0
 
-    def test_embedding_prefixes_used_correctly(self, sample_jd: JobDescription):
+    def test_embedding_prefixes_used_correctly(self, sample_jd: JobDescription) -> None:
         """AC7: Work Units use query prefix, JDs use passage prefix."""
         from unittest.mock import MagicMock
 
@@ -254,7 +270,7 @@ class TestHybridRanker:
 class TestRRFFusion:
     """Tests for RRF fusion algorithm."""
 
-    def test_rrf_formula_with_k_60(self):
+    def test_rrf_formula_with_k_60(self) -> None:
         """AC6: RRF formula applied with k=60."""
         from resume_as_code.services.ranker import HybridRanker
 
@@ -273,7 +289,7 @@ class TestRRFFusion:
         expected_a = 1 / 61 + 1 / 61
         assert abs(scores[0] - expected_a) < 0.0001
 
-    def test_rrf_document_ranked_first_both_methods(self):
+    def test_rrf_document_ranked_first_both_methods(self) -> None:
         """Document ranked 1st in both methods should have highest RRF score."""
         from resume_as_code.services.ranker import HybridRanker
 
@@ -288,7 +304,7 @@ class TestRRFFusion:
         assert scores[0] > scores[1]
         assert scores[0] > scores[2]
 
-    def test_deterministic_tiebreaker_by_id(self, mock_embedding_service):
+    def test_deterministic_tiebreaker_by_id(self, mock_embedding_service: MagicMock) -> None:
         """AC6: Ties broken deterministically by document ID."""
         from resume_as_code.models.job_description import JobDescription
         from resume_as_code.services.ranker import HybridRanker
@@ -337,7 +353,7 @@ class TestRRFFusion:
 class TestScoringWeights:
     """Tests for scoring weights integration (Story 5.6 AC: #3)."""
 
-    def test_rrf_fusion_with_custom_weights(self):
+    def test_rrf_fusion_with_custom_weights(self) -> None:
         """Scoring weights should affect RRF fusion calculation."""
         from resume_as_code.models.config import ScoringWeights
         from resume_as_code.services.ranker import HybridRanker
@@ -370,7 +386,7 @@ class TestScoringWeights:
         assert bm25_scores != default_scores
         assert semantic_scores != default_scores
 
-    def test_rrf_fusion_with_zero_weight(self):
+    def test_rrf_fusion_with_zero_weight(self) -> None:
         """Zero weight should exclude that ranking method entirely."""
         from resume_as_code.models.config import ScoringWeights
         from resume_as_code.services.ranker import HybridRanker
@@ -394,7 +410,7 @@ class TestScoringWeights:
         # Semantic only: doc 1 has rank 1 (better), doc 0 has rank 2
         assert scores_semantic[1] > scores_semantic[0]
 
-    def test_ranker_accepts_scoring_weights(self, mock_embedding_service):
+    def test_ranker_accepts_scoring_weights(self, mock_embedding_service: MagicMock) -> None:
         """HybridRanker.rank() should accept scoring_weights parameter."""
         from resume_as_code.models.config import ScoringWeights
         from resume_as_code.models.job_description import JobDescription
@@ -428,10 +444,330 @@ class TestScoringWeights:
         assert len(output.results) == 1
 
 
-class TestMatchReasonExtraction:
-    """Tests for match reason extraction."""
+class TestFieldWeightedBM25:
+    """Tests for field-weighted BM25 scoring (Story 7.8)."""
 
-    def test_match_reasons_include_skills(self, mock_embedding_service):
+    @pytest.fixture
+    def weighted_work_units(self) -> list[dict[str, Any]]:
+        """Work units with varying title/skills relevance for weighted testing."""
+        return [
+            {
+                "id": "wu-title-match",
+                "title": "Senior Python Developer - Backend Services",
+                "tags": ["javascript", "react"],
+                "skills_demonstrated": [{"name": "JavaScript"}],
+                "problem": {"statement": "Legacy system needed modernization"},
+                "actions": ["Rewrote frontend"],
+                "outcome": {"result": "Improved performance"},
+            },
+            {
+                "id": "wu-skills-match",
+                "title": "Led infrastructure migration",
+                "tags": ["python", "django", "aws"],
+                "skills_demonstrated": [{"name": "Python"}, {"name": "Django"}],
+                "problem": {"statement": "Cloud costs too high"},
+                "actions": ["Optimized resources"],
+                "outcome": {"result": "Reduced costs"},
+            },
+            {
+                "id": "wu-experience-match",
+                "title": "Database optimization project",
+                "tags": ["sql"],
+                "skills_demonstrated": [],
+                "problem": {"statement": "Python application had slow queries"},
+                "actions": ["Used Python scripts to analyze and optimize"],
+                "outcome": {"result": "Python automation reduced manual work"},
+            },
+        ]
+
+    @pytest.fixture
+    def jd_python(self) -> JobDescription:
+        """JD looking for Python developer."""
+        from resume_as_code.models.job_description import JobDescription
+
+        return JobDescription(
+            raw_text="Senior Python Developer with Django experience",
+            skills=["Python", "Django", "AWS"],
+            keywords=["Python", "Django", "backend", "senior"],
+            requirements=[],
+        )
+
+    def test_has_field_weights_default(self, mock_embedding_service: MagicMock) -> None:
+        """_has_field_weights returns True for default weights (title=2.0, skills=1.5)."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+        default = ScoringWeights()
+        # Default weights now include field weighting (title=2.0, skills=1.5)
+        assert ranker._has_field_weights(default)
+
+    def test_has_field_weights_title(self, mock_embedding_service: MagicMock) -> None:
+        """_has_field_weights returns True when title_weight differs."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+        weights = ScoringWeights(title_weight=2.0)
+        assert ranker._has_field_weights(weights)
+
+    def test_has_field_weights_skills(self, mock_embedding_service: MagicMock) -> None:
+        """_has_field_weights returns True when skills_weight differs."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+        weights = ScoringWeights(skills_weight=1.5)
+        assert ranker._has_field_weights(weights)
+
+    def test_has_field_weights_experience(self, mock_embedding_service: MagicMock) -> None:
+        """_has_field_weights returns True when experience_weight differs."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+        weights = ScoringWeights(experience_weight=0.5)
+        assert ranker._has_field_weights(weights)
+
+    def test_default_weights_use_field_weighted_bm25(
+        self,
+        weighted_work_units: list[dict[str, Any]],
+        jd_python: JobDescription,
+        mock_embedding_service: MagicMock,
+    ) -> None:
+        """Default weights (title=2.0, skills=1.5) use field-weighted BM25."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+        default_weights = ScoringWeights()
+
+        # Default weights now use field-weighted BM25 (per HBR 2023 research)
+        # Verify via _has_field_weights check
+        assert ranker._has_field_weights(default_weights)
+
+    def test_equal_weights_use_standard_bm25(
+        self,
+        weighted_work_units: list[dict[str, Any]],
+        jd_python: JobDescription,
+        mock_embedding_service: MagicMock,
+    ) -> None:
+        """AC#3: Equal weights (all 1.0) use standard BM25, not field-weighted."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+        equal_weights = ScoringWeights(
+            title_weight=1.0,
+            skills_weight=1.0,
+            experience_weight=1.0,
+        )
+
+        # With equal weights (1.0), standard BM25 should be used
+        # Verify via _has_field_weights check
+        assert not ranker._has_field_weights(equal_weights)
+
+    def test_title_weight_boosts_title_matches(
+        self,
+        weighted_work_units: list[dict[str, Any]],
+        jd_python: JobDescription,
+        mock_embedding_service: MagicMock,
+    ) -> None:
+        """AC#1: Higher title_weight boosts work units with title matches."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+
+        # High title weight
+        title_heavy = ScoringWeights(
+            title_weight=3.0,
+            skills_weight=1.0,
+            experience_weight=1.0,
+        )
+
+        ranks = ranker._bm25_rank_weighted(
+            weighted_work_units,
+            jd_python.text_for_ranking,
+            title_heavy,
+        )
+
+        # wu-title-match (has "Python" in title) should rank better than others
+        # Index 0 is wu-title-match
+        assert ranks[0] <= 2, "Title match should rank highly with high title_weight"
+
+    def test_skills_weight_boosts_skills_matches(
+        self,
+        weighted_work_units: list[dict[str, Any]],
+        jd_python: JobDescription,
+        mock_embedding_service: MagicMock,
+    ) -> None:
+        """AC#2: Higher skills_weight boosts work units with skills/tag matches."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+
+        # High skills weight
+        skills_heavy = ScoringWeights(
+            title_weight=1.0,
+            skills_weight=3.0,
+            experience_weight=1.0,
+        )
+
+        ranks = ranker._bm25_rank_weighted(
+            weighted_work_units,
+            jd_python.text_for_ranking,
+            skills_heavy,
+        )
+
+        # wu-skills-match (index 1, has Python, Django in tags) should rank highly
+        assert ranks[1] <= 2, "Skills match should rank highly with high skills_weight"
+
+    def test_weighted_rank_returns_valid_ranks(
+        self,
+        weighted_work_units: list[dict[str, Any]],
+        jd_python: JobDescription,
+        mock_embedding_service: MagicMock,
+    ) -> None:
+        """_bm25_rank_weighted returns valid 1-indexed ranks."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+        weights = ScoringWeights(title_weight=2.0, skills_weight=1.5)
+
+        ranks = ranker._bm25_rank_weighted(
+            weighted_work_units,
+            jd_python.text_for_ranking,
+            weights,
+        )
+
+        # Ranks should be 1-indexed
+        assert all(r >= 1 for r in ranks)
+        # Should have one of each rank (1, 2, 3)
+        assert sorted(ranks) == [1, 2, 3]
+
+    def test_rank_uses_weighted_when_configured(
+        self,
+        weighted_work_units: list[dict[str, Any]],
+        jd_python: JobDescription,
+        mock_embedding_service: MagicMock,
+    ) -> None:
+        """rank() uses field-weighted BM25 when field weights configured."""
+        from resume_as_code.models.config import ScoringWeights
+        from resume_as_code.services.ranker import HybridRanker
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+
+        # With field weights configured, weighted method should be used
+        weights = ScoringWeights(title_weight=2.0)
+
+        # Should complete without error
+        output = ranker.rank(weighted_work_units, jd_python, scoring_weights=weights)
+
+        assert len(output.results) > 0
+
+
+class TestMatchReasonExtraction:
+    """Tests for match reason extraction (includes Story 7.8 AC#4 tests)."""
+
+    def test_match_reasons_indicate_title_field(self, mock_embedding_service: MagicMock) -> None:
+        """AC#4: Match reasons indicate 'Title match:' when title matches."""
+        from resume_as_code.models.job_description import JobDescription
+        from resume_as_code.services.ranker import HybridRanker
+
+        work_units = [
+            {
+                "id": "wu-title-match-test",
+                "title": "Senior Python Developer - Backend Services",
+                "tags": ["javascript"],  # Different skills
+                "skills_demonstrated": [{"name": "JavaScript"}],
+                "problem": {"statement": "Generic problem"},
+                "actions": ["Generic action"],
+                "outcome": {"result": "Generic result"},
+            }
+        ]
+
+        jd = JobDescription(
+            raw_text="Looking for Python Developer",
+            skills=["JavaScript"],  # Skills don't match Python
+            keywords=["Python", "Developer", "Senior"],
+            requirements=[],
+        )
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+        output = ranker.rank(work_units, jd)
+
+        reasons = output.results[0].match_reasons
+        title_reasons = [r for r in reasons if r.startswith("Title match:")]
+        assert len(title_reasons) > 0, f"Expected 'Title match:' in reasons: {reasons}"
+
+    def test_match_reasons_indicate_skills_field(self, mock_embedding_service: MagicMock) -> None:
+        """AC#4: Match reasons indicate 'Skills match:' when skills/tags match."""
+        from resume_as_code.models.job_description import JobDescription
+        from resume_as_code.services.ranker import HybridRanker
+
+        work_units = [
+            {
+                "id": "wu-skills-match-test",
+                "title": "Generic Project Title",  # No Python in title
+                "tags": ["python", "aws"],
+                "skills_demonstrated": [{"name": "Python"}, {"name": "AWS"}],
+                "problem": {"statement": "Generic problem"},
+                "actions": ["Generic action"],
+                "outcome": {"result": "Generic result"},
+            }
+        ]
+
+        jd = JobDescription(
+            raw_text="Looking for developer with Python and AWS",
+            skills=["Python", "AWS"],
+            keywords=["experience", "cloud"],  # Keywords won't match
+            requirements=[],
+        )
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+        output = ranker.rank(work_units, jd)
+
+        reasons = output.results[0].match_reasons
+        skills_reasons = [r for r in reasons if r.startswith("Skills match:")]
+        assert len(skills_reasons) > 0, f"Expected 'Skills match:' in reasons: {reasons}"
+
+    def test_match_reasons_indicate_experience_field(
+        self, mock_embedding_service: MagicMock
+    ) -> None:
+        """AC#4: Match reasons indicate 'Experience match:' for body text matches."""
+        from resume_as_code.models.job_description import JobDescription
+        from resume_as_code.services.ranker import HybridRanker
+
+        work_units = [
+            {
+                "id": "wu-experience-match-test",
+                "title": "Database Project",  # No Python in title
+                "tags": ["sql"],  # No Python in tags
+                "skills_demonstrated": [],
+                "problem": {"statement": "Python application had performance issues"},
+                "actions": ["Optimized Python code for better performance"],
+                "outcome": {"result": "Python application now runs smoothly"},
+            }
+        ]
+
+        jd = JobDescription(
+            raw_text="Looking for Python developer",
+            skills=["SQL"],  # Skills don't match Python
+            keywords=["Python", "performance", "application"],
+            requirements=[],
+        )
+
+        ranker = HybridRanker(embedding_service=mock_embedding_service)
+        output = ranker.rank(work_units, jd)
+
+        reasons = output.results[0].match_reasons
+        experience_reasons = [r for r in reasons if r.startswith("Experience match:")]
+        assert len(experience_reasons) > 0, f"Expected 'Experience match:' in reasons: {reasons}"
+
+    def test_match_reasons_include_skills(self, mock_embedding_service: MagicMock) -> None:
         """AC4: Match reasons include matching skills."""
         from resume_as_code.models.job_description import JobDescription
         from resume_as_code.services.ranker import HybridRanker
@@ -463,7 +799,7 @@ class TestMatchReasonExtraction:
         skills_reason = [r for r in reasons if "skill" in r.lower() or "Skills" in r]
         assert len(skills_reason) > 0 or any("python" in r.lower() for r in reasons)
 
-    def test_match_reasons_limited_to_max(self, mock_embedding_service):
+    def test_match_reasons_limited_to_max(self, mock_embedding_service: MagicMock) -> None:
         """AC4: Match reasons limited to 3-5 per Work Unit."""
         from resume_as_code.models.job_description import JobDescription
         from resume_as_code.services.ranker import HybridRanker
@@ -524,8 +860,11 @@ class TestRankingOutput:
     """Tests for RankingOutput helper methods."""
 
     def test_top_n_returns_n_results(
-        self, sample_work_units: list[dict], sample_jd: JobDescription, mock_embedding_service
-    ):
+        self,
+        sample_work_units: list[dict[str, Any]],
+        sample_jd: JobDescription,
+        mock_embedding_service: MagicMock,
+    ) -> None:
         """RankingOutput.top(n) returns top n results."""
         from resume_as_code.services.ranker import HybridRanker
 
@@ -537,8 +876,11 @@ class TestRankingOutput:
         assert top_2[0].score >= top_2[1].score
 
     def test_selected_property(
-        self, sample_work_units: list[dict], sample_jd: JobDescription, mock_embedding_service
-    ):
+        self,
+        sample_work_units: list[dict[str, Any]],
+        sample_jd: JobDescription,
+        mock_embedding_service: MagicMock,
+    ) -> None:
         """RankingOutput.selected returns all results."""
         from resume_as_code.services.ranker import HybridRanker
 
@@ -551,7 +893,7 @@ class TestRankingOutput:
 class TestPerformance:
     """Performance tests for NFR requirements."""
 
-    def test_ranking_completes_under_3_seconds(self, mock_embedding_service):
+    def test_ranking_completes_under_3_seconds(self, mock_embedding_service: MagicMock) -> None:
         """NFR1: Ranking 15+ Work Units completes within 3 seconds."""
         import time
 

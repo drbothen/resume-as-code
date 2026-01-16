@@ -466,14 +466,14 @@
           "type": "number"
         },
         "title_weight": {
-          "default": 1.0,
+          "default": 2.0,
           "maximum": 10.0,
           "minimum": 0.0,
           "title": "Title Weight",
           "type": "number"
         },
         "skills_weight": {
-          "default": 1.0,
+          "default": 1.5,
           "maximum": 10.0,
           "minimum": 0.0,
           "title": "Skills Weight",

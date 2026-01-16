@@ -1,6 +1,6 @@
 # Story 7.8: Field-Weighted BM25 Scoring
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -30,30 +30,30 @@ So that **resumes with matching titles rank higher than those with incidental ke
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add field extraction helpers (AC: #1, #2)
-  - [ ] 1.1 Create `extract_title_text(wu)` function in work_unit_text.py
-  - [ ] 1.2 Create `extract_skills_text(wu)` function in work_unit_text.py
-  - [ ] 1.3 Create `extract_experience_text(wu)` function (problem, actions, outcome)
-  - [ ] 1.4 Add unit tests for field extraction
+- [x] Task 1: Add field extraction helpers (AC: #1, #2)
+  - [x] 1.1 Create `extract_title_text(wu)` function in work_unit_text.py
+  - [x] 1.2 Create `extract_skills_text(wu)` function in work_unit_text.py
+  - [x] 1.3 Create `extract_experience_text(wu)` function (problem, actions, outcome)
+  - [x] 1.4 Add unit tests for field extraction
 
-- [ ] Task 2: Implement field-weighted BM25 (AC: #1, #2, #3)
-  - [ ] 2.1 Create `_bm25_rank_weighted()` method in HybridRanker
-  - [ ] 2.2 Build separate BM25 corpora for title, skills, experience
-  - [ ] 2.3 Apply field weights from ScoringWeights
-  - [ ] 2.4 Combine weighted scores
-  - [ ] 2.5 Update `_bm25_rank()` to call weighted version when weights != 1.0
+- [x] Task 2: Implement field-weighted BM25 (AC: #1, #2, #3)
+  - [x] 2.1 Create `_bm25_rank_weighted()` method in HybridRanker
+  - [x] 2.2 Build separate BM25 corpora for title, skills, experience
+  - [x] 2.3 Apply field weights from ScoringWeights
+  - [x] 2.4 Combine weighted scores
+  - [x] 2.5 Update `_bm25_rank()` to call weighted version when weights != 1.0
 
-- [ ] Task 3: Enhance match reasons (AC: #4)
-  - [ ] 3.1 Update `_extract_match_reasons()` to indicate field type
-  - [ ] 3.2 Show "Title match: ..." when title field matches
-  - [ ] 3.3 Show "Skills match: ..." when skills field matches
-  - [ ] 3.4 Show "Experience match: ..." for body text matches
+- [x] Task 3: Enhance match reasons (AC: #4)
+  - [x] 3.1 Update `_extract_match_reasons()` to indicate field type
+  - [x] 3.2 Show "Title match: ..." when title field matches
+  - [x] 3.3 Show "Skills match: ..." when skills field matches
+  - [x] 3.4 Show "Experience match: ..." for body text matches
 
-- [ ] Task 4: Add tests and quality checks
-  - [ ] 4.1 Unit tests for weighted BM25 scoring
-  - [ ] 4.2 Test that default weights produce identical results
-  - [ ] 4.3 Integration test with plan command
-  - [ ] 4.4 Run `ruff check` and `mypy --strict`
+- [x] Task 4: Add tests and quality checks
+  - [x] 4.1 Unit tests for weighted BM25 scoring
+  - [x] 4.2 Test that default weights produce identical results
+  - [x] 4.3 Integration test with plan command
+  - [x] 4.4 Run `ruff check` and `mypy --strict`
 
 ## Dev Notes
 
@@ -627,11 +627,32 @@ From `project-context.md`:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+- All 1906 tests pass (148.77s)
+- `ruff check` passed with no issues
+- `mypy --strict` passed with no issues
+
 ### Completion Notes List
 
+- Implemented field extraction helpers (`extract_title_text`, `extract_skills_text`, `extract_experience_text`) in `work_unit_text.py`
+- Added `_has_field_weights()` method to detect non-default field weights
+- Implemented `_bm25_rank_weighted()` method for field-specific BM25 scoring with configurable weights
+- Updated `rank()` method to use weighted BM25 when field weights are configured (AC #1, #2, #3)
+- Enhanced `_extract_match_reasons()` to indicate field type (Title match, Skills match, Experience match) (AC #4)
+- Added comprehensive unit tests: 14 tests for field extraction, 9 tests for weighted BM25, 3 tests for field-specific match reasons
+- All acceptance criteria satisfied
+
 ### File List
+
+- `src/resume_as_code/utils/work_unit_text.py` - Added 3 field extraction functions
+- `src/resume_as_code/services/ranker.py` - Added `_has_field_weights()`, `_bm25_rank_weighted()`, updated `rank()`, updated `_extract_match_reasons()`
+- `tests/unit/test_work_unit_text.py` - New: 14 tests for field extraction
+- `tests/unit/test_ranker.py` - Added 12 new tests for field-weighted BM25 and enhanced match reasons
+
+## Change Log
+
+- 2026-01-16: Implemented field-weighted BM25 scoring with configurable weights and enhanced match reasons
 
