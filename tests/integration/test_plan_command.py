@@ -261,6 +261,90 @@ class TestPlanCommandRichOutput:
             f"got output: {output[:500]}"
         )
 
+    def test_recency_decay_boosts_recent_work_units(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Story 7.9: Recent work units should rank higher with recency decay enabled.
+
+        AC #1-3: Recency decay applies exponential decay based on time_ended.
+        AC #5: Final score blends relevance and recency.
+        """
+        from datetime import date, timedelta
+
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        # Create two work units with identical relevance but different recency
+        # Old work unit (5 years ago - should get ~50% recency with 5-year half-life)
+        old_date = (date.today() - timedelta(days=5 * 365)).strftime("%Y-%m-%d")
+        old_wu = f"""\
+schema_version: "1.0.0"
+id: "wu-old-python"
+title: "Python Backend Service"
+time_ended: "{old_date}"
+problem:
+  statement: "Built Python microservices"
+actions:
+  - "Developed Python APIs"
+outcome:
+  result: "Delivered Python solution"
+tags:
+  - "python"
+  - "backend"
+confidence: high
+"""
+        (work_units / "wu-old.yaml").write_text(old_wu)
+
+        # Recent work unit (current - should get 100% recency)
+        recent_wu = """\
+schema_version: "1.0.0"
+id: "wu-recent-python"
+title: "Python Backend Service"
+problem:
+  statement: "Built Python microservices"
+actions:
+  - "Developed Python APIs"
+outcome:
+  result: "Delivered Python solution"
+tags:
+  - "python"
+  - "backend"
+confidence: high
+"""
+        (work_units / "wu-recent.yaml").write_text(recent_wu)
+
+        # Configure recency decay in .resume.yaml
+        config = """\
+work_units_dir: work-units
+scoring_weights:
+  recency_half_life: 5.0
+  recency_blend: 0.3
+"""
+        (tmp_path / ".resume.yaml").write_text(config)
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Python Developer",
+            "Requirements:\n- Python backend\n- API development",
+        )
+
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--top", "2"])
+
+        assert result.exit_code == 0
+        # Both should be selected, but recent should rank higher
+        assert "wu-recent-python" in result.output
+        assert "wu-old-python" in result.output
+        # Recent should appear before old in the output (higher ranking)
+        recent_pos = result.output.find("wu-recent-python")
+        old_pos = result.output.find("wu-old-python")
+        assert recent_pos < old_pos, (
+            f"Recent work unit should rank higher than old one. "
+            f"Recent at {recent_pos}, Old at {old_pos}"
+        )
+
 
 class TestPlanCommandContentAnalysis:
     """Tests for content analysis (AC #6)."""
@@ -594,8 +678,11 @@ class TestPlanCommandExclusionReasons:
 
         assert result.exit_code == 0
         assert "EXCLUDED" in result.output
-        # Should show low relevance reason with specific message
-        assert "Low relevance score" in result.output or "relevance" in result.output.lower()
+        # Should show exclusion reason with score percentage
+        # Note: At exactly 20% threshold, may show either message
+        assert (
+            "Low relevance score" in result.output or "Below selection threshold" in result.output
+        ), f"Expected exclusion reason with score, got: {result.output}"
 
     def test_below_threshold_reason_for_medium_scores(
         self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch

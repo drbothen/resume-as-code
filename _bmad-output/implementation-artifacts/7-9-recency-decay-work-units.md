@@ -1,6 +1,6 @@
 # Story 7.9: Recency Decay for Work Units
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -487,11 +487,15 @@ None required.
 - Final score blending: `final = (1 - recency_blend) × relevance + recency_blend × recency`
 - Added 23 new tests across 4 test classes (TestRecencyDecay, TestScoreBlending, TestRecencyConfigValidation, TestRecencyIntegration)
 - All 54 ranker tests pass, ruff check and mypy --strict pass
-- Note: One pre-existing test failure in test_plan_command.py is unrelated to this work
+
+**Code Review Remediation (2026-01-16):**
+- Fixed pre-existing test assertion in `test_low_relevance_reason_for_low_scores` to accept boundary case
+- Added integration test `test_recency_decay_boosts_recent_work_units` verifying end-to-end recency ranking
 
 ### File List
 
 - `src/resume_as_code/models/config.py` - Added recency_half_life and recency_blend fields to ScoringWeights with docstrings
 - `src/resume_as_code/services/ranker.py` - Added `_calculate_recency_score()` and `_blend_scores()` methods, integrated into `rank()`
 - `tests/unit/test_ranker.py` - Added 23 new tests for recency decay feature
+- `tests/integration/test_plan_command.py` - Added `test_recency_decay_boosts_recent_work_units` for Story 7.9 verification; fixed `test_low_relevance_reason_for_low_scores` threshold edge case
 
