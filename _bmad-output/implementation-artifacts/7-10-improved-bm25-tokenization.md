@@ -1,6 +1,6 @@
 # Story 7.10: Improved BM25 Tokenization
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -644,11 +644,22 @@ Without spaCy, the tokenizer still provides:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4 (claude-opus-4-20250514)
 
 ### Debug Log References
 
+- Commit: 7ab185e feat(ranker): add ResumeTokenizer with normalization and abbreviation expansion
+
 ### Completion Notes List
+
+- ResumeTokenizer implements full normalization pipeline: lowercase → separator normalization → abbreviation expansion → optional lemmatization → stop word filtering
+- spaCy lemmatization is optional (disabled by default in ranker for performance)
+- 26 unit tests covering all ACs
+- Integration with both `_bm25_rank` and `_bm25_rank_weighted` methods
 
 ### File List
 
+- `src/resume_as_code/utils/tokenizer.py` - NEW: ResumeTokenizer class with normalization pipeline
+- `src/resume_as_code/services/ranker.py` - MODIFIED: Integrated ResumeTokenizer in BM25 methods
+- `tests/unit/test_tokenizer.py` - NEW: 26 unit tests including AC validation tests
+- `pyproject.toml` - MODIFIED: Added optional `nlp` dependency group with spaCy>=3.7

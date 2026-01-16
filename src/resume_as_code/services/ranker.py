@@ -181,6 +181,10 @@ class HybridRanker:
         - Hyphen/slash normalization (CI/CD -> ci cd)
         - Domain stop word filtering (requirements, experience, etc.)
         - Optional spaCy lemmatization (engineering -> engineer)
+
+        Note: Lemmatization is disabled by default for performance since spaCy
+        is an optional dependency. Abbreviation expansion and normalization
+        provide the majority of matching benefits without the spaCy overhead.
         """
         # Use ResumeTokenizer for intelligent tokenization (Story 7.10)
         tokenizer = get_tokenizer(use_lemmatization=False)
@@ -233,6 +237,10 @@ class HybridRanker:
         - Hyphen/slash normalization (CI/CD -> ci cd)
         - Domain stop word filtering (requirements, experience, etc.)
         - Optional spaCy lemmatization (engineering -> engineer)
+
+        Note: Lemmatization is disabled by default for performance since spaCy
+        is an optional dependency. Abbreviation expansion and normalization
+        provide the majority of matching benefits without the spaCy overhead.
 
         Args:
             work_units: List of Work Unit dictionaries.

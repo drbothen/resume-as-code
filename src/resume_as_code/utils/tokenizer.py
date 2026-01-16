@@ -12,36 +12,74 @@ if TYPE_CHECKING:
 
 # Technical abbreviation mappings (bidirectional expansion)
 TECH_EXPANSIONS: dict[str, str] = {
+    # AI/ML
     "ml": "machine learning",
     "ai": "artificial intelligence",
+    "nlp": "natural language processing",
+    "llm": "large language model",
+    "genai": "generative artificial intelligence",
+    # Infrastructure
     "k8s": "kubernetes",
+    "infra": "infrastructure",
+    "vpc": "virtual private cloud",
+    "cdn": "content delivery network",
+    "dns": "domain name system",
+    # Languages/Frameworks
     "js": "javascript",
     "ts": "typescript",
     "py": "python",
+    "rb": "ruby",
+    "fe": "frontend",
+    "be": "backend",
+    # CI/CD variants
     "cicd": "continuous integration continuous deployment",
     "ci/cd": "continuous integration continuous deployment",
     "ci cd": "continuous integration continuous deployment",
+    # Cloud providers
     "aws": "amazon web services",
     "gcp": "google cloud platform",
     "az": "azure",
+    # Databases
     "db": "database",
-    "api": "application programming interface",
-    "ui": "user interface",
-    "ux": "user experience",
-    "qa": "quality assurance",
-    "devops": "development operations",
-    "sre": "site reliability engineering",
-    "sdk": "software development kit",
-    "cli": "command line interface",
     "sql": "structured query language",
     "nosql": "not only sql",
     "orm": "object relational mapping",
-    "mvc": "model view controller",
+    "rds": "relational database service",
+    # APIs/Architecture
+    "api": "application programming interface",
     "rest": "representational state transfer",
     "graphql": "graph query language",
+    "grpc": "google remote procedure call",
+    "mvc": "model view controller",
+    "soa": "service oriented architecture",
+    # UX/UI
+    "ui": "user interface",
+    "ux": "user experience",
+    # DevOps/SRE
+    "devops": "development operations",
+    "sre": "site reliability engineering",
+    "qa": "quality assurance",
+    "tdd": "test driven development",
+    "bdd": "behavior driven development",
+    # Tools/SDKs
+    "sdk": "software development kit",
+    "cli": "command line interface",
+    "ide": "integrated development environment",
+    # Cloud services
     "saas": "software as a service",
     "paas": "platform as a service",
     "iaas": "infrastructure as a service",
+    # Security
+    "sso": "single sign on",
+    "mfa": "multi factor authentication",
+    "rbac": "role based access control",
+    "iam": "identity access management",
+    # Agile/Management
+    "agile": "agile methodology",
+    "scrum": "scrum framework",
+    "kanban": "kanban methodology",
+    "okr": "objectives key results",
+    "kpi": "key performance indicator",
 }
 
 # Domain-specific stop words (common in JDs but not meaningful for matching)
@@ -271,20 +309,22 @@ def _tokenize_cached(tokenizer: ResumeTokenizer, text: str) -> tuple[str, ...]:
     return _tokenize_cached_impl(text, tokenizer.use_lemmatization)
 
 
-# Module-level singleton for convenience
-_default_tokenizer: ResumeTokenizer | None = None
+# Module-level cache for tokenizer instances (keyed by config)
+_tokenizer_cache: dict[bool, ResumeTokenizer] = {}
 
 
 def get_tokenizer(use_lemmatization: bool = True) -> ResumeTokenizer:
-    """Get or create default tokenizer instance.
+    """Get or create tokenizer instance for the given configuration.
+
+    Uses a cache to reuse tokenizer instances with the same configuration,
+    avoiding repeated spaCy model loading while respecting different configs.
 
     Args:
         use_lemmatization: Whether to use spaCy lemmatization.
 
     Returns:
-        ResumeTokenizer instance.
+        ResumeTokenizer instance configured as requested.
     """
-    global _default_tokenizer
-    if _default_tokenizer is None:
-        _default_tokenizer = ResumeTokenizer(use_lemmatization=use_lemmatization)
-    return _default_tokenizer
+    if use_lemmatization not in _tokenizer_cache:
+        _tokenizer_cache[use_lemmatization] = ResumeTokenizer(use_lemmatization=use_lemmatization)
+    return _tokenizer_cache[use_lemmatization]

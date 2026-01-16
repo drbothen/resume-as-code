@@ -3,6 +3,94 @@
 from __future__ import annotations
 
 
+class TestTechExpansions:
+    """Tests for TECH_EXPANSIONS constant dictionary."""
+
+    def test_all_keys_are_lowercase(self) -> None:
+        """All abbreviation keys should be lowercase."""
+        from resume_as_code.utils.tokenizer import TECH_EXPANSIONS
+
+        for key in TECH_EXPANSIONS:
+            assert key == key.lower(), f"Key '{key}' should be lowercase"
+
+    def test_all_values_are_lowercase(self) -> None:
+        """All expansion values should be lowercase."""
+        from resume_as_code.utils.tokenizer import TECH_EXPANSIONS
+
+        for key, value in TECH_EXPANSIONS.items():
+            assert value == value.lower(), f"Value for '{key}' should be lowercase"
+
+    def test_required_abbreviations_present(self) -> None:
+        """Critical abbreviations must be present."""
+        from resume_as_code.utils.tokenizer import TECH_EXPANSIONS
+
+        required = ["ml", "ai", "k8s", "aws", "gcp", "cicd", "api", "ui", "ux"]
+        for abbrev in required:
+            assert abbrev in TECH_EXPANSIONS, f"Missing required abbreviation: {abbrev}"
+
+    def test_cicd_variants_all_present(self) -> None:
+        """All CI/CD variants should be present for robust matching."""
+        from resume_as_code.utils.tokenizer import TECH_EXPANSIONS
+
+        variants = ["cicd", "ci/cd", "ci cd"]
+        for variant in variants:
+            assert variant in TECH_EXPANSIONS, f"Missing CI/CD variant: {variant}"
+
+    def test_no_empty_expansions(self) -> None:
+        """No expansion should be empty."""
+        from resume_as_code.utils.tokenizer import TECH_EXPANSIONS
+
+        for key, value in TECH_EXPANSIONS.items():
+            assert value.strip(), f"Empty expansion for '{key}'"
+
+
+class TestDomainStopWords:
+    """Tests for DOMAIN_STOP_WORDS constant set."""
+
+    def test_all_words_are_lowercase(self) -> None:
+        """All stop words should be lowercase."""
+        from resume_as_code.utils.tokenizer import DOMAIN_STOP_WORDS
+
+        for word in DOMAIN_STOP_WORDS:
+            assert word == word.lower(), f"Stop word '{word}' should be lowercase"
+
+    def test_required_stop_words_present(self) -> None:
+        """Critical JD boilerplate words must be filtered."""
+        from resume_as_code.utils.tokenizer import DOMAIN_STOP_WORDS
+
+        required = [
+            "responsibilities",
+            "requirements",
+            "qualifications",
+            "experience",
+            "ability",
+            "skills",
+        ]
+        for word in required:
+            assert word in DOMAIN_STOP_WORDS, f"Missing required stop word: {word}"
+
+    def test_no_technical_terms_in_stop_words(self) -> None:
+        """Technical terms should NOT be in stop words."""
+        from resume_as_code.utils.tokenizer import DOMAIN_STOP_WORDS
+
+        technical_terms = [
+            "python",
+            "javascript",
+            "kubernetes",
+            "docker",
+            "aws",
+            "react",
+            "database",
+            "api",
+            "security",
+            "cloud",
+        ]
+        for term in technical_terms:
+            assert term not in DOMAIN_STOP_WORDS, (
+                f"Technical term '{term}' should not be a stop word"
+            )
+
+
 class TestNormalization:
     """Tests for text normalization."""
 
@@ -227,16 +315,30 @@ class TestGetTokenizer:
         tokenizer = get_tokenizer(use_lemmatization=False)
         assert isinstance(tokenizer, ResumeTokenizer)
 
-    def test_get_tokenizer_singleton(self) -> None:
-        """get_tokenizer returns the same instance on repeated calls."""
+    def test_get_tokenizer_caches_by_config(self) -> None:
+        """get_tokenizer returns the same instance for same config."""
         from resume_as_code.utils import tokenizer as tok_module
 
-        # Reset singleton for clean test
-        tok_module._default_tokenizer = None
+        # Reset cache for clean test
+        tok_module._tokenizer_cache.clear()
 
         tok1 = tok_module.get_tokenizer(use_lemmatization=False)
         tok2 = tok_module.get_tokenizer(use_lemmatization=False)
         assert tok1 is tok2
+
+    def test_get_tokenizer_respects_different_configs(self) -> None:
+        """get_tokenizer returns different instances for different configs."""
+        from resume_as_code.utils import tokenizer as tok_module
+
+        # Reset cache for clean test
+        tok_module._tokenizer_cache.clear()
+
+        tok_no_lemma = tok_module.get_tokenizer(use_lemmatization=False)
+        tok_with_lemma = tok_module.get_tokenizer(use_lemmatization=True)
+
+        assert tok_no_lemma is not tok_with_lemma
+        assert tok_no_lemma.use_lemmatization is False
+        assert tok_with_lemma.use_lemmatization is True
 
 
 class TestAcceptanceCriteria:
