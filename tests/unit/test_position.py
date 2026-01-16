@@ -129,16 +129,15 @@ class TestPositionModel:
             )
         assert "Date must be in YYYY-MM format" in str(exc_info.value)
 
-    def test_date_validation_full_date_rejected(self) -> None:
-        """Should reject full date format (YYYY-MM-DD)."""
-        with pytest.raises(ValidationError) as exc_info:
-            Position(
-                id="pos-test",
-                employer="Test Corp",
-                title="Engineer",
-                start_date="2022-01-15",
-            )
-        assert "Date must be in YYYY-MM format" in str(exc_info.value)
+    def test_date_validation_full_date_normalized(self) -> None:
+        """YYYY-MM-DD format should be normalized to YYYY-MM."""
+        pos = Position(
+            id="pos-test",
+            employer="Test Corp",
+            title="Engineer",
+            start_date="2022-01-15",
+        )
+        assert pos.start_date == "2022-01"
 
     def test_employment_type_valid_values(self) -> None:
         """Should accept all valid employment types."""

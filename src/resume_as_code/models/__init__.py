@@ -38,6 +38,7 @@ from resume_as_code.models.resume import (
     ResumeSection,
 )
 from resume_as_code.models.scope import Scope
+from resume_as_code.models.types import Year, YearMonth
 from resume_as_code.models.work_unit import (
     STRONG_VERBS,
     WEAK_VERBS,
@@ -110,5 +111,7 @@ __all__ = [
     "WorkUnit",
     "WorkUnitConfidence",
     "WorkUnitReference",
+    "Year",
+    "YearMonth",
     "get_exclusion_reason",
 ]

@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import re
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl
+
+from resume_as_code.models.types import YearMonth
 
 PublicationType = Literal["conference", "article", "whitepaper", "book", "podcast", "webinar"]
 
@@ -20,27 +21,9 @@ class Publication(BaseModel):
     title: str
     type: PublicationType
     venue: str  # Conference name, publisher, blog name
-    date: str  # YYYY-MM format
+    date: YearMonth  # YYYY-MM format
     url: HttpUrl | None = None
     display: bool = Field(default=True)
-
-    @field_validator("date", mode="before")
-    @classmethod
-    def validate_date_format(cls, v: str) -> str:
-        """Validate YYYY-MM date format.
-
-        Args:
-            v: Date string.
-
-        Returns:
-            Validated date string.
-
-        Raises:
-            ValueError: If date format is invalid.
-        """
-        if not re.match(r"^\d{4}-\d{2}$", str(v)):
-            raise ValueError("Date must be in YYYY-MM format")
-        return v
 
     @property
     def year(self) -> str:

@@ -137,7 +137,7 @@ development_status:
   epic-7: in-progress
   7-1-json-schema-auto-generation: done  # P1, 3 pts - Auto-generate JSON schemas from Pydantic models
   7-2-unified-scope-model: review  # P1, 5 pts - Single Scope model for positions and work units
-  7-3-standardized-date-types: ready-for-dev  # P2, 3 pts - YearMonth and Year annotated types
+  7-3-standardized-date-types: review  # P2, 3 pts - YearMonth and Year annotated types
   7-4-skills-registry-normalization: ready-for-dev  # P2, 5 pts - Skill aliases and normalization
   7-5-onet-api-integration: ready-for-dev  # P3, 8 pts - O*NET skill standardization (depends on 7.4)
   7-6-position-reference-integrity: ready-for-dev  # P2, 2 pts - Validate position_id references

@@ -12,6 +12,8 @@
     "year": {
       "anyOf": [
         {
+          "description": "Year in YYYY format",
+          "pattern": "^\\d{4}$",
           "type": "string"
         },
         {

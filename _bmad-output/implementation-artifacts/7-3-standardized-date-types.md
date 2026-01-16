@@ -1,6 +1,6 @@
 # Story 7.3: Standardized Date Types
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -38,47 +38,47 @@ So that **date validation is centralized and dates display consistently**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create reusable date types module (AC: #1, #2)
-  - [ ] 1.1 Create `src/resume_as_code/models/types.py` with YearMonth type
-  - [ ] 1.2 Add Year type with int-to-str coercion
-  - [ ] 1.3 Add proper docstrings and Field descriptions
-  - [ ] 1.4 Export from `models/__init__.py`
-  - [ ] 1.5 Add comprehensive unit tests for both types
+- [x] Task 1: Create reusable date types module (AC: #1, #2)
+  - [x] 1.1 Create `src/resume_as_code/models/types.py` with YearMonth type
+  - [x] 1.2 Add Year type with int-to-str coercion
+  - [x] 1.3 Add proper docstrings and Field descriptions
+  - [x] 1.4 Export from `models/__init__.py`
+  - [x] 1.5 Add comprehensive unit tests for both types
 
-- [ ] Task 2: Update Position model (AC: #3)
-  - [ ] 2.1 Replace `start_date: str` with `start_date: YearMonth`
-  - [ ] 2.2 Replace `end_date: str | None` with `end_date: YearMonth | None`
-  - [ ] 2.3 Remove the `validate_date_format` field_validator
-  - [ ] 2.4 Verify existing tests pass
+- [x] Task 2: Update Position model (AC: #3)
+  - [x] 2.1 Replace `start_date: str` with `start_date: YearMonth`
+  - [x] 2.2 Replace `end_date: str | None` with `end_date: YearMonth | None`
+  - [x] 2.3 Remove the `validate_date_format` field_validator
+  - [x] 2.4 Verify existing tests pass
 
-- [ ] Task 3: Update Education model (AC: #4)
-  - [ ] 3.1 Rename `year` field to `graduation_year` (optional - confirm with user)
-  - [ ] 3.2 Replace type annotation with `Year | None`
-  - [ ] 3.3 Remove the `validate_year_format` field_validator
-  - [ ] 3.4 Verify existing tests pass
+- [x] Task 3: Update Education model (AC: #4)
+  - [x] 3.1 Rename `year` field to `graduation_year` (optional - confirm with user) - SKIPPED: not renaming without user confirmation
+  - [x] 3.2 Replace type annotation with `Year | None`
+  - [x] 3.3 Remove the `validate_year_format` field_validator
+  - [x] 3.4 Verify existing tests pass
 
-- [ ] Task 4: Update Certification model (AC: #1)
-  - [ ] 4.1 Replace `date: str | None` with `date: YearMonth | None`
-  - [ ] 4.2 Replace `expires: str | None` with `expires: YearMonth | None`
-  - [ ] 4.3 Remove the `validate_date_format` field_validator
-  - [ ] 4.4 Verify existing tests pass
+- [x] Task 4: Update Certification model (AC: #1)
+  - [x] 4.1 Replace `date: str | None` with `date: YearMonth | None`
+  - [x] 4.2 Replace `expires: str | None` with `expires: YearMonth | None`
+  - [x] 4.3 Remove the `validate_date_format` field_validator
+  - [x] 4.4 Verify existing tests pass
 
-- [ ] Task 5: Update BoardRole model (AC: #1)
-  - [ ] 5.1 Replace `start_date: str` with `start_date: YearMonth`
-  - [ ] 5.2 Replace `end_date: str | None` with `end_date: YearMonth | None`
-  - [ ] 5.3 Remove the `validate_date_format` field_validator
-  - [ ] 5.4 Verify existing tests pass
+- [x] Task 5: Update BoardRole model (AC: #1)
+  - [x] 5.1 Replace `start_date: str` with `start_date: YearMonth`
+  - [x] 5.2 Replace `end_date: str | None` with `end_date: YearMonth | None`
+  - [x] 5.3 Remove the `validate_date_format` field_validator
+  - [x] 5.4 Verify existing tests pass
 
-- [ ] Task 6: Update Publication model (AC: #1)
-  - [ ] 6.1 Replace `date: str` with `date: YearMonth`
-  - [ ] 6.2 Remove the `validate_date_format` field_validator
-  - [ ] 6.3 Verify existing tests pass
+- [x] Task 6: Update Publication model (AC: #1)
+  - [x] 6.1 Replace `date: str` with `date: YearMonth`
+  - [x] 6.2 Remove the `validate_date_format` field_validator
+  - [x] 6.3 Verify existing tests pass
 
-- [ ] Task 7: Final verification and documentation
-  - [ ] 7.1 Run `ruff check` and `mypy --strict`
-  - [ ] 7.2 Run full test suite
-  - [ ] 7.3 Update schema generation if needed
-  - [ ] 7.4 Add usage examples to docstrings
+- [x] Task 7: Final verification and documentation
+  - [x] 7.1 Run `ruff check` and `mypy --strict`
+  - [x] 7.2 Run full test suite
+  - [x] 7.3 Update schema generation if needed - JSON schemas auto-generated via WithJsonSchema
+  - [x] 7.4 Add usage examples to docstrings
 
 ## Dev Notes
 
@@ -482,11 +482,37 @@ The `YearMonth` and `Year` types are for string-based date fields only.
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None
+
 ### Completion Notes List
 
+- Created `src/resume_as_code/models/types.py` with `YearMonth` and `Year` annotated types using Pydantic v2 `BeforeValidator` and `WithJsonSchema`
+- `YearMonth` normalizes YYYY-MM-DD to YYYY-MM (consistent with existing Certification behavior)
+- `Year` coerces int to string and normalizes extended formats to YYYY
+- Used `WithJsonSchema` to override schema generation and include pattern constraints (workaround for Pydantic #12417)
+- Removed 5 duplicate `validate_date_format` / `validate_year_format` field validators from Position, Education, Certification, BoardRole, Publication models
+- Updated 3 tests that expected YYYY-MM-DD rejection to now expect normalization (Position, Publication)
+- All 1701 tests pass with 33 warnings (unrelated to this change)
+- ruff check and mypy --strict pass with no issues
+
 ### File List
+
+- src/resume_as_code/models/types.py (new)
+- src/resume_as_code/models/__init__.py (modified - exports Year, YearMonth)
+- src/resume_as_code/models/position.py (modified - uses YearMonth, removed validator)
+- src/resume_as_code/models/education.py (modified - uses Year, removed validator)
+- src/resume_as_code/models/certification.py (modified - uses YearMonth, removed validator)
+- src/resume_as_code/models/board_role.py (modified - uses YearMonth, removed validator)
+- src/resume_as_code/models/publication.py (modified - uses YearMonth, removed validator)
+- tests/unit/test_types.py (new - 17 tests for YearMonth and Year types)
+- tests/unit/test_position.py (modified - test_date_validation_full_date_normalized)
+- tests/unit/test_publication.py (modified - test_date_format_validation_day_format_normalized)
+
+### Change Log
+
+- 2026-01-15: Implemented Story 7.3 - Standardized Date Types. Created reusable YearMonth and Year annotated types, replaced duplicate validators across 5 models, added 17 new tests.
 

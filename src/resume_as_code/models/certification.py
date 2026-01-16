@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import re
 from datetime import date, datetime, timedelta
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl
+
+from resume_as_code.models.types import YearMonth
 
 
 class Certification(BaseModel):
@@ -18,33 +19,11 @@ class Certification(BaseModel):
 
     name: str
     issuer: str | None = None
-    date: str | None = None  # YYYY-MM format
-    expires: str | None = None  # YYYY-MM format
+    date: YearMonth | None = None  # YYYY-MM format
+    expires: YearMonth | None = None  # YYYY-MM format
     credential_id: str | None = None
     url: HttpUrl | None = None
     display: bool = Field(default=True)  # Allow hiding without deleting
-
-    @field_validator("date", "expires", mode="before")
-    @classmethod
-    def validate_date_format(cls, v: str | None) -> str | None:
-        """Validate and normalize date to YYYY-MM format.
-
-        Accepts YYYY-MM or YYYY-MM-DD formats, normalizes to YYYY-MM.
-
-        Args:
-            v: Date string or None.
-
-        Returns:
-            Normalized YYYY-MM date string or None.
-
-        Raises:
-            ValueError: If date format is invalid.
-        """
-        if v is None:
-            return None
-        if not re.match(r"^\d{4}-\d{2}(-\d{2})?$", v):
-            raise ValueError("Date must be in YYYY-MM or YYYY-MM-DD format")
-        return v[:7]  # Normalize to YYYY-MM
 
     def get_status(self) -> Literal["active", "expires_soon", "expired"]:
         """Calculate certification status based on expiration.

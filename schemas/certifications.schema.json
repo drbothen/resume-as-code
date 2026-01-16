@@ -20,6 +20,8 @@
     "date": {
       "anyOf": [
         {
+          "description": "Date in YYYY-MM format",
+          "pattern": "^\\d{4}-\\d{2}$",
           "type": "string"
         },
         {
@@ -32,6 +34,8 @@
     "expires": {
       "anyOf": [
         {
+          "description": "Date in YYYY-MM format",
+          "pattern": "^\\d{4}-\\d{2}$",
           "type": "string"
         },
         {

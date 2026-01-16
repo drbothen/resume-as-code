@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import re
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
+
+from resume_as_code.models.types import YearMonth
 
 BoardRoleType = Literal["director", "advisory", "committee"]
 
@@ -20,30 +21,10 @@ class BoardRole(BaseModel):
     organization: str
     role: str
     type: BoardRoleType = "advisory"
-    start_date: str  # YYYY-MM format
-    end_date: str | None = None  # None = current
+    start_date: YearMonth  # YYYY-MM format
+    end_date: YearMonth | None = None  # None = current
     focus: str | None = None
     display: bool = Field(default=True)
-
-    @field_validator("start_date", "end_date", mode="before")
-    @classmethod
-    def validate_date_format(cls, v: str | None) -> str | None:
-        """Validate YYYY-MM date format.
-
-        Args:
-            v: Date string or None.
-
-        Returns:
-            Validated date string or None.
-
-        Raises:
-            ValueError: If date format is invalid.
-        """
-        if v is None:
-            return None
-        if not re.match(r"^\d{4}-\d{2}$", str(v)):
-            raise ValueError("Date must be in YYYY-MM format")
-        return v
 
     @property
     def is_current(self) -> bool:

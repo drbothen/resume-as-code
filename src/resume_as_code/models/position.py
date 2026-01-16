@@ -6,12 +6,12 @@ Supports career progression tracking via promoted_from field.
 
 from __future__ import annotations
 
-import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from resume_as_code.models.scope import Scope
+from resume_as_code.models.types import YearMonth
 
 EmploymentType = Literal["full-time", "part-time", "contract", "consulting", "freelance"]
 
@@ -33,8 +33,8 @@ class Position(BaseModel):
     employer: str = Field(description="Company/organization name")
     title: str = Field(description="Job title")
     location: str | None = Field(default=None, description="Location (city, state/country)")
-    start_date: str = Field(description="Start date in YYYY-MM format")
-    end_date: str | None = Field(
+    start_date: YearMonth = Field(description="Start date in YYYY-MM format")
+    end_date: YearMonth | None = Field(
         default=None, description="End date in YYYY-MM format, None for current"
     )
     employment_type: EmploymentType | None = Field(default=None, description="Type of employment")
@@ -45,16 +45,6 @@ class Position(BaseModel):
     scope: Scope | None = Field(
         default=None, description="Scope indicators for executive positions"
     )
-
-    @field_validator("start_date", "end_date", mode="before")
-    @classmethod
-    def validate_date_format(cls, v: str | None) -> str | None:
-        """Validate YYYY-MM date format."""
-        if v is None:
-            return None
-        if not re.match(r"^\d{4}-\d{2}$", str(v)):
-            raise ValueError("Date must be in YYYY-MM format")
-        return v
 
     @model_validator(mode="after")
     def validate_date_range(self) -> Position:

@@ -61,10 +61,10 @@ class TestPublicationModel:
         with pytest.raises(ValidationError):
             Publication(title="Test", type="article", venue="Blog", date="2024")
 
-    def test_date_format_validation_invalid_day_format(self) -> None:
-        """Should reject YYYY-MM-DD format (only YYYY-MM allowed)."""
-        with pytest.raises(ValidationError):
-            Publication(title="Test", type="article", venue="Blog", date="2024-06-15")
+    def test_date_format_validation_day_format_normalized(self) -> None:
+        """YYYY-MM-DD format should be normalized to YYYY-MM."""
+        pub = Publication(title="Test", type="article", venue="Blog", date="2024-06-15")
+        assert pub.date == "2024-06"
 
     def test_url_validation_valid(self) -> None:
         """Should accept valid URL."""
