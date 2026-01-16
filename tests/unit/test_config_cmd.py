@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from resume_as_code.cli import main
@@ -279,3 +280,99 @@ class TestConfigCertifications:
             assert "certifications" in data["data"]
             assert data["data"]["certifications"][0]["name"] == "AWS Cert"
             assert "status" in data["data"]["certifications"][0]
+
+
+class TestConfigONetStatus:
+    """Tests for resume config --show-onet-status (Story 7.5, AC #6)."""
+
+    def test_onet_status_flag_exists(self, cli_runner: CliRunner) -> None:
+        """--show-onet-status flag should be available."""
+        result = cli_runner.invoke(main, ["config", "--help"])
+        assert result.exit_code == 0
+        assert "--show-onet-status" in result.output
+
+    def test_onet_status_not_configured(self, cli_runner: CliRunner, tmp_path: Path) -> None:
+        """When O*NET not configured, shows helpful message."""
+        reset_config()
+        with cli_runner.isolated_filesystem(temp_dir=tmp_path):
+            result = cli_runner.invoke(main, ["config", "--show-onet-status"])
+
+            assert result.exit_code == 0
+            assert "not configured" in result.output.lower()
+
+    def test_onet_status_shows_masked_key(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """When API key configured, shows masked version."""
+        reset_config()
+        monkeypatch.setenv("ONET_API_KEY", "my-secret-api-key-12345")
+        with cli_runner.isolated_filesystem(temp_dir=tmp_path):
+            config_file = Path(".resume.yaml")
+            config_file.write_text("onet:\n  enabled: true\n")
+
+            result = cli_runner.invoke(main, ["config", "--show-onet-status"])
+
+            assert result.exit_code == 0
+            # Should show masked key (e.g., "my-s***45")
+            assert "***" in result.output
+            # Should NOT show full key
+            assert "my-secret-api-key-12345" not in result.output
+
+    def test_onet_status_shows_cache_stats(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Shows cache statistics (entries, size)."""
+        reset_config()
+        monkeypatch.setenv("ONET_API_KEY", "test-key")
+        with cli_runner.isolated_filesystem(temp_dir=tmp_path):
+            config_file = Path(".resume.yaml")
+            config_file.write_text("onet:\n  enabled: true\n")
+
+            result = cli_runner.invoke(main, ["config", "--show-onet-status"])
+
+            assert result.exit_code == 0
+            # Should show cache information
+            assert "cache" in result.output.lower()
+
+    def test_onet_status_shows_enabled_state(self, cli_runner: CliRunner, tmp_path: Path) -> None:
+        """Shows whether O*NET integration is enabled/disabled."""
+        reset_config()
+        with cli_runner.isolated_filesystem(temp_dir=tmp_path):
+            config_file = Path(".resume.yaml")
+            config_file.write_text("onet:\n  enabled: false\n")
+
+            result = cli_runner.invoke(main, ["config", "--show-onet-status"])
+
+            assert result.exit_code == 0
+            assert "disabled" in result.output.lower()
+
+    def test_onet_status_json_mode(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """JSON mode outputs O*NET status as structured data."""
+        reset_config()
+        monkeypatch.setenv("ONET_API_KEY", "test-key-abc123")
+        with cli_runner.isolated_filesystem(temp_dir=tmp_path):
+            config_file = Path(".resume.yaml")
+            config_file.write_text("onet:\n  enabled: true\n")
+
+            result = cli_runner.invoke(main, ["--json", "config", "--show-onet-status"])
+
+            assert result.exit_code == 0
+            data = json.loads(result.output)
+            assert data["status"] == "success"
+            assert "onet" in data["data"]
+            assert data["data"]["onet"]["enabled"] is True
+            assert data["data"]["onet"]["configured"] is True
+            # Key should be masked in JSON too
+            assert "test-key-abc123" not in result.output
+            assert "cache" in data["data"]["onet"]
+
+    def test_onet_status_quiet_mode(self, cli_runner: CliRunner, tmp_path: Path) -> None:
+        """Quiet mode produces no output."""
+        reset_config()
+        with cli_runner.isolated_filesystem(temp_dir=tmp_path):
+            result = cli_runner.invoke(main, ["--quiet", "config", "--show-onet-status"])
+
+            assert result.exit_code == 0
+            assert result.output == ""

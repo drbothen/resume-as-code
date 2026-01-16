@@ -1,6 +1,6 @@
 # Story 7.3: Standardized Date Types
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -52,7 +52,7 @@ So that **date validation is centralized and dates display consistently**.
   - [x] 2.4 Verify existing tests pass
 
 - [x] Task 3: Update Education model (AC: #4)
-  - [x] 3.1 Rename `year` field to `graduation_year` (optional - confirm with user) - SKIPPED: not renaming without user confirmation
+  - [x] 3.1 Rename `year` field to `graduation_year` (optional - confirm with user) - COMPLETED: renamed field to match AC #4
   - [x] 3.2 Replace type annotation with `Year | None`
   - [x] 3.3 Remove the `validate_year_format` field_validator
   - [x] 3.4 Verify existing tests pass
@@ -195,7 +195,7 @@ Year = Annotated[
 Accepts both int and str input, normalizes to 4-digit string.
 
 Used for:
-- Education.year
+- Education.graduation_year
 """
 ```
 
@@ -244,7 +244,7 @@ class Education(BaseModel):
 from resume_as_code.models.types import Year
 
 class Education(BaseModel):
-    year: Year | None = None
+    graduation_year: Year | None = None  # Renamed from 'year' per AC #4
     # No validator needed - Year handles validation automatically
 ```
 
@@ -504,15 +504,42 @@ None
 - src/resume_as_code/models/types.py (new)
 - src/resume_as_code/models/__init__.py (modified - exports Year, YearMonth)
 - src/resume_as_code/models/position.py (modified - uses YearMonth, removed validator)
-- src/resume_as_code/models/education.py (modified - uses Year, removed validator)
+- src/resume_as_code/models/education.py (modified - uses Year, renamed year to graduation_year)
 - src/resume_as_code/models/certification.py (modified - uses YearMonth, removed validator)
 - src/resume_as_code/models/board_role.py (modified - uses YearMonth, removed validator)
 - src/resume_as_code/models/publication.py (modified - uses YearMonth, removed validator)
+- src/resume_as_code/providers/docx.py (modified - updated to use graduation_year)
+- src/resume_as_code/templates/modern.html (modified - updated to use graduation_year)
+- src/resume_as_code/templates/executive.html (modified - updated to use graduation_year)
+- src/resume_as_code/templates/executive-classic.html (modified - updated to use graduation_year)
+- src/resume_as_code/templates/ats-safe.html (modified - updated to use graduation_year)
+- src/resume_as_code/commands/list_cmd.py (modified - updated JSON output key)
+- src/resume_as_code/commands/show.py (modified - updated JSON output key)
+- src/resume_as_code/commands/new.py (modified - updated Education constructor)
 - tests/unit/test_types.py (new - 17 tests for YearMonth and Year types)
 - tests/unit/test_position.py (modified - test_date_validation_full_date_normalized)
 - tests/unit/test_publication.py (modified - test_date_format_validation_day_format_normalized)
+- tests/unit/test_education.py (modified - updated all year references to graduation_year)
+- tests/unit/test_inline_education.py (modified - updated Education constructor calls)
+- tests/unit/test_docx_provider.py (modified - updated Education constructor calls)
+- tests/unit/test_education_commands.py (modified - updated Education constructor calls and JSON assertions)
+- tests/integration/test_template_rendering.py (modified - updated Education constructor calls)
+- tests/unit/test_executive_template.py (modified - updated year to graduation_year)
+- tests/unit/test_pdf_provider.py (modified - updated year to graduation_year)
+- tests/unit/test_resume_model.py (modified - updated year to graduation_year)
+- tests/integration/test_plan_command.py (modified - updated year to graduation_year)
+- .resume.yaml (modified - updated year to graduation_year)
+- examples/.resume.yaml (modified - updated year to graduation_year)
 
 ### Change Log
 
 - 2026-01-15: Implemented Story 7.3 - Standardized Date Types. Created reusable YearMonth and Year annotated types, replaced duplicate validators across 5 models, added 17 new tests.
+- 2026-01-15: Code Review Task 3.1 - Renamed Education.year to Education.graduation_year per AC #4. Updated model, providers (docx.py), templates (modern, executive, executive-classic, ats-safe), commands (list_cmd, show, new), and all test files. All 1701 tests pass.
+- 2026-01-15: Code Review - All findings remediated:
+  - M1: Fixed types.py docstring to show graduation_year instead of year
+  - M2: Added documentation to CLI validation functions explaining intentional duplication
+  - L2: Added ConfigDict(extra="forbid") to Education model for consistency
+  - Data migration: Updated .resume.yaml and examples/.resume.yaml to use graduation_year
+  - Test fixes: Updated test_executive_template.py, test_pdf_provider.py, test_resume_model.py, test_plan_command.py to use graduation_year
+  - All 1701 tests pass, ruff clean, mypy --strict clean
 

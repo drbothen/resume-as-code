@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
+from unittest.mock import patch
 
 from resume_as_code.models.certification import Certification
 from resume_as_code.models.config import SkillsConfig
@@ -15,6 +16,8 @@ from resume_as_code.models.resume import (
     ResumeItem,
     ResumeSection,
 )
+from resume_as_code.models.skill_entry import SkillEntry
+from resume_as_code.services.skill_registry import SkillRegistry
 
 
 class TestContactInfo:
@@ -141,7 +144,7 @@ class TestResumeData:
                 Education(
                     degree="BS Computer Science",
                     institution="State University",
-                    year="2014",
+                    graduation_year="2014",
                 )
             ],
         )
@@ -395,7 +398,11 @@ class TestResumeDataCertifications:
 
 
 class TestResumeDataSkillsCuration:
-    """Tests for skills curation integration in ResumeData.from_work_units() (AC #1, #2, #3)."""
+    """Tests for skills curation integration in ResumeData.from_work_units() (AC #1, #2, #3).
+
+    Note: These tests mock the registry to test curation logic in isolation.
+    Registry integration is tested separately in TestResumeDataSkillsRegistryIntegration.
+    """
 
     def test_from_work_units_with_skills_config_deduplicates(self) -> None:
         """Skills should be deduplicated case-insensitively when skills_config provided."""
@@ -403,7 +410,7 @@ class TestResumeDataSkillsCuration:
             {
                 "id": "wu-1",
                 "title": "Test",
-                "tags": ["AWS", "aws", "Python", "python"],
+                "tags": ["MySkill", "myskill", "OtherSkill", "otherskill"],
                 "skills_demonstrated": [],
                 "actions": [],
                 "outcome": {"result": "Done"},
@@ -412,17 +419,19 @@ class TestResumeDataSkillsCuration:
         contact = ContactInfo(name="Test")
         skills_config = SkillsConfig()
 
-        resume = ResumeData.from_work_units(
-            work_units=work_units,
-            contact=contact,
-            skills_config=skills_config,
-        )
+        # Use empty registry to test deduplication logic without normalization
+        with patch.object(SkillRegistry, "load_default", return_value=SkillRegistry([])):
+            resume = ResumeData.from_work_units(
+                work_units=work_units,
+                contact=contact,
+                skills_config=skills_config,
+            )
 
-        # Should have 2 skills (AWS and Python) not 4
+        # Should have 2 skills (MySkill and OtherSkill) not 4
         assert len(resume.skills) == 2
         lower_skills = [s.lower() for s in resume.skills]
-        assert lower_skills.count("aws") == 1
-        assert lower_skills.count("python") == 1
+        assert lower_skills.count("myskill") == 1
+        assert lower_skills.count("otherskill") == 1
 
     def test_from_work_units_with_skills_config_respects_max_display(self) -> None:
         """Skills should be limited to max_display when skills_config provided."""
@@ -439,11 +448,12 @@ class TestResumeDataSkillsCuration:
         contact = ContactInfo(name="Test")
         skills_config = SkillsConfig(max_display=5)
 
-        resume = ResumeData.from_work_units(
-            work_units=work_units,
-            contact=contact,
-            skills_config=skills_config,
-        )
+        with patch.object(SkillRegistry, "load_default", return_value=SkillRegistry([])):
+            resume = ResumeData.from_work_units(
+                work_units=work_units,
+                contact=contact,
+                skills_config=skills_config,
+            )
 
         assert len(resume.skills) == 5
 
@@ -453,25 +463,26 @@ class TestResumeDataSkillsCuration:
             {
                 "id": "wu-1",
                 "title": "Test",
-                "tags": ["Python", "PHP", "JavaScript", "jQuery"],
+                "tags": ["SkillA", "ExcludeMe", "SkillB", "AlsoExclude"],
                 "skills_demonstrated": [],
                 "actions": [],
                 "outcome": {"result": "Done"},
             }
         ]
         contact = ContactInfo(name="Test")
-        skills_config = SkillsConfig(exclude=["PHP", "jQuery"])
+        skills_config = SkillsConfig(exclude=["ExcludeMe", "AlsoExclude"])
 
-        resume = ResumeData.from_work_units(
-            work_units=work_units,
-            contact=contact,
-            skills_config=skills_config,
-        )
+        with patch.object(SkillRegistry, "load_default", return_value=SkillRegistry([])):
+            resume = ResumeData.from_work_units(
+                work_units=work_units,
+                contact=contact,
+                skills_config=skills_config,
+            )
 
-        assert "PHP" not in resume.skills
-        assert "jQuery" not in resume.skills
-        assert "Python" in resume.skills
-        assert "JavaScript" in resume.skills
+        assert "ExcludeMe" not in resume.skills
+        assert "AlsoExclude" not in resume.skills
+        assert "SkillA" in resume.skills
+        assert "SkillB" in resume.skills
 
     def test_from_work_units_with_jd_keywords_prioritizes_matches(self) -> None:
         """JD-matching skills should be prioritized when jd_keywords provided."""
@@ -488,12 +499,13 @@ class TestResumeDataSkillsCuration:
         contact = ContactInfo(name="Test")
         skills_config = SkillsConfig(max_display=3)
 
-        resume = ResumeData.from_work_units(
-            work_units=work_units,
-            contact=contact,
-            skills_config=skills_config,
-            jd_keywords={"gamma", "delta"},
-        )
+        with patch.object(SkillRegistry, "load_default", return_value=SkillRegistry([])):
+            resume = ResumeData.from_work_units(
+                work_units=work_units,
+                contact=contact,
+                skills_config=skills_config,
+                jd_keywords={"gamma", "delta"},
+            )
 
         # Gamma and Delta should be in the top 3 (JD matches prioritized)
         lower_skills = [s.lower() for s in resume.skills]
@@ -506,8 +518,8 @@ class TestResumeDataSkillsCuration:
             {
                 "id": "wu-1",
                 "title": "Test",
-                "tags": ["Python", "AWS"],
-                "skills_demonstrated": ["Leadership", "Architecture"],
+                "tags": ["SkillFromTag1", "SkillFromTag2"],
+                "skills_demonstrated": ["SkillDemo1", "SkillDemo2"],
                 "actions": [],
                 "outcome": {"result": "Done"},
             }
@@ -515,18 +527,18 @@ class TestResumeDataSkillsCuration:
         contact = ContactInfo(name="Test")
         skills_config = SkillsConfig()
 
-        resume = ResumeData.from_work_units(
-            work_units=work_units,
-            contact=contact,
-            skills_config=skills_config,
-        )
+        with patch.object(SkillRegistry, "load_default", return_value=SkillRegistry([])):
+            resume = ResumeData.from_work_units(
+                work_units=work_units,
+                contact=contact,
+                skills_config=skills_config,
+            )
 
         assert len(resume.skills) == 4
-        lower_skills = [s.lower() for s in resume.skills]
-        assert "python" in lower_skills
-        assert "aws" in lower_skills
-        assert "leadership" in lower_skills
-        assert "architecture" in lower_skills
+        assert "SkillFromTag1" in resume.skills
+        assert "SkillFromTag2" in resume.skills
+        assert "SkillDemo1" in resume.skills
+        assert "SkillDemo2" in resume.skills
 
     def test_from_work_units_without_skills_config_uses_old_behavior(self) -> None:
         """Without skills_config, old alphabetical sorting should be used."""
@@ -740,3 +752,171 @@ positions:
         # Should fall back to standalone entry
         assert len(resume.sections[0].items) == 1
         assert resume.sections[0].items[0].title == "Work with invalid position"
+
+
+class TestResumeDataSkillsRegistryIntegration:
+    """Tests for SkillRegistry integration in ResumeData.from_work_units() (Story 7.4)."""
+
+    def test_from_work_units_normalizes_skills_via_registry(self) -> None:
+        """Skills should be normalized to canonical names via registry (AC #1)."""
+        # Create a registry with known aliases
+        registry = SkillRegistry(
+            [
+                SkillEntry(canonical="Kubernetes", aliases=["k8s", "kube"]),
+                SkillEntry(canonical="TypeScript", aliases=["ts"]),
+            ]
+        )
+
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Test",
+                "tags": ["k8s", "ts", "Python"],  # k8s and ts are aliases
+                "skills_demonstrated": [],
+                "actions": [],
+                "outcome": {"result": "Done"},
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        skills_config = SkillsConfig()
+
+        # Mock load_default to return our test registry
+        with patch.object(SkillRegistry, "load_default", return_value=registry):
+            resume = ResumeData.from_work_units(
+                work_units=work_units,
+                contact=contact,
+                skills_config=skills_config,
+            )
+
+        # Should have canonical names, not aliases
+        assert "Kubernetes" in resume.skills
+        assert "TypeScript" in resume.skills
+        assert "Python" in resume.skills
+        # Aliases should not appear
+        assert "k8s" not in resume.skills
+        assert "ts" not in resume.skills
+
+    def test_from_work_units_deduplicates_via_registry_normalization(self) -> None:
+        """Multiple aliases for same skill should dedupe to one entry (AC #5)."""
+        registry = SkillRegistry(
+            [
+                SkillEntry(canonical="Kubernetes", aliases=["k8s", "kube"]),
+            ]
+        )
+
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Test",
+                "tags": ["k8s", "kube", "Kubernetes"],  # All same skill
+                "skills_demonstrated": [],
+                "actions": [],
+                "outcome": {"result": "Done"},
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        skills_config = SkillsConfig()
+
+        with patch.object(SkillRegistry, "load_default", return_value=registry):
+            resume = ResumeData.from_work_units(
+                work_units=work_units,
+                contact=contact,
+                skills_config=skills_config,
+            )
+
+        # Should have only one Kubernetes entry
+        assert resume.skills.count("Kubernetes") == 1
+        assert len(resume.skills) == 1
+
+    def test_from_work_units_jd_matching_via_alias_expansion(self) -> None:
+        """JD keywords should match via alias expansion (AC #6)."""
+        registry = SkillRegistry(
+            [
+                SkillEntry(canonical="Kubernetes", aliases=["k8s", "kube"]),
+                SkillEntry(canonical="Python", aliases=["py", "python3"]),
+            ]
+        )
+
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Test",
+                "tags": ["k8s", "Ruby", "Java"],  # k8s is alias for Kubernetes
+                "skills_demonstrated": [],
+                "actions": [],
+                "outcome": {"result": "Done"},
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        skills_config = SkillsConfig(max_display=2)
+
+        # JD mentions "Kubernetes" canonical name
+        with patch.object(SkillRegistry, "load_default", return_value=registry):
+            resume = ResumeData.from_work_units(
+                work_units=work_units,
+                contact=contact,
+                skills_config=skills_config,
+                jd_keywords={"Kubernetes"},  # JD has canonical name
+            )
+
+        # Kubernetes should be prioritized even though work unit has "k8s"
+        assert "Kubernetes" in resume.skills
+        assert resume.skills[0] == "Kubernetes"  # Should be first
+
+    def test_from_work_units_unknown_skills_passthrough(self) -> None:
+        """Unknown skills should pass through unchanged (AC #4)."""
+        registry = SkillRegistry(
+            [
+                SkillEntry(canonical="Kubernetes", aliases=["k8s"]),
+            ]
+        )
+
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Test",
+                "tags": ["k8s", "CustomFramework", "MyTool"],
+                "skills_demonstrated": [],
+                "actions": [],
+                "outcome": {"result": "Done"},
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        skills_config = SkillsConfig()
+
+        with patch.object(SkillRegistry, "load_default", return_value=registry):
+            resume = ResumeData.from_work_units(
+                work_units=work_units,
+                contact=contact,
+                skills_config=skills_config,
+            )
+
+        # Known alias normalized, unknown pass through
+        assert "Kubernetes" in resume.skills
+        assert "CustomFramework" in resume.skills
+        assert "MyTool" in resume.skills
+
+    def test_from_work_units_loads_default_registry(self) -> None:
+        """from_work_units should load the default registry when skills_config provided."""
+        work_units = [
+            {
+                "id": "wu-1",
+                "title": "Test",
+                "tags": ["Python"],
+                "skills_demonstrated": [],
+                "actions": [],
+                "outcome": {"result": "Done"},
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        skills_config = SkillsConfig()
+
+        # Verify load_default is called
+        with patch.object(SkillRegistry, "load_default") as mock_load:
+            mock_load.return_value = SkillRegistry([])
+            ResumeData.from_work_units(
+                work_units=work_units,
+                contact=contact,
+                skills_config=skills_config,
+            )
+            mock_load.assert_called_once()

@@ -154,6 +154,7 @@
       "type": "object"
     },
     "Education": {
+      "additionalProperties": false,
       "description": "Educational credential record.\n\nStores education information for resume rendering with support\nfor honors, GPA, and display control.",
       "properties": {
         "degree": {
@@ -164,7 +165,7 @@
           "title": "Institution",
           "type": "string"
         },
-        "year": {
+        "graduation_year": {
           "anyOf": [
             {
               "description": "Year in YYYY format",
@@ -176,7 +177,7 @@
             }
           ],
           "default": null,
-          "title": "Year"
+          "title": "Graduation Year"
         },
         "honors": {
           "anyOf": [
@@ -213,6 +214,55 @@
         "institution"
       ],
       "title": "Education",
+      "type": "object"
+    },
+    "ONetConfig": {
+      "additionalProperties": false,
+      "description": "O*NET API v2.0 configuration.\n\nAPI key can be set via config file or ONET_API_KEY environment variable.\nRegister at https://services.onetcenter.org/developer/signup\n\nAttributes:\n    enabled: Enable O*NET API integration.\n    api_key: O*NET API key (or set ONET_API_KEY env var).\n    cache_ttl: Cache TTL in seconds (minimum 1 hour).\n    timeout: API request timeout in seconds.\n    retry_delay_ms: Minimum delay between retries in milliseconds.",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "description": "Enable O*NET API integration",
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "api_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "O*NET API key (or set ONET_API_KEY env var)",
+          "title": "Api Key"
+        },
+        "cache_ttl": {
+          "default": 86400,
+          "description": "Cache TTL in seconds",
+          "minimum": 3600,
+          "title": "Cache Ttl",
+          "type": "integer"
+        },
+        "timeout": {
+          "default": 10.0,
+          "description": "API request timeout in seconds",
+          "maximum": 60.0,
+          "minimum": 1.0,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "retry_delay_ms": {
+          "default": 200,
+          "description": "Minimum delay between retries in milliseconds",
+          "minimum": 200,
+          "title": "Retry Delay Ms",
+          "type": "integer"
+        }
+      },
+      "title": "ONetConfig",
       "type": "object"
     },
     "ProfileConfig": {
@@ -566,6 +616,17 @@
       },
       "title": "Publications",
       "type": "array"
+    },
+    "onet": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ONetConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     }
   },
   "title": "ResumeConfig",

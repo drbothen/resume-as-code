@@ -347,7 +347,7 @@ def _output_education_json(education: list[Any]) -> None:
             data = {
                 "degree": edu.degree,
                 "institution": edu.institution,
-                "year": edu.year,
+                "graduation_year": edu.graduation_year,
                 "honors": edu.honors,
                 "gpa": edu.gpa,
                 "display": edu.display,
@@ -377,7 +377,7 @@ def _output_education_table(education: list[Any]) -> None:
             table.add_row(
                 edu.degree,
                 edu.institution,
-                edu.year or "-",
+                edu.graduation_year or "-",
                 edu.honors or "-",
             )
 

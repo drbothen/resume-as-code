@@ -1,4 +1,5 @@
 {
+  "additionalProperties": false,
   "description": "Educational credential record.\n\nStores education information for resume rendering with support\nfor honors, GPA, and display control.",
   "properties": {
     "degree": {
@@ -9,7 +10,7 @@
       "title": "Institution",
       "type": "string"
     },
-    "year": {
+    "graduation_year": {
       "anyOf": [
         {
           "description": "Year in YYYY format",
@@ -21,7 +22,7 @@
         }
       ],
       "default": null,
-      "title": "Year"
+      "title": "Graduation Year"
     },
     "honors": {
       "anyOf": [

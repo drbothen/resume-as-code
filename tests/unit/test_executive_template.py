@@ -79,12 +79,12 @@ def executive_resume() -> ResumeData:
         Education(
             degree="MBA",
             institution="Stanford Graduate School of Business",
-            year="2015",
+            graduation_year="2015",
         ),
         Education(
             degree="BS Computer Science",
             institution="MIT",
-            year="2008",
+            graduation_year="2008",
         ),
     ]
 

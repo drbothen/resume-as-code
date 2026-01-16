@@ -56,7 +56,7 @@ class TestNewEducationCommand:
         assert len(data["education"]) == 1
         assert data["education"][0]["degree"] == "BS Computer Science"
         assert data["education"][0]["institution"] == "MIT"
-        assert data["education"][0]["year"] == "2015"
+        assert data["education"][0]["graduation_year"] == "2015"
 
     def test_education_with_all_fields(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -93,7 +93,7 @@ class TestNewEducationCommand:
         edu = data["education"][0]
         assert edu["degree"] == "MS Cybersecurity"
         assert edu["institution"] == "Georgia Tech"
-        assert edu["year"] == "2018"
+        assert edu["graduation_year"] == "2018"
         assert edu["honors"] == "Magna Cum Laude"
         assert edu["gpa"] == "3.9/4.0"
 
@@ -242,7 +242,7 @@ class TestEducationPipeSeparated:
         edu = data["education"][0]
         assert edu["degree"] == "BS Computer Science"
         assert edu["institution"] == "MIT"
-        assert edu["year"] == "2015"
+        assert edu["graduation_year"] == "2015"
         assert edu["honors"] == "Magna Cum Laude"
 
     def test_creates_education_pipe_minimal(
@@ -299,7 +299,7 @@ class TestEducationPipeSeparated:
         edu = data["education"][0]
         assert edu["degree"] == "PhD Computer Science"
         assert edu["institution"] == "Stanford"
-        assert edu.get("year") is None
+        assert edu.get("graduation_year") is None
         assert edu.get("honors") is None
 
     def test_pipe_format_json_output(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -375,7 +375,7 @@ class TestEducationPipeSeparated:
         assert edu["degree"] == "Flag Degree"
         assert edu["institution"] == "Flag Institution"
         # These should still come from pipe since not overridden
-        assert edu["year"] == "2015"
+        assert edu["graduation_year"] == "2015"
         assert edu["honors"] == "Pipe Honors"
 
 

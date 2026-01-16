@@ -101,12 +101,12 @@ def detailed_resume() -> ResumeData:
             Education(
                 degree="M.S. Computer Science",
                 institution="Stanford University",
-                year="2012",
+                graduation_year="2012",
             ),
             Education(
                 degree="B.S. Computer Science",
                 institution="UC Berkeley",
-                year="2010",
+                graduation_year="2010",
             ),
         ],
     )
@@ -368,7 +368,7 @@ class TestDOCXEducation:
                 Education(
                     degree="B.S. Computer Science",
                     institution="MIT",
-                    year="2012",
+                    graduation_year="2012",
                     honors="Summa Cum Laude",
                 ),
             ],
@@ -416,7 +416,7 @@ class TestDOCXEducation:
                 Education(
                     degree="BS Computer Science",
                     institution="MIT",
-                    year="2010",
+                    graduation_year="2010",
                 )
             ],
         )

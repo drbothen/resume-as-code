@@ -38,6 +38,7 @@ from resume_as_code.models.resume import (
     ResumeSection,
 )
 from resume_as_code.models.scope import Scope
+from resume_as_code.models.skill_entry import SkillEntry
 from resume_as_code.models.types import Year, YearMonth
 from resume_as_code.models.work_unit import (
     STRONG_VERBS,
@@ -103,6 +104,7 @@ __all__ = [
     "ScoringWeights",
     "SelectedWorkUnit",
     "Skill",
+    "SkillEntry",
     "STRONG_VERBS",
     "StructuredError",
     "UserError",

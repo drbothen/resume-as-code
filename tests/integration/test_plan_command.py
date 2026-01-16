@@ -1283,7 +1283,7 @@ class TestPlanEnhancedDataModelPreview:
         self._create_config_file(
             tmp_path,
             education=[
-                {"degree": "MS Computer Science", "institution": "MIT", "year": "2020"},
+                {"degree": "MS Computer Science", "institution": "MIT", "graduation_year": "2020"},
             ],
         )
 
@@ -1374,7 +1374,7 @@ confidence: high
                 {"name": "CISSP", "issuer": "ISC2", "date": "2023-01"},
             ],
             education=[
-                {"degree": "MS Computer Science", "institution": "MIT", "year": "2020"},
+                {"degree": "MS Computer Science", "institution": "MIT", "graduation_year": "2020"},
             ],
         )
 

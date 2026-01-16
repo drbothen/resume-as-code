@@ -1038,7 +1038,12 @@ def _create_position_inline(ctx: click.Context, config: Any, service: PositionSe
 
 
 def _validate_date_format(date_str: str) -> bool:
-    """Validate YYYY-MM date format."""
+    """Validate YYYY-MM date format for CLI input.
+
+    Note: This intentionally duplicates validation from models.types.YearMonth.
+    CLI-layer validation provides immediate user feedback before model creation,
+    enabling clearer error messages and interactive prompts for correction.
+    """
     return bool(re.match(r"^\d{4}-\d{2}$", date_str))
 
 
@@ -1070,7 +1075,12 @@ def _build_position_scope(
 
 
 def _validate_year_format(year_str: str) -> bool:
-    """Validate YYYY year format."""
+    """Validate YYYY year format for CLI input.
+
+    Note: This intentionally duplicates validation from models.types.Year.
+    CLI-layer validation provides immediate user feedback before model creation,
+    enabling clearer error messages and interactive prompts for correction.
+    """
     return bool(re.match(r"^\d{4}$", year_str))
 
 
@@ -1291,7 +1301,7 @@ def new_education(
         education = Education(
             degree=degree,
             institution=institution,
-            year=year,
+            graduation_year=year,
             honors=honors,
             gpa=gpa,
         )
@@ -1321,7 +1331,7 @@ def new_education(
         education = Education(
             degree=degree,
             institution=institution,
-            year=year,
+            graduation_year=year,
             honors=honors,
             gpa=gpa,
         )

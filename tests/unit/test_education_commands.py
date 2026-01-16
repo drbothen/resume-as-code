@@ -311,11 +311,11 @@ class TestListEducationCommand:
 education:
   - degree: "BS Computer Science"
     institution: "UT Austin"
-    year: "2012"
+    graduation_year: "2012"
     honors: "Magna Cum Laude"
   - degree: "MS Cybersecurity"
     institution: "Georgia Tech"
-    year: "2018"
+    graduation_year: "2018"
 """
         )
         monkeypatch.chdir(tmp_path)
@@ -351,7 +351,7 @@ education:
 education:
   - degree: "MS Cybersecurity"
     institution: "Georgia Tech"
-    year: "2018"
+    graduation_year: "2018"
     honors: "With Distinction"
     gpa: "3.9/4.0"
 """
@@ -368,7 +368,7 @@ education:
         edu = data["data"]["education"][0]
         assert edu["degree"] == "MS Cybersecurity"
         assert edu["institution"] == "Georgia Tech"
-        assert edu["year"] == "2018"
+        assert edu["graduation_year"] == "2018"
         assert edu["honors"] == "With Distinction"
         assert edu["gpa"] == "3.9/4.0"
 
@@ -538,7 +538,7 @@ class TestShowEducationCommand:
 education:
   - degree: "BS Computer Science"
     institution: "MIT"
-    year: "2015"
+    graduation_year: "2015"
     honors: "Magna Cum Laude"
     gpa: "3.8/4.0"
 """
@@ -626,7 +626,7 @@ education:
 education:
   - degree: "MS Cybersecurity"
     institution: "Georgia Tech"
-    year: "2018"
+    graduation_year: "2018"
     honors: "With Distinction"
     gpa: "3.9/4.0"
 """
@@ -642,7 +642,7 @@ education:
         edu = data["data"]["education"]
         assert edu["degree"] == "MS Cybersecurity"
         assert edu["institution"] == "Georgia Tech"
-        assert edu["year"] == "2018"
+        assert edu["graduation_year"] == "2018"
         assert edu["honors"] == "With Distinction"
         assert edu["gpa"] == "3.9/4.0"
         assert "formatted" in edu
@@ -687,7 +687,7 @@ class TestEducationFormatting:
         edu = Education(
             degree="BS Computer Science",
             institution="UT Austin",
-            year="2012",
+            graduation_year="2012",
             honors="Magna Cum Laude",
         )
         display = edu.format_display()
@@ -714,7 +714,7 @@ class TestEducationFormatting:
         edu = Education(
             degree="BS Computer Science",
             institution="MIT",
-            year="2015",
+            graduation_year="2015",
             gpa="3.8/4.0",
         )
         display = edu.format_display()

@@ -127,7 +127,7 @@ development_status:
   6-18-enhanced-plan-data-model-preview: done  # Full data preview in plan - builds on 6.2, 6.6, 6.7
   6-19-philosophy-documentation: done  # docs/ folder with philosophy, diagrams, data model docs
   6-20-readme-update: done  # Comprehensive README with features, quick start, examples (depends on 6.19)
-  6-21-github-pages-site: review  # Docusaurus marketing site with interactive demos (depends on 6.19)
+  6-21-github-pages-site: done  # Docusaurus marketing site with interactive demos (depends on 6.19)
   epic-6-retrospective: optional
 
   # Epic 7: Schema & Data Model Refactoring
@@ -136,10 +136,10 @@ development_status:
   # Total Points: 68 (16 stories)
   epic-7: in-progress
   7-1-json-schema-auto-generation: done  # P1, 3 pts - Auto-generate JSON schemas from Pydantic models
-  7-2-unified-scope-model: review  # P1, 5 pts - Single Scope model for positions and work units
-  7-3-standardized-date-types: review  # P2, 3 pts - YearMonth and Year annotated types
-  7-4-skills-registry-normalization: ready-for-dev  # P2, 5 pts - Skill aliases and normalization
-  7-5-onet-api-integration: ready-for-dev  # P3, 8 pts - O*NET skill standardization (depends on 7.4)
+  7-2-unified-scope-model: done  # P1, 5 pts - Single Scope model for positions and work units
+  7-3-standardized-date-types: done  # P2, 3 pts - YearMonth and Year annotated types
+  7-4-skills-registry-normalization: done  # P2, 5 pts - Skill aliases and normalization
+  7-5-onet-api-integration: done  # P3, 8 pts - O*NET skill standardization (depends on 7.4)
   7-6-position-reference-integrity: ready-for-dev  # P2, 2 pts - Validate position_id references
   7-7-evidence-model-enhancement: ready-for-dev  # P3, 3 pts - URL-optional evidence with discriminated unions
   7-8-field-weighted-bm25-scoring: ready-for-dev  # P1, 3 pts - Title/skills weighted higher in BM25
@@ -151,4 +151,5 @@ development_status:
   7-14-jd-relevant-content-curation: ready-for-dev  # P2, 5 pts - Research-backed limits per section
   7-15-comprehensive-algorithm-documentation: ready-for-dev  # P1, 3 pts - Full algorithm docs (depends on 7.8-7.14)
   7-16-cli-config-file-override: ready-for-dev  # P1, 2 pts - --config flag for custom config paths
+  7-17-onet-registry-workflow-wiring: ready-for-dev  # P2, 5 pts - Wire O*NET & Registry into plan/build workflow
   epic-7-retrospective: optional

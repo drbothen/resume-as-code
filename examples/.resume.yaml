@@ -49,11 +49,11 @@ profile:
 education:
   - degree: "BS Computer Science"
     institution: "University of Texas at Austin"
-    year: "2016"
+    graduation_year: "2016"
     honors: "Magna Cum Laude"
   - degree: "MS Cybersecurity"
     institution: "Georgia Institute of Technology"
-    year: "2020"
+    graduation_year: "2020"
 
 # Certifications
 certifications:

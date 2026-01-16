@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import pytest
+
+from resume_as_code.models.skill_entry import SkillEntry
 from resume_as_code.services.skill_curator import CurationResult, SkillCurator
+from resume_as_code.services.skill_registry import SkillRegistry
 
 
 class TestSkillCuratorDeduplication:
@@ -251,3 +255,106 @@ class TestCurationResult:
         assert result.included == ["Python", "Java"]
         assert result.excluded == [("PHP", "config_exclude")]
         assert result.stats == {"total_raw": 3}
+
+
+@pytest.fixture
+def skill_registry() -> SkillRegistry:
+    """Create a test skill registry."""
+    entries = [
+        SkillEntry(canonical="Kubernetes", aliases=["k8s", "kube"]),
+        SkillEntry(canonical="TypeScript", aliases=["ts"]),
+        SkillEntry(canonical="Python", aliases=["py", "python3"]),
+        SkillEntry(
+            canonical="Amazon Web Services",
+            aliases=["aws", "amazon aws"],
+            category="cloud",
+        ),
+        SkillEntry(canonical="JavaScript", aliases=["js", "ecmascript"]),
+    ]
+    return SkillRegistry(entries)
+
+
+class TestSkillCuratorWithRegistry:
+    """Tests for SkillCurator integration with SkillRegistry (Story 7.4)."""
+
+    def test_curator_normalizes_alias_to_canonical(self, skill_registry: SkillRegistry) -> None:
+        """Alias should normalize to canonical name (AC #1, #3)."""
+        curator = SkillCurator(registry=skill_registry)
+        result = curator.curate({"k8s", "py"})
+
+        assert "Kubernetes" in result.included
+        assert "Python" in result.included
+        assert "k8s" not in result.included
+        assert "py" not in result.included
+
+    def test_curator_normalizes_multiple_aliases_to_same_canonical(
+        self, skill_registry: SkillRegistry
+    ) -> None:
+        """Multiple aliases for same skill should dedupe to one canonical name (AC #5)."""
+        curator = SkillCurator(registry=skill_registry)
+        result = curator.curate({"k8s", "kube", "Kubernetes"})
+
+        assert result.included.count("Kubernetes") == 1
+        assert len(result.included) == 1
+
+    def test_curator_passthrough_unknown_skill(self, skill_registry: SkillRegistry) -> None:
+        """Unknown skill passes through unchanged (AC #4)."""
+        curator = SkillCurator(registry=skill_registry)
+        result = curator.curate({"CustomFramework", "k8s"})
+
+        assert "CustomFramework" in result.included
+        assert "Kubernetes" in result.included
+
+    def test_curator_jd_matches_via_alias_expansion(self, skill_registry: SkillRegistry) -> None:
+        """JD keyword matches via alias expansion (AC #6)."""
+        curator = SkillCurator(registry=skill_registry, max_count=3)
+        # JD has "Kubernetes", work unit has "k8s" - should match and be prioritized
+        result = curator.curate(
+            {"k8s", "Ruby", "Java"},
+            jd_keywords={"Kubernetes"},
+        )
+
+        # k8s should be normalized to Kubernetes and ranked high due to JD match
+        assert result.included[0] == "Kubernetes"
+
+    def test_curator_jd_alias_in_keywords_matches_canonical(
+        self, skill_registry: SkillRegistry
+    ) -> None:
+        """JD keyword as alias matches canonical skill in work units."""
+        curator = SkillCurator(registry=skill_registry, max_count=3)
+        # JD has "ts" (alias), work unit has "TypeScript" - should match
+        result = curator.curate(
+            {"TypeScript", "Java", "Go"},
+            jd_keywords={"ts"},
+        )
+
+        # TypeScript should be ranked high because "ts" expands to match it
+        assert result.included[0] == "TypeScript"
+
+    def test_curator_without_registry_no_normalization(self) -> None:
+        """Without registry, skills pass through as-is."""
+        curator = SkillCurator()  # No registry
+        result = curator.curate({"k8s", "py"})
+
+        # Without registry, aliases are not normalized
+        assert "k8s" in result.included
+        assert "py" in result.included
+        assert "Kubernetes" not in result.included
+
+    def test_curator_registry_with_exclude_list(self, skill_registry: SkillRegistry) -> None:
+        """Exclude list works with registry normalization."""
+        curator = SkillCurator(registry=skill_registry, exclude=["Kubernetes"])
+        result = curator.curate({"k8s", "Python"})
+
+        # k8s normalizes to Kubernetes, which is excluded
+        assert "Kubernetes" not in result.included
+        assert "k8s" not in result.included
+        assert "Python" in result.included
+
+    def test_curator_registry_with_prioritize_list(self, skill_registry: SkillRegistry) -> None:
+        """Prioritize list works with registry normalization."""
+        curator = SkillCurator(registry=skill_registry, prioritize=["Kubernetes"])
+        result = curator.curate({"k8s", "Python", "Java"})
+
+        # k8s normalizes to Kubernetes which is prioritized
+        assert result.included[0] == "Kubernetes"

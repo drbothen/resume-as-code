@@ -1,6 +1,6 @@
 # Story 7.4: Skills Registry & Normalization
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -44,44 +44,44 @@ So that **ATS systems recognize my skills regardless of how I typed them**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create SkillEntry model (AC: #2)
-  - [ ] 1.1 Create `src/resume_as_code/models/skill_entry.py` with SkillEntry class
-  - [ ] 1.2 Add canonical, aliases, category, onet_code fields
-  - [ ] 1.3 Add validation (canonical required, aliases unique)
-  - [ ] 1.4 Export from `models/__init__.py`
+- [x] Task 1: Create SkillEntry model (AC: #2)
+  - [x] 1.1 Create `src/resume_as_code/models/skill_entry.py` with SkillEntry class
+  - [x] 1.2 Add canonical, aliases, category, onet_code fields
+  - [x] 1.3 Add validation (canonical required, aliases unique)
+  - [x] 1.4 Export from `models/__init__.py`
 
-- [ ] Task 2: Create SkillRegistry service (AC: #3, #4)
-  - [ ] 2.1 Create `src/resume_as_code/services/skill_registry.py`
-  - [ ] 2.2 Implement `normalize(skill: str) -> str` method
-  - [ ] 2.3 Implement `get_aliases(skill: str) -> set[str]` method
-  - [ ] 2.4 Implement `load_from_yaml(path: Path) -> SkillRegistry` class method
-  - [ ] 2.5 Add `load_default()` to load bundled registry
+- [x] Task 2: Create SkillRegistry service (AC: #3, #4)
+  - [x] 2.1 Create `src/resume_as_code/services/skill_registry.py`
+  - [x] 2.2 Implement `normalize(skill: str) -> str` method
+  - [x] 2.3 Implement `get_aliases(skill: str) -> set[str]` method
+  - [x] 2.4 Implement `load_from_yaml(path: Path) -> SkillRegistry` class method
+  - [x] 2.5 Add `load_default()` to load bundled registry
 
-- [ ] Task 3: Create initial skills.yaml registry (AC: #2)
-  - [ ] 3.1 Create `src/resume_as_code/data/` directory
-  - [ ] 3.2 Create `src/resume_as_code/data/skills.yaml` with 50+ common tech skills
-  - [ ] 3.3 Include cloud platforms (AWS, GCP, Azure aliases)
-  - [ ] 3.4 Include programming languages (JS/JavaScript, TS/TypeScript)
-  - [ ] 3.5 Include DevOps tools (k8s/Kubernetes, Docker, CI/CD)
-  - [ ] 3.6 Include frameworks (React, Vue, Angular, Django, FastAPI)
-  - [ ] 3.7 Update `pyproject.toml` to include data files in wheel build
+- [x] Task 3: Create initial skills.yaml registry (AC: #2)
+  - [x] 3.1 Create `src/resume_as_code/data/` directory
+  - [x] 3.2 Create `src/resume_as_code/data/skills.yaml` with 97 common tech skills
+  - [x] 3.3 Include cloud platforms (AWS, GCP, Azure aliases)
+  - [x] 3.4 Include programming languages (JS/JavaScript, TS/TypeScript)
+  - [x] 3.5 Include DevOps tools (k8s/Kubernetes, Docker, CI/CD)
+  - [x] 3.6 Include frameworks (React, Vue, Angular, Django, FastAPI)
+  - [x] 3.7 Update `pyproject.toml` to include data files in wheel build
 
-- [ ] Task 4: Integrate with SkillCurator (AC: #1, #5, #6)
-  - [ ] 4.1 Add optional `registry: SkillRegistry` parameter to SkillCurator
-  - [ ] 4.2 Normalize skills before deduplication
-  - [ ] 4.3 Expand JD keywords with aliases for matching
-  - [ ] 4.4 Update `_score_skills` to match on aliases
+- [x] Task 4: Integrate with SkillCurator (AC: #1, #5, #6)
+  - [x] 4.1 Add optional `registry: SkillRegistry` parameter to SkillCurator
+  - [x] 4.2 Normalize skills before deduplication
+  - [x] 4.3 Expand JD keywords with aliases for matching
+  - [x] 4.4 Update `_score_skills` to match on aliases
 
-- [ ] Task 5: Integrate with ResumeData (AC: #1)
-  - [ ] 5.1 Load registry in `from_work_units` method
-  - [ ] 5.2 Pass registry to SkillCurator
-  - [ ] 5.3 Ensure canonical names appear on final resume
+- [x] Task 5: Integrate with ResumeData (AC: #1)
+  - [x] 5.1 Load registry in `from_work_units` method
+  - [x] 5.2 Pass registry to SkillCurator
+  - [x] 5.3 Ensure canonical names appear on final resume
 
-- [ ] Task 6: Add tests and documentation
-  - [ ] 6.1 Unit tests for SkillEntry model
-  - [ ] 6.2 Unit tests for SkillRegistry (normalize, aliases, passthrough)
-  - [ ] 6.3 Integration tests for curator with registry
-  - [ ] 6.4 Run `ruff check` and `mypy --strict`
+- [x] Task 6: Add tests and documentation
+  - [x] 6.1 Unit tests for SkillEntry model
+  - [x] 6.2 Unit tests for SkillRegistry (normalize, aliases, passthrough)
+  - [x] 6.3 Integration tests for curator with registry
+  - [x] 6.4 Run `ruff check` and `mypy --strict`
 
 ## Dev Notes
 
@@ -635,11 +635,39 @@ def test_curator_matches_jd_via_aliases() -> None:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None - all tests pass.
+
 ### Completion Notes List
 
+- Created SkillEntry Pydantic model with validation for canonical names and aliases
+- Created SkillRegistry service with `normalize()`, `get_aliases()`, `get_onet_code()` methods
+- Created `load_from_yaml()` and `load_default()` class methods for loading registries
+- Created initial skills.yaml with 75+ tech skills organized by category
+- Updated pyproject.toml to include data files in wheel build
+- Integrated registry with SkillCurator for alias normalization and JD keyword expansion
+- Integrated registry loading in ResumeData.from_work_units()
+- All 1498 unit tests pass
+- mypy --strict passes on all modified files
+- ruff check passes on all modified files
+
 ### File List
+
+**New Files:**
+- `src/resume_as_code/models/skill_entry.py` - SkillEntry Pydantic model
+- `src/resume_as_code/services/skill_registry.py` - SkillRegistry service
+- `src/resume_as_code/data/skills.yaml` - Default skill registry (97 skills)
+- `tests/unit/test_skill_entry.py` - 10 tests for SkillEntry model
+- `tests/unit/test_skill_registry.py` - 16 tests for SkillRegistry service
+
+**Modified Files:**
+- `src/resume_as_code/models/__init__.py` - Added SkillEntry export
+- `src/resume_as_code/services/skill_curator.py` - Added registry parameter and alias expansion
+- `src/resume_as_code/models/resume.py` - Load registry in from_work_units()
+- `tests/unit/test_skill_curator.py` - Added 8 registry integration tests
+- `tests/unit/test_resume_model.py` - Added 5 registry integration tests, updated existing tests
+- `pyproject.toml` - Added data file inclusion for wheel build
 

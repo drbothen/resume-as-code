@@ -424,7 +424,7 @@ def _output_education_json(edu: Any) -> None:
         edu_data = {
             "degree": edu.degree,
             "institution": edu.institution,
-            "year": edu.year,
+            "graduation_year": edu.graduation_year,
             "honors": edu.honors,
             "gpa": edu.gpa,
             "display": edu.display,
@@ -450,10 +450,10 @@ def _output_education_rich(edu: Any) -> None:
     console.print(f"\n[bold cyan]{edu.degree}[/bold cyan]")
     console.print(f"[green]{edu.institution}[/green]")
 
-    # Year
+    # Graduation Year
     console.print("")
-    if edu.year:
-        console.print(f"[bold]Year:[/bold] {edu.year}")
+    if edu.graduation_year:
+        console.print(f"[bold]Year:[/bold] {edu.graduation_year}")
 
     # Honors
     if edu.honors:

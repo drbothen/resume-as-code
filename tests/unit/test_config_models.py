@@ -8,6 +8,7 @@ import pytest
 
 from resume_as_code.models.config import (
     ConfigSource,
+    ONetConfig,
     ResumeConfig,
     ScoringWeights,
     SkillsConfig,
@@ -266,3 +267,117 @@ class TestResumeConfigSkills:
         assert config.skills.max_display == 12
         assert config.skills.exclude == ["PHP"]
         assert config.skills.prioritize == ["Python"]
+
+
+class TestONetConfig:
+    """Test ONetConfig model for O*NET API v2.0 integration."""
+
+    def test_default_enabled_is_true(self) -> None:
+        """Default enabled should be True."""
+        config = ONetConfig()
+        assert config.enabled is True
+
+    def test_default_api_key_is_none(self) -> None:
+        """Default api_key should be None."""
+        config = ONetConfig()
+        assert config.api_key is None
+
+    def test_default_cache_ttl_24_hours(self) -> None:
+        """Default cache_ttl should be 86400 seconds (24 hours)."""
+        config = ONetConfig()
+        assert config.cache_ttl == 86400
+
+    def test_default_timeout_10_seconds(self) -> None:
+        """Default timeout should be 10.0 seconds."""
+        config = ONetConfig()
+        assert config.timeout == 10.0
+
+    def test_default_retry_delay_200ms(self) -> None:
+        """Default retry_delay_ms should be 200 (O*NET minimum)."""
+        config = ONetConfig()
+        assert config.retry_delay_ms == 200
+
+    def test_custom_api_key(self) -> None:
+        """ONetConfig should accept custom api_key."""
+        config = ONetConfig(api_key="test-key-123")
+        assert config.api_key == "test-key-123"
+
+    def test_custom_cache_ttl(self) -> None:
+        """ONetConfig should accept custom cache_ttl."""
+        config = ONetConfig(cache_ttl=7200)  # 2 hours
+        assert config.cache_ttl == 7200
+
+    def test_cache_ttl_minimum_bound(self) -> None:
+        """cache_ttl should have minimum value of 3600 (1 hour)."""
+        with pytest.raises(ValueError):
+            ONetConfig(cache_ttl=1800)  # 30 minutes - too low
+
+    def test_timeout_minimum_bound(self) -> None:
+        """timeout should have minimum value of 1.0."""
+        with pytest.raises(ValueError):
+            ONetConfig(timeout=0.5)
+
+    def test_timeout_maximum_bound(self) -> None:
+        """timeout should have maximum value of 60.0."""
+        with pytest.raises(ValueError):
+            ONetConfig(timeout=120.0)
+
+    def test_retry_delay_minimum_bound(self) -> None:
+        """retry_delay_ms should have minimum value of 200 (O*NET requirement)."""
+        with pytest.raises(ValueError):
+            ONetConfig(retry_delay_ms=100)
+
+    def test_is_configured_with_api_key(self) -> None:
+        """is_configured should return True when enabled and api_key set."""
+        config = ONetConfig(enabled=True, api_key="test-key")
+        assert config.is_configured is True
+
+    def test_is_configured_without_api_key(self) -> None:
+        """is_configured should return False when api_key is None."""
+        config = ONetConfig(enabled=True, api_key=None)
+        assert config.is_configured is False
+
+    def test_is_configured_when_disabled(self) -> None:
+        """is_configured should return False when disabled."""
+        config = ONetConfig(enabled=False, api_key="test-key")
+        assert config.is_configured is False
+
+    def test_api_key_from_environment(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """api_key should be resolved from ONET_API_KEY environment variable."""
+        monkeypatch.setenv("ONET_API_KEY", "env-api-key")
+        config = ONetConfig()
+        assert config.api_key == "env-api-key"
+
+    def test_config_api_key_overrides_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Explicit api_key should override environment variable."""
+        monkeypatch.setenv("ONET_API_KEY", "env-api-key")
+        config = ONetConfig(api_key="explicit-key")
+        assert config.api_key == "explicit-key"
+
+    def test_disabled_config(self) -> None:
+        """ONetConfig should accept disabled state."""
+        config = ONetConfig(enabled=False)
+        assert config.enabled is False
+        assert config.is_configured is False
+
+
+class TestResumeConfigONet:
+    """Test onet field in ResumeConfig."""
+
+    def test_default_onet_is_none(self) -> None:
+        """ResumeConfig should have onet as None by default."""
+        config = ResumeConfig()
+        assert config.onet is None
+
+    def test_custom_onet_config(self) -> None:
+        """ResumeConfig should accept custom onet configuration."""
+        config = ResumeConfig(
+            onet=ONetConfig(
+                enabled=True,
+                api_key="test-key",
+                cache_ttl=7200,
+            )
+        )
+        assert config.onet is not None
+        assert config.onet.api_key == "test-key"
+        assert config.onet.cache_ttl == 7200

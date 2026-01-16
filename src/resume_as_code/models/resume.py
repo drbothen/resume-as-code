@@ -167,11 +167,16 @@ class ResumeData(BaseModel):
         # Curate skills if config provided, otherwise use legacy sorting
         if skills_config is not None:
             from resume_as_code.services.skill_curator import SkillCurator
+            from resume_as_code.services.skill_registry import SkillRegistry
+
+            # Load default skill registry for alias normalization (Story 7.4)
+            registry = SkillRegistry.load_default()
 
             curator = SkillCurator(
                 max_count=skills_config.max_display,
                 exclude=skills_config.exclude,
                 prioritize=skills_config.prioritize,
+                registry=registry,
             )
             result = curator.curate(all_skills, jd_keywords)
             curated_skills = result.included

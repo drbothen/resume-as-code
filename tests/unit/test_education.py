@@ -22,7 +22,7 @@ class TestEducationModel:
         )
         assert edu.degree == "BS Computer Science"
         assert edu.institution == "MIT"
-        assert edu.year is None
+        assert edu.graduation_year is None
         assert edu.honors is None
         assert edu.gpa is None
         assert edu.display is True
@@ -32,42 +32,42 @@ class TestEducationModel:
         edu = Education(
             degree="BS Computer Science",
             institution="UT Austin",
-            year="2012",
+            graduation_year="2012",
             honors="Magna Cum Laude",
             gpa="3.8/4.0",
             display=True,
         )
         assert edu.degree == "BS Computer Science"
         assert edu.institution == "UT Austin"
-        assert edu.year == "2012"
+        assert edu.graduation_year == "2012"
         assert edu.honors == "Magna Cum Laude"
         assert edu.gpa == "3.8/4.0"
         assert edu.display is True
 
     def test_year_validation_valid_yyyy(self) -> None:
         """Should accept YYYY year format."""
-        edu = Education(degree="BS", institution="School", year="2012")
-        assert edu.year == "2012"
+        edu = Education(degree="BS", institution="School", graduation_year="2012")
+        assert edu.graduation_year == "2012"
 
     def test_year_normalization_longer_date(self) -> None:
         """Should normalize longer date to YYYY."""
-        edu = Education(degree="BS", institution="School", year="2012-05")
-        assert edu.year == "2012"
+        edu = Education(degree="BS", institution="School", graduation_year="2012-05")
+        assert edu.graduation_year == "2012"
 
     def test_year_normalization_full_date(self) -> None:
         """Should normalize YYYY-MM-DD to YYYY."""
-        edu = Education(degree="BS", institution="School", year="2012-05-15")
-        assert edu.year == "2012"
+        edu = Education(degree="BS", institution="School", graduation_year="2012-05-15")
+        assert edu.graduation_year == "2012"
 
     def test_year_validation_invalid(self) -> None:
         """Should reject invalid year format."""
         with pytest.raises(ValidationError):
-            Education(degree="BS", institution="School", year="invalid")
+            Education(degree="BS", institution="School", graduation_year="invalid")
 
     def test_year_validation_invalid_partial(self) -> None:
         """Should reject year without 4 digits at start."""
         with pytest.raises(ValidationError):
-            Education(degree="BS", institution="School", year="12")
+            Education(degree="BS", institution="School", graduation_year="12")
 
     def test_display_default_true(self) -> None:
         """Display should default to True."""
@@ -91,7 +91,7 @@ class TestEducationFormatDisplay:
 
     def test_format_display_with_year(self) -> None:
         """Should format with year."""
-        edu = Education(degree="MBA", institution="Harvard", year="2020")
+        edu = Education(degree="MBA", institution="Harvard", graduation_year="2020")
         display = edu.format_display()
         assert display == "MBA, Harvard, 2020"
 
@@ -100,7 +100,7 @@ class TestEducationFormatDisplay:
         edu = Education(
             degree="BS Computer Science",
             institution="UT Austin",
-            year="2012",
+            graduation_year="2012",
             honors="Magna Cum Laude",
         )
         display = edu.format_display()
@@ -115,7 +115,7 @@ class TestEducationFormatDisplay:
         edu = Education(
             degree="BS Computer Science",
             institution="UT Austin",
-            year="2012",
+            graduation_year="2012",
             gpa="3.8/4.0",
         )
         display = edu.format_display()
@@ -129,7 +129,7 @@ class TestEducationFormatDisplay:
         edu = Education(
             degree="BS Computer Science",
             institution="UT Austin",
-            year="2012",
+            graduation_year="2012",
             honors="Magna Cum Laude",
             gpa="3.8/4.0",
         )
@@ -169,12 +169,12 @@ class TestResumeConfigEducation:
         config = ResumeConfig(
             education=[
                 {"degree": "BS Computer Science", "institution": "MIT"},
-                {"degree": "MBA", "institution": "Harvard", "year": "2020"},
+                {"degree": "MBA", "institution": "Harvard", "graduation_year": "2020"},
             ]
         )
         assert len(config.education) == 2
         assert config.education[0].institution == "MIT"
-        assert config.education[1].year == "2020"
+        assert config.education[1].graduation_year == "2020"
 
 
 class TestEducationLoadingFromConfig:
@@ -193,11 +193,11 @@ class TestEducationLoadingFromConfig:
 education:
   - degree: "Bachelor of Science in Computer Science"
     institution: "University of Texas at Austin"
-    year: "2012"
+    graduation_year: "2012"
     honors: "Magna Cum Laude"
   - degree: "Master of Science in Cybersecurity"
     institution: "Georgia Tech"
-    year: "2018"
+    graduation_year: "2018"
 """
         )
         monkeypatch.chdir(tmp_path)
@@ -206,10 +206,10 @@ education:
             assert len(config.education) == 2
             assert config.education[0].degree == "Bachelor of Science in Computer Science"
             assert config.education[0].institution == "University of Texas at Austin"
-            assert config.education[0].year == "2012"
+            assert config.education[0].graduation_year == "2012"
             assert config.education[0].honors == "Magna Cum Laude"
             assert config.education[1].degree == "Master of Science in Cybersecurity"
-            assert config.education[1].year == "2018"
+            assert config.education[1].graduation_year == "2018"
 
     def test_education_empty_when_not_in_config(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -260,8 +260,8 @@ class TestEducationInResumeData:
         from resume_as_code.models.resume import ContactInfo, ResumeData
 
         edu_list = [
-            Education(degree="BS Computer Science", institution="MIT", year="2015"),
-            Education(degree="MBA", institution="Harvard", year="2020"),
+            Education(degree="BS Computer Science", institution="MIT", graduation_year="2015"),
+            Education(degree="MBA", institution="Harvard", graduation_year="2020"),
         ]
         contact = ContactInfo(name="Test User")
         resume = ResumeData(contact=contact, education=edu_list)

@@ -30,12 +30,18 @@ PROJECT_CONFIG_NAME = ".resume.yaml"
     is_flag=True,
     help="List all configuration values with sources",
 )
+@click.option(
+    "--show-onet-status",
+    is_flag=True,
+    help="Show O*NET API integration status (credentials, cache stats)",
+)
 @click.pass_context
 def config_command(
     ctx: click.Context,
     key: str | None,
     value: str | None,
     list_all: bool,
+    show_onet_status: bool,
 ) -> None:
     """View or set configuration values.
 
@@ -48,6 +54,11 @@ def config_command(
     """
     # Reset config to ensure fresh load with current environment
     reset_config()
+
+    # Handle O*NET status (Story 7.5, AC #6)
+    if show_onet_status:
+        _show_onet_status(ctx)
+        return
 
     # Handle set operation (AC: #4)
     if key and value:
@@ -288,3 +299,122 @@ def _show_certifications_table(ctx: click.Context, config: ResumeConfig) -> None
         )
 
     console.print(table)
+
+
+def _mask_api_key(key: str) -> str:
+    """Mask API key showing only first 4 and last 2 characters.
+
+    Args:
+        key: API key to mask.
+
+    Returns:
+        Masked key string.
+
+    """
+    if len(key) <= 6:
+        return "***"
+    return f"{key[:4]}***{key[-2:]}"
+
+
+def _show_onet_status(ctx: click.Context) -> None:
+    """Show O*NET API integration status (Story 7.5, AC #6).
+
+    Displays:
+    - Enabled/disabled state
+    - API key configured (masked)
+    - Cache statistics
+
+    Args:
+        ctx: Click context with output options.
+    """
+    from resume_as_code.models.config import ONetConfig
+    from resume_as_code.services.onet_service import ONetService
+
+    config = get_config()
+
+    # Get O*NET config (may be None if not configured)
+    onet_config = config.onet or ONetConfig()
+
+    # Determine status
+    is_enabled = onet_config.enabled
+    is_configured = onet_config.is_configured
+    api_key = onet_config.api_key
+    masked_key = _mask_api_key(api_key) if api_key else None
+
+    # Get cache stats if configured
+    cache_stats = {"entries": 0, "size_bytes": 0}
+    if is_configured:
+        try:
+            service = ONetService(onet_config)
+            cache_stats = service.get_cache_stats()
+        except Exception:
+            pass  # Gracefully handle any cache access errors
+
+    if ctx.obj.json_output:
+        response = JSONResponse(
+            status="success",
+            command="config",
+            data={
+                "onet": {
+                    "enabled": is_enabled,
+                    "configured": is_configured,
+                    "api_key_masked": masked_key,
+                    "cache": cache_stats,
+                    "settings": {
+                        "cache_ttl": onet_config.cache_ttl,
+                        "timeout": onet_config.timeout,
+                        "retry_delay_ms": onet_config.retry_delay_ms,
+                    },
+                }
+            },
+        )
+        click.echo(response.to_json())
+        return
+
+    if ctx.obj.quiet:
+        return
+
+    # Rich output
+    table = Table(title="O*NET API Status")
+    table.add_column("Setting", style="cyan")
+    table.add_column("Value", style="green")
+
+    # Enabled state
+    if is_enabled:
+        table.add_row("Status", "[green]Enabled[/green]")
+    else:
+        table.add_row("Status", "[yellow]Disabled[/yellow]")
+
+    # API key
+    if masked_key:
+        table.add_row("API Key", f"[green]{masked_key}[/green] (configured)")
+    else:
+        table.add_row("API Key", "[red]Not configured[/red]")
+
+    # Overall readiness
+    if is_configured:
+        table.add_row("Ready", "[green]Yes[/green]")
+    else:
+        table.add_row("Ready", "[yellow]No[/yellow] - set ONET_API_KEY env var")
+
+    # Cache stats
+    table.add_row("Cache Entries", str(cache_stats["entries"]))
+    size_kb = cache_stats["size_bytes"] / 1024
+    table.add_row("Cache Size", f"{size_kb:.1f} KB")
+
+    # Settings
+    table.add_row("Cache TTL", f"{onet_config.cache_ttl} seconds")
+    table.add_row("Timeout", f"{onet_config.timeout} seconds")
+    table.add_row("Retry Delay", f"{onet_config.retry_delay_ms} ms")
+
+    console.print(table)
+
+    # Help text if not configured
+    if not is_configured:
+        console.print()
+        console.print("[dim]To enable O*NET integration:[/dim]")
+        console.print("[dim]  1. Get an API key from https://services.onetcenter.org/[/dim]")
+        console.print("[dim]  2. Set ONET_API_KEY environment variable[/dim]")
+        console.print("[dim]  3. Optionally add to .resume.yaml:[/dim]")
+        console.print("[dim]     onet:[/dim]")
+        console.print("[dim]       enabled: true[/dim]")

@@ -61,15 +61,15 @@ publications:
 education:
 - degree: MBA, Technology Management
   institution: Stanford Graduate School of Business
-  year: '2016'
+  graduation_year: '2016'
   honors: Sloan Fellow
 - degree: M.S. Computer Science
   institution: Massachusetts Institute of Technology
-  year: '2010'
+  graduation_year: '2010'
   honors: 'Focus: Distributed Systems'
 - degree: B.S. Computer Science
   institution: University of California, Berkeley
-  year: '2008'
+  graduation_year: '2008'
   honors: Magna Cum Laude
 certifications:
 - name: AWS Solutions Architect Professional

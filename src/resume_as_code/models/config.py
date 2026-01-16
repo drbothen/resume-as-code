@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
+import os
 import warnings
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
 
 from resume_as_code.models.board_role import BoardRole
 from resume_as_code.models.certification import Certification
@@ -65,6 +66,60 @@ class ScoringWeights(BaseModel):
     experience_weight: float = Field(default=1.0, ge=0.0, le=10.0)
 
 
+class ONetConfig(BaseModel):
+    """O*NET API v2.0 configuration.
+
+    API key can be set via config file or ONET_API_KEY environment variable.
+    Register at https://services.onetcenter.org/developer/signup
+
+    Attributes:
+        enabled: Enable O*NET API integration.
+        api_key: O*NET API key (or set ONET_API_KEY env var).
+        cache_ttl: Cache TTL in seconds (minimum 1 hour).
+        timeout: API request timeout in seconds.
+        retry_delay_ms: Minimum delay between retries in milliseconds.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = Field(
+        default=True,
+        description="Enable O*NET API integration",
+    )
+    api_key: str | None = Field(
+        default=None,
+        description="O*NET API key (or set ONET_API_KEY env var)",
+    )
+    cache_ttl: int = Field(
+        default=86400,  # 24 hours
+        ge=3600,  # Minimum 1 hour
+        description="Cache TTL in seconds",
+    )
+    timeout: float = Field(
+        default=10.0,
+        ge=1.0,
+        le=60.0,
+        description="API request timeout in seconds",
+    )
+    retry_delay_ms: int = Field(
+        default=200,
+        ge=200,  # O*NET documented minimum
+        description="Minimum delay between retries in milliseconds",
+    )
+
+    @model_validator(mode="after")
+    def resolve_env_api_key(self) -> ONetConfig:
+        """Resolve API key from environment if not in config."""
+        if self.api_key is None:
+            self.api_key = os.environ.get("ONET_API_KEY")
+        return self
+
+    @property
+    def is_configured(self) -> bool:
+        """Check if API key is available and enabled."""
+        return self.enabled and self.api_key is not None
+
+
 class ResumeConfig(BaseModel):
     """Complete configuration for Resume as Code."""
 
@@ -106,6 +161,9 @@ class ResumeConfig(BaseModel):
 
     # Publications & Speaking Engagements
     publications: list[Publication] = Field(default_factory=list)
+
+    # O*NET API configuration
+    onet: ONetConfig | None = Field(default=None)
 
     @field_validator("career_highlights", mode="before")
     @classmethod

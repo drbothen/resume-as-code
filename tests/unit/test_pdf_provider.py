@@ -71,7 +71,7 @@ def detailed_resume() -> ResumeData:
             Education(
                 degree="M.S. Computer Science",
                 institution="Stanford University",
-                year="2012",
+                graduation_year="2012",
             ),
         ],
     )

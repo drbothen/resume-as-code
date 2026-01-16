@@ -70,7 +70,7 @@
         <h2>EDUCATION</h2>
         {% for edu in resume.education %}
         {% if edu.display is not defined or edu.display %}
-        <p class="edu-entry">{{ edu.degree }}, {{ edu.institution }}{% if edu.year %}, {{ edu.year }}{% endif %}{% if edu.honors %} - {{ edu.honors }}{% endif %}</p>
+        <p class="edu-entry">{{ edu.degree }}, {{ edu.institution }}{% if edu.graduation_year %}, {{ edu.graduation_year }}{% endif %}{% if edu.honors %} - {{ edu.honors }}{% endif %}</p>
         {% endif %}
         {% endfor %}
     </section>

@@ -7,6 +7,10 @@ to produce a curated list of skills for resume output.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from resume_as_code.services.skill_registry import SkillRegistry
 
 
 @dataclass
@@ -35,6 +39,7 @@ class SkillCurator:
         max_count: int = 15,
         exclude: list[str] | None = None,
         prioritize: list[str] | None = None,
+        registry: SkillRegistry | None = None,
     ) -> None:
         """Initialize the skill curator.
 
@@ -42,10 +47,12 @@ class SkillCurator:
             max_count: Maximum number of skills to include.
             exclude: Skills to always exclude (case-insensitive).
             prioritize: Skills to always prioritize (case-insensitive).
+            registry: Optional SkillRegistry for alias normalization.
         """
         self.max_count = max_count
         self.exclude = {s.lower() for s in (exclude or [])}
         self.prioritize = {s.lower() for s in (prioritize or [])}
+        self.registry = registry
 
     def curate(
         self,
@@ -62,7 +69,8 @@ class SkillCurator:
             CurationResult with included/excluded skills and reasons.
         """
         jd_keywords = jd_keywords or set()
-        jd_lower = {k.lower() for k in jd_keywords}
+        # Expand JD keywords with registry aliases for better matching
+        jd_lower = self._expand_jd_keywords(jd_keywords)
 
         # Step 1: Normalize and deduplicate (case-insensitive)
         normalized = self._deduplicate(raw_skills)
@@ -98,6 +106,7 @@ class SkillCurator:
     def _deduplicate(self, skills: set[str]) -> dict[str, str]:
         """Deduplicate skills case-insensitively, keeping best casing.
 
+        If registry is set, normalizes aliases to canonical names.
         Returns dict mapping lowercase -> display form.
         Prefers: Title Case > UPPERCASE > lowercase
         Filters out empty and whitespace-only strings.
@@ -107,16 +116,22 @@ class SkillCurator:
             # Skip empty or whitespace-only strings
             if not skill or not skill.strip():
                 continue
-            lower = skill.lower()
+
+            # Apply registry normalization if available
+            display = skill
+            if self.registry:
+                display = self.registry.normalize(skill)
+
+            lower = display.lower()
             if lower not in normalized:
-                normalized[lower] = skill
+                normalized[lower] = display
             else:
                 # Prefer title case, then uppercase, then existing
                 existing = normalized[lower]
-                prefer_new = skill.istitle() and not existing.istitle()
-                prefer_new = prefer_new or (skill.isupper() and existing.islower())
+                prefer_new = display.istitle() and not existing.istitle()
+                prefer_new = prefer_new or (display.isupper() and existing.islower())
                 if prefer_new:
-                    normalized[lower] = skill
+                    normalized[lower] = display
         return normalized
 
     def _filter_excluded(
@@ -162,3 +177,24 @@ class SkillCurator:
             key=lambda x: (-x[1][1], x[1][0].lower()),  # -score, then alpha
         )
         return [display for _, (display, _) in sorted_items]
+
+    def _expand_jd_keywords(self, keywords: set[str]) -> set[str]:
+        """Expand JD keywords with skill aliases for better matching.
+
+        If registry is available, each keyword is expanded to include
+        all its aliases (e.g., "Kubernetes" -> {"kubernetes", "k8s", "kube"}).
+
+        Args:
+            keywords: Original JD keywords.
+
+        Returns:
+            Expanded set of lowercase keywords including aliases.
+        """
+        if not self.registry:
+            return {k.lower() for k in keywords}
+
+        expanded: set[str] = set()
+        for keyword in keywords:
+            # Add all aliases including canonical (all lowercase)
+            expanded.update(self.registry.get_aliases(keyword))
+        return expanded

@@ -11,7 +11,7 @@ Usage:
         end_date: YearMonth | None = None
 
     class Education(BaseModel):
-        year: Year | None = None
+        graduation_year: Year | None = None
 """
 
 from __future__ import annotations
@@ -115,5 +115,5 @@ Year = Annotated[
 Accepts both int and str input, normalizes to 4-digit string.
 
 Used for:
-- Education.year
+- Education.graduation_year
 """

@@ -249,8 +249,8 @@ class DOCXProvider:
         """
         # Format: "Degree, Institution, Year - Honors" or "(GPA: X)"
         parts = [edu.degree, edu.institution]
-        if edu.year:
-            parts.append(edu.year)
+        if edu.graduation_year:
+            parts.append(edu.graduation_year)
 
         text = ", ".join(parts)
         if edu.honors:

@@ -162,7 +162,7 @@
         {% if edu.display is not defined or edu.display %}
         <p class="edu-entry">
             <strong>{{ edu.degree }}</strong><br>
-            {{ edu.institution }}{% if edu.year %}, {{ edu.year }}{% endif %}
+            {{ edu.institution }}{% if edu.graduation_year %}, {{ edu.graduation_year }}{% endif %}
             {% if edu.honors %}<span class="honors">{{ edu.honors }}</span>{% endif %}
         </p>
         {% endif %}

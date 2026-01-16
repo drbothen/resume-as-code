@@ -506,7 +506,7 @@ class TestModernTemplateIntegration:
                 Education(
                     degree="BS Computer Science",
                     institution="State University",
-                    year="2014",
+                    graduation_year="2014",
                 )
             ],
         )
@@ -528,7 +528,7 @@ class TestModernTemplateIntegration:
                 Education(
                     degree="BS Computer Science",
                     institution="State University",
-                    year="2014",
+                    graduation_year="2014",
                     honors="Cum Laude",
                 )
             ],
@@ -552,12 +552,12 @@ class TestModernTemplateIntegration:
                 Education(
                     degree="MBA",
                     institution="Stanford Graduate School of Business",
-                    year="2015",
+                    graduation_year="2015",
                 ),
                 Education(
                     degree="BS Computer Science",
                     institution="MIT",
-                    year="2008",
+                    graduation_year="2008",
                 ),
             ],
         )
@@ -581,7 +581,7 @@ class TestModernTemplateIntegration:
                 Education(
                     degree="PhD Computer Science",
                     institution="Carnegie Mellon",
-                    year="2010",
+                    graduation_year="2010",
                     honors="Summa Cum Laude",
                 )
             ],

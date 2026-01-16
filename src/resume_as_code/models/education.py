@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from resume_as_code.models.types import Year
 
@@ -14,9 +14,11 @@ class Education(BaseModel):
     for honors, GPA, and display control.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     degree: str
     institution: str
-    year: Year | None = None  # YYYY format
+    graduation_year: Year | None = None  # YYYY format
     honors: str | None = None  # e.g., "Magna Cum Laude", "With Distinction"
     gpa: str | None = None  # e.g., "3.8/4.0"
     display: bool = Field(default=True)  # Allow hiding without deleting
@@ -55,8 +57,8 @@ class Education(BaseModel):
         """
         parts = [self.degree, self.institution]
 
-        if self.year:
-            parts.append(self.year)
+        if self.graduation_year:
+            parts.append(self.graduation_year)
 
         base = ", ".join(parts)
 

@@ -123,7 +123,7 @@
         <div class="edu-entry">
             <p>
                 <strong>{{ edu.degree }}</strong>, {{ edu.institution }}
-                {%- if edu.year %}, {{ edu.year }}{% endif %}
+                {%- if edu.graduation_year %}, {{ edu.graduation_year }}{% endif %}
                 {%- if edu.honors %} - {{ edu.honors }}{% endif %}
                 {%- if edu.gpa and not edu.honors %} (GPA: {{ edu.gpa }}){% endif %}
             </p>

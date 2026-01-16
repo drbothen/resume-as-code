@@ -1,0 +1,443 @@
+# Skill Registry for Resume as Code
+# Maps skill aliases to canonical names for ATS optimization
+# Version: 1.0.0
+
+skills:
+  # ============================================================
+  # Cloud Platforms
+  # ============================================================
+  - canonical: Amazon Web Services
+    aliases: [aws, amazon aws]
+    category: cloud
+
+  - canonical: Google Cloud Platform
+    aliases: [gcp, google cloud]
+    category: cloud
+
+  - canonical: Microsoft Azure
+    aliases: [azure, ms azure]
+    category: cloud
+
+  # ============================================================
+  # Container & Orchestration
+  # ============================================================
+  - canonical: Kubernetes
+    aliases: [k8s, kube]
+    category: devops
+
+  - canonical: Docker
+    aliases: [docker containers, containerization]
+    category: devops
+
+  - canonical: Helm
+    aliases: [helm charts]
+    category: devops
+
+  - canonical: OpenShift
+    aliases: [ocp, redhat openshift]
+    category: devops
+
+  # ============================================================
+  # Programming Languages
+  # ============================================================
+  - canonical: JavaScript
+    aliases: [js, ecmascript, es6, es2015, es2016, es2017]
+    category: language
+
+  - canonical: TypeScript
+    aliases: [ts]
+    category: language
+
+  - canonical: Python
+    aliases: [py, python3]
+    category: language
+
+  - canonical: Java
+    aliases: [jdk, jvm]
+    category: language
+
+  - canonical: Go
+    aliases: [golang]
+    category: language
+
+  - canonical: Rust
+    aliases: [rust-lang]
+    category: language
+
+  - canonical: "C#"
+    aliases: [csharp, c sharp]
+    category: language
+
+  - canonical: C++
+    aliases: [cpp, cplusplus]
+    category: language
+
+  - canonical: Ruby
+    aliases: [rb]
+    category: language
+
+  - canonical: PHP
+    aliases: [php8, php7]
+    category: language
+
+  - canonical: Swift
+    aliases: [swift-lang]
+    category: language
+
+  - canonical: Kotlin
+    aliases: [kt]
+    category: language
+
+  - canonical: Scala
+    aliases: [scala-lang]
+    category: language
+
+  # ============================================================
+  # Frontend Frameworks
+  # ============================================================
+  - canonical: React
+    aliases: [reactjs, react.js]
+    category: framework
+
+  - canonical: Vue.js
+    aliases: [vue, vuejs]
+    category: framework
+
+  - canonical: Angular
+    aliases: [angularjs, angular.js]
+    category: framework
+
+  - canonical: Next.js
+    aliases: [nextjs, next]
+    category: framework
+
+  - canonical: Svelte
+    aliases: [sveltejs]
+    category: framework
+
+  - canonical: Tailwind CSS
+    aliases: [tailwindcss, tailwind]
+    category: css
+
+  # ============================================================
+  # Backend Frameworks
+  # ============================================================
+  - canonical: Node.js
+    aliases: [nodejs, node]
+    category: runtime
+
+  - canonical: Express.js
+    aliases: [express, expressjs]
+    category: framework
+
+  - canonical: FastAPI
+    aliases: [fast-api]
+    category: framework
+
+  - canonical: Django
+    aliases: [django-python]
+    category: framework
+
+  - canonical: Flask
+    aliases: [flask-python]
+    category: framework
+
+  - canonical: Spring Boot
+    aliases: [springboot, spring]
+    category: framework
+
+  - canonical: Ruby on Rails
+    aliases: [rails, ror]
+    category: framework
+
+  - canonical: .NET
+    aliases: [dotnet, dot net, asp.net]
+    category: framework
+
+  # ============================================================
+  # Databases
+  # ============================================================
+  - canonical: PostgreSQL
+    aliases: [postgres, pg, psql]
+    category: database
+
+  - canonical: MySQL
+    aliases: [mariadb]
+    category: database
+
+  - canonical: MongoDB
+    aliases: [mongo]
+    category: database
+
+  - canonical: Redis
+    aliases: [redis-cache]
+    category: database
+
+  - canonical: Elasticsearch
+    aliases: [es, elastic]
+    category: database
+
+  - canonical: DynamoDB
+    aliases: [dynamo, aws dynamodb]
+    category: database
+
+  - canonical: Apache Cassandra
+    aliases: [cassandra]
+    category: database
+
+  - canonical: Microsoft SQL Server
+    aliases: [mssql, sql server]
+    category: database
+
+  - canonical: SQLite
+    aliases: [sqlite3]
+    category: database
+
+  # ============================================================
+  # DevOps & CI/CD
+  # ============================================================
+  - canonical: CI/CD
+    aliases: [cicd, continuous integration, continuous deployment, continuous delivery]
+    category: devops
+
+  - canonical: Jenkins
+    aliases: [jenkins-ci]
+    category: devops
+
+  - canonical: GitHub Actions
+    aliases: [gh actions, gha]
+    category: devops
+
+  - canonical: GitLab CI
+    aliases: [gitlab-ci, gitlab ci/cd]
+    category: devops
+
+  - canonical: CircleCI
+    aliases: [circle-ci]
+    category: devops
+
+  - canonical: Travis CI
+    aliases: [travis-ci, travisci]
+    category: devops
+
+  - canonical: ArgoCD
+    aliases: [argo-cd, argo cd]
+    category: devops
+
+  # ============================================================
+  # Infrastructure as Code
+  # ============================================================
+  - canonical: Terraform
+    aliases: [tf, hashicorp terraform]
+    category: infrastructure
+
+  - canonical: Ansible
+    aliases: [ansible-playbook]
+    category: infrastructure
+
+  - canonical: Pulumi
+    aliases: [pulumi-iac]
+    category: infrastructure
+
+  - canonical: CloudFormation
+    aliases: [cfn, aws cloudformation]
+    category: infrastructure
+
+  # ============================================================
+  # Monitoring & Observability
+  # ============================================================
+  - canonical: Prometheus
+    aliases: [prom]
+    category: monitoring
+
+  - canonical: Grafana
+    aliases: [grafana-dashboards]
+    category: monitoring
+
+  - canonical: Datadog
+    aliases: [dd, data dog]
+    category: monitoring
+
+  - canonical: New Relic
+    aliases: [newrelic]
+    category: monitoring
+
+  - canonical: Splunk
+    aliases: [splunk-enterprise]
+    category: monitoring
+
+  - canonical: OpenTelemetry
+    aliases: [otel]
+    category: monitoring
+
+  # ============================================================
+  # Version Control
+  # ============================================================
+  - canonical: Git
+    aliases: [git-scm]
+    category: vcs
+
+  - canonical: GitHub
+    aliases: [gh]
+    category: vcs
+
+  - canonical: GitLab
+    aliases: [gl]
+    category: vcs
+
+  - canonical: Bitbucket
+    aliases: [bb, atlassian bitbucket]
+    category: vcs
+
+  # ============================================================
+  # API & Protocols
+  # ============================================================
+  - canonical: REST API
+    aliases: [restful, restful api, rest]
+    category: api
+
+  - canonical: GraphQL
+    aliases: [gql]
+    category: api
+
+  - canonical: gRPC
+    aliases: [grpc-protocol]
+    category: api
+
+  - canonical: WebSocket
+    aliases: [websockets, ws]
+    category: api
+
+  # ============================================================
+  # Message Queues
+  # ============================================================
+  - canonical: Apache Kafka
+    aliases: [kafka]
+    category: messaging
+
+  - canonical: RabbitMQ
+    aliases: [rabbit mq]
+    category: messaging
+
+  - canonical: Amazon SQS
+    aliases: [sqs, aws sqs]
+    category: messaging
+
+  # ============================================================
+  # AI/ML
+  # ============================================================
+  - canonical: Machine Learning
+    aliases: [ml]
+    category: ai
+
+  - canonical: Artificial Intelligence
+    aliases: [ai]
+    category: ai
+
+  - canonical: TensorFlow
+    aliases: [tf-ml]
+    category: ai
+
+  - canonical: PyTorch
+    aliases: []
+    category: ai
+
+  - canonical: scikit-learn
+    aliases: [sklearn, sci-kit learn]
+    category: ai
+
+  - canonical: Natural Language Processing
+    aliases: [nlp]
+    category: ai
+
+  - canonical: Large Language Models
+    aliases: [llm, llms]
+    category: ai
+
+  # ============================================================
+  # Testing
+  # ============================================================
+  - canonical: Jest
+    aliases: [jestjs]
+    category: testing
+
+  - canonical: pytest
+    aliases: [py.test]
+    category: testing
+
+  - canonical: Cypress
+    aliases: [cypress.io]
+    category: testing
+
+  - canonical: Selenium
+    aliases: [selenium-webdriver]
+    category: testing
+
+  - canonical: Playwright
+    aliases: [playwright-testing]
+    category: testing
+
+  # ============================================================
+  # Security
+  # ============================================================
+  - canonical: OAuth 2.0
+    aliases: [oauth, oauth2]
+    category: security
+
+  - canonical: JWT
+    aliases: [json web token, json web tokens]
+    category: security
+
+  - canonical: SAML
+    aliases: [saml 2.0]
+    category: security
+
+  - canonical: SSO
+    aliases: [single sign-on]
+    category: security
+
+  # ============================================================
+  # Agile & Project Management
+  # ============================================================
+  - canonical: Agile
+    aliases: [agile methodology, agile development]
+    category: methodology
+
+  - canonical: Scrum
+    aliases: [scrum framework]
+    category: methodology
+
+  - canonical: Kanban
+    aliases: [kanban-board]
+    category: methodology
+
+  - canonical: Jira
+    aliases: [atlassian jira]
+    category: tools
+
+  - canonical: Confluence
+    aliases: [atlassian confluence]
+    category: tools
+
+  # ============================================================
+  # Data Engineering
+  # ============================================================
+  - canonical: Apache Spark
+    aliases: [spark, pyspark]
+    category: data
+
+  - canonical: Apache Airflow
+    aliases: [airflow]
+    category: data
+
+  - canonical: Snowflake
+    aliases: [snowflake-db]
+    category: data
+
+  - canonical: Databricks
+    aliases: [databricks-platform]
+    category: data
+
+  - canonical: ETL
+    aliases: [extract transform load]
+    category: data
