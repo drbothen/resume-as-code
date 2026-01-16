@@ -48,11 +48,9 @@ class ResumeItem(BaseModel):
     end_date: str | None = None
     bullets: list[ResumeBullet] = Field(default_factory=list)
 
-    # Executive fields
-    scope_budget: str | None = None
-    scope_team_size: int | None = None
-    scope_revenue: str | None = None
-    scope_line: str | None = None  # Formatted scope line for display
+    # Executive scope - formatted line derived from Position.scope
+    # Individual scope_* fields removed in Story 7.2 - use scope_line only
+    scope_line: str | None = None
 
 
 class ResumeSection(BaseModel):
@@ -263,25 +261,12 @@ class ResumeData(BaseModel):
 
         # Collect all bullets from work units
         all_bullets: list[ResumeBullet] = []
-        scope_budget: str | None = None
-        scope_team_size: int | None = None
-        scope_revenue: str | None = None
-
         for wu in work_units:
             bullets = cls._extract_bullets(wu)
             all_bullets.extend(bullets)
 
-            # Aggregate scope from work units (take first non-None values)
-            # These are legacy fields - position.scope takes precedence for scope_line
-            scope = wu.get("scope", {}) or {}
-            if not scope_budget:
-                scope_budget = scope.get("budget_managed")
-            if not scope_team_size:
-                scope_team_size = scope.get("team_size")
-            if not scope_revenue:
-                scope_revenue = scope.get("revenue_influenced")
-
-        # Position scope takes precedence for the formatted scope_line (AC #5)
+        # Scope line derived from Position.scope only (Story 7.2 - unified model)
+        # WorkUnit.scope is deprecated and ignored for resume rendering
         scope_line = format_scope_line(position)
 
         return ResumeItem(
@@ -291,9 +276,6 @@ class ResumeData(BaseModel):
             start_date=cls._format_position_date(position.start_date),
             end_date=cls._format_position_date(position.end_date),
             bullets=all_bullets,
-            scope_budget=scope_budget,
-            scope_team_size=scope_team_size,
-            scope_revenue=scope_revenue,
             scope_line=scope_line,
         )
 
@@ -305,6 +287,7 @@ class ResumeData(BaseModel):
         """Build a ResumeItem from a standalone work unit.
 
         Used for work units without position_id (personal projects, etc.).
+        Note: WorkUnit.scope is deprecated - standalone work units have no scope_line.
 
         Args:
             work_unit: Work Unit dictionary.
@@ -313,7 +296,6 @@ class ResumeData(BaseModel):
             ResumeItem populated from work unit data.
         """
         bullets = cls._extract_bullets(work_unit)
-        scope = work_unit.get("scope", {}) or {}
 
         return ResumeItem(
             title=work_unit.get("title", ""),
@@ -321,9 +303,6 @@ class ResumeData(BaseModel):
             start_date=cls._format_date(work_unit.get("time_started")),
             end_date=cls._format_date(work_unit.get("time_ended")),
             bullets=bullets,
-            scope_budget=scope.get("budget_managed"),
-            scope_team_size=scope.get("team_size"),
-            scope_revenue=scope.get("revenue_influenced"),
         )
 
     @staticmethod

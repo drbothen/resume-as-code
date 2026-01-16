@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import warnings
 from datetime import date
 from enum import Enum
 from typing import Annotated, Literal
@@ -176,8 +177,18 @@ class Outcome(BaseModel):
     confidence_note: str | None = None
 
 
-class Scope(BaseModel):
-    """Scope of responsibility for executive-level work (budget, team, reach)."""
+class LegacyWorkUnitScope(BaseModel):
+    """Legacy scope model for work units (DEPRECATED).
+
+    This model is kept for backwards compatibility with existing YAML files.
+    New work units should use Position.scope instead.
+
+    Field mapping to unified Scope:
+    - budget_managed -> budget
+    - revenue_influenced -> revenue
+    - geographic_reach -> geography
+    - team_size -> team_size (same)
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -185,6 +196,12 @@ class Scope(BaseModel):
     team_size: int | None = Field(default=None, ge=0)
     revenue_influenced: str | None = None
     geographic_reach: str | None = None
+
+
+# DEPRECATED: LegacyScope alias for backwards compatibility with existing YAML files.
+# New code should import Scope from resume_as_code.models.scope instead.
+# This alias will be removed in v1.0.
+LegacyScope = LegacyWorkUnitScope
 
 
 class Metrics(BaseModel):
@@ -233,8 +250,9 @@ class WorkUnit(BaseModel):
     tags: list[str] = Field(default_factory=list)
     evidence: list[Evidence] = Field(default_factory=list)
 
-    # Executive-level fields
-    scope: Scope | None = None
+    # Executive-level fields (DEPRECATED: use Position.scope instead)
+    # Note: Deprecation warning emitted by warn_deprecated_scope validator only when set
+    scope: LegacyWorkUnitScope | None = None
     impact_category: list[ImpactCategory] = Field(default_factory=list)
     metrics: Metrics | None = None
     framing: Framing | None = None
@@ -275,6 +293,22 @@ class WorkUnit(BaseModel):
         """Ensure time_ended is after time_started if both are set."""
         if self.time_started and self.time_ended and self.time_ended < self.time_started:
             raise ValueError("time_ended must be after time_started")
+        return self
+
+    @model_validator(mode="after")
+    def warn_deprecated_scope(self) -> WorkUnit:
+        """Emit deprecation warning when scope is set.
+
+        Per Story 7.2, WorkUnit.scope is deprecated. Scope should be
+        set on Position instead and inherited via position_id reference.
+        """
+        if self.scope is not None:
+            warnings.warn(
+                "WorkUnit.scope is deprecated. Set scope on the Position instead. "
+                "Will be removed in v1.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         return self
 
     def get_weak_verb_warnings(self) -> list[str]:

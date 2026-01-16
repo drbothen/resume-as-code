@@ -104,42 +104,45 @@ class TestEndToEndWorkUnitToHTML:
         assert "API Design" in html
 
     def test_work_units_to_html_executive_template_with_scope(self) -> None:
-        """Executive template renders scope indicators from Work Units."""
-        work_units = [
-            {
-                "id": "wu-2024-01-01-vp-eng",
-                "title": "VP of Engineering",
-                "organization": "Enterprise Corp",
-                "time_started": date(2021, 1, 1),
-                "time_ended": None,
-                "actions": ["Directed engineering strategy"],
-                "outcome": {
-                    "result": "Scaled engineering organization",
-                    "quantified_impact": "from 20 to 80 engineers",
-                },
-                "tags": [],
-                "skills_demonstrated": [],
-                "scope": {
-                    "budget_managed": "$10M",
-                    "team_size": 80,
-                    "revenue_influenced": "$50M ARR",
-                },
-            }
-        ]
+        """Executive template renders scope_line (Story 7.2: scope from Position only).
 
+        WorkUnit.scope is deprecated - standalone work units without position_id
+        don't have scope_line rendered. This test verifies the rendering still works
+        when scope_line is set directly on ResumeItem.
+        """
+        # Create ResumeData directly with scope_line (as would be set from Position)
         contact = ContactInfo(name="Executive Leader")
-        resume = ResumeData.from_work_units(work_units, contact)
+        resume = ResumeData(
+            contact=contact,
+            sections=[
+                ResumeSection(
+                    title="Experience",
+                    items=[
+                        ResumeItem(
+                            title="VP of Engineering",
+                            organization="Enterprise Corp",
+                            start_date="2021",
+                            scope_line="$50M ARR revenue | 80+ engineers | $10M budget",
+                            bullets=[
+                                ResumeBullet(
+                                    text="Scaled engineering organization",
+                                    metrics="from 20 to 80 engineers",
+                                ),
+                                ResumeBullet(text="Directed engineering strategy"),
+                            ],
+                        )
+                    ],
+                )
+            ],
+        )
 
         service = TemplateService()
         html = service.render(resume, "executive")
 
-        # Verify scope indicators rendered in new format per Story 6.4 AC#3
-        # Format: "Led team of X | $YM budget | ZM revenue impact"
-        assert "$10M" in html
-        assert "Led team of 80" in html
-        assert "$50M ARR" in html
-        assert "budget" in html.lower()
-        assert "revenue impact" in html.lower()
+        # Verify scope_line is rendered
+        assert "$10M budget" in html
+        assert "80+ engineers" in html
+        assert "$50M ARR revenue" in html
 
     def test_work_units_to_html_ats_safe_template(self) -> None:
         """ATS-safe template renders Work Unit data with standard formatting."""
@@ -283,7 +286,10 @@ class TestExecutiveTemplateIntegration:
         assert "executive" in templates
 
     def test_executive_template_renders_scope_indicators(self) -> None:
-        """Executive template renders scope indicators (budget, team, revenue)."""
+        """Executive template renders scope indicators from scope_line.
+
+        Story 7.2: scope_line is the unified display format from Position.scope.
+        """
         service = TemplateService()
         contact = ContactInfo(name="Executive Leader")
         resume = ResumeData(
@@ -295,9 +301,7 @@ class TestExecutiveTemplateIntegration:
                         ResumeItem(
                             title="VP of Engineering",
                             organization="Enterprise Corp",
-                            scope_budget="$5M",
-                            scope_team_size=25,
-                            scope_revenue="$100M ARR",
+                            scope_line="$100M ARR revenue | 25+ engineers | $5M budget",
                             bullets=[
                                 ResumeBullet(text="Led digital transformation"),
                             ],
@@ -309,13 +313,10 @@ class TestExecutiveTemplateIntegration:
 
         html = service.render(resume, "executive")
 
-        # Verify scope indicators rendered in new format per Story 6.4 AC#3
-        # Format: "Led team of X | $YM budget | ZM revenue impact"
-        assert "$5M" in html
-        assert "Led team of 25" in html
-        assert "$100M ARR" in html
-        assert "budget" in html.lower()
-        assert "revenue impact" in html.lower()
+        # Verify scope_line is rendered
+        assert "$5M budget" in html
+        assert "25+ engineers" in html
+        assert "$100M ARR revenue" in html
 
     def test_executive_template_executive_summary_section(self) -> None:
         """Executive template renders Executive Summary section."""

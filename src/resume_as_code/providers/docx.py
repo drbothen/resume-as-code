@@ -221,15 +221,9 @@ class DOCXProvider:
 
         title_para.paragraph_format.space_after = Pt(3)
 
-        # Scope indicators for executive roles
-        if item.scope_team_size or item.scope_budget:
-            scope_parts: list[str] = []
-            if item.scope_team_size:
-                scope_parts.append(f"Team: {item.scope_team_size}")
-            if item.scope_budget:
-                scope_parts.append(f"Budget: {item.scope_budget}")
-
-            scope_para = doc.add_paragraph(", ".join(scope_parts))
+        # Scope indicators for executive roles (unified scope_line from Position)
+        if item.scope_line:
+            scope_para = doc.add_paragraph(item.scope_line)
             scope_para.paragraph_format.left_indent = Inches(0.25)
             for run in scope_para.runs:
                 run.italic = True

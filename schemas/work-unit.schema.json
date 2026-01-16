@@ -224,6 +224,63 @@
       "title": "ImpactCategory",
       "type": "string"
     },
+    "LegacyWorkUnitScope": {
+      "additionalProperties": false,
+      "description": "Legacy scope model for work units (DEPRECATED).\n\nThis model is kept for backwards compatibility with existing YAML files.\nNew work units should use Position.scope instead.\n\nField mapping to unified Scope:\n- budget_managed -> budget\n- revenue_influenced -> revenue\n- geographic_reach -> geography\n- team_size -> team_size (same)",
+      "properties": {
+        "budget_managed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Budget Managed"
+        },
+        "team_size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Team Size"
+        },
+        "revenue_influenced": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revenue Influenced"
+        },
+        "geographic_reach": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Geographic Reach"
+        }
+      },
+      "title": "LegacyWorkUnitScope",
+      "type": "object"
+    },
     "Metrics": {
       "additionalProperties": false,
       "description": "Quantified metrics with baseline and outcome for before/after comparison.",
@@ -457,63 +514,6 @@
       "title": "Problem",
       "type": "object"
     },
-    "Scope": {
-      "additionalProperties": false,
-      "description": "Scope of responsibility for executive-level work (budget, team, reach).",
-      "properties": {
-        "budget_managed": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Budget Managed"
-        },
-        "team_size": {
-          "anyOf": [
-            {
-              "minimum": 0,
-              "type": "integer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Team Size"
-        },
-        "revenue_influenced": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Revenue Influenced"
-        },
-        "geographic_reach": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Geographic Reach"
-        }
-      },
-      "title": "Scope",
-      "type": "object"
-    },
     "Skill": {
       "additionalProperties": false,
       "description": "Skill demonstrated in a Work Unit with optional O*NET taxonomy mapping.",
@@ -695,7 +695,7 @@
     "scope": {
       "anyOf": [
         {
-          "$ref": "#/$defs/Scope"
+          "$ref": "#/$defs/LegacyWorkUnitScope"
         },
         {
           "type": "null"

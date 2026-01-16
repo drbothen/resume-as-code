@@ -1,8 +1,8 @@
 {
   "$defs": {
-    "PositionScope": {
+    "Scope": {
       "additionalProperties": false,
-      "description": "Scope indicators for executive positions.\n\nCaptures leadership scale: P&L, revenue, team size, budget, geography.\nAll fields are optional - only populated fields render in scope line.",
+      "description": "Unified scope model for executive-level positions.\n\nCaptures leadership scale indicators: P&L, revenue, team size,\nbudget, geography, customers. Used by Position and inherited\nby work units via position reference.\n\nAll fields are optional - only populated fields render in scope line.",
       "properties": {
         "revenue": {
           "anyOf": [
@@ -20,6 +20,7 @@
         "team_size": {
           "anyOf": [
             {
+              "minimum": 0,
               "type": "integer"
             },
             {
@@ -27,12 +28,13 @@
             }
           ],
           "default": null,
-          "description": "Total engineers/team members",
+          "description": "Total team/org size",
           "title": "Team Size"
         },
         "direct_reports": {
           "anyOf": [
             {
+              "minimum": 0,
               "type": "integer"
             },
             {
@@ -66,7 +68,7 @@
             }
           ],
           "default": null,
-          "description": "P&L responsibility amount",
+          "description": "P&L responsibility, e.g., '$100M'",
           "title": "Pl Responsibility"
         },
         "geography": {
@@ -79,7 +81,7 @@
             }
           ],
           "default": null,
-          "description": "Geographic reach, e.g., 'Global', 'APAC'",
+          "description": "Geographic reach, e.g., 'Global', 'EMEA'",
           "title": "Geography"
         },
         "customers": {
@@ -92,11 +94,11 @@
             }
           ],
           "default": null,
-          "description": "Customer scope, e.g., '500K users', 'Fortune 500'",
+          "description": "Customer scope, e.g., 'Fortune 500', '500K users'",
           "title": "Customers"
         }
       },
-      "title": "PositionScope",
+      "title": "Scope",
       "type": "object"
     }
   },
@@ -198,7 +200,7 @@
     "scope": {
       "anyOf": [
         {
-          "$ref": "#/$defs/PositionScope"
+          "$ref": "#/$defs/Scope"
         },
         {
           "type": "null"

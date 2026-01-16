@@ -37,6 +37,7 @@ from resume_as_code.models.resume import (
     ResumeItem,
     ResumeSection,
 )
+from resume_as_code.models.scope import Scope
 from resume_as_code.models.work_unit import (
     STRONG_VERBS,
     WEAK_VERBS,
@@ -53,7 +54,6 @@ from resume_as_code.models.work_unit import (
     OtherEvidence,
     Outcome,
     Problem,
-    Scope,
     Skill,
     WorkUnit,
     WorkUnitConfidence,

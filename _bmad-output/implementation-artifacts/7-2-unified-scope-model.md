@@ -1,6 +1,6 @@
 # Story 7.2: Unified Scope Model
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -39,32 +39,32 @@ So that **executive metrics are reliable and don't conflict between data sources
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create unified Scope model (AC: #2)
-  - [ ] 1.1 Create `src/resume_as_code/models/scope.py` with unified Scope class
-  - [ ] 1.2 Add proper docstrings and Field descriptions
-  - [ ] 1.3 Export from `models/__init__.py`
-  - [ ] 1.4 Add unit tests for Scope model validation
+- [x] Task 1: Create unified Scope model (AC: #2)
+  - [x] 1.1 Create `src/resume_as_code/models/scope.py` with unified Scope class
+  - [x] 1.2 Add proper docstrings and Field descriptions
+  - [x] 1.3 Export from `models/__init__.py`
+  - [x] 1.4 Add unit tests for Scope model validation
 
-- [ ] Task 2: Update Position to use unified Scope (AC: #1, #4)
-  - [ ] 2.1 Replace `PositionScope` with unified `Scope` in position.py
-  - [ ] 2.2 Update `format_scope_line()` in position_service.py if needed
-  - [ ] 2.3 Update any imports/references to PositionScope
+- [x] Task 2: Update Position to use unified Scope (AC: #1, #4)
+  - [x] 2.1 Replace `PositionScope` with unified `Scope` in position.py
+  - [x] 2.2 Update `format_scope_line()` in position_service.py if needed
+  - [x] 2.3 Update any imports/references to PositionScope
 
-- [ ] Task 3: Deprecate WorkUnit.scope (AC: #3)
-  - [ ] 3.1 Add `@deprecated` decorator or deprecation warning to WorkUnit.scope
-  - [ ] 3.2 Create migration helper to map legacy fields to unified model
-  - [ ] 3.3 Log warning when legacy scope is used (not error)
-  - [ ] 3.4 Update WorkUnit model validator to emit deprecation warning
+- [x] Task 3: Deprecate WorkUnit.scope (AC: #3)
+  - [x] 3.1 Add `@deprecated` decorator or deprecation warning to WorkUnit.scope
+  - [x] 3.2 Create migration helper to map legacy fields to unified model
+  - [x] 3.3 Log warning when legacy scope is used (not error)
+  - [x] 3.4 Update WorkUnit model validator to emit deprecation warning
 
-- [ ] Task 4: Update ResumeItem scope handling (AC: #4)
-  - [ ] 4.1 Refactor ResumeItem to use Position.scope instead of separate scope_* fields
-  - [ ] 4.2 Keep scope_line as computed property
-  - [ ] 4.3 Update resume builder to derive scope from Position only
+- [x] Task 4: Update ResumeItem scope handling (AC: #4)
+  - [x] 4.1 Refactor ResumeItem to use Position.scope instead of separate scope_* fields
+  - [x] 4.2 Keep scope_line as computed property
+  - [x] 4.3 Update resume builder to derive scope from Position only
 
-- [ ] Task 5: Update schema generation and tests
-  - [ ] 5.1 Regenerate schemas after model changes
-  - [ ] 5.2 Update all tests referencing PositionScope or WorkUnit.scope
-  - [ ] 5.3 Add integration test verifying scope flows from Position to ResumeItem
+- [x] Task 5: Update schema generation and tests
+  - [x] 5.1 Regenerate schemas after model changes
+  - [x] 5.2 Update all tests referencing PositionScope or WorkUnit.scope
+  - [x] 5.3 Add integration test verifying scope flows from Position to ResumeItem
 
 ## Dev Notes
 
@@ -312,11 +312,59 @@ class WorkUnit(BaseModel):
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+1. Created unified `Scope` model in `src/resume_as_code/models/scope.py` with all 7 executive-level fields (revenue, team_size, direct_reports, budget, pl_responsibility, geography, customers)
+2. Updated `Position` model to use unified `Scope` type; added `PositionScope = Scope` alias for backwards compatibility
+3. Added `LegacyWorkUnitScope` class in work_unit.py to maintain backwards compatibility with existing YAML files using legacy field names (budget_managed, revenue_influenced, geographic_reach)
+4. Implemented deprecation warning via `@model_validator` in `WorkUnit` that emits `DeprecationWarning` when `scope` is set
+5. Verified `scope_line` is already computed from `Position.scope` via `format_scope_line()` function
+6. Regenerated JSON schemas - `positions.schema.json` and `work-unit.schema.json` updated
+7. All 1681 tests pass; ruff and mypy --strict pass
+
+**Code Review Remediation (2026-01-15):**
+
+8. **HIGH #1 Fix**: Removed legacy `scope_budget`, `scope_team_size`, `scope_revenue` fields from `ResumeItem` in `models/resume.py`. Only `scope_line` is now used for executive scope rendering.
+9. **MEDIUM #2 Fix**: Renamed confusing `Scope = LegacyWorkUnitScope` alias to `LegacyScope = LegacyWorkUnitScope` in work_unit.py to avoid confusion with unified Scope model.
+10. **MEDIUM #3 Fix**: Added `TestUnifiedScopeIntegration` class to `tests/unit/test_position_scope.py` with tests for AC #1 (no scope duplication needed).
+11. **MEDIUM #4 Fix**: Updated `tests/unit/test_position_scope.py` docstrings, class names, and imports to use unified Scope terminology.
+12. **MEDIUM #5 Fix**: Removed legacy scope aggregation from `_build_item_from_position()` in `models/resume.py`. Scope now only comes from Position, WorkUnit.scope is ignored for rendering.
+13. **LOW #6**: Kept model_validator approach for deprecation warning (Pydantic `deprecated=True` on Field causes warnings even for None defaults).
+14. Updated tests referencing removed scope_* fields across: `test_resume_model.py`, `test_docx_provider.py`, `test_executive_template.py`, `test_template_rendering.py`
+15. Updated `providers/docx.py` to use `scope_line` instead of individual scope_* fields
+16. All 1683 tests pass; ruff and mypy --strict pass
+
+**Code Review Remediation #2 (2026-01-15):**
+
+17. **MEDIUM #1 Fix**: Added `test_position_scope_alias_exported()` to `tests/unit/test_scope.py` verifying `PositionScope` alias is importable and identical to `Scope`
+18. **LOW #2 Fix**: Refactored `test_work_unit_scope_deprecated_warning()` to use `pytest.warns()` instead of manual `warnings.catch_warnings()` pattern
+19. **LOW #3 Fix**: Added clarifying docstring comment to `test_from_work_units_ignores_deprecated_scope()` explaining why no deprecation warning is expected (raw dicts vs model instances)
+20. All 1684 tests pass; ruff and mypy --strict pass
+
 ### File List
+
+**New Files:**
+- `src/resume_as_code/models/scope.py` - Unified Scope model
+- `tests/unit/test_scope.py` - Unit tests for unified Scope model
+
+**Modified Files:**
+- `src/resume_as_code/models/__init__.py` - Export unified Scope
+- `src/resume_as_code/models/position.py` - Use unified Scope, add PositionScope alias
+- `src/resume_as_code/models/work_unit.py` - Rename to LegacyWorkUnitScope, add LegacyScope alias, deprecation warning
+- `src/resume_as_code/models/resume.py` - Remove scope_* fields from ResumeItem, use scope_line only
+- `src/resume_as_code/providers/docx.py` - Use scope_line instead of individual scope fields
+- `tests/unit/test_work_unit_models.py` - Add deprecation tests, use LegacyWorkUnitScope
+- `tests/unit/test_position_scope.py` - Add integration tests, update naming for unified Scope
+- `tests/unit/test_resume_model.py` - Update tests for scope_line
+- `tests/unit/test_docx_provider.py` - Update tests for scope_line
+- `tests/unit/test_executive_template.py` - Update tests for scope_line
+- `tests/integration/test_template_rendering.py` - Update tests for scope_line
+- `schemas/positions.schema.json` - Regenerated (PositionScope -> Scope)
+- `schemas/work-unit.schema.json` - Regenerated (added LegacyWorkUnitScope)
 

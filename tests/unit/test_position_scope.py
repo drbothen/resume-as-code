@@ -1,23 +1,26 @@
-"""Unit tests for PositionScope model and scope formatting.
+"""Unit tests for unified Scope model and scope formatting.
 
 Tests scope indicator functionality for executive positions:
-- PositionScope model validation
+- Unified Scope model validation (Story 7.2)
 - format_scope_line() service function
 - Scope rendering in ResumeData
+
+Note: PositionScope is now an alias for the unified Scope model.
 """
 
 from __future__ import annotations
 
-from resume_as_code.models.position import Position, PositionScope
+from resume_as_code.models.position import Position
+from resume_as_code.models.scope import Scope
 from resume_as_code.services.position_service import format_scope_line
 
 
-class TestPositionScopeModel:
-    """Tests for PositionScope Pydantic model."""
+class TestUnifiedScopeModel:
+    """Tests for unified Scope Pydantic model (Story 7.2)."""
 
     def test_all_fields_populated(self) -> None:
         """Test scope with all fields populated."""
-        scope = PositionScope(
+        scope = Scope(
             revenue="$500M",
             team_size=200,
             direct_reports=15,
@@ -36,7 +39,7 @@ class TestPositionScopeModel:
 
     def test_all_fields_optional(self) -> None:
         """Test that all scope fields are optional."""
-        scope = PositionScope()
+        scope = Scope()
         assert scope.revenue is None
         assert scope.team_size is None
         assert scope.direct_reports is None
@@ -47,7 +50,7 @@ class TestPositionScopeModel:
 
     def test_partial_fields(self) -> None:
         """Test scope with only some fields populated."""
-        scope = PositionScope(
+        scope = Scope(
             revenue="$200M",
             team_size=50,
         )
@@ -67,7 +70,7 @@ class TestPositionWithScope:
             employer="Acme Corporation",
             title="Chief Technology Officer",
             start_date="2020-01",
-            scope=PositionScope(
+            scope=Scope(
                 revenue="$500M",
                 team_size=200,
                 pl_responsibility="$100M",
@@ -96,7 +99,7 @@ class TestPositionWithScope:
             employer="TechCorp",
             title="Tech Lead",
             start_date="2019-01",
-            scope=PositionScope(),
+            scope=Scope(),
         )
         assert position.scope is not None
         assert position.scope.revenue is None
@@ -112,7 +115,7 @@ class TestFormatScopeLine:
             employer="Acme Corp",
             title="CTO",
             start_date="2020-01",
-            scope=PositionScope(
+            scope=Scope(
                 pl_responsibility="$100M",
                 revenue="$500M",
                 team_size=200,
@@ -138,7 +141,7 @@ class TestFormatScopeLine:
             employer="Test Corp",
             title="VP",
             start_date="2020-01",
-            scope=PositionScope(
+            scope=Scope(
                 revenue="$200M",
                 pl_responsibility="$50M",
             ),
@@ -154,7 +157,7 @@ class TestFormatScopeLine:
             employer="Test Corp",
             title="Director",
             start_date="2021-01",
-            scope=PositionScope(
+            scope=Scope(
                 team_size=50,
                 geography="EMEA",
             ),
@@ -186,7 +189,7 @@ class TestFormatScopeLine:
             employer="Test Corp",
             title="Lead",
             start_date="2020-01",
-            scope=PositionScope(),
+            scope=Scope(),
         )
         result = format_scope_line(position)
         assert result is None
@@ -198,7 +201,7 @@ class TestFormatScopeLine:
             employer="Test Corp",
             title="Manager",
             start_date="2020-01",
-            scope=PositionScope(team_size=30),
+            scope=Scope(team_size=30),
         )
         result = format_scope_line(position)
         assert result == "30+ engineers"
@@ -211,7 +214,7 @@ class TestFormatScopeLine:
             employer="Test Corp",
             title="VP",
             start_date="2020-01",
-            scope=PositionScope(direct_reports=8),
+            scope=Scope(direct_reports=8),
         )
         result = format_scope_line(position)
         assert result is not None
@@ -224,7 +227,7 @@ class TestFormatScopeLine:
             employer="Test Corp",
             title="CTO",
             start_date="2020-01",
-            scope=PositionScope(customers="500K users"),
+            scope=Scope(customers="500K users"),
         )
         result = format_scope_line(position)
         assert result is not None
@@ -268,7 +271,7 @@ class TestBuildItemFromPosition:
             employer="Acme Corp",
             title="CTO",
             start_date="2020-01",
-            scope=PositionScope(
+            scope=Scope(
                 pl_responsibility="$100M",
                 revenue="$500M",
                 team_size=200,
@@ -283,8 +286,11 @@ class TestBuildItemFromPosition:
         assert "$500M revenue" in item.scope_line
         assert "200+ engineers" in item.scope_line
 
-    def test_build_item_position_scope_overrides_work_unit(self) -> None:
-        """Test position scope takes precedence over work unit scope (AC: #5)."""
+    def test_build_item_position_scope_only(self) -> None:
+        """Test position scope is used exclusively (Story 7.2 - unified model).
+
+        WorkUnit.scope is deprecated - only Position.scope is used for scope_line.
+        """
         from resume_as_code.models.resume import ResumeData
 
         position = Position(
@@ -292,16 +298,17 @@ class TestBuildItemFromPosition:
             employer="Acme Corp",
             title="CTO",
             start_date="2020-01",
-            scope=PositionScope(
-                team_size=200,  # Position says 200
+            scope=Scope(
+                team_size=200,
                 revenue="$500M",
             ),
         )
         work_units = [
             {
                 "title": "Some achievement",
+                # WorkUnit.scope is deprecated and ignored for resume rendering
                 "scope": {
-                    "team_size": 50,  # Work unit says 50 (should be overridden)
+                    "team_size": 50,
                     "revenue_influenced": "$100M",
                 },
             }
@@ -309,12 +316,11 @@ class TestBuildItemFromPosition:
 
         item = ResumeData._build_item_from_position(position, work_units)
 
-        # Position scope_line should use position data (200, $500M)
+        # Only position scope is used (Story 7.2 AC #1, #4)
         assert item.scope_line is not None
         assert "200+ engineers" in item.scope_line
         assert "$500M revenue" in item.scope_line
-        # Work unit scope_revenue still captured in legacy field
-        assert item.scope_revenue == "$100M"
+        # Work unit scope values are NOT captured - unified model means position only
 
     def test_build_item_no_scope_line_when_position_has_no_scope(self) -> None:
         """Test no scope_line when position has no scope data."""
@@ -479,3 +485,107 @@ class TestTemplateRendering:
         assert "Startup" in html
         # scope-line should NOT appear when no scope data
         assert html.count('class="scope-line"') == 0
+
+
+class TestUnifiedScopeIntegration:
+    """Integration tests for unified Scope model (Story 7.2 AC #1).
+
+    Verifies that scope flows from Position to ResumeItem without
+    requiring duplication in work units.
+    """
+
+    def test_ac1_no_scope_duplication_needed(self) -> None:
+        """AC #1: Work units don't need to duplicate scope from position.
+
+        Given a position with scope data
+        When I create work units for that position
+        Then I don't need to duplicate scope in work units
+        And scope from position is used for resume rendering
+        """
+        from resume_as_code.models.resume import ResumeData
+
+        # Position with executive scope data
+        position = Position(
+            id="pos-acme-cto",
+            employer="Acme Corp",
+            title="Chief Technology Officer",
+            start_date="2020-01",
+            scope=Scope(
+                pl_responsibility="$100M",
+                revenue="$500M",
+                team_size=200,
+                budget="$50M",
+                geography="Global",
+            ),
+        )
+
+        # Work units WITHOUT scope (no duplication needed per AC #1)
+        work_units = [
+            {
+                "id": "wu-2024-01-01-achievement-one",
+                "title": "Led major platform migration",
+                "outcome": {"result": "Reduced costs by 40%"},
+                "actions": ["Designed architecture", "Led execution"],
+                # Note: NO scope field - using Position.scope instead
+            },
+            {
+                "id": "wu-2024-06-01-achievement-two",
+                "title": "Launched new product line",
+                "outcome": {"result": "Generated $10M revenue"},
+                "actions": ["Built team", "Delivered MVP"],
+                # Note: NO scope field - using Position.scope instead
+            },
+        ]
+
+        # Build ResumeItem from position and work units
+        item = ResumeData._build_item_from_position(position, work_units)
+
+        # Verify position scope is rendered (no duplication in work units)
+        assert item.scope_line is not None
+        assert "$100M P&L" in item.scope_line
+        assert "$500M revenue" in item.scope_line
+        assert "200+ engineers" in item.scope_line
+        assert "$50M budget" in item.scope_line
+        assert "Global" in item.scope_line
+
+        # Verify work unit bullets are captured (2 outcomes + 4 actions = 6 total)
+        assert len(item.bullets) == 6
+
+    def test_ac1_scope_only_from_position_not_work_unit(self) -> None:
+        """Verify scope_line is ONLY derived from Position, never from WorkUnit.
+
+        Even if work units have legacy scope data, it is ignored.
+        """
+        from resume_as_code.models.resume import ResumeData
+
+        # Position WITH scope
+        position = Position(
+            id="pos-test-director",
+            employer="Test Corp",
+            title="Director",
+            start_date="2021-01",
+            scope=Scope(team_size=50, geography="EMEA"),
+        )
+
+        # Work unit with DIFFERENT scope values (should be ignored)
+        work_units = [
+            {
+                "title": "Achievement",
+                "outcome": {"result": "Delivered project"},
+                "actions": ["Did the work"],
+                "scope": {
+                    "team_size": 999,  # Different from position - should be ignored
+                    "budget_managed": "$999M",  # Not in position - should not appear
+                },
+            }
+        ]
+
+        item = ResumeData._build_item_from_position(position, work_units)
+
+        # Position scope is used
+        assert item.scope_line is not None
+        assert "50+ engineers" in item.scope_line
+        assert "EMEA" in item.scope_line
+        # Work unit scope is NOT used
+        assert "999" not in item.scope_line
+        assert "budget" not in item.scope_line.lower()

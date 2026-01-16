@@ -313,8 +313,7 @@ class TestDOCXWithScopeFields:
                             title="VP Engineering",
                             organization="Big Corp",
                             start_date="2018-01",
-                            scope_team_size=50,
-                            scope_budget="$5M",
+                            scope_line="Team: 50 | Budget: $5M",
                             bullets=[ResumeBullet(text="Led engineering org")],
                         ),
                     ],
@@ -329,8 +328,8 @@ class TestDOCXWithScopeFields:
         doc = Document(output_path)
         text = "\n".join(p.text for p in doc.paragraphs)
 
-        assert "50" in text or "Team" in text
-        assert "$5M" in text or "Budget" in text
+        assert "Team: 50" in text
+        assert "Budget: $5M" in text
 
 
 class TestDOCXEducation:

@@ -49,9 +49,7 @@ def executive_resume() -> ResumeData:
             location="San Francisco, CA",
             start_date="2020-01",
             end_date=None,
-            scope_budget="$15M",
-            scope_team_size=85,
-            scope_revenue="$50M ARR",
+            scope_line="P&L: $50M ARR | Team: 85 | Budget: $15M",
             bullets=[
                 ResumeBullet(
                     text="Led digital transformation initiative across enterprise",
@@ -67,8 +65,7 @@ def executive_resume() -> ResumeData:
             location="Palo Alto, CA",
             start_date="2016-03",
             end_date="2019-12",
-            scope_budget="$5M",
-            scope_team_size=35,
+            scope_line="Team: 35 | Budget: $5M",
             bullets=[
                 ResumeBullet(
                     text="Grew engineering team from 8 to 35 engineers",

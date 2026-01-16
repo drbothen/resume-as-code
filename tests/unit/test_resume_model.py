@@ -88,15 +88,12 @@ class TestResumeItem:
                 ResumeBullet(text="Built scalable systems"),
                 ResumeBullet(text="Mentored junior engineers"),
             ],
-            scope_budget="$1.5M",
-            scope_team_size=8,
-            scope_revenue="$50M ARR",
+            scope_line="P&L: $50M ARR | Team: 8 | Budget: $1.5M",
         )
         assert item.title == "Senior Engineer"
         assert item.organization == "Acme Corp"
         assert len(item.bullets) == 2
-        assert item.scope_budget == "$1.5M"
-        assert item.scope_team_size == 8
+        assert item.scope_line == "P&L: $50M ARR | Team: 8 | Budget: $1.5M"
 
 
 class TestResumeSection:
@@ -209,8 +206,15 @@ class TestResumeDataFromWorkUnits:
         assert "api" in resume.skills
         assert "leadership" in resume.skills
 
-    def test_from_work_units_extracts_scope_fields(self) -> None:
-        """Executive scope fields are preserved."""
+    def test_from_work_units_ignores_deprecated_scope(self) -> None:
+        """WorkUnit.scope is deprecated - scope comes from Position only.
+
+        Story 7.2: Standalone work units (without position_id) have no scope_line.
+        Scope fields on work units are ignored for resume rendering.
+
+        Note: No deprecation warning expected here because work_units are raw dicts,
+        not WorkUnit model instances. The warning only fires on WorkUnit() instantiation.
+        """
         work_units = [
             {
                 "id": "wu-2024-01-01-exec-project",
@@ -231,10 +235,10 @@ class TestResumeDataFromWorkUnits:
 
         resume = ResumeData.from_work_units(work_units, contact)
 
+        # Standalone work unit without position_id has no scope_line
+        # (WorkUnit.scope is deprecated and ignored for rendering)
         item = resume.sections[0].items[0]
-        assert item.scope_budget == "$5M"
-        assert item.scope_team_size == 25
-        assert item.scope_revenue == "$100M ARR"
+        assert item.scope_line is None
 
     def test_from_work_units_formats_dates(self) -> None:
         """Dates are formatted for display."""

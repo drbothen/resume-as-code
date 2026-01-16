@@ -16,12 +16,12 @@ from resume_as_code.models.work_unit import (
     Framing,
     GitRepoEvidence,
     ImpactCategory,
+    LegacyWorkUnitScope,
     Metrics,
     MetricsEvidence,
     OtherEvidence,
     Outcome,
     Problem,
-    Scope,
     Skill,
     WorkUnit,
     WorkUnitConfidence,
@@ -264,9 +264,9 @@ class TestEnumValues:
 class TestExecutiveLevelFields:
     """Test executive-level model fields."""
 
-    def test_scope_model(self) -> None:
-        """Scope should accept executive-level fields."""
-        scope = Scope(
+    def test_legacy_work_unit_scope_model(self) -> None:
+        """LegacyWorkUnitScope should accept legacy executive-level fields."""
+        scope = LegacyWorkUnitScope(
             budget_managed="$5M",
             team_size=25,
             revenue_influenced="$50M",
@@ -356,7 +356,7 @@ class TestWorkUnitWithAllFields:
                 GitRepoEvidence(url="https://github.com/org/infra"),
                 MetricsEvidence(url="https://grafana.example.com/costs"),
             ],
-            scope=Scope(budget_managed="$5M", team_size=12),
+            scope=LegacyWorkUnitScope(budget_managed="$5M", team_size=12),
             impact_category=[ImpactCategory.FINANCIAL, ImpactCategory.OPERATIONAL],
             metrics=Metrics(baseline="$5M/year", outcome="$3M/year", percentage_change=-40.0),
             framing=Framing(action_verb="Orchestrated"),
@@ -601,6 +601,42 @@ class TestMetadataValidation:
                 confidence=level,
             )
             assert wu.confidence == level
+
+
+class TestWorkUnitScopeDeprecation:
+    """Test WorkUnit.scope deprecation (Story 7.2 AC #3)."""
+
+    def test_work_unit_scope_deprecated_warning(self) -> None:
+        """Setting WorkUnit.scope emits deprecation warning."""
+        with pytest.warns(DeprecationWarning, match="deprecated"):
+            wu = WorkUnit(
+                id="wu-2024-01-01-test",
+                title="Test work unit with deprecated scope",
+                problem=Problem(statement="This is the problem statement"),
+                actions=["Action taken here"],
+                outcome=Outcome(result="Result achieved"),
+                scope=LegacyWorkUnitScope(team_size=10),  # Deprecated usage
+            )
+            assert wu.scope is not None
+
+    def test_work_unit_scope_no_warning_when_not_set(self) -> None:
+        """No warning when WorkUnit.scope is not set."""
+        import warnings
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            WorkUnit(
+                id="wu-2024-01-01-test",
+                title="Test work unit without scope",
+                problem=Problem(statement="This is the problem statement"),
+                actions=["Action taken here"],
+                outcome=Outcome(result="Result achieved"),
+            )
+            # Should NOT emit deprecation warning
+            deprecation_warnings = [
+                warning for warning in w if issubclass(warning.category, DeprecationWarning)
+            ]
+            assert len(deprecation_warnings) == 0
 
 
 class TestExtraFieldsForbidden:
