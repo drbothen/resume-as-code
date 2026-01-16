@@ -153,3 +153,18 @@ development_status:
   7-16-cli-config-file-override: ready-for-dev  # P1, 2 pts - --config flag for custom config paths
   7-17-onet-registry-workflow-wiring: ready-for-dev  # P2, 5 pts - Wire O*NET & Registry into plan/build workflow
   epic-7-retrospective: optional
+
+# RESEARCH / TECH DEBT BACKLOG:
+# =============================
+# Items identified during code review that warrant future investigation.
+#
+# [2026-01-16] Abbreviation/Expansion System (from 7-10 code review)
+#   Current: Static TECH_EXPANSIONS dict in tokenizer.py with ~50 hardcoded mappings
+#   Problem: Difficult to maintain, may miss domain-specific terms, no bidirectional lookup
+#   Research areas:
+#   - External abbreviation databases (e.g., acronym APIs, technical glossaries)
+#   - ML-based abbreviation detection/expansion
+#   - User-configurable abbreviation files (YAML/JSON in config)
+#   - Bidirectional expansion (both "ML" -> "machine learning" AND "machine learning" -> "ML")
+#   - Context-aware disambiguation (PM = project management vs product management)
+#   Related: src/resume_as_code/utils/tokenizer.py TECH_EXPANSIONS dict
