@@ -2,7 +2,7 @@
   "$defs": {
     "ArtifactEvidence": {
       "additionalProperties": false,
-      "description": "Evidence from an artifact or release (package, binary, deployment).",
+      "description": "Evidence from an artifact or release (package, binary, deployment).\n\nCan reference artifacts via URL, local path, or content hash.\nAt least one of url, local_path, or sha256 must be provided.",
       "properties": {
         "type": {
           "const": "artifact",
@@ -11,11 +11,46 @@
           "type": "string"
         },
         "url": {
-          "format": "uri",
-          "maxLength": 2083,
-          "minLength": 1,
-          "title": "Url",
-          "type": "string"
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        },
+        "local_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Local file path (relative to project root)",
+          "title": "Local Path"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-fA-F0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "SHA-256 hash of artifact for verification",
+          "title": "Sha256"
         },
         "artifact_type": {
           "anyOf": [
@@ -27,6 +62,7 @@
             }
           ],
           "default": null,
+          "description": "Type of artifact (e.g., 'wheel', 'docker', 'pdf')",
           "title": "Artifact Type"
         },
         "description": {
@@ -39,12 +75,10 @@
             }
           ],
           "default": null,
+          "description": "Artifact description",
           "title": "Description"
         }
       },
-      "required": [
-        "url"
-      ],
       "title": "ArtifactEvidence",
       "type": "object"
     },
@@ -281,6 +315,56 @@
       "title": "LegacyWorkUnitScope",
       "type": "object"
     },
+    "LinkEvidence": {
+      "additionalProperties": false,
+      "description": "Evidence from a generic web link.\n\nUse for any HTTP/HTTPS URL that doesn't fit specific categories\nlike git_repo, metrics, document, or artifact. Preferred over\nOtherEvidence for new work units as it supports a title field\nfor better labeling.\n\nExamples:\n    - Blog posts\n    - News articles\n    - External presentations\n    - Company announcements",
+      "properties": {
+        "type": {
+          "const": "link",
+          "default": "link",
+          "title": "Type",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Link title or label",
+          "title": "Title"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Link description",
+          "title": "Description"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "LinkEvidence",
+      "type": "object"
+    },
     "Metrics": {
       "additionalProperties": false,
       "description": "Quantified metrics with baseline and outcome for before/after comparison.",
@@ -380,9 +464,59 @@
       "title": "MetricsEvidence",
       "type": "object"
     },
+    "NarrativeEvidence": {
+      "additionalProperties": false,
+      "description": "Evidence based on narrative description only.\n\nUse for internal achievements, verbal feedback, or evidence\nthat cannot be linked externally.",
+      "properties": {
+        "type": {
+          "const": "narrative",
+          "default": "narrative",
+          "title": "Type",
+          "type": "string"
+        },
+        "description": {
+          "description": "Narrative description of the evidence",
+          "minLength": 10,
+          "title": "Description",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source of evidence (e.g., 'Manager feedback', 'Internal review')",
+          "title": "Source"
+        },
+        "date_recorded": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "When the evidence was recorded",
+          "title": "Date Recorded"
+        }
+      },
+      "required": [
+        "description"
+      ],
+      "title": "NarrativeEvidence",
+      "type": "object"
+    },
     "OtherEvidence": {
       "additionalProperties": false,
-      "description": "Evidence that doesn't fit other categories.",
+      "description": "Evidence that doesn't fit other categories.\n\nDEPRECATED: Prefer LinkEvidence for generic URLs or NarrativeEvidence\nfor description-only evidence. This type is maintained for backward\ncompatibility with existing work units.",
       "properties": {
         "type": {
           "const": "other",
@@ -666,7 +800,9 @@
             "artifact": "#/$defs/ArtifactEvidence",
             "document": "#/$defs/DocumentEvidence",
             "git_repo": "#/$defs/GitRepoEvidence",
+            "link": "#/$defs/LinkEvidence",
             "metrics": "#/$defs/MetricsEvidence",
+            "narrative": "#/$defs/NarrativeEvidence",
             "other": "#/$defs/OtherEvidence"
           },
           "propertyName": "type"
@@ -683,6 +819,12 @@
           },
           {
             "$ref": "#/$defs/ArtifactEvidence"
+          },
+          {
+            "$ref": "#/$defs/LinkEvidence"
+          },
+          {
+            "$ref": "#/$defs/NarrativeEvidence"
           },
           {
             "$ref": "#/$defs/OtherEvidence"

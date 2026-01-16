@@ -86,6 +86,8 @@ class EvidenceType(str, Enum):
     METRICS = "metrics"
     DOCUMENT = "document"
     ARTIFACT = "artifact"
+    LINK = "link"
+    NARRATIVE = "narrative"
     OTHER = "other"
 
 
@@ -127,18 +129,66 @@ class DocumentEvidence(BaseModel):
 
 
 class ArtifactEvidence(BaseModel):
-    """Evidence from an artifact or release (package, binary, deployment)."""
+    """Evidence from an artifact or release (package, binary, deployment).
+
+    Can reference artifacts via URL, local path, or content hash.
+    At least one of url, local_path, or sha256 must be provided.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     type: Literal["artifact"] = "artifact"
-    url: HttpUrl
-    artifact_type: str | None = None
-    description: str | None = None
+    url: HttpUrl | None = None
+    local_path: str | None = Field(
+        default=None,
+        description="Local file path (relative to project root)",
+    )
+    sha256: str | None = Field(
+        default=None,
+        pattern=r"^[a-fA-F0-9]{64}$",
+        description="SHA-256 hash of artifact for verification",
+    )
+    artifact_type: str | None = Field(
+        default=None,
+        description="Type of artifact (e.g., 'wheel', 'docker', 'pdf')",
+    )
+    description: str | None = Field(default=None, description="Artifact description")
+
+    @field_validator("local_path")
+    @classmethod
+    def validate_local_path_is_relative(cls, v: str | None) -> str | None:
+        """Ensure local_path is a relative path, not absolute.
+
+        Rejects paths starting with /, ~, or Windows drive letters (C:, D:, etc.)
+        to ensure paths are relative to project root.
+        """
+        if v is None:
+            return v
+        # Check for Unix absolute paths
+        if v.startswith("/") or v.startswith("~"):
+            raise ValueError(f"local_path must be relative to project root, not absolute: {v}")
+        # Check for Windows absolute paths (drive letters)
+        if len(v) >= 2 and v[1] == ":" and v[0].isalpha():
+            raise ValueError(f"local_path must be relative to project root, not absolute: {v}")
+        return v
+
+    @model_validator(mode="after")
+    def validate_at_least_one_reference(self) -> ArtifactEvidence:
+        """Ensure at least one reference method is provided."""
+        if not any([self.url, self.local_path, self.sha256]):
+            raise ValueError(
+                "ArtifactEvidence requires at least one of: url, local_path, or sha256"
+            )
+        return self
 
 
 class OtherEvidence(BaseModel):
-    """Evidence that doesn't fit other categories."""
+    """Evidence that doesn't fit other categories.
+
+    DEPRECATED: Prefer LinkEvidence for generic URLs or NarrativeEvidence
+    for description-only evidence. This type is maintained for backward
+    compatibility with existing work units.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -147,9 +197,66 @@ class OtherEvidence(BaseModel):
     description: str | None = None
 
 
+class LinkEvidence(BaseModel):
+    """Evidence from a generic web link.
+
+    Use for any HTTP/HTTPS URL that doesn't fit specific categories
+    like git_repo, metrics, document, or artifact. Preferred over
+    OtherEvidence for new work units as it supports a title field
+    for better labeling.
+
+    Examples:
+        - Blog posts
+        - News articles
+        - External presentations
+        - Company announcements
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["link"] = "link"
+    url: HttpUrl
+    title: str | None = Field(
+        default=None,
+        description="Link title or label",
+    )
+    description: str | None = Field(default=None, description="Link description")
+
+
+class NarrativeEvidence(BaseModel):
+    """Evidence based on narrative description only.
+
+    Use for internal achievements, verbal feedback, or evidence
+    that cannot be linked externally.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["narrative"] = "narrative"
+    description: str = Field(
+        ...,
+        min_length=10,
+        description="Narrative description of the evidence",
+    )
+    source: str | None = Field(
+        default=None,
+        description="Source of evidence (e.g., 'Manager feedback', 'Internal review')",
+    )
+    date_recorded: date | None = Field(
+        default=None,
+        description="When the evidence was recorded",
+    )
+
+
 # Discriminated union for evidence
 Evidence = Annotated[
-    GitRepoEvidence | MetricsEvidence | DocumentEvidence | ArtifactEvidence | OtherEvidence,
+    GitRepoEvidence
+    | MetricsEvidence
+    | DocumentEvidence
+    | ArtifactEvidence
+    | LinkEvidence
+    | NarrativeEvidence
+    | OtherEvidence,
     Field(discriminator="type"),
 ]
 

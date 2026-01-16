@@ -179,9 +179,7 @@ class TestWorkUnitSchemaFile:
         assert "action_verb" in framing_props
         assert "strategic_context" in framing_props
 
-    def _get_evidence_variant(
-        self, schema: dict[str, Any], type_name: str
-    ) -> dict[str, Any]:
+    def _get_evidence_variant(self, schema: dict[str, Any], type_name: str) -> dict[str, Any]:
         """Get evidence variant by type, resolving $ref if needed."""
         evidence_items = schema["properties"]["evidence"]["items"]
         for variant in evidence_items["oneOf"]:
@@ -191,8 +189,8 @@ class TestWorkUnitSchemaFile:
                 return resolved
         raise ValueError(f"Evidence type {type_name} not found")
 
-    def test_evidence_has_five_types(self, schema: dict[str, Any]) -> None:
-        """Evidence should support git_repo, metrics, document, artifact, other types."""
+    def test_evidence_has_all_types(self, schema: dict[str, Any]) -> None:
+        """Evidence should support all evidence types including link and narrative."""
         evidence_items = schema["properties"]["evidence"]["items"]
         # Evidence uses oneOf for discriminated union
         assert "oneOf" in evidence_items
@@ -201,7 +199,7 @@ class TestWorkUnitSchemaFile:
             resolved = resolve_ref(schema, variant["$ref"]) if "$ref" in variant else variant
             type_const = resolved["properties"]["type"].get("const")
             type_values.append(type_const)
-        expected = ["git_repo", "metrics", "document", "artifact", "other"]
+        expected = ["git_repo", "metrics", "document", "artifact", "link", "narrative", "other"]
         assert sorted(type_values) == sorted(expected)
 
     def test_evidence_git_repo_has_type_specific_fields(self, schema: dict[str, Any]) -> None:
@@ -229,11 +227,29 @@ class TestWorkUnitSchemaFile:
         assert "publication_date" in props
 
     def test_evidence_artifact_has_type_specific_fields(self, schema: dict[str, Any]) -> None:
-        """Artifact evidence should have url, artifact_type fields."""
+        """Artifact evidence should have url, local_path, sha256, artifact_type fields."""
         artifact = self._get_evidence_variant(schema, "artifact")
         props = artifact["properties"]
         assert "url" in props
+        assert "local_path" in props
+        assert "sha256" in props
         assert "artifact_type" in props
+
+    def test_evidence_link_has_type_specific_fields(self, schema: dict[str, Any]) -> None:
+        """Link evidence should have url, title, description fields."""
+        link = self._get_evidence_variant(schema, "link")
+        props = link["properties"]
+        assert "url" in props
+        assert "title" in props
+        assert "description" in props
+
+    def test_evidence_narrative_has_type_specific_fields(self, schema: dict[str, Any]) -> None:
+        """Narrative evidence should have description, source, date_recorded fields."""
+        narrative = self._get_evidence_variant(schema, "narrative")
+        props = narrative["properties"]
+        assert "description" in props
+        assert "source" in props
+        assert "date_recorded" in props
 
     def test_evidence_other_has_type_specific_fields(self, schema: dict[str, Any]) -> None:
         """Other evidence should have url, description fields."""

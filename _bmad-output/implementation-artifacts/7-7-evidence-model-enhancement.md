@@ -1,6 +1,6 @@
 # Story 7.7: Evidence Model Enhancement
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -39,34 +39,34 @@ So that **I can reference local artifacts, file hashes, and narrative descriptio
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add NarrativeEvidence type (AC: #1)
-  - [ ] 1.1 Create `NarrativeEvidence` class with description-only field
-  - [ ] 1.2 Add to discriminated union
-  - [ ] 1.3 Update EvidenceType enum
-  - [ ] 1.4 Add unit tests for narrative evidence
+- [x] Task 1: Add NarrativeEvidence type (AC: #1)
+  - [x] 1.1 Create `NarrativeEvidence` class with description-only field
+  - [x] 1.2 Add to discriminated union
+  - [x] 1.3 Update EvidenceType enum
+  - [x] 1.4 Add unit tests for narrative evidence
 
-- [ ] Task 2: Add LinkEvidence type (AC: #2)
-  - [ ] 2.1 Create `LinkEvidence` class for generic URLs
-  - [ ] 2.2 Add to discriminated union
-  - [ ] 2.3 Update EvidenceType enum
-  - [ ] 2.4 Add unit tests for link evidence
+- [x] Task 2: Add LinkEvidence type (AC: #2)
+  - [x] 2.1 Create `LinkEvidence` class for generic URLs
+  - [x] 2.2 Add to discriminated union
+  - [x] 2.3 Update EvidenceType enum
+  - [x] 2.4 Add unit tests for link evidence
 
-- [ ] Task 3: Enhance ArtifactEvidence (AC: #3)
-  - [ ] 3.1 Make `url` optional on ArtifactEvidence
-  - [ ] 3.2 Add `sha256: str | None` field for file hash
-  - [ ] 3.3 Add `local_path: str | None` field
-  - [ ] 3.4 Add validator requiring at least one of url, sha256, or local_path
-  - [ ] 3.5 Add unit tests for enhanced artifact evidence
+- [x] Task 3: Enhance ArtifactEvidence (AC: #3)
+  - [x] 3.1 Make `url` optional on ArtifactEvidence
+  - [x] 3.2 Add `sha256: str | None` field for file hash
+  - [x] 3.3 Add `local_path: str | None` field
+  - [x] 3.4 Add validator requiring at least one of url, sha256, or local_path
+  - [x] 3.5 Add unit tests for enhanced artifact evidence
 
-- [ ] Task 4: Ensure backward compatibility (AC: #2, #4)
-  - [ ] 4.1 Verify existing work units with URL-based evidence still validate
-  - [ ] 4.2 Update JSON schema generation (auto via Story 7.1)
-  - [ ] 4.3 Add migration notes for any breaking changes
+- [x] Task 4: Ensure backward compatibility (AC: #2, #4)
+  - [x] 4.1 Verify existing work units with URL-based evidence still validate
+  - [x] 4.2 Update JSON schema generation (auto via Story 7.1)
+  - [x] 4.3 Add migration notes for any breaking changes
 
-- [ ] Task 5: Add tests and quality checks
-  - [ ] 5.1 Unit tests for all new evidence types
-  - [ ] 5.2 Integration tests with WorkUnit model
-  - [ ] 5.3 Run `ruff check` and `mypy --strict`
+- [x] Task 5: Add tests and quality checks
+  - [x] 5.1 Unit tests for all new evidence types
+  - [x] 5.2 Integration tests with WorkUnit model
+  - [x] 5.3 Run `ruff check` and `mypy --strict`
 
 ## Dev Notes
 
@@ -443,11 +443,41 @@ From `project-context.md`:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None
+
 ### Completion Notes List
 
+- ✅ Added `NarrativeEvidence` class with description (min 10 chars), source, and date_recorded fields
+- ✅ Added `LinkEvidence` class with url (required), title, and description fields
+- ✅ Enhanced `ArtifactEvidence` with optional url, local_path, and sha256 fields
+- ✅ Added model_validator to ensure at least one reference (url, local_path, or sha256) is provided
+- ✅ Updated EvidenceType enum to include LINK and NARRATIVE
+- ✅ Updated Evidence discriminated union to include all 7 types
+- ✅ JSON schema auto-regenerated via scripts/generate_schemas.py
+- ✅ All 36 evidence-specific tests pass (including path validation)
+- ✅ All 1880 project tests pass (no regressions)
+- ✅ Backward compatibility verified - existing URL-only ArtifactEvidence still works
+- ✅ ruff check: All checks passed
+- ✅ mypy --strict: no issues found
+
+**Migration Notes:** No breaking changes. Existing work units with URL-based evidence continue to work. New evidence types (narrative, link) and enhanced artifact fields are purely additive.
+
+**Code Review Fixes Applied:**
+- Added `local_path` validation to reject absolute paths (Unix `/`, `~`, Windows `C:\`)
+- Added 4 tests for path validation (unix, home dir, windows, relative paths)
+- Added deprecation note to `OtherEvidence` docstring
+- Improved `LinkEvidence` documentation with examples and usage guidance
+- Fixed `Field()` wrapper consistency on `ArtifactEvidence.description` and `LinkEvidence.description`
+
 ### File List
+
+- src/resume_as_code/models/work_unit.py (modified - added NarrativeEvidence, LinkEvidence, enhanced ArtifactEvidence, added local_path validation)
+- tests/unit/models/test_evidence.py (new - 36 tests for evidence types including path validation)
+- tests/unit/test_work_unit_schema.py (modified - updated evidence type tests)
+- schemas/work-unit.schema.json (regenerated - includes new evidence types)
+- _bmad-output/implementation-artifacts/sprint-status.yaml (modified - story status tracking)
 
