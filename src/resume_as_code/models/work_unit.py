@@ -6,9 +6,20 @@ import re
 import warnings
 from datetime import date
 from enum import Enum
-from typing import Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    PrivateAttr,
+    field_validator,
+    model_validator,
+)
+
+if TYPE_CHECKING:
+    from resume_as_code.models.position import Position
 
 # Weak action verbs to flag per Content Strategy standards
 WEAK_VERBS: frozenset[str] = frozenset(
@@ -259,6 +270,36 @@ class WorkUnit(BaseModel):
 
     # Schema version
     schema_version: str = Field(default="1.0.0")
+
+    # Private attribute for attached Position (not serialized)
+    _position: Position | None = PrivateAttr(default=None)
+
+    @property
+    def position(self) -> Position | None:
+        """Get attached Position object.
+
+        Returns None if position_id is None or Position hasn't been attached.
+        Use WorkUnitLoader.load_with_positions() to attach positions.
+        """
+        return self._position
+
+    def attach_position(self, position: Position) -> None:
+        """Attach a Position object to this WorkUnit.
+
+        Args:
+            position: Position to attach.
+
+        Raises:
+            ValueError: If position.id doesn't match position_id.
+        """
+        if self.position_id is None:
+            raise ValueError("Cannot attach position to WorkUnit without position_id")
+        if position.id != self.position_id:
+            raise ValueError(
+                f"Position ID mismatch: WorkUnit.position_id={self.position_id!r}, "
+                f"Position.id={position.id!r}"
+            )
+        self._position = position
 
     @field_validator("actions")
     @classmethod

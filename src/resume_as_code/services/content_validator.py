@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from difflib import get_close_matches
 from typing import Any
 
 # Weak verbs with strong alternatives
@@ -178,12 +179,21 @@ def validate_position_reference(
         )
     elif valid_position_ids is not None and position_id not in valid_position_ids:
         # Invalid position_id reference is a serious issue
+        # Try to suggest similar position IDs
+        suggestion_text = (
+            "Run 'resume list positions' to see valid IDs or create with 'resume new position'"
+        )
+        if valid_position_ids:
+            matches = get_close_matches(position_id, list(valid_position_ids), n=1, cutoff=0.6)
+            if matches:
+                suggestion_text = f"Did you mean '{matches[0]}'? {suggestion_text}"
+
         warnings.append(
             ContentWarning(
                 code="INVALID_POSITION_ID",
                 message=f"position_id '{position_id}' not found in positions.yaml",
                 path=f"{file_path}:position_id",
-                suggestion="Add position to positions.yaml or fix the position_id value",
+                suggestion=suggestion_text,
                 severity="error",
             )
         )

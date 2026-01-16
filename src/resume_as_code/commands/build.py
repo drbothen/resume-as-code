@@ -12,6 +12,8 @@ import click
 from resume_as_code.config import get_config
 from resume_as_code.models.plan import SavedPlan
 from resume_as_code.models.resume import ContactInfo, ResumeData
+from resume_as_code.services.position_service import PositionService
+from resume_as_code.services.work_unit_loader import WorkUnitLoader
 from resume_as_code.services.work_unit_service import load_all_work_units
 from resume_as_code.utils.console import console, info, success
 from resume_as_code.utils.errors import handle_errors
@@ -58,6 +60,11 @@ if TYPE_CHECKING:
     default=None,
     help="Template to use for rendering (default: from config or 'modern')",
 )
+@click.option(
+    "--strict-positions",
+    is_flag=True,
+    help="Validate position_id references exist before building (fail on invalid refs)",
+)
 @click.pass_context
 @handle_errors
 def build_command(
@@ -67,6 +74,7 @@ def build_command(
     output_format: str | None,
     output_dir: Path | None,
     template_name: str | None,
+    strict_positions: bool,
 ) -> None:
     """Build resume from plan or job description.
 
@@ -112,7 +120,7 @@ def build_command(
     else:
         # Generate implicit plan (same as `resume plan`) (AC: #2)
         assert jd_path is not None  # Guaranteed by validation above
-        plan, jd_keywords = _generate_implicit_plan(jd_path, config)
+        plan, jd_keywords = _generate_implicit_plan(jd_path, config, strict_positions)
         if not ctx.obj.quiet:
             info("Generated implicit plan from JD")
 
@@ -166,12 +174,17 @@ def build_command(
         success(f"Build complete! Files in: {actual_output_dir}")
 
 
-def _generate_implicit_plan(jd_path: Path, config: ResumeConfig) -> tuple[SavedPlan, set[str]]:
+def _generate_implicit_plan(
+    jd_path: Path,
+    config: ResumeConfig,
+    strict_positions: bool = False,
+) -> tuple[SavedPlan, set[str]]:
     """Generate plan on-the-fly from JD.
 
     Args:
         jd_path: Path to job description file.
         config: Application configuration.
+        strict_positions: If True, validate position_id references before planning.
 
     Returns:
         Tuple of (SavedPlan created from ranking results, JD keywords set).
@@ -184,6 +197,24 @@ def _generate_implicit_plan(jd_path: Path, config: ResumeConfig) -> tuple[SavedP
 
     # Load Work Units
     work_units = load_all_work_units(config.work_units_dir)
+
+    # Validate position references if strict mode enabled (Story 7.6)
+    if strict_positions:
+        position_service = PositionService(config.positions_path)
+        positions = position_service.load_positions()
+        # Always validate - even if positions dict is empty, work units
+        # with position_id references should fail validation
+        loader = WorkUnitLoader(config.work_units_dir)
+        try:
+            # This validates and raises on invalid refs
+            loader.load_with_positions(positions)
+        except Exception as e:
+            from resume_as_code.models.errors import ValidationError
+
+            raise ValidationError(
+                message=f"Position reference validation failed: {e}",
+                suggestion=("Fix invalid position_ids or run 'resume validate --check-positions'"),
+            ) from e
 
     # Rank with scoring weights from config (AC: #3)
     ranker = HybridRanker()

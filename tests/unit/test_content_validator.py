@@ -9,6 +9,7 @@ from resume_as_code.services.content_validator import (
     ContentWarning,
     validate_content_density,
     validate_content_quality,
+    validate_position_reference,
 )
 
 
@@ -320,3 +321,70 @@ class TestContentDensity:
         assert BULLET_CHAR_MIN == 100
         assert BULLET_CHAR_MAX == 160
         assert BULLET_CHAR_MIN < BULLET_CHAR_MAX
+
+
+class TestPositionReference:
+    """Tests for position reference validation (Story 7.6)."""
+
+    def test_missing_position_id_is_info_level(self) -> None:
+        """Missing position_id should be info severity, not error (AC #2)."""
+        work_unit: dict[str, object] = {"id": "wu-2024-01-01-test"}
+        warnings = validate_position_reference(work_unit, "test.yaml")
+
+        assert len(warnings) == 1
+        assert warnings[0].code == "MISSING_POSITION_ID"
+        assert warnings[0].severity == "info"
+
+    def test_valid_position_id_no_warning(self) -> None:
+        """Valid position_id should not produce warnings."""
+        work_unit = {"position_id": "pos-acme-engineer"}
+        valid_ids = {"pos-acme-engineer", "pos-other-company"}
+        warnings = validate_position_reference(work_unit, "test.yaml", valid_ids)
+
+        assert len(warnings) == 0
+
+    def test_invalid_position_id_is_error_level(self) -> None:
+        """Invalid position_id should be error severity (AC #1)."""
+        work_unit = {"position_id": "pos-nonexistent"}
+        valid_ids = {"pos-acme-engineer"}
+        warnings = validate_position_reference(work_unit, "test.yaml", valid_ids)
+
+        assert len(warnings) == 1
+        assert warnings[0].code == "INVALID_POSITION_ID"
+        assert warnings[0].severity == "error"
+
+    def test_invalid_position_id_includes_value_in_message(self) -> None:
+        """Error message should include the invalid position_id value (AC #1)."""
+        work_unit = {"position_id": "pos-nonexistent"}
+        valid_ids = {"pos-acme-engineer"}
+        warnings = validate_position_reference(work_unit, "test.yaml", valid_ids)
+
+        assert "pos-nonexistent" in warnings[0].message
+
+    def test_invalid_position_id_suggests_similar(self) -> None:
+        """Error should suggest similar position ID if available (AC #1)."""
+        work_unit = {"position_id": "pos-acme-enginee"}  # Typo
+        valid_ids = {"pos-acme-engineer", "pos-other-company"}
+        warnings = validate_position_reference(work_unit, "test.yaml", valid_ids)
+
+        assert len(warnings) == 1
+        # Should suggest the similar ID
+        assert "pos-acme-engineer" in warnings[0].suggestion
+        assert "Did you mean" in warnings[0].suggestion
+
+    def test_invalid_position_id_suggests_list_command(self) -> None:
+        """Error should suggest running 'resume list positions'."""
+        work_unit = {"position_id": "pos-totally-different"}
+        valid_ids = {"pos-acme-engineer"}
+        warnings = validate_position_reference(work_unit, "test.yaml", valid_ids)
+
+        assert "resume list positions" in warnings[0].suggestion
+
+    def test_no_valid_ids_provided_only_checks_missing(self) -> None:
+        """Without valid_ids, only missing position_id is checked."""
+        work_unit = {"position_id": "pos-any-value"}
+        # valid_position_ids is None (not provided)
+        warnings = validate_position_reference(work_unit, "test.yaml", None)
+
+        # Should not produce any warnings when valid_ids not provided
+        assert len(warnings) == 0

@@ -1,6 +1,6 @@
 # Story 7.6: Position Reference Integrity
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -33,35 +33,35 @@ So that **invalid references are caught early and Position data is efficiently a
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add Position attachment to WorkUnit model (AC: #4)
-  - [ ] 1.1 Add `_position: Position | None = PrivateAttr(default=None)` to WorkUnit
-  - [ ] 1.2 Add `position` property that returns `self._position`
-  - [ ] 1.3 Add `attach_position(position: Position)` method with ID validation
-  - [ ] 1.4 Add unit tests for position attachment
+- [x] Task 1: Add Position attachment to WorkUnit model (AC: #4)
+  - [x] 1.1 Add `_position: Position | None = PrivateAttr(default=None)` to WorkUnit
+  - [x] 1.2 Add `position` property that returns `self._position`
+  - [x] 1.3 Add `attach_position(position: Position)` method with ID validation
+  - [x] 1.4 Add unit tests for position attachment
 
-- [ ] Task 2: Create WorkUnitLoader service (AC: #3)
-  - [ ] 2.1 Create `src/resume_as_code/services/work_unit_loader.py`
-  - [ ] 2.2 Implement `load_all(directory: Path) -> list[WorkUnit]` method
-  - [ ] 2.3 Implement `load_with_positions(positions: dict[str, Position]) -> list[WorkUnit]`
-  - [ ] 2.4 Validate position_id references and attach Position objects
-  - [ ] 2.5 Raise clear ValidationError for invalid position_ids
+- [x] Task 2: Create WorkUnitLoader service (AC: #3)
+  - [x] 2.1 Create `src/resume_as_code/services/work_unit_loader.py`
+  - [x] 2.2 Implement `load_all(directory: Path) -> list[WorkUnit]` method
+  - [x] 2.3 Implement `load_with_positions(positions: dict[str, Position]) -> list[WorkUnit]`
+  - [x] 2.4 Validate position_id references and attach Position objects
+  - [x] 2.5 Raise clear ValidationError for invalid position_ids
 
-- [ ] Task 3: Enhance error messages (AC: #1, #2)
-  - [ ] 3.1 Include invalid position_id value in error message
-  - [ ] 3.2 Suggest similar position IDs if available (fuzzy match)
-  - [ ] 3.3 Include suggestion to run `resume list positions` or create position
-  - [ ] 3.4 Ensure missing position_id is info-level (not error)
+- [x] Task 3: Enhance error messages (AC: #1, #2)
+  - [x] 3.1 Include invalid position_id value in error message
+  - [x] 3.2 Suggest similar position IDs if available (fuzzy match)
+  - [x] 3.3 Include suggestion to run `resume list positions` or create position
+  - [x] 3.4 Ensure missing position_id is info-level (not error)
 
-- [ ] Task 4: Integrate with existing code (AC: #1, #3)
-  - [ ] 4.1 Update `resume plan` to use WorkUnitLoader
-  - [ ] 4.2 Update `resume build` to use WorkUnitLoader
-  - [ ] 4.3 Keep backward compatibility with existing validate command
-  - [ ] 4.4 Ensure `--check-positions` flag still works as expected
+- [x] Task 4: Integrate with existing code (AC: #1, #3)
+  - [x] 4.1 Update `resume plan` to use WorkUnitLoader
+  - [x] 4.2 Update `resume build` to use WorkUnitLoader
+  - [x] 4.3 Keep backward compatibility with existing validate command
+  - [x] 4.4 Ensure `--check-positions` flag still works as expected
 
-- [ ] Task 5: Add tests and quality checks
-  - [ ] 5.1 Unit tests for WorkUnitLoader
-  - [ ] 5.2 Integration tests for validation flow
-  - [ ] 5.3 Run `ruff check` and `mypy --strict`
+- [x] Task 5: Add tests and quality checks
+  - [x] 5.1 Unit tests for WorkUnitLoader
+  - [x] 5.2 Integration tests for validation flow
+  - [x] 5.3 Run `ruff check` and `mypy --strict`
 
 ## Dev Notes
 
@@ -450,11 +450,64 @@ From `project-context.md`:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+- **Task 1**: Added `_position` PrivateAttr, `position` property, and `attach_position()` method to WorkUnit model. Uses TYPE_CHECKING import to avoid circular dependencies.
+- **Task 2**: Created WorkUnitLoader service with `load_all()`, `load_with_positions()`, and `validate_position_references()` methods. Includes fuzzy matching for position ID suggestions using `difflib.get_close_matches`.
+- **Task 3**: Enhanced `validate_position_reference()` in content_validator.py with fuzzy matching suggestions for invalid position IDs.
+- **Task 4**: Added `--strict-positions` flag to both `plan` and `build` commands. Integration uses WorkUnitLoader for early validation when flag is set. Backward compatibility maintained - existing dictionary-based flow unchanged.
+- **Task 5**: All 21 new tests pass. Total test suite: 1596 tests passing. ruff and mypy --strict pass on all modified files.
+
 ### File List
+
+**New Files:**
+- `src/resume_as_code/services/work_unit_loader.py` - WorkUnitLoader service
+- `tests/unit/models/test_work_unit_position.py` - Position attachment unit tests (5 tests)
+- `tests/unit/services/test_work_unit_loader.py` - WorkUnitLoader unit tests (9 tests)
+
+**Modified Files:**
+- `src/resume_as_code/models/work_unit.py` - Added position attachment capability
+- `src/resume_as_code/services/content_validator.py` - Added fuzzy matching for position suggestions
+- `src/resume_as_code/commands/plan.py` - Added --strict-positions flag
+- `src/resume_as_code/commands/build.py` - Added --strict-positions flag
+- `tests/unit/test_content_validator.py` - Added TestPositionReference class (7 tests)
+
+## Code Review
+
+### Review Date
+2026-01-16
+
+### Reviewer
+Amelia (Dev Agent - Adversarial Code Review)
+
+### Issues Found and Remediated
+
+1. **Lint UP035** - Fixed import `typing.Generator` → `collections.abc.Generator` in test file
+2. **Broad Exception catch** - Changed `Exception` to `PydanticValidationError` in work_unit_loader.py:71
+3. **Empty positions edge case** - Fixed `if positions:` check in plan.py and build.py to always validate
+4. **Missing tests** - Added 4 tests for `validate_position_references()` public method
+5. **Docstring accuracy** - Fixed "sorted by filename" → "sorted alphabetically by file path"
+
+### Tech Debt Noted
+
+**Duplicate Position Validation Pattern:**
+- `content_validator.py:validate_position_reference()` - returns warnings for validate command
+- `work_unit_loader.py:validate_position_references()` - returns tuple for plan/build commands
+
+Both use `difflib.get_close_matches` for suggestions. This duplication exists because:
+1. The validate command needs individual file-level warnings
+2. The loader service needs batch validation with attachment
+
+**Recommendation for Future:** Consider extracting shared fuzzy matching logic to a utility function if additional consumers emerge.
+
+### Final Test Results
+- All tests pass: 1600/1600 (added 4 new tests for validate_position_references)
+- ruff check: PASS
+- mypy --strict: PASS
 

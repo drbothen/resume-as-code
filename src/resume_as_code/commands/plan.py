@@ -33,6 +33,7 @@ from resume_as_code.services.jd_parser import parse_jd_file
 from resume_as_code.services.position_service import PositionService
 from resume_as_code.services.ranker import HybridRanker, RankingResult
 from resume_as_code.services.skill_curator import CurationResult, SkillCurator
+from resume_as_code.services.work_unit_loader import WorkUnitLoader
 from resume_as_code.services.work_unit_service import load_all_work_units
 from resume_as_code.utils.console import console, info, json_output, success, warning
 from resume_as_code.utils.errors import handle_errors
@@ -208,6 +209,11 @@ class PublicationsPreview:
     is_flag=True,
     help="Show all excluded Work Units with reasons",
 )
+@click.option(
+    "--strict-positions",
+    is_flag=True,
+    help="Validate position_id references exist before planning (fail on invalid refs)",
+)
 @click.pass_context
 @handle_errors
 def plan_command(
@@ -218,6 +224,7 @@ def plan_command(
     top: int,
     show_excluded: bool,
     show_all_excluded: bool,
+    strict_positions: bool,
 ) -> None:
     """Preview which Work Units will be included in a resume.
 
@@ -241,6 +248,24 @@ def plan_command(
     if not work_units:
         warning("No Work Units found. Run `resume new work-unit` to create some.")
         return
+
+    # Validate position references if strict mode enabled (Story 7.6)
+    if strict_positions:
+        position_service = PositionService(config.positions_path)
+        positions = position_service.load_positions()
+        # Always validate - even if positions dict is empty, work units
+        # with position_id references should fail validation
+        loader = WorkUnitLoader(config.work_units_dir)
+        try:
+            # This validates and raises on invalid refs
+            loader.load_with_positions(positions)
+        except Exception as e:
+            from resume_as_code.models.errors import ValidationError
+
+            raise ValidationError(
+                message=f"Position reference validation failed: {e}",
+                suggestion=("Fix invalid position_ids or run 'resume validate --check-positions'"),
+            ) from e
 
     # Parse JD
     jd = parse_jd_file(jd_path)
