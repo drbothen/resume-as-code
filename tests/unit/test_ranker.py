@@ -1098,7 +1098,7 @@ class TestScoreBlending:
     """Tests for relevance/recency score blending (Story 7.9 AC#5)."""
 
     def test_default_blend_80_20(self, mock_embedding_service: MagicMock) -> None:
-        """AC#5: Default blend is 80% relevance, 20% recency (with neutral seniority)."""
+        """AC#5: Default blend is 80% relevance, 20% recency (with neutral seniority/impact)."""
         from resume_as_code.models.config import ScoringWeights
         from resume_as_code.services.ranker import HybridRanker
 
@@ -1106,9 +1106,10 @@ class TestScoreBlending:
         relevance = [1.0, 0.5, 0.0]
         recency = [0.5, 1.0, 1.0]
         seniority = [1.0, 1.0, 1.0]  # Neutral seniority (no impact)
-        weights = ScoringWeights(recency_blend=0.2, seniority_blend=0.0)
+        impact = [0.5, 0.5, 0.5]  # Neutral impact (Story 7.13)
+        weights = ScoringWeights(recency_blend=0.2, seniority_blend=0.0, impact_blend=0.0)
 
-        blended = ranker._blend_scores(relevance, recency, seniority, weights)
+        blended = ranker._blend_scores(relevance, recency, seniority, impact, weights)
 
         # final[0] = 0.8 × 1.0 + 0.2 × 0.5 = 0.9
         # final[1] = 0.8 × 0.5 + 0.2 × 1.0 = 0.6
@@ -1125,8 +1126,9 @@ class TestScoreBlending:
         relevance = [1.0, 0.5, 0.0]
         recency = [0.5, 1.0, 1.0]
         seniority = [1.0, 1.0, 1.0]  # Neutral seniority
+        impact = [0.5, 0.5, 0.5]  # Neutral impact (Story 7.13)
 
-        blended = ranker._blend_scores(relevance, recency, seniority, None)
+        blended = ranker._blend_scores(relevance, recency, seniority, impact, None)
 
         assert blended == relevance
 
@@ -1139,9 +1141,10 @@ class TestScoreBlending:
         relevance = [1.0, 0.5, 0.0]
         recency = [0.0, 0.0, 0.0]  # Old work units
         seniority = [1.0, 1.0, 1.0]  # Neutral seniority
-        weights = ScoringWeights(recency_blend=0.0, seniority_blend=0.0)
+        impact = [0.5, 0.5, 0.5]  # Neutral impact (Story 7.13)
+        weights = ScoringWeights(recency_blend=0.0, seniority_blend=0.0, impact_blend=0.0)
 
-        blended = ranker._blend_scores(relevance, recency, seniority, weights)
+        blended = ranker._blend_scores(relevance, recency, seniority, impact, weights)
 
         assert blended == relevance
 
@@ -1154,9 +1157,10 @@ class TestScoreBlending:
         relevance = [1.0, 0.0]
         recency = [0.0, 1.0]
         seniority = [1.0, 1.0]  # Neutral seniority
-        weights = ScoringWeights(recency_blend=0.5, seniority_blend=0.0)
+        impact = [0.5, 0.5]  # Neutral impact (Story 7.13)
+        weights = ScoringWeights(recency_blend=0.5, seniority_blend=0.0, impact_blend=0.0)
 
-        blended = ranker._blend_scores(relevance, recency, seniority, weights)
+        blended = ranker._blend_scores(relevance, recency, seniority, impact, weights)
 
         # final[0] = 0.5 × 1.0 + 0.5 × 0.0 = 0.5
         # final[1] = 0.5 × 0.0 + 0.5 × 1.0 = 0.5

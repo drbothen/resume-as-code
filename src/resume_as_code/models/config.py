@@ -147,6 +147,24 @@ class ScoringWeights(BaseModel):
         description="How much seniority alignment affects final score (0.1 = 10%).",
     )
 
+    # Impact category matching (Story 7.13)
+    use_impact_matching: bool = Field(
+        default=True,
+        description="Enable impact category matching against role type.",
+    )
+    impact_blend: float = Field(
+        default=0.1,
+        ge=0.0,
+        le=0.3,
+        description="How much impact alignment affects final score (0.1 = 10%).",
+    )
+    quantified_boost: float = Field(
+        default=1.25,
+        ge=1.0,
+        le=2.0,
+        description="Multiplier for work units with quantified outcomes (1.25 = 25% boost).",
+    )
+
     @model_validator(mode="after")
     def validate_section_weights_sum(self) -> ScoringWeights:
         """Validate section weights sum to ~1.0 when sectioned semantic is enabled."""

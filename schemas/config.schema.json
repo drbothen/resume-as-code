@@ -560,6 +560,28 @@
           "minimum": 0.0,
           "title": "Seniority Blend",
           "type": "number"
+        },
+        "use_impact_matching": {
+          "default": true,
+          "description": "Enable impact category matching against role type.",
+          "title": "Use Impact Matching",
+          "type": "boolean"
+        },
+        "impact_blend": {
+          "default": 0.1,
+          "description": "How much impact alignment affects final score (0.1 = 10%).",
+          "maximum": 0.3,
+          "minimum": 0.0,
+          "title": "Impact Blend",
+          "type": "number"
+        },
+        "quantified_boost": {
+          "default": 1.25,
+          "description": "Multiplier for work units with quantified outcomes (1.25 = 25% boost).",
+          "maximum": 2.0,
+          "minimum": 1.0,
+          "title": "Quantified Boost",
+          "type": "number"
         }
       },
       "title": "ScoringWeights",

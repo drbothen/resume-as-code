@@ -138,14 +138,14 @@ class TestRankerSeniorityScoring:
         relevance = [0.8, 0.6]
         recency = [1.0, 0.5]
         seniority = [1.0, 0.6]  # First matches, second has underqualified penalty
+        impact = [0.5, 0.5]  # Neutral impact (Story 7.13)
 
         blended = ranker._blend_scores(
-            relevance, recency, seniority, scoring_weights_with_seniority
+            relevance, recency, seniority, impact, scoring_weights_with_seniority
         )
 
-        # With recency_blend=0.2, seniority_blend=0.1, relevance_blend=0.7
-        # First: 0.7*0.8 + 0.2*1.0 + 0.1*1.0 = 0.56 + 0.2 + 0.1 = 0.86
-        # Second: 0.7*0.6 + 0.2*0.5 + 0.1*0.6 = 0.42 + 0.1 + 0.06 = 0.58
+        # With recency_blend=0.2, seniority_blend=0.1, impact_blend=0.1, relevance_blend=0.6
+        # First should still score higher than second
         assert len(blended) == 2
         assert blended[0] > blended[1]  # First should score higher
 

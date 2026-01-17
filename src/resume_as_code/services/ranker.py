@@ -10,6 +10,12 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 from rank_bm25 import BM25Okapi  # type: ignore[import-untyped]
 
+from resume_as_code.services.impact_classifier import (
+    calculate_impact_alignment,
+    classify_impact,
+    has_quantified_impact,
+    infer_role_type,
+)
 from resume_as_code.services.seniority_inference import (
     calculate_seniority_alignment,
     infer_seniority,
@@ -41,6 +47,7 @@ class RankingResult:
     semantic_rank: int
     match_reasons: list[str] = field(default_factory=list)
     seniority_score: float = field(default=1.0)  # 0.0 to 1.0, Story 7.12
+    impact_score: float = field(default=0.5)  # 0.0 to 1.0, Story 7.13
 
 
 @dataclass
@@ -161,9 +168,12 @@ class HybridRanker:
             self._calculate_seniority_score(wu, jd, scoring_weights, positions) for wu in work_units
         ]
 
-        # Blend relevance, recency, and seniority scores
+        # Calculate impact alignment scores (Story 7.13)
+        impact_scores = [self._calculate_impact_score(wu, jd, scoring_weights) for wu in work_units]
+
+        # Blend relevance, recency, seniority, and impact scores
         final_scores = self._blend_scores(
-            normalized_relevance, recency_scores, seniority_scores, scoring_weights
+            normalized_relevance, recency_scores, seniority_scores, impact_scores, scoring_weights
         )
 
         # Sort by final score (higher is better), then by ID for determinism
@@ -177,7 +187,7 @@ class HybridRanker:
         results: list[RankingResult] = []
         for idx in sorted_indices[: top_k * 2]:
             match_reasons = self._extract_match_reasons(
-                work_units[idx], jd, seniority_scores[idx], scoring_weights
+                work_units[idx], jd, seniority_scores[idx], impact_scores[idx], scoring_weights
             )
             results.append(
                 RankingResult(
@@ -188,6 +198,7 @@ class HybridRanker:
                     semantic_rank=semantic_ranks[idx],
                     match_reasons=match_reasons,
                     seniority_score=seniority_scores[idx],
+                    impact_score=impact_scores[idx],
                 )
             )
 
@@ -502,12 +513,13 @@ class HybridRanker:
         work_unit: dict[str, Any],
         jd: JobDescription,
         seniority_score: float = 1.0,
+        impact_score: float = 0.5,
         scoring_weights: ScoringWeights | None = None,
     ) -> list[str]:
         """Extract reasons why this Work Unit matched.
 
         Returns up to 3 reasons explaining the match, with field indication.
-        Field types: Title match, Skills match, Experience match, Seniority.
+        Field types: Title match, Skills match, Experience match, Seniority, Impact.
         """
         reasons: list[str] = []
 
@@ -541,6 +553,11 @@ class HybridRanker:
                 reasons.append("Seniority level close to JD requirements")
             elif seniority_score < 0.5:
                 reasons.append(f"Seniority mismatch (score: {seniority_score:.0%})")
+
+        # Impact alignment reason (Story 7.13 - AC6)
+        impact_reason = self._generate_impact_reason(work_unit, jd, impact_score, scoring_weights)
+        if impact_reason:
+            reasons.append(impact_reason)
 
         # Limit to max reasons (prevents UI clutter)
         if reasons:
@@ -656,25 +673,130 @@ class HybridRanker:
         # Calculate alignment
         return calculate_seniority_alignment(wu_level, jd.experience_level)
 
+    def _calculate_impact_score(
+        self,
+        work_unit: dict[str, Any],
+        jd: JobDescription,
+        scoring_weights: ScoringWeights | None,
+    ) -> float:
+        """Calculate impact alignment score for a work unit (Story 7.13).
+
+        Returns 0.5 (neutral) if impact matching is disabled.
+
+        Args:
+            work_unit: Work Unit dictionary.
+            jd: JobDescription with title for role inference.
+            scoring_weights: Scoring weights with impact config.
+
+        Returns:
+            Impact alignment score between 0.0 and 1.0.
+        """
+        # No impact matching if disabled or no weights
+        if scoring_weights is None or not scoring_weights.use_impact_matching:
+            return 0.5
+
+        # Build outcome text from all outcome fields
+        outcome = work_unit.get("outcome", {})
+        if isinstance(outcome, dict):
+            outcome_parts = [
+                outcome.get("result", ""),
+                outcome.get("quantified_impact", ""),
+                outcome.get("business_value", ""),
+            ]
+        else:
+            outcome_parts = [str(outcome) if outcome else ""]
+
+        outcome_text = " ".join(filter(None, outcome_parts))
+
+        # Classify work unit impacts
+        impacts = classify_impact(outcome_text)
+
+        # Check for quantification
+        is_quantified = has_quantified_impact(outcome_text)
+
+        # Infer role type from JD
+        role_type = infer_role_type(jd.title)
+
+        # Calculate alignment with configurable quantified boost
+        return calculate_impact_alignment(
+            impacts,
+            role_type,
+            is_quantified,
+            quantified_boost=scoring_weights.quantified_boost,
+        )
+
+    def _generate_impact_reason(
+        self,
+        work_unit: dict[str, Any],
+        jd: JobDescription,
+        impact_score: float,
+        scoring_weights: ScoringWeights | None,
+    ) -> str | None:
+        """Generate human-readable impact alignment reason (AC6).
+
+        Args:
+            work_unit: Work Unit dictionary.
+            jd: JobDescription with title for role inference.
+            impact_score: Calculated impact alignment score.
+            scoring_weights: Scoring weights with impact config.
+
+        Returns:
+            Human-readable reason string, or None if not significant.
+        """
+        if scoring_weights is None or not scoring_weights.use_impact_matching:
+            return None
+
+        # Build outcome text
+        outcome = work_unit.get("outcome", {})
+        if isinstance(outcome, dict):
+            outcome_parts = [
+                outcome.get("result", ""),
+                outcome.get("quantified_impact", ""),
+                outcome.get("business_value", ""),
+            ]
+        else:
+            outcome_parts = [str(outcome) if outcome else ""]
+
+        outcome_text = " ".join(filter(None, outcome_parts))
+
+        impacts = classify_impact(outcome_text)
+        role_type = infer_role_type(jd.title)
+
+        if not impacts:
+            return None
+
+        top_impact = impacts[0].category.capitalize()
+        role_display = role_type.capitalize()
+
+        if impact_score >= 0.7:
+            return f"{top_impact} impact aligns with {role_display} role"
+        elif impact_score >= 0.4:
+            return f"{top_impact} impact partially relevant to {role_display} role"
+        else:
+            return None  # Low alignment - don't highlight
+
     def _blend_scores(
         self,
         relevance_scores: list[float],
         recency_scores: list[float],
         seniority_scores: list[float],
+        impact_scores: list[float],
         scoring_weights: ScoringWeights | None,
     ) -> list[float]:
-        """Blend relevance, recency, and seniority scores.
+        """Blend relevance, recency, seniority, and impact scores.
 
         Formula: final = relevance × relevance_blend
                        + recency × recency_blend
                        + seniority × seniority_blend
+                       + impact × impact_blend
 
-        Where: relevance_blend = 1.0 - recency_blend - seniority_blend
+        Where: relevance_blend = 1.0 - recency_blend - seniority_blend - impact_blend
 
         Args:
             relevance_scores: Normalized relevance scores (0-1).
             recency_scores: Recency decay scores (0-1).
             seniority_scores: Seniority alignment scores (0-1).
+            impact_scores: Impact alignment scores (0-1).
             scoring_weights: Weights configuration.
 
         Returns:
@@ -685,11 +807,15 @@ class HybridRanker:
 
         recency_blend = scoring_weights.recency_blend
         seniority_blend = scoring_weights.seniority_blend
-        relevance_blend = 1.0 - recency_blend - seniority_blend
+        impact_blend = scoring_weights.impact_blend
+        relevance_blend = 1.0 - recency_blend - seniority_blend - impact_blend
 
         return [
-            (relevance_blend * rel) + (recency_blend * rec) + (seniority_blend * sen)
-            for rel, rec, sen in zip(
-                relevance_scores, recency_scores, seniority_scores, strict=True
+            (relevance_blend * rel)
+            + (recency_blend * rec)
+            + (seniority_blend * sen)
+            + (impact_blend * imp)
+            for rel, rec, sen, imp in zip(
+                relevance_scores, recency_scores, seniority_scores, impact_scores, strict=True
             )
         ]
