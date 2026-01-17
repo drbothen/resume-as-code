@@ -571,6 +571,16 @@ Manage the embedding cache used for semantic matching.
 
 ## AI Agent Workflows
 
+### Initializing New Project
+
+```bash
+# Quick setup with placeholders (non-interactive)
+resume init --non-interactive
+
+# Check if already initialized
+resume config
+```
+
 ### Adding Work Experience (Inline - Preferred for LLM)
 
 ```bash
@@ -599,6 +609,7 @@ resume new work-unit \
 
 | User Request | Agent Action |
 |--------------|--------------|
+| "Start a new resume project" | Initialize: `resume init --non-interactive` |
 | "Add my job history" | Create positions: `resume new position "..."` |
 | "I just accomplished something" | Quick capture: `resume new work-unit --position "..."` |
 | "Generate resume for this job" | `resume plan --jd file.txt && resume build` |
@@ -610,11 +621,14 @@ resume new work-unit \
 ### Non-Interactive (LLM-optimized)
 
 ```bash
-# 1. Create positions (your job history)
+# 1. Initialize project (creates .resume.yaml, work-units/, positions.yaml)
+resume init --non-interactive
+
+# 2. Create positions (your job history)
 resume new position "TechCorp|Senior Engineer|2022-01|"
 resume new position "StartupXYZ|Software Developer|2019-06|2021-12"
 
-# 2. Add work units (achievements)
+# 3. Add work units (achievements)
 resume new work-unit \
   --position-id pos-techcorp-senior-engineer \
   --title "Reduced deployment time by 80%" \
@@ -622,7 +636,7 @@ resume new work-unit \
   --action "Built CI/CD pipeline with GitHub Actions" \
   --result "Deployments now take 48 minutes"
 
-# 3. Validate and generate
+# 4. Validate and generate
 resume validate --check-positions
 resume plan --jd job-description.txt
 resume build --jd job-description.txt
@@ -631,13 +645,16 @@ resume build --jd job-description.txt
 ### Interactive (Human-friendly)
 
 ```bash
-# 1. Create position (prompts for each field)
+# 1. Initialize project (prompts for profile info)
+resume init
+
+# 2. Create position (prompts for each field)
 resume new position
 
-# 2. Create work unit (opens editor with template)
+# 3. Create work unit (opens editor with template)
 resume new work-unit --archetype greenfield
 
-# 3. Validate and generate
+# 4. Validate and generate
 resume validate --check-positions
 resume plan --jd job-description.txt
 resume build --jd job-description.txt
