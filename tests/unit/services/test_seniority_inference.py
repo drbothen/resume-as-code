@@ -76,7 +76,10 @@ class TestInferSeniorityFromTitle:
 
 
 class TestSeniorityAlignment:
-    """Test alignment score calculation."""
+    """Test alignment score calculation with asymmetric penalties.
+
+    Per AC4: overqualified gets slight penalty, underqualified gets larger penalty.
+    """
 
     def test_exact_match(self) -> None:
         """Exact match should return 1.0."""
@@ -87,30 +90,60 @@ class TestSeniorityAlignment:
         )
         assert calculate_seniority_alignment(ExperienceLevel.ENTRY, ExperienceLevel.ENTRY) == 1.0
 
-    def test_one_level_off(self) -> None:
-        """One level difference should return 0.85."""
-        assert calculate_seniority_alignment(ExperienceLevel.SENIOR, ExperienceLevel.LEAD) == 0.85
-        assert calculate_seniority_alignment(ExperienceLevel.LEAD, ExperienceLevel.SENIOR) == 0.85
+    def test_overqualified_one_level(self) -> None:
+        """Overqualified by one level should get slight penalty (0.9)."""
+        # LEAD (rank 4) applying for SENIOR (rank 3) job
+        assert calculate_seniority_alignment(ExperienceLevel.LEAD, ExperienceLevel.SENIOR) == 0.9
 
-    def test_two_levels_off(self) -> None:
-        """Two level difference should return 0.65."""
-        assert calculate_seniority_alignment(ExperienceLevel.SENIOR, ExperienceLevel.STAFF) == 0.65
-        assert calculate_seniority_alignment(ExperienceLevel.MID, ExperienceLevel.LEAD) == 0.65
+    def test_underqualified_one_level(self) -> None:
+        """Underqualified by one level should get moderate penalty (0.8)."""
+        # SENIOR (rank 3) applying for LEAD (rank 4) job
+        assert calculate_seniority_alignment(ExperienceLevel.SENIOR, ExperienceLevel.LEAD) == 0.8
 
-    def test_three_levels_off(self) -> None:
-        """Three level difference should return 0.45."""
+    def test_overqualified_two_levels(self) -> None:
+        """Overqualified by two levels should get penalty (0.8)."""
+        # STAFF (rank 5) applying for SENIOR (rank 3) job
+        assert calculate_seniority_alignment(ExperienceLevel.STAFF, ExperienceLevel.SENIOR) == 0.8
+
+    def test_underqualified_two_levels(self) -> None:
+        """Underqualified by two levels should get larger penalty (0.6)."""
+        # MID (rank 2) applying for LEAD (rank 4) job
+        assert calculate_seniority_alignment(ExperienceLevel.MID, ExperienceLevel.LEAD) == 0.6
+
+    def test_overqualified_three_levels(self) -> None:
+        """Overqualified by three levels should get penalty (0.75)."""
+        # PRINCIPAL (rank 6) applying for SENIOR (rank 3) job
         assert (
-            calculate_seniority_alignment(ExperienceLevel.SENIOR, ExperienceLevel.PRINCIPAL) == 0.45
+            calculate_seniority_alignment(ExperienceLevel.PRINCIPAL, ExperienceLevel.SENIOR) == 0.75
         )
 
-    def test_major_mismatch(self) -> None:
-        """Major mismatch (4+ levels) should return 0.3."""
+    def test_underqualified_three_levels(self) -> None:
+        """Underqualified by three levels should get significant penalty (0.4)."""
+        # SENIOR (rank 3) applying for PRINCIPAL (rank 6) job
+        assert (
+            calculate_seniority_alignment(ExperienceLevel.SENIOR, ExperienceLevel.PRINCIPAL) == 0.4
+        )
+
+    def test_major_overqualified(self) -> None:
+        """Major overqualified (4+ levels) should return 0.7."""
+        # EXECUTIVE (rank 7) applying for ENTRY (rank 1) job
+        assert (
+            calculate_seniority_alignment(ExperienceLevel.EXECUTIVE, ExperienceLevel.ENTRY) == 0.7
+        )
+
+    def test_major_underqualified(self) -> None:
+        """Major underqualified (4+ levels) should return 0.3."""
+        # ENTRY (rank 1) applying for EXECUTIVE (rank 7) job
         assert (
             calculate_seniority_alignment(ExperienceLevel.ENTRY, ExperienceLevel.EXECUTIVE) == 0.3
         )
-        assert (
-            calculate_seniority_alignment(ExperienceLevel.EXECUTIVE, ExperienceLevel.ENTRY) == 0.3
-        )
+
+    def test_asymmetric_penalty(self) -> None:
+        """Overqualified should have less penalty than underqualified at same distance."""
+        # Both 2 levels apart, but different directions
+        overqualified = calculate_seniority_alignment(ExperienceLevel.STAFF, ExperienceLevel.SENIOR)
+        underqualified = calculate_seniority_alignment(ExperienceLevel.MID, ExperienceLevel.LEAD)
+        assert overqualified > underqualified  # 0.8 > 0.6
 
 
 class TestParseCurrency:

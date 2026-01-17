@@ -3,7 +3,7 @@
 **Epic:** Epic 7 - Schema & Data Model Refactoring
 **Story Points:** 5
 **Priority:** P3
-**Status:** Review
+**Status:** Done
 
 ---
 
@@ -252,28 +252,32 @@ def calculate_seniority_alignment(
 ) -> float:
     """Calculate alignment score between work unit and JD seniority.
 
+    Applies asymmetric penalties per AC4:
+    - Overqualified (wu > jd): slight penalty (executive applying for senior)
+    - Underqualified (wu < jd): larger penalty (entry applying for senior)
+
     Returns:
         Float between 0.0 and 1.0:
         - 1.0: Perfect match
-        - 0.8-0.9: One level off (slight penalty)
-        - 0.5-0.7: Two levels off (moderate penalty)
-        - 0.3-0.5: Three+ levels off (significant penalty)
+        - Overqualified: 0.9 (1 level), 0.8 (2), 0.75 (3), 0.7 (4+)
+        - Underqualified: 0.8 (1 level), 0.6 (2), 0.4 (3), 0.3 (4+)
     """
     wu_rank = _level_rank(work_unit_level)
     jd_rank = _level_rank(jd_level)
 
-    diff = abs(wu_rank - jd_rank)
+    diff = wu_rank - jd_rank  # Positive = overqualified, negative = underqualified
 
     if diff == 0:
         return 1.0
-    elif diff == 1:
-        return 0.85  # One level off - slight penalty
-    elif diff == 2:
-        return 0.65  # Two levels off - moderate penalty
-    elif diff == 3:
-        return 0.45  # Three levels off - significant penalty
+
+    if diff > 0:
+        # Overqualified: slight penalty
+        overqualified_scores = {1: 0.9, 2: 0.8, 3: 0.75}
+        return overqualified_scores.get(diff, 0.7)
     else:
-        return 0.3   # Four+ levels off - major mismatch
+        # Underqualified: larger penalty
+        underqualified_scores = {-1: 0.8, -2: 0.6, -3: 0.4}
+        return underqualified_scores.get(diff, 0.3)
 ```
 
 ### 3. Configuration Extension
@@ -451,7 +455,7 @@ class TestInferSeniorityFromTitle:
 
 
 class TestSeniorityAlignment:
-    """Test alignment score calculation."""
+    """Test alignment score calculation with asymmetric penalties."""
 
     def test_exact_match(self):
         score = calculate_seniority_alignment(
@@ -459,23 +463,35 @@ class TestSeniorityAlignment:
         )
         assert score == 1.0
 
-    def test_one_level_off(self):
+    def test_overqualified_one_level(self):
+        # LEAD applying for SENIOR job (overqualified)
+        score = calculate_seniority_alignment(
+            ExperienceLevel.LEAD, ExperienceLevel.SENIOR
+        )
+        assert score == 0.9  # Slight penalty
+
+    def test_underqualified_one_level(self):
+        # SENIOR applying for LEAD job (underqualified)
         score = calculate_seniority_alignment(
             ExperienceLevel.SENIOR, ExperienceLevel.LEAD
         )
-        assert score == 0.85
+        assert score == 0.8  # Moderate penalty
 
-    def test_two_levels_off(self):
-        score = calculate_seniority_alignment(
-            ExperienceLevel.SENIOR, ExperienceLevel.STAFF
+    def test_asymmetric_penalty(self):
+        # Same distance, different direction
+        overqualified = calculate_seniority_alignment(
+            ExperienceLevel.STAFF, ExperienceLevel.SENIOR  # +2 levels
         )
-        assert score == 0.65
+        underqualified = calculate_seniority_alignment(
+            ExperienceLevel.MID, ExperienceLevel.LEAD  # -2 levels
+        )
+        assert overqualified > underqualified  # 0.8 > 0.6
 
-    def test_major_mismatch(self):
+    def test_major_underqualified(self):
         score = calculate_seniority_alignment(
             ExperienceLevel.ENTRY, ExperienceLevel.EXECUTIVE
         )
-        assert score == 0.3
+        assert score == 0.3  # Major underqualified penalty
 
 
 class TestParseCurrency:
@@ -487,11 +503,11 @@ class TestParseCurrency:
         ("$50K", 50_000),
         ("$1,000,000", 1_000_000),
         ("100M", 100_000_000),
+        ("$10.5M", 10_500_000),
         ("", 0),
-        (None, 0),
     ])
-    def test_currency_parsing(self, value: str | None, expected: int):
-        assert _parse_currency(value or "") == expected
+    def test_currency_parsing(self, value: str, expected: int):
+        assert _parse_currency(value) == expected
 ```
 
 ### Integration Tests: Ranker with Seniority
@@ -573,3 +589,36 @@ class TestRankerSeniorityScoring:
 - `plan.py`: Load positions unconditionally, pass to `ranker.rank()`
 - `build.py`: Load positions unconditionally, pass to `ranker.rank()`
 - `ranker.py`: Add `positions` parameter, look up by `position_id`
+
+---
+
+## Dev Agent Record
+
+### File List
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/resume_as_code/models/work_unit.py` | Modified | Added `seniority_level: ExperienceLevel \| None` field |
+| `src/resume_as_code/services/seniority_inference.py` | Created | Seniority inference service with asymmetric penalty scoring |
+| `src/resume_as_code/models/config.py` | Modified | Added `use_seniority_matching`, `seniority_blend` to ScoringWeights |
+| `src/resume_as_code/services/ranker.py` | Modified | Integrated seniority scoring with positions support |
+| `src/resume_as_code/commands/plan.py` | Modified | Load positions and pass to ranker |
+| `src/resume_as_code/commands/build.py` | Modified | Load positions and pass to ranker |
+| `schemas/work-unit.schema.json` | Modified | Added seniority_level field with ExperienceLevel enum |
+| `tests/unit/services/test_seniority_inference.py` | Created | Unit tests for inference with asymmetric penalty tests |
+| `tests/unit/services/test_ranker_seniority.py` | Created | Ranker seniority integration tests |
+
+### Change Log
+
+| Date | Change | Reason |
+|------|--------|--------|
+| 2026-01-16 | Implemented asymmetric seniority penalty | AC4 requires overqualified to have slight penalty vs larger penalty for underqualified |
+| 2026-01-16 | Added positions parameter to ranker | Enable scope-based boosting (P&L, revenue, team size) |
+| 2026-01-16 | Updated tests for asymmetric scoring | Tests now validate directional penalty differences |
+
+### Decisions Made
+
+1. **Reused ExperienceLevel enum** from job_description.py rather than creating duplicate
+2. **Pattern order matters** - LEAD patterns checked before SENIOR so "Senior Manager" → LEAD
+3. **Asymmetric penalties** - Overqualified (0.9/0.8/0.75/0.7) vs Underqualified (0.8/0.6/0.4/0.3)
+4. **Positions passed as dict** - Ranker receives positions dict rather than attached Position objects

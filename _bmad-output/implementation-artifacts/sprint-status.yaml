@@ -146,7 +146,7 @@ development_status:
   7-9-recency-decay-work-units: done  # P2, 3 pts - Exponential decay for older experience
   7-10-improved-bm25-tokenization: done  # P2, 5 pts - Lemmatization, abbreviation expansion
   7-11-section-level-semantic-embeddings: done  # P3, 8 pts - Separate embeddings per section
-  7-12-seniority-level-matching: review  # P3, 5 pts - Match work unit seniority to JD level
+  7-12-seniority-level-matching: done  # P3, 5 pts - Match work unit seniority to JD level
   7-13-impact-category-classification: ready-for-dev  # P3, 5 pts - Classify financial/operational/talent impacts
   7-14-jd-relevant-content-curation: ready-for-dev  # P2, 5 pts - Research-backed limits per section
   7-15-comprehensive-algorithm-documentation: ready-for-dev  # P1, 3 pts - Full algorithm docs (depends on 7.8-7.14)

@@ -106,8 +106,8 @@ class TestRankerSeniorityScoring:
         )
 
         score = ranker._calculate_seniority_score(work_unit, jd, scoring_weights_with_seniority)
-        # Entry to Senior = 2 levels (ENTRY=1, MID=2, SENIOR=3)
-        assert score == 0.65  # Two levels off
+        # Entry (rank 1) applying for Senior (rank 3) = underqualified by 2 levels
+        assert score == 0.6  # Underqualified penalty
 
     def test_seniority_inferred_from_title_when_not_set(
         self, ranker: HybridRanker, scoring_weights_with_seniority: ScoringWeights
@@ -137,7 +137,7 @@ class TestRankerSeniorityScoring:
         """Blend scores should incorporate seniority."""
         relevance = [0.8, 0.6]
         recency = [1.0, 0.5]
-        seniority = [1.0, 0.65]  # First matches, second has penalty
+        seniority = [1.0, 0.6]  # First matches, second has underqualified penalty
 
         blended = ranker._blend_scores(
             relevance, recency, seniority, scoring_weights_with_seniority
@@ -145,7 +145,7 @@ class TestRankerSeniorityScoring:
 
         # With recency_blend=0.2, seniority_blend=0.1, relevance_blend=0.7
         # First: 0.7*0.8 + 0.2*1.0 + 0.1*1.0 = 0.56 + 0.2 + 0.1 = 0.86
-        # Second: 0.7*0.6 + 0.2*0.5 + 0.1*0.65 = 0.42 + 0.1 + 0.065 = 0.585
+        # Second: 0.7*0.6 + 0.2*0.5 + 0.1*0.6 = 0.42 + 0.1 + 0.06 = 0.58
         assert len(blended) == 2
         assert blended[0] > blended[1]  # First should score higher
 

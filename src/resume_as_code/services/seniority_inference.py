@@ -190,28 +190,32 @@ def calculate_seniority_alignment(
 ) -> float:
     """Calculate alignment score between work unit and JD seniority.
 
+    Applies asymmetric penalties per AC4:
+    - Overqualified (wu > jd): slight penalty (executive applying for senior)
+    - Underqualified (wu < jd): larger penalty (entry applying for senior)
+
     Returns:
         Float between 0.0 and 1.0:
         - 1.0: Perfect match
-        - 0.85: One level off (slight penalty)
-        - 0.65: Two levels off (moderate penalty)
-        - 0.45: Three levels off (significant penalty)
-        - 0.3: Four+ levels off (major mismatch)
+        - Overqualified: 0.9 (1 level), 0.8 (2), 0.75 (3), 0.7 (4+)
+        - Underqualified: 0.8 (1 level), 0.6 (2), 0.4 (3), 0.3 (4+)
     """
     wu_rank = _level_rank(work_unit_level)
     jd_rank = _level_rank(jd_level)
 
-    diff = abs(wu_rank - jd_rank)
+    diff = wu_rank - jd_rank  # Positive = overqualified, negative = underqualified
 
-    # Alignment scores by level difference
-    alignment_scores = {
-        0: 1.0,  # Perfect match
-        1: 0.85,  # One level off - slight penalty
-        2: 0.65,  # Two levels off - moderate penalty
-        3: 0.45,  # Three levels off - significant penalty
-    }
+    if diff == 0:
+        return 1.0
 
-    return alignment_scores.get(diff, 0.3)  # 4+ levels = major mismatch
+    if diff > 0:
+        # Overqualified: slight penalty (executive applying for senior role)
+        overqualified_scores = {1: 0.9, 2: 0.8, 3: 0.75}
+        return overqualified_scores.get(diff, 0.7)
+    else:
+        # Underqualified: larger penalty (entry applying for senior role)
+        underqualified_scores = {-1: 0.8, -2: 0.6, -3: 0.4}
+        return underqualified_scores.get(diff, 0.3)
 
 
 def _parse_currency(value: str) -> int:
