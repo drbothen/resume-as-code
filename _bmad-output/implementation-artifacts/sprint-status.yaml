@@ -160,10 +160,19 @@ development_status:
 
   # Epic 8: Resume Template Enhancements
   # Goal: Improve resume template rendering for better visual presentation and professional formatting
-  # User Outcome: Professionally formatted resumes with grouped employer positions showing career progression
-  # Total Points: 5 (initial)
+  # User Outcome: Professionally formatted resumes with grouped employer positions and curated publications
+  # Total Points: 10 (2 stories)
   epic-8: backlog
   8-1-employer-grouped-position-rendering: backlog  # P2, 5 pts - Nest positions under same employer
+  8-2-jd-relevant-publication-curation: backlog  # P2, 5 pts - Limit publications to top N JD-relevant
+
+  # Epic 9: Data Management & Migration
+  # Goal: Robust data management with schema versioning, migration, and backward compatibility
+  # User Outcome: Safe upgrades without data loss or manual file editing when schemas evolve
+  # Total Points: 13 (2 stories)
+  epic-9: backlog
+  9-1-schema-evolution-migration-system: backlog  # P2, 8 pts - Auto-detect and migrate outdated schemas
+  9-2-separate-config-from-data: backlog  # P1, 5 pts - Extract resume data from .resume.yaml to separate files
 
 # RESEARCH / TECH DEBT BACKLOG:
 # =============================
@@ -179,3 +188,16 @@ development_status:
 #   - Bidirectional expansion (both "ML" -> "machine learning" AND "machine learning" -> "ML")
 #   - Context-aware disambiguation (PM = project management vs product management)
 #   Related: src/resume_as_code/utils/tokenizer.py TECH_EXPANSIONS dict
+#
+# [2026-01-17] Certification Curation by JD Relevance
+#   Current: All certifications displayed regardless of job description
+#   Problem: For roles where some certs are less relevant, showing all may dilute impact
+#   Consideration: Lower priority than publications (11 certs vs 45 pubs, no page bloat)
+#   Implementation ideas:
+#   - Score certifications against JD keywords (OSCP for pentesting, CISSP for leadership)
+#   - Config option: certifications.max_count (0 = unlimited, default)
+#   - Config option: certifications.sort_by (relevance or date)
+#   - Show most relevant N certs when JD provided
+#   - Fallback to all certs when no JD
+#   Related: Story 8.2 (publication curation) uses same pattern
+#   Trigger: Consider when user has 15+ certifications or requests filtering

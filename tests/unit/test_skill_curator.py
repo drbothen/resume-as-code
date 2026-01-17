@@ -54,6 +54,27 @@ class TestSkillCuratorDeduplication:
         assert lower_included.count("python") == 1
         assert lower_included.count("terraform") == 1
 
+    def test_deduplication_hyphen_vs_space(self) -> None:
+        """Should deduplicate hyphenated tags with spaced skills.
+
+        Tags like 'business-development' should dedupe with skills like
+        'Business Development' since they represent the same skill.
+        """
+        curator = SkillCurator()
+        result = curator.curate({"business-development", "Business Development"})
+
+        assert len(result.included) == 1
+        # Should prefer title case spaced version
+        assert result.included[0] == "Business Development"
+
+    def test_deduplication_hyphen_multiple_words(self) -> None:
+        """Should dedupe multi-hyphen tags with multi-word skills."""
+        curator = SkillCurator()
+        result = curator.curate({"machine-learning-ops", "Machine Learning Ops"})
+
+        assert len(result.included) == 1
+        assert result.included[0] == "Machine Learning Ops"
+
 
 class TestSkillCuratorEmptyStrings:
     """Tests for empty/whitespace string handling."""

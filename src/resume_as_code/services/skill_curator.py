@@ -110,7 +110,9 @@ class SkillCurator:
         For unknown skills with O*NET configured, attempts discovery
         via lookup_and_cache() (Story 7.17).
 
-        Returns dict mapping lowercase -> display form.
+        Returns dict mapping normalized key -> display form.
+        Key normalization: lowercase + hyphens converted to spaces.
+        This ensures "business-development" and "Business Development" dedupe.
         Prefers: Title Case > UPPERCASE > lowercase
         Filters out empty and whitespace-only strings.
         """
@@ -131,7 +133,9 @@ class SkillCurator:
                 else:
                     display = normalized_skill
 
-            lower = display.lower()
+            # Normalize key: lowercase + hyphens to spaces for deduplication
+            # e.g., "business-development" dedupes with "Business Development"
+            lower = display.lower().replace("-", " ")
             if lower not in normalized:
                 normalized[lower] = display
             else:
