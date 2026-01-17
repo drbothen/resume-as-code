@@ -18,6 +18,49 @@ from resume_as_code.models.publication import Publication
 logger = logging.getLogger(__name__)
 
 
+class BulletsPerPositionConfig(BaseModel):
+    """Bullet limits based on position age.
+
+    Research-backed limits (2024-2025 resume studies):
+    - Recent positions (0-3 years): 4-6 bullets
+    - Mid positions (3-7 years): 3-4 bullets
+    - Older positions (7+ years): 2-3 bullets
+    """
+
+    recent_years: int = Field(default=3, ge=1, le=10, description="Years considered 'recent'")
+    recent_max: int = Field(default=6, ge=1, le=10, description="Max bullets for recent positions")
+    mid_years: int = Field(default=7, ge=3, le=15, description="Years considered 'mid-career'")
+    mid_max: int = Field(default=4, ge=1, le=8, description="Max bullets for mid positions")
+    older_max: int = Field(default=3, ge=1, le=6, description="Max bullets for older positions")
+
+
+class CurationConfig(BaseModel):
+    """Configuration for content curation.
+
+    Research-backed defaults (2024-2025 resume studies):
+    - Career highlights: 3-5 optimal
+    - Certifications: 3-5 most relevant
+    - Board roles: 2-3 unless executive
+    - Skills: 6-10 optimal (median 8-9)
+    """
+
+    career_highlights_max: int = Field(default=4, ge=1, le=10)
+    certifications_max: int = Field(default=5, ge=1, le=15)
+    board_roles_max: int = Field(default=3, ge=1, le=10)
+    board_roles_executive_max: int = Field(default=5, ge=1, le=10)
+    publications_max: int = Field(default=3, ge=1, le=10)
+    skills_max: int = Field(default=10, ge=1, le=30)
+
+    bullets_per_position: BulletsPerPositionConfig = Field(default_factory=BulletsPerPositionConfig)
+
+    min_relevance_score: float = Field(
+        default=0.2,
+        ge=0.0,
+        le=1.0,
+        description="Minimum score for inclusion (below this, item is excluded)",
+    )
+
+
 class ProfileConfig(BaseModel):
     """User profile information for resume header.
 
@@ -279,6 +322,9 @@ class ResumeConfig(BaseModel):
 
     # O*NET API configuration
     onet: ONetConfig | None = Field(default=None)
+
+    # Content curation configuration
+    curation: CurationConfig = Field(default_factory=CurationConfig)
 
     @field_validator("career_highlights", mode="before")
     @classmethod

@@ -76,6 +76,24 @@
       "default": true,
       "title": "Display",
       "type": "boolean"
+    },
+    "priority": {
+      "anyOf": [
+        {
+          "enum": [
+            "always",
+            "normal",
+            "low"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Curation priority: 'always' forces inclusion regardless of JD relevance",
+      "title": "Priority"
     }
   },
   "required": [

@@ -57,6 +57,24 @@
           "default": true,
           "title": "Display",
           "type": "boolean"
+        },
+        "priority": {
+          "anyOf": [
+            {
+              "enum": [
+                "always",
+                "normal",
+                "low"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Curation priority: 'always' forces inclusion regardless of JD relevance",
+          "title": "Priority"
         }
       },
       "required": [
@@ -65,6 +83,53 @@
         "start_date"
       ],
       "title": "BoardRole",
+      "type": "object"
+    },
+    "BulletsPerPositionConfig": {
+      "description": "Bullet limits based on position age.\n\nResearch-backed limits (2024-2025 resume studies):\n- Recent positions (0-3 years): 4-6 bullets\n- Mid positions (3-7 years): 3-4 bullets\n- Older positions (7+ years): 2-3 bullets",
+      "properties": {
+        "recent_years": {
+          "default": 3,
+          "description": "Years considered 'recent'",
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Recent Years",
+          "type": "integer"
+        },
+        "recent_max": {
+          "default": 6,
+          "description": "Max bullets for recent positions",
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Recent Max",
+          "type": "integer"
+        },
+        "mid_years": {
+          "default": 7,
+          "description": "Years considered 'mid-career'",
+          "maximum": 15,
+          "minimum": 3,
+          "title": "Mid Years",
+          "type": "integer"
+        },
+        "mid_max": {
+          "default": 4,
+          "description": "Max bullets for mid positions",
+          "maximum": 8,
+          "minimum": 1,
+          "title": "Mid Max",
+          "type": "integer"
+        },
+        "older_max": {
+          "default": 3,
+          "description": "Max bullets for older positions",
+          "maximum": 6,
+          "minimum": 1,
+          "title": "Older Max",
+          "type": "integer"
+        }
+      },
+      "title": "BulletsPerPositionConfig",
       "type": "object"
     },
     "Certification": {
@@ -145,12 +210,90 @@
           "default": true,
           "title": "Display",
           "type": "boolean"
+        },
+        "priority": {
+          "anyOf": [
+            {
+              "enum": [
+                "always",
+                "normal",
+                "low"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Curation priority: 'always' forces inclusion regardless of JD relevance",
+          "title": "Priority"
         }
       },
       "required": [
         "name"
       ],
       "title": "Certification",
+      "type": "object"
+    },
+    "CurationConfig": {
+      "description": "Configuration for content curation.\n\nResearch-backed defaults (2024-2025 resume studies):\n- Career highlights: 3-5 optimal\n- Certifications: 3-5 most relevant\n- Board roles: 2-3 unless executive\n- Skills: 6-10 optimal (median 8-9)",
+      "properties": {
+        "career_highlights_max": {
+          "default": 4,
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Career Highlights Max",
+          "type": "integer"
+        },
+        "certifications_max": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 1,
+          "title": "Certifications Max",
+          "type": "integer"
+        },
+        "board_roles_max": {
+          "default": 3,
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Board Roles Max",
+          "type": "integer"
+        },
+        "board_roles_executive_max": {
+          "default": 5,
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Board Roles Executive Max",
+          "type": "integer"
+        },
+        "publications_max": {
+          "default": 3,
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Publications Max",
+          "type": "integer"
+        },
+        "skills_max": {
+          "default": 10,
+          "maximum": 30,
+          "minimum": 1,
+          "title": "Skills Max",
+          "type": "integer"
+        },
+        "bullets_per_position": {
+          "$ref": "#/$defs/BulletsPerPositionConfig"
+        },
+        "min_relevance_score": {
+          "default": 0.2,
+          "description": "Minimum score for inclusion (below this, item is excluded)",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Min Relevance Score",
+          "type": "number"
+        }
+      },
+      "title": "CurationConfig",
       "type": "object"
     },
     "Education": {
@@ -724,6 +867,9 @@
         }
       ],
       "default": null
+    },
+    "curation": {
+      "$ref": "#/$defs/CurationConfig"
     }
   },
   "title": "ResumeConfig",

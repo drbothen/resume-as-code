@@ -24,6 +24,10 @@ class Certification(BaseModel):
     credential_id: str | None = None
     url: HttpUrl | None = None
     display: bool = Field(default=True)  # Allow hiding without deleting
+    priority: Literal["always", "normal", "low"] | None = Field(
+        default=None,
+        description="Curation priority: 'always' forces inclusion regardless of JD relevance",
+    )
 
     def get_status(self) -> Literal["active", "expires_soon", "expired"]:
         """Calculate certification status based on expiration.

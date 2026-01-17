@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any
 import click
 
 if TYPE_CHECKING:
+    from resume_as_code.models.board_role import BoardRole
+    from resume_as_code.models.certification import Certification
     from resume_as_code.models.config import ResumeConfig
 from rich.panel import Panel
 
@@ -19,6 +21,13 @@ from resume_as_code.models.plan import SavedPlan
 from resume_as_code.services.certification_matcher import (
     CertificationMatcher,
     CertificationMatchResult,
+)
+from resume_as_code.services.content_curator import (
+    ContentCurator,
+    is_executive_level,
+)
+from resume_as_code.services.content_curator import (
+    CurationResult as ContentCurationResult,
 )
 from resume_as_code.services.coverage_analyzer import (
     CoverageLevel,
@@ -171,6 +180,19 @@ class PublicationsPreview:
     has_publications: bool
 
 
+@dataclass(frozen=True)
+class CurationPreview:
+    """JD-relevant content curation preview for plan display.
+
+    Shows which items were curated and their relevance scores.
+    """
+
+    highlights_result: ContentCurationResult[str] | None
+    certifications_result: ContentCurationResult[Certification] | None
+    board_roles_result: ContentCurationResult[BoardRole] | None
+    is_executive: bool
+
+
 @click.command("plan")
 @click.option(
     "--jd",
@@ -313,6 +335,9 @@ def plan_command(
     # Get publications preview (AC11)
     publications_preview = _get_publications_preview(config)
 
+    # Get JD-relevant content curation preview (Story 7.14 AC7)
+    curation_preview = _get_curation_preview(config, jd)
+
     # Save plan if requested
     if output_path:
         plan = SavedPlan.from_ranking(ranking, jd, jd_path, top)
@@ -334,6 +359,7 @@ def plan_command(
             career_highlights_preview,
             board_roles_preview,
             publications_preview,
+            curation_preview,
         )
     else:
         _output_rich(
@@ -352,6 +378,7 @@ def plan_command(
             career_highlights_preview,
             board_roles_preview,
             publications_preview,
+            curation_preview,
         )
 
 
@@ -638,6 +665,73 @@ def _get_publications_preview(config: ResumeConfig) -> PublicationsPreview:
     )
 
 
+def _get_curation_preview(
+    config: ResumeConfig,
+    jd: Any,
+) -> CurationPreview | None:
+    """Generate JD-relevant content curation preview.
+
+    Uses ContentCurator to curate career highlights, certifications,
+    and board roles based on JD relevance with scores.
+
+    Args:
+        config: Resume configuration with content to curate.
+        jd: Parsed job description.
+
+    Returns:
+        CurationPreview with curated content and scores, or None if no content.
+    """
+    from resume_as_code.services.embedder import EmbeddingService
+
+    # Check if there's any content to curate
+    has_content = config.career_highlights or config.certifications or config.board_roles
+    if not has_content:
+        return None
+
+    # Initialize curator with config
+    embedder = EmbeddingService()
+    curator = ContentCurator(
+        embedder=embedder,
+        config=config.curation,
+        quantified_boost=config.scoring_weights.quantified_boost,
+    )
+
+    # Determine if executive role for board role limits
+    is_executive = is_executive_level(jd.experience_level)
+
+    # Curate highlights
+    highlights_result = None
+    if config.career_highlights:
+        highlights_result = curator.curate_highlights(
+            config.career_highlights,
+            jd,
+        )
+
+    # Curate certifications
+    certs_result = None
+    if config.certifications:
+        certs_result = curator.curate_certifications(
+            config.certifications,
+            jd,
+        )
+
+    # Curate board roles
+    board_roles_result = None
+    if config.board_roles:
+        board_roles_result = curator.curate_board_roles(
+            config.board_roles,
+            jd,
+            is_executive_role=is_executive,
+        )
+
+    return CurationPreview(
+        highlights_result=highlights_result,
+        certifications_result=certs_result,
+        board_roles_result=board_roles_result,
+        is_executive=is_executive,
+    )
+
+
 def _display_saved_plan(plan: SavedPlan, json_mode: bool = False) -> None:
     """Display a loaded SavedPlan."""
     # Check for Work Unit changes (Task 3.4)
@@ -729,6 +823,7 @@ def _output_rich(
     career_highlights_preview: CareerHighlightsPreview | None = None,
     board_roles_preview: BoardRolesPreview | None = None,
     publications_preview: PublicationsPreview | None = None,
+    curation_preview: CurationPreview | None = None,
 ) -> None:
     """Display plan with Rich formatting."""
     selected = results[:top]
@@ -802,6 +897,10 @@ def _output_rich(
     # Publications Preview (AC11)
     if publications_preview:
         _display_publications_preview(publications_preview)
+
+    # JD-Relevant Content Curation (Story 7.14 AC7)
+    if curation_preview:
+        _display_curation_preview(curation_preview)
 
     # Excluded (if requested)
     if show_excluded and excluded:
@@ -1181,6 +1280,77 @@ def _display_publications_preview(preview: PublicationsPreview) -> None:
     )
 
 
+def _display_curation_preview(preview: CurationPreview) -> None:
+    """Display JD-relevant content curation preview section.
+
+    Shows which items were selected and their relevance scores for:
+    - Career highlights (Story 7.14 AC7)
+    - Certifications with priority
+    - Board roles (with executive limit adjustment)
+
+    Args:
+        preview: Curation preview with curated results.
+    """
+    lines: list[str] = []
+
+    # Career highlights curation
+    if preview.highlights_result:
+        hr = preview.highlights_result
+        lines.append("[bold cyan]Career Highlights[/bold cyan] (by JD relevance):")
+        for i, highlight in enumerate(hr.selected):
+            score = hr.scores.get(f"highlight_{i}", 0.0)
+            score_color = "green" if score >= 0.5 else "yellow"
+            lines.append(f"  [{score_color}]{score:.0%}[/{score_color}] {highlight[:60]}...")
+        if hr.excluded:
+            lines.append(f"  [dim]({len(hr.excluded)} excluded below threshold)[/dim]")
+        lines.append("")
+
+    # Certifications curation
+    if preview.certifications_result:
+        cr = preview.certifications_result
+        lines.append("[bold cyan]Certifications[/bold cyan] (by JD relevance):")
+        for cert in cr.selected:
+            has_priority = getattr(cert, "priority", None) == "always"
+            priority_marker = " [magenta]★[/magenta]" if has_priority else ""
+            score = cr.scores.get(cert.name, 0.0)
+            score_color = "green" if score >= 0.5 else "yellow"
+            if score > 0:
+                score_display = f"[{score_color}]{score:.0%}[/{score_color}]"
+            else:
+                score_display = "[dim]priority[/dim]"
+            lines.append(f"  {score_display} {cert.name}{priority_marker}")
+        if cr.excluded:
+            lines.append(f"  [dim]({len(cr.excluded)} excluded)[/dim]")
+        lines.append("")
+
+    # Board roles curation
+    if preview.board_roles_result:
+        br = preview.board_roles_result
+        role_limit = "5 max (executive)" if preview.is_executive else "3 max"
+        lines.append(f"[bold cyan]Board Roles[/bold cyan] ({role_limit}):")
+        for role in br.selected:
+            has_priority = getattr(role, "priority", None) == "always"
+            priority_marker = " [magenta]★[/magenta]" if has_priority else ""
+            score = br.scores.get(role.organization, 0.0)
+            score_color = "green" if score >= 0.5 else "yellow"
+            if score > 0:
+                score_display = f"[{score_color}]{score:.0%}[/{score_color}]"
+            else:
+                score_display = "[dim]priority[/dim]"
+            lines.append(f"  {score_display} {role.organization} - {role.role}{priority_marker}")
+        if br.excluded:
+            lines.append(f"  [dim]({len(br.excluded)} excluded)[/dim]")
+
+    if lines:
+        console.print(
+            Panel(
+                "\n".join(lines),
+                title="Content Curation (JD-Relevant)",
+                border_style="cyan",
+            )
+        )
+
+
 def _display_content_analysis(selected: list[RankingResult]) -> None:
     """Display content analysis section."""
     # Calculate word count
@@ -1347,6 +1517,7 @@ def _output_json(
     career_highlights_preview: CareerHighlightsPreview | None = None,
     board_roles_preview: BoardRolesPreview | None = None,
     publications_preview: PublicationsPreview | None = None,
+    curation_preview: CurationPreview | None = None,
 ) -> None:
     """Output plan as JSON."""
     selected = results[:top]
@@ -1463,6 +1634,40 @@ def _output_json(
             "written_count": publications_preview.written_count,
         }
 
+    # Build curation preview data for JSON (Story 7.14 AC7)
+    curation_preview_data: dict[str, Any] | None = None
+    if curation_preview:
+        curation_preview_data = {
+            "is_executive_role": curation_preview.is_executive,
+            "highlights": None,
+            "certifications": None,
+            "board_roles": None,
+        }
+        if curation_preview.highlights_result:
+            hr = curation_preview.highlights_result
+            curation_preview_data["highlights"] = {
+                "selected": hr.selected,
+                "excluded": hr.excluded,
+                "scores": hr.scores,
+                "reason": hr.reason,
+            }
+        if curation_preview.certifications_result:
+            cr = curation_preview.certifications_result
+            curation_preview_data["certifications"] = {
+                "selected": [c.name for c in cr.selected],
+                "excluded": [c.name for c in cr.excluded],
+                "scores": cr.scores,
+                "reason": cr.reason,
+            }
+        if curation_preview.board_roles_result:
+            br = curation_preview.board_roles_result
+            curation_preview_data["board_roles"] = {
+                "selected": [r.organization for r in br.selected],
+                "excluded": [r.organization for r in br.excluded],
+                "scores": br.scores,
+                "reason": br.reason,
+            }
+
     response = JSONResponse(
         status="success",
         command="plan",
@@ -1501,6 +1706,7 @@ def _output_json(
             "career_highlights": career_highlights_data,
             "board_roles": board_roles_data,
             "publications": publications_data,
+            "content_curation": curation_preview_data,
         },
     )
     json_output(response.to_json())

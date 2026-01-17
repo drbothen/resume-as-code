@@ -25,6 +25,10 @@ class BoardRole(BaseModel):
     end_date: YearMonth | None = None  # None = current
     focus: str | None = None
     display: bool = Field(default=True)
+    priority: Literal["always", "normal", "low"] | None = Field(
+        default=None,
+        description="Curation priority: 'always' forces inclusion regardless of JD relevance",
+    )
 
     @property
     def is_current(self) -> bool:
