@@ -461,3 +461,49 @@ class TestResumeConfigCuration:
         )
         assert config.curation.action_scoring_enabled is False
         assert config.curation.min_action_relevance_score == 0.5
+
+
+class TestResumeConfigTailoredNotice:
+    """Test tailored_notice fields in ResumeConfig (Story 7.19)."""
+
+    def test_tailored_notice_defaults_false(self) -> None:
+        """Tailored notice should be opt-in (default False)."""
+        config = ResumeConfig()
+        assert config.tailored_notice is False
+
+    def test_tailored_notice_text_defaults_none(self) -> None:
+        """Tailored notice text should default to None."""
+        config = ResumeConfig()
+        assert config.tailored_notice_text is None
+
+    def test_tailored_notice_enabled(self) -> None:
+        """ResumeConfig should accept tailored_notice=True."""
+        config = ResumeConfig(tailored_notice=True)
+        assert config.tailored_notice is True
+
+    def test_tailored_notice_custom_text(self) -> None:
+        """ResumeConfig should accept custom tailored_notice_text."""
+        custom_text = "Custom footer message for recruiters."
+        config = ResumeConfig(
+            tailored_notice=True,
+            tailored_notice_text=custom_text,
+        )
+        assert config.tailored_notice is True
+        assert config.tailored_notice_text == custom_text
+
+    def test_tailored_notice_text_without_enabled(self) -> None:
+        """Custom text can be set even if tailored_notice is False."""
+        config = ResumeConfig(
+            tailored_notice=False,
+            tailored_notice_text="Text but not shown",
+        )
+        assert config.tailored_notice is False
+        assert config.tailored_notice_text == "Text but not shown"
+
+    def test_default_tailored_notice_constant_exists(self) -> None:
+        """DEFAULT_TAILORED_NOTICE constant should exist."""
+        from resume_as_code.models.config import DEFAULT_TAILORED_NOTICE
+
+        assert DEFAULT_TAILORED_NOTICE is not None
+        assert "relevant" in DEFAULT_TAILORED_NOTICE.lower()
+        assert "request" in DEFAULT_TAILORED_NOTICE.lower()

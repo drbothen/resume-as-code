@@ -1663,3 +1663,252 @@ created_at: "2024-01-01T00:00:00"
             assert result.exit_code == 0
             # No warning for non-CTO templates
             assert "CTO resumes should be 2 pages maximum" not in result.output
+
+
+class TestTailoredNoticeFlag:
+    """Tests for --tailored-notice/--no-tailored-notice flags (Story 7.19)."""
+
+    def test_tailored_notice_flag_sets_resume_data(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """--tailored-notice flag should set tailored_notice_text on ResumeData (AC #2)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        captured_resume = None
+
+        def capture_generate(**kwargs: Any) -> None:
+            nonlocal captured_resume
+            captured_resume = kwargs.get("resume")
+
+        with (
+            patch("resume_as_code.commands.build.SavedPlan.load") as mock_load,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+        ):
+            mock_plan = MagicMock()
+            mock_plan.selected_work_units = []
+            mock_load.return_value = mock_plan
+
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = Path("dist")
+            config.default_template = "modern"
+            config.default_format = "both"
+            config.tailored_notice = False  # Config says off
+            config.tailored_notice_text = None
+            # Profile attrs
+            config.profile.name = "Test User"
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
+            mock_config.return_value = config
+            mock_gen.side_effect = capture_generate
+
+            # CLI flag should override config
+            runner.invoke(main, ["build", "--plan", str(plan_file), "--tailored-notice"])
+
+            assert captured_resume is not None
+            assert captured_resume.tailored_notice_text is not None
+
+    def test_no_tailored_notice_flag_excludes_notice(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """--no-tailored-notice flag should exclude notice even if config enables it (AC #3)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        captured_resume = None
+
+        def capture_generate(**kwargs: Any) -> None:
+            nonlocal captured_resume
+            captured_resume = kwargs.get("resume")
+
+        with (
+            patch("resume_as_code.commands.build.SavedPlan.load") as mock_load,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+        ):
+            mock_plan = MagicMock()
+            mock_plan.selected_work_units = []
+            mock_load.return_value = mock_plan
+
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = Path("dist")
+            config.default_template = "modern"
+            config.default_format = "both"
+            config.tailored_notice = True  # Config says ON
+            config.tailored_notice_text = "Config text"
+            # Profile attrs
+            config.profile.name = "Test User"
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
+            mock_config.return_value = config
+            mock_gen.side_effect = capture_generate
+
+            # CLI flag should override config
+            runner.invoke(main, ["build", "--plan", str(plan_file), "--no-tailored-notice"])
+
+            assert captured_resume is not None
+            assert captured_resume.tailored_notice_text is None
+
+    def test_config_tailored_notice_used_when_no_flag(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """Config tailored_notice should be used when no CLI flag provided (AC #1)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        captured_resume = None
+
+        def capture_generate(**kwargs: Any) -> None:
+            nonlocal captured_resume
+            captured_resume = kwargs.get("resume")
+
+        with (
+            patch("resume_as_code.commands.build.SavedPlan.load") as mock_load,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+        ):
+            mock_plan = MagicMock()
+            mock_plan.selected_work_units = []
+            mock_load.return_value = mock_plan
+
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = Path("dist")
+            config.default_template = "modern"
+            config.default_format = "both"
+            config.tailored_notice = True  # Config enables notice
+            config.tailored_notice_text = "Custom config message"
+            # Profile attrs
+            config.profile.name = "Test User"
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
+            mock_config.return_value = config
+            mock_gen.side_effect = capture_generate
+
+            # No CLI flag - should use config
+            runner.invoke(main, ["build", "--plan", str(plan_file)])
+
+            assert captured_resume is not None
+            assert captured_resume.tailored_notice_text == "Custom config message"
+
+    def test_default_notice_text_used_when_no_custom(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """Default notice text used when tailored_notice=True but no custom text."""
+        from resume_as_code.models.config import DEFAULT_TAILORED_NOTICE
+
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        captured_resume = None
+
+        def capture_generate(**kwargs: Any) -> None:
+            nonlocal captured_resume
+            captured_resume = kwargs.get("resume")
+
+        with (
+            patch("resume_as_code.commands.build.SavedPlan.load") as mock_load,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+        ):
+            mock_plan = MagicMock()
+            mock_plan.selected_work_units = []
+            mock_load.return_value = mock_plan
+
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = Path("dist")
+            config.default_template = "modern"
+            config.default_format = "both"
+            config.tailored_notice = True  # Config enables notice
+            config.tailored_notice_text = None  # No custom text - use default
+            # Profile attrs
+            config.profile.name = "Test User"
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
+            mock_config.return_value = config
+            mock_gen.side_effect = capture_generate
+
+            runner.invoke(main, ["build", "--plan", str(plan_file)])
+
+            assert captured_resume is not None
+            assert captured_resume.tailored_notice_text == DEFAULT_TAILORED_NOTICE

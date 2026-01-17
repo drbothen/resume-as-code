@@ -14,7 +14,8 @@ from resume_as_code.models.education import Education
 from resume_as_code.models.publication import Publication
 
 if TYPE_CHECKING:
-    from resume_as_code.models.config import ONetConfig, SkillsConfig
+    from resume_as_code.models.config import CurationConfig, ONetConfig, SkillsConfig
+    from resume_as_code.models.job_description import JobDescription
     from resume_as_code.models.position import Position
 
 
@@ -72,6 +73,8 @@ class ResumeData(BaseModel):
     career_highlights: list[str] = Field(default_factory=list)
     board_roles: list[BoardRole] = Field(default_factory=list)
     publications: list[Publication] = Field(default_factory=list)
+    # Footer notice for tailored resumes (Story 7.19)
+    tailored_notice_text: str | None = None
 
     def get_active_certifications(self) -> list[Certification]:
         """Get certifications that should be displayed on resume.
@@ -129,6 +132,8 @@ class ResumeData(BaseModel):
         jd_keywords: set[str] | None = None,
         positions_path: Path | None = None,
         onet_config: ONetConfig | None = None,
+        curation_config: CurationConfig | None = None,
+        jd: JobDescription | None = None,
     ) -> ResumeData:
         """Build ResumeData from selected Work Units.
 
@@ -144,12 +149,16 @@ class ResumeData(BaseModel):
             jd_keywords: Optional JD keywords for skill prioritization.
             positions_path: Optional path to positions.yaml file.
             onet_config: Optional O*NET configuration for skill discovery.
+            curation_config: Optional curation configuration for action scoring.
+            jd: Optional job description for action-level scoring (Story 7.18).
 
         Returns:
             ResumeData instance ready for rendering.
         """
         # Build experience items with position grouping if positions available
-        experience_items = cls._build_experience_items(work_units, positions_path)
+        experience_items = cls._build_experience_items(
+            work_units, positions_path, curation_config, jd
+        )
 
         sections = [
             ResumeSection(title="Experience", items=experience_items),
@@ -198,15 +207,23 @@ class ResumeData(BaseModel):
         cls,
         work_units: list[dict[str, Any]],
         positions_path: Path | None = None,
+        curation_config: CurationConfig | None = None,
+        jd: JobDescription | None = None,
     ) -> list[ResumeItem]:
         """Build experience items from work units, grouped by position.
 
         Groups work units by position_id when positions are available,
         otherwise falls back to treating each work unit as standalone entry.
 
+        When action scoring is enabled (curation_config.action_scoring_enabled=True)
+        and a JD is provided, uses ContentCurator.curate_action_bullets to select
+        the most JD-relevant action bullets for each position. (Story 7.18)
+
         Args:
             work_units: List of Work Unit dictionaries.
             positions_path: Optional path to positions.yaml file.
+            curation_config: Optional curation configuration for action scoring.
+            jd: Optional job description for action-level scoring.
 
         Returns:
             List of ResumeItem objects sorted by date (most recent first).
@@ -232,7 +249,7 @@ class ResumeData(BaseModel):
             if pos_id and pos_id in positions:
                 # Build item from position with work unit bullets
                 pos = positions[pos_id]
-                item = cls._build_item_from_position(pos, pos_work_units)
+                item = cls._build_item_from_position(pos, pos_work_units, curation_config, jd)
                 experience_items.append(item)
             else:
                 # Work units without positions or with invalid position_id
@@ -254,23 +271,47 @@ class ResumeData(BaseModel):
         cls,
         position: Position,
         work_units: list[dict[str, Any]],
+        curation_config: CurationConfig | None = None,
+        jd: JobDescription | None = None,
     ) -> ResumeItem:
         """Build a ResumeItem from a position with work unit bullets.
+
+        When action scoring is enabled and a JD is provided, uses
+        ContentCurator.curate_action_bullets to select the most relevant
+        action bullets for this position. (Story 7.18)
 
         Args:
             position: Position model instance.
             work_units: List of Work Unit dictionaries for this position.
+            curation_config: Optional curation configuration for action scoring.
+            jd: Optional job description for action-level scoring.
 
         Returns:
             ResumeItem populated from position and work unit data.
         """
         from resume_as_code.services.position_service import format_scope_line
 
-        # Collect all bullets from work units
-        all_bullets: list[ResumeBullet] = []
-        for wu in work_units:
-            bullets = cls._extract_bullets(wu)
-            all_bullets.extend(bullets)
+        # Check if action scoring should be used (Story 7.18)
+        use_action_scoring = (
+            curation_config is not None
+            and jd is not None
+            and curation_config.action_scoring_enabled
+        )
+
+        if use_action_scoring:
+            # Use action-level curation for bullet selection
+            # Assertions for type narrowing (mypy)
+            assert curation_config is not None
+            assert jd is not None
+            all_bullets = cls._curate_bullets_for_position(
+                position, work_units, curation_config, jd
+            )
+        else:
+            # Fallback: collect all bullets from work units without scoring
+            all_bullets = []
+            for wu in work_units:
+                bullets = cls._extract_bullets(wu)
+                all_bullets.extend(bullets)
 
         # Scope line derived from Position.scope only (Story 7.2 - unified model)
         # WorkUnit.scope is deprecated and ignored for resume rendering
@@ -311,6 +352,59 @@ class ResumeData(BaseModel):
             end_date=cls._format_date(work_unit.get("time_ended")),
             bullets=bullets,
         )
+
+    @classmethod
+    def _curate_bullets_for_position(
+        cls,
+        position: Position,
+        work_units: list[dict[str, Any]],
+        curation_config: CurationConfig,
+        jd: JobDescription,
+    ) -> list[ResumeBullet]:
+        """Curate bullets for a position using action-level scoring.
+
+        Uses ContentCurator.curate_action_bullets to select the most
+        JD-relevant actions from all work units for this position. (Story 7.18)
+
+        Args:
+            position: Position model instance.
+            work_units: List of Work Unit dictionaries for this position.
+            curation_config: Curation configuration for action scoring.
+            jd: Job description for scoring actions.
+
+        Returns:
+            List of ResumeBullet objects containing curated actions.
+        """
+        from resume_as_code.models.work_unit import WorkUnit
+        from resume_as_code.services.content_curator import ContentCurator
+        from resume_as_code.services.embedder import EmbeddingService
+
+        # Convert dicts to WorkUnit models
+        wu_models: list[WorkUnit] = []
+        for wu_dict in work_units:
+            try:
+                wu_model = WorkUnit.model_validate(wu_dict)
+                wu_models.append(wu_model)
+            except Exception:
+                # Skip invalid work units - they'll be excluded from curation
+                continue
+
+        if not wu_models:
+            # Fallback to legacy extraction if no valid models
+            all_bullets: list[ResumeBullet] = []
+            for wu in work_units:
+                all_bullets.extend(cls._extract_bullets(wu))
+            return all_bullets
+
+        # Create curator with embedder and config
+        embedder = EmbeddingService()
+        curator = ContentCurator(embedder=embedder, config=curation_config)
+
+        # Curate actions based on JD relevance
+        result = curator.curate_action_bullets(position, wu_models, jd)
+
+        # Convert selected action strings to ResumeBullet objects
+        return [ResumeBullet(text=action) for action in result.selected]
 
     @staticmethod
     def _format_position_date(d: str | None) -> str | None:

@@ -291,6 +291,20 @@
           "minimum": 0.0,
           "title": "Min Relevance Score",
           "type": "number"
+        },
+        "action_scoring_enabled": {
+          "default": true,
+          "description": "Score individual action bullets against JD relevance.",
+          "title": "Action Scoring Enabled",
+          "type": "boolean"
+        },
+        "min_action_relevance_score": {
+          "default": 0.25,
+          "description": "Minimum score for action bullet inclusion.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Min Action Relevance Score",
+          "type": "number"
         }
       },
       "title": "CurationConfig",
@@ -856,6 +870,25 @@
       },
       "title": "Publications",
       "type": "array"
+    },
+    "tailored_notice": {
+      "default": false,
+      "description": "Show footer notice that resume is tailored for the role",
+      "title": "Tailored Notice",
+      "type": "boolean"
+    },
+    "tailored_notice_text": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Custom tailored notice text (overrides default)",
+      "title": "Tailored Notice Text"
     },
     "onet": {
       "anyOf": [

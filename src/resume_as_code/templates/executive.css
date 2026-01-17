@@ -350,6 +350,21 @@ section {
     }
 }
 
+/* Tailored Notice Footer (Story 7.19) */
+.tailored-notice {
+    margin-top: 1.5em;
+    padding-top: 0.75em;
+    border-top: 1px solid #ddd;
+    text-align: center;
+}
+
+.tailored-notice p {
+    font-size: 8.5pt;
+    color: #777;
+    font-style: italic;
+    margin: 0;
+}
+
 /* Screen preview styles */
 @media screen {
     body {

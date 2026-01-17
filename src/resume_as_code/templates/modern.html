@@ -120,5 +120,11 @@
         <p>{{ resume.skills | join(', ') }}</p>
     </section>
     {% endif %}
+
+    {% if resume.tailored_notice_text %}
+    <footer class="tailored-notice">
+        <p>{{ resume.tailored_notice_text }}</p>
+    </footer>
+    {% endif %}
 </body>
 </html>

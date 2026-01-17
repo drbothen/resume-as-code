@@ -920,3 +920,193 @@ class TestResumeDataSkillsRegistryIntegration:
                 skills_config=skills_config,
             )
             mock_load.assert_called_once()
+
+
+class TestResumeDataActionScoring:
+    """Tests for action-level scoring in ResumeData.from_work_units() (Story 7.18)."""
+
+    def test_action_scoring_disabled_uses_legacy_behavior(self, tmp_path: Path) -> None:
+        """When action_scoring_enabled=False, all bullets extracted without scoring."""
+        from resume_as_code.models.config import CurationConfig
+        from resume_as_code.models.job_description import JobDescription
+
+        positions_file = tmp_path / "positions.yaml"
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-test:
+    employer: "TestCorp"
+    title: "Engineer"
+    start_date: "2024-01"
+""")
+        work_units = [
+            {
+                "id": "wu-2024-01-01-test-one",
+                "title": "Test Work Unit One",
+                "position_id": "pos-test",
+                "problem": {"statement": "This is a test problem statement for unit one"},
+                "actions": ["Action one performed", "Action two performed"],
+                "outcome": {"result": "Completed with success"},
+                "tags": [],
+                "skills_demonstrated": [],
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        curation_config = CurationConfig(action_scoring_enabled=False)
+        jd = JobDescription(
+            title="Test Job",
+            company="TestCo",
+            raw_text="Test JD text looking for Python developer",
+            skills=["Python"],
+            keywords=["Python"],
+        )
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            positions_path=positions_file,
+            curation_config=curation_config,
+            jd=jd,
+        )
+
+        # Should have all bullets (1 outcome + 2 actions = 3)
+        item = resume.sections[0].items[0]
+        assert len(item.bullets) == 3
+
+    def test_action_scoring_without_jd_uses_legacy_behavior(self, tmp_path: Path) -> None:
+        """When JD not provided, all bullets extracted without scoring."""
+        from resume_as_code.models.config import CurationConfig
+
+        positions_file = tmp_path / "positions.yaml"
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-test:
+    employer: "TestCorp"
+    title: "Engineer"
+    start_date: "2024-01"
+""")
+        work_units = [
+            {
+                "id": "wu-2024-01-01-test-one",
+                "title": "Test Work Unit One",
+                "position_id": "pos-test",
+                "problem": {"statement": "This is a test problem statement for unit one"},
+                "actions": ["Action one performed", "Action two performed"],
+                "outcome": {"result": "Completed with success"},
+                "tags": [],
+                "skills_demonstrated": [],
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        curation_config = CurationConfig(action_scoring_enabled=True)
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            positions_path=positions_file,
+            curation_config=curation_config,
+            jd=None,  # No JD provided
+        )
+
+        # Should have all bullets (1 outcome + 2 actions = 3)
+        item = resume.sections[0].items[0]
+        assert len(item.bullets) == 3
+
+    def test_action_scoring_enabled_curates_bullets(self, tmp_path: Path) -> None:
+        """When action_scoring_enabled=True and JD provided, bullets are curated by relevance.
+
+        This is an integration test that uses the real ContentCurator to verify
+        the full action scoring flow works end-to-end.
+        """
+        from resume_as_code.models.config import CurationConfig
+        from resume_as_code.models.job_description import JobDescription
+
+        positions_file = tmp_path / "positions.yaml"
+        positions_file.write_text("""
+schema_version: "1.0.0"
+positions:
+  pos-test:
+    employer: "TestCorp"
+    title: "Engineer"
+    start_date: "2024-01"
+""")
+        work_units = [
+            {
+                "id": "wu-2024-01-01-test-one",
+                "title": "Test Work Unit One",
+                "position_id": "pos-test",
+                "problem": {"statement": "This is a test problem statement for unit one"},
+                "actions": [
+                    "Built Python microservice with Flask reducing API latency by 50%",
+                    "Organized team meetings and wrote documentation for internal wiki",
+                ],
+                "outcome": {"result": "Deployed scalable Python Flask application to production"},
+                "tags": [],
+                "skills_demonstrated": [],
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        curation_config = CurationConfig(
+            action_scoring_enabled=True,
+            min_action_relevance_score=0.0,  # Low threshold to ensure bullets pass
+        )
+        jd = JobDescription(
+            title="Python Developer",
+            company="TestCo",
+            raw_text="Looking for a Python developer with Flask microservice experience",
+            skills=["Python", "Flask"],
+            keywords=["Python", "Flask", "microservice", "API", "scalable"],
+        )
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            positions_path=positions_file,
+            curation_config=curation_config,
+            jd=jd,
+        )
+
+        # Should have curated bullets (actual count depends on scoring)
+        item = resume.sections[0].items[0]
+        # Verify that action scoring was used (bullets should be ResumeBullet instances)
+        assert len(item.bullets) > 0
+        assert all(hasattr(b, "text") for b in item.bullets)
+        # The Python/Flask related bullets should score higher than meeting/wiki bullet
+
+    def test_action_scoring_standalone_work_units_use_legacy(self) -> None:
+        """Standalone work units (no position_id) use legacy bullet extraction."""
+        from resume_as_code.models.config import CurationConfig
+        from resume_as_code.models.job_description import JobDescription
+
+        work_units = [
+            {
+                "id": "wu-2024-01-01-standalone",
+                "title": "Open Source Contribution",
+                "actions": ["Fixed bug in library", "Added documentation"],
+                "outcome": {"result": "PR merged upstream"},
+                "tags": [],
+                "skills_demonstrated": [],
+            }
+        ]
+        contact = ContactInfo(name="Test")
+        curation_config = CurationConfig(action_scoring_enabled=True)
+        jd = JobDescription(
+            title="Developer",
+            company="TestCo",
+            raw_text="Looking for Python developer",
+            skills=["Python"],
+            keywords=["Python"],
+        )
+
+        resume = ResumeData.from_work_units(
+            work_units=work_units,
+            contact=contact,
+            positions_path=None,  # No positions file
+            curation_config=curation_config,
+            jd=jd,
+        )
+
+        # Standalone work units don't use action scoring
+        item = resume.sections[0].items[0]
+        assert len(item.bullets) == 3  # 1 outcome + 2 actions

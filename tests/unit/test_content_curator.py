@@ -704,6 +704,328 @@ class TestHelperMethods:
         assert key1 != key2
 
 
+class TestScoreAction:
+    """Tests for score_action method (Story 7.18 AC #2)."""
+
+    def test_score_action_returns_float_between_0_and_1(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Score should be between 0.0 and 1.0."""
+        curator = ContentCurator(embedder=mock_embedder)
+        action = "Led Kubernetes migration reducing deployment time"
+
+        score = curator.score_action(action, sample_jd)
+
+        assert 0.0 <= score <= 1.0
+
+    def test_score_action_quantified_boost(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Quantified actions should get 10% boost over non-quantified."""
+        curator = ContentCurator(embedder=mock_embedder)
+        base_action = "Improved system performance"
+        quantified_action = "Improved system performance by 40%"
+
+        base_score = curator.score_action(base_action, sample_jd)
+        quant_score = curator.score_action(quantified_action, sample_jd)
+
+        # Quantified should get +0.1 from the 10% boost component
+        assert quant_score > base_score
+
+    def test_score_action_quantified_patterns(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Various quantification patterns should be detected."""
+        curator = ContentCurator(embedder=mock_embedder)
+
+        # Test different quantification patterns
+        quantified_actions = [
+            "Reduced latency by 50%",  # Percentage
+            "Saved $100K in annual costs",  # Dollar amount
+            "Achieved 3x improvement in throughput",  # Multiplier
+            "Cut build time from 30 minutes to 5 minutes",  # Time
+            "Supported 500 users across 5 teams",  # People + teams
+            "Led 10 engineers in migration project",  # Team size
+        ]
+
+        for action in quantified_actions:
+            assert curator._has_quantified_text(action), f"Should detect quantified: {action}"
+
+    def test_score_action_non_quantified(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Non-quantified actions should not get boost."""
+        curator = ContentCurator(embedder=mock_embedder)
+
+        non_quantified = [
+            "Improved overall system performance",
+            "Led successful migration project",
+            "Collaborated with cross-functional teams",
+        ]
+
+        for action in non_quantified:
+            assert not curator._has_quantified_text(action), f"Should not detect: {action}"
+
+    def test_score_action_with_precomputed_embedding(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Should accept precomputed JD embedding for efficiency."""
+        curator = ContentCurator(embedder=mock_embedder)
+        action = "Built CI/CD pipeline with Docker and Kubernetes"
+
+        # Pre-compute JD embedding
+        jd_embedding = mock_embedder.embed_passage(sample_jd.text_for_ranking)
+
+        # Both calls should produce same score
+        score1 = curator.score_action(action, sample_jd)
+        score2 = curator.score_action(action, sample_jd, jd_embedding=jd_embedding)
+
+        assert score1 == score2
+
+    def test_score_action_keyword_boost(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Actions with JD keywords should score higher."""
+        curator = ContentCurator(embedder=mock_embedder)
+
+        # JD has keywords: python, aws, kubernetes, docker, cicd, senior
+        with_keywords = "Deployed Python services to AWS using Kubernetes"
+        without_keywords = "Organized team meetings and documentation"
+
+        score_with = curator.score_action(with_keywords, sample_jd)
+        score_without = curator.score_action(without_keywords, sample_jd)
+
+        # Keyword overlap (30%) should differentiate scores
+        assert score_with > score_without
+
+    def test_score_action_empty_action(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Empty action should return low score."""
+        curator = ContentCurator(embedder=mock_embedder)
+        score = curator.score_action("", sample_jd)
+
+        assert 0.0 <= score <= 1.0
+
+
+class TestCurateActionBullets:
+    """Tests for curate_action_bullets method (Story 7.18 AC #1, #3, #5)."""
+
+    @pytest.fixture
+    def recent_position(self) -> Position:
+        """Create a recent position (within 3 years)."""
+        return Position(
+            id="pos-recent-test",
+            employer="Recent Corp",
+            title="Senior Engineer",
+            start_date="2023-01",
+            end_date=None,  # Current position
+        )
+
+    @pytest.fixture
+    def work_units_with_many_actions(self) -> list[WorkUnit]:
+        """Create work units with 12 total actions for testing limit."""
+        return [
+            WorkUnit(
+                id=f"wu-2023-01-0{i}-task{i}",
+                title=f"Task {i} - Python project",
+                problem=Problem(statement=f"Problem {i} needed solving"),
+                actions=[
+                    f"Implemented Python solution {i} with AWS",
+                    f"Built CI/CD pipeline {i} with Docker",
+                    f"Deployed Kubernetes {i} infrastructure",
+                ],
+                outcome=Outcome(result=f"Achieved result {i} with 50% improvement"),
+                position_id="pos-recent-test",
+            )
+            for i in range(1, 4)  # 3 work units × (1 result + 3 actions) = 12 bullets
+        ]
+
+    def test_curate_selects_top_actions_across_work_units(
+        self,
+        mock_embedder: MagicMock,
+        sample_jd: JobDescription,
+        recent_position: Position,
+        work_units_with_many_actions: list[WorkUnit],
+    ) -> None:
+        """Should select top 6 actions from 12 total for recent position (AC #3)."""
+        curator = ContentCurator(embedder=mock_embedder)
+        result = curator.curate_action_bullets(
+            recent_position, work_units_with_many_actions, sample_jd
+        )
+
+        # Recent position max is 6 bullets
+        assert len(result.selected) == 6
+        assert len(result.excluded) == 6
+        assert "12" in result.reason or "actions" in result.reason
+
+    def test_curate_action_bullets_empty_work_units(
+        self,
+        mock_embedder: MagicMock,
+        sample_jd: JobDescription,
+        recent_position: Position,
+    ) -> None:
+        """Should handle empty work units list."""
+        curator = ContentCurator(embedder=mock_embedder)
+        result = curator.curate_action_bullets(recent_position, [], sample_jd)
+
+        assert result.selected == []
+        assert result.excluded == []
+        assert "No work units" in result.reason
+
+    def test_curate_action_bullets_includes_outcomes_and_actions(
+        self,
+        mock_embedder: MagicMock,
+        sample_jd: JobDescription,
+        recent_position: Position,
+    ) -> None:
+        """Should include both outcome.result and action bullets (AC #1)."""
+        curator = ContentCurator(embedder=mock_embedder)
+        work_units = [
+            WorkUnit(
+                id="wu-2023-01-01-test",
+                title="Test work unit with outcome and actions",
+                problem=Problem(statement="Problem statement here"),
+                actions=["Action one executed", "Action two completed"],
+                outcome=Outcome(result="Outcome result achieved"),
+                position_id="pos-recent-test",
+            )
+        ]
+
+        result = curator.curate_action_bullets(recent_position, work_units, sample_jd)
+
+        # Should have 3 bullets: 1 outcome.result + 2 actions
+        all_bullets = result.selected + result.excluded
+        assert len(all_bullets) == 3
+
+    def test_curate_action_bullets_scores_in_result(
+        self,
+        mock_embedder: MagicMock,
+        sample_jd: JobDescription,
+        recent_position: Position,
+        work_units_with_many_actions: list[WorkUnit],
+    ) -> None:
+        """Should include scores in result for all actions."""
+        curator = ContentCurator(embedder=mock_embedder)
+        result = curator.curate_action_bullets(
+            recent_position, work_units_with_many_actions, sample_jd
+        )
+
+        # Should have 12 scores (one per action)
+        assert len(result.scores) == 12
+
+        # All scores should be between 0 and 1
+        for score in result.scores.values():
+            assert 0.0 <= score <= 1.0
+
+    def test_curate_action_bullets_respects_threshold(
+        self,
+        mock_embedder: MagicMock,
+        sample_jd: JobDescription,
+        recent_position: Position,
+    ) -> None:
+        """Should exclude actions below min_action_relevance_score (AC #5)."""
+        config = CurationConfig(min_action_relevance_score=0.9)  # Very high
+        curator = ContentCurator(embedder=mock_embedder, config=config)
+        work_units = [
+            WorkUnit(
+                id="wu-2023-01-01-test",
+                title="Test work unit for threshold test",
+                problem=Problem(statement="This is a test problem statement"),
+                actions=["Some action performed", "Another action completed"],
+                outcome=Outcome(result="Test result achieved"),
+                position_id="pos-recent-test",
+            )
+        ]
+
+        result = curator.curate_action_bullets(recent_position, work_units, sample_jd)
+
+        # With high threshold, items below should be excluded
+        # Verify reason mentions threshold filtering
+        assert "below threshold" in result.reason
+
+    def test_curate_action_bullets_ranking_by_relevance(
+        self,
+        mock_embedder: MagicMock,
+        sample_jd: JobDescription,
+        recent_position: Position,
+    ) -> None:
+        """Selected actions should be ranked by JD relevance score."""
+        curator = ContentCurator(embedder=mock_embedder)
+        work_units = [
+            WorkUnit(
+                id="wu-2023-01-01-relevant",
+                title="Relevant work for Python and AWS",
+                problem=Problem(statement="Technical infrastructure problem needing attention"),
+                actions=[
+                    "Built Python microservices with AWS Lambda",
+                    "Deployed Kubernetes clusters with CI/CD pipelines",
+                ],
+                outcome=Outcome(result="Improved deployment by 50%"),
+                position_id="pos-recent-test",
+            ),
+            WorkUnit(
+                id="wu-2023-01-02-less-relevant",
+                title="Less relevant administrative work",
+                problem=Problem(statement="Administrative coordination needed improvement"),
+                actions=["Organized team meetings"],
+                outcome=Outcome(result="Better communication"),
+                position_id="pos-recent-test",
+            ),
+        ]
+
+        result = curator.curate_action_bullets(recent_position, work_units, sample_jd)
+
+        # Should have scores and selections
+        assert len(result.selected) > 0
+        assert len(result.scores) > 0
+
+
+class TestHasQuantifiedText:
+    """Tests for _has_quantified_text helper method."""
+
+    def test_detects_percentage(self, mock_embedder: MagicMock) -> None:
+        """Should detect percentage patterns."""
+        curator = ContentCurator(embedder=mock_embedder)
+        assert curator._has_quantified_text("Reduced costs by 50%")
+        assert curator._has_quantified_text("100% uptime achieved")
+
+    def test_detects_dollar_amounts(self, mock_embedder: MagicMock) -> None:
+        """Should detect dollar amount patterns."""
+        curator = ContentCurator(embedder=mock_embedder)
+        assert curator._has_quantified_text("Saved $100K annually")
+        assert curator._has_quantified_text("Generated $5M revenue")
+        assert curator._has_quantified_text("Budget of $2,500,000")
+
+    def test_detects_multipliers(self, mock_embedder: MagicMock) -> None:
+        """Should detect multiplier patterns."""
+        curator = ContentCurator(embedder=mock_embedder)
+        assert curator._has_quantified_text("Achieved 3x improvement")
+        assert curator._has_quantified_text("10x faster than baseline")
+
+    def test_detects_time_metrics(self, mock_embedder: MagicMock) -> None:
+        """Should detect time-based metrics."""
+        curator = ContentCurator(embedder=mock_embedder)
+        assert curator._has_quantified_text("Reduced from 2 hours to 10 minutes")
+        assert curator._has_quantified_text("Saved 5 days per sprint")
+        assert curator._has_quantified_text("Delivered 3 months ahead of schedule")
+
+    def test_detects_people_metrics(self, mock_embedder: MagicMock) -> None:
+        """Should detect people-based metrics."""
+        curator = ContentCurator(embedder=mock_embedder)
+        assert curator._has_quantified_text("Supported 500 users")
+        assert curator._has_quantified_text("Served 1000 customers")
+        assert curator._has_quantified_text("Managed 10 engineers")
+        assert curator._has_quantified_text("Coordinated across 5 teams")
+
+    def test_no_false_positives(self, mock_embedder: MagicMock) -> None:
+        """Should not detect non-metric patterns."""
+        curator = ContentCurator(embedder=mock_embedder)
+        assert not curator._has_quantified_text("Improved performance significantly")
+        assert not curator._has_quantified_text("Led successful migration")
+        assert not curator._has_quantified_text("Collaborated with stakeholders")
+
+
 class TestIntegrationWithRealEmbeddings:
     """Integration tests using real EmbeddingService.
 

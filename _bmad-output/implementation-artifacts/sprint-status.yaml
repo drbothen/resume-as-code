@@ -150,8 +150,12 @@ development_status:
   7-13-impact-category-classification: done  # P3, 5 pts - Classify financial/operational/talent impacts
   7-14-jd-relevant-content-curation: done  # P2, 5 pts - Research-backed limits per section
   7-15-comprehensive-algorithm-documentation: done  # P1, 3 pts - Full algorithm docs (depends on 7.8-7.14)
-  7-16-cli-config-file-override: review  # P1, 2 pts - --config flag for custom config paths
-  7-17-onet-registry-workflow-wiring: review  # P2, 5 pts - Wire O*NET & Registry into plan/build workflow
+  7-16-cli-config-file-override: done  # P1, 2 pts - --config flag for custom config paths
+  7-17-onet-registry-workflow-wiring: done  # P2, 5 pts - Wire O*NET & Registry into plan/build workflow
+  7-18-score-actions-against-jd: done  # P2, 5 pts - Score action bullets against JD relevance
+  7-19-tailored-resume-notice: done  # P3, 2 pts - Optional footer notice for tailored resumes
+  7-20-employment-continuity-gap-detection: ready-for-dev  # P2, 3 pts - Maintain timeline continuity
+  7-21-resume-init-command: ready-for-dev  # P2, 3 pts - Initialize project with resume init command
   epic-7-retrospective: optional
 
 # RESEARCH / TECH DEBT BACKLOG:

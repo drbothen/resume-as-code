@@ -16,6 +16,12 @@ from resume_as_code.models.publication import Publication
 
 logger = logging.getLogger(__name__)
 
+# Default tailored notice text (Story 7.19)
+DEFAULT_TAILORED_NOTICE = (
+    "This resume highlights experience most relevant to this role. "
+    "Full details available upon request."
+)
+
 
 class BulletsPerPositionConfig(BaseModel):
     """Bullet limits based on position age.
@@ -57,6 +63,18 @@ class CurationConfig(BaseModel):
         ge=0.0,
         le=1.0,
         description="Minimum score for inclusion (below this, item is excluded)",
+    )
+
+    # Action-level scoring (Story 7.18)
+    action_scoring_enabled: bool = Field(
+        default=True,
+        description="Score individual action bullets against JD relevance.",
+    )
+    min_action_relevance_score: float = Field(
+        default=0.25,
+        ge=0.0,
+        le=1.0,
+        description="Minimum score for action bullet inclusion.",
     )
 
 
@@ -318,6 +336,16 @@ class ResumeConfig(BaseModel):
 
     # Publications & Speaking Engagements
     publications: list[Publication] = Field(default_factory=list)
+
+    # Tailored resume notice (Story 7.19)
+    tailored_notice: bool = Field(
+        default=False,
+        description="Show footer notice that resume is tailored for the role",
+    )
+    tailored_notice_text: str | None = Field(
+        default=None,
+        description="Custom tailored notice text (overrides default)",
+    )
 
     # O*NET API configuration
     onet: ONetConfig | None = Field(default=None)

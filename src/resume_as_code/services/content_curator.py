@@ -10,12 +10,15 @@ Research Basis: 2024-2025 resume studies analyzing 18.4M resumes.
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 from dataclasses import dataclass, field
 from datetime import date
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -110,9 +113,14 @@ class ContentCurator:
             }
             self.bullets_config = config.bullets_per_position
             self.min_relevance_score = config.min_relevance_score
+            # Action-level scoring config (Story 7.18)
+            self.action_scoring_enabled = config.action_scoring_enabled
+            self.min_action_relevance_score = config.min_action_relevance_score
         else:
             self.limits = DEFAULT_SECTION_LIMITS.copy()
             self.min_relevance_score = 0.2
+            self.action_scoring_enabled = True
+            self.min_action_relevance_score = 0.25
 
     def curate_highlights(
         self,
@@ -383,6 +391,135 @@ class ContentCurator:
             f"for {years_ago:.0f}-year-old position (limit: {max_bullets})",
         )
 
+    def curate_action_bullets(
+        self,
+        position: Position,
+        work_units: list[WorkUnit],
+        jd: JobDescription,
+    ) -> CurationResult[str]:
+        """Select most JD-relevant action bullets for a position.
+
+        Scores individual action bullets (outcome.result + actions) from all work units
+        and selects the top N based on JD relevance.
+
+        Bullet limits based on position recency:
+        - Recent (0-3 years): 4-6 bullets
+        - Mid (3-7 years): 3-4 bullets
+        - Older (7+ years): 2-3 bullets
+
+        Args:
+            position: The position these work units belong to.
+            work_units: Work units containing actions to curate.
+            jd: Job description for matching.
+
+        Returns:
+            CurationResult with selected/excluded action strings.
+        """
+        if not work_units:
+            return CurationResult(selected=[], excluded=[], reason="No work units for position")
+
+        # Determine bullet limits based on position age
+        years_ago = self._position_age_years(position)
+        bullet_config = self._get_bullet_config(years_ago)
+        max_bullets = int(bullet_config["max"])
+
+        # Pre-compute JD embedding for efficiency
+        jd_embedding = self.embedder.embed_passage(jd.text_for_ranking)
+
+        # Extract all action bullets from all work units
+        # Each action is stored as (action_text, work_unit_id, source_type)
+        all_actions: list[tuple[str, str, str]] = []
+        for wu in work_units:
+            # Include outcome.result as primary bullet
+            if wu.outcome.result:
+                all_actions.append((wu.outcome.result, wu.id, "result"))
+            # Include actions
+            for i, action in enumerate(wu.actions):
+                all_actions.append((action, wu.id, f"action_{i}"))
+
+        # Score each action
+        # Key format: {work_unit_id}:{source_type}
+        scores: dict[str, float] = {}
+        for action_text, wu_id, source_type in all_actions:
+            key = f"{wu_id}:{source_type}"
+            scores[key] = self.score_action(action_text, jd, jd_embedding)
+
+        # Filter by minimum threshold (Task 4: Apply minimum threshold filter)
+        min_score = self.min_action_relevance_score
+        qualified = [
+            (action, f"{wu_id}:{source}")
+            for action, wu_id, source in all_actions
+            if scores.get(f"{wu_id}:{source}", 0) >= min_score
+        ]
+        below_threshold = [
+            (action, f"{wu_id}:{source}")
+            for action, wu_id, source in all_actions
+            if scores.get(f"{wu_id}:{source}", 0) < min_score
+        ]
+
+        # Log excluded count at DEBUG level (Story 7.18 Task 4.2)
+        if below_threshold:
+            logger.debug(
+                "Excluded %d actions below threshold %.2f for position %s",
+                len(below_threshold),
+                min_score,
+                position.id,
+            )
+
+        # Rank by score descending
+        qualified.sort(key=lambda x: scores.get(x[1], 0), reverse=True)
+
+        # Select top N
+        selected = [action for action, _ in qualified[:max_bullets]]
+        excluded_qualified = [action for action, _ in qualified[max_bullets:]]
+        excluded_threshold = [action for action, _ in below_threshold]
+
+        return CurationResult(
+            selected=selected,
+            excluded=excluded_qualified + excluded_threshold,
+            scores=scores,
+            reason=f"Selected {len(selected)} of {len(all_actions)} actions "
+            f"by JD relevance for {years_ago:.0f}-year-old position "
+            f"(limit: {max_bullets}, {len(below_threshold)} below threshold)",
+        )
+
+    def score_action(
+        self,
+        action: str,
+        jd: JobDescription,
+        jd_embedding: NDArray[np.float32] | None = None,
+    ) -> float:
+        """Score individual action bullet against JD relevance.
+
+        Scoring formula (Story 7.18 AC #2):
+        - 60% semantic similarity to JD requirements
+        - 30% keyword overlap with JD extracted keywords
+        - 10% quantified impact boost if action contains metrics
+
+        Args:
+            action: Action bullet text.
+            jd: Job description for matching.
+            jd_embedding: Pre-computed JD embedding (optional, for batch efficiency).
+
+        Returns:
+            Relevance score between 0.0 and 1.0.
+        """
+        if jd_embedding is None:
+            jd_embedding = self.embedder.embed_passage(jd.text_for_ranking)
+
+        # Semantic similarity (60% weight)
+        action_emb = self.embedder.embed_query(action)
+        semantic_score = self._cosine_similarity(action_emb, jd_embedding)
+
+        # Keyword overlap (30% weight)
+        jd_keywords = {kw.lower() for kw in jd.keywords}
+        keyword_score = self._keyword_overlap(action, jd_keywords)
+
+        # Quantified boost (10% weight) - binary: 1.0 if quantified, 0.0 if not
+        quantified_score = 1.0 if self._has_quantified_text(action) else 0.0
+
+        return (0.6 * semantic_score) + (0.3 * keyword_score) + (0.1 * quantified_score)
+
     # --- Helper Methods ---
 
     def _cosine_similarity(
@@ -482,11 +619,31 @@ class ContentCurator:
         """Check if work unit has quantified metrics."""
         outcome = wu.outcome
         text = f"{outcome.result} {outcome.quantified_impact or ''}"
+        return self._has_quantified_text(text)
+
+    def _has_quantified_text(self, text: str) -> bool:
+        """Check if text contains quantified metrics.
+
+        Detects common metric patterns:
+        - Percentages: 40%, 100%
+        - Dollar amounts: $50K, $1M
+        - Multipliers: 3x, 10x
+        - Time metrics: 2 hours, 5 days
+        - People metrics: 500 users, 5 engineers, 10 teams
+
+        Args:
+            text: Text to analyze.
+
+        Returns:
+            True if quantified metrics found.
+        """
         patterns = [
             r"\d+%",  # Percentages
             r"\$[\d,]+[KMB]?",  # Dollar amounts
             r"\d+x\b",  # Multipliers
-            r"\d+\s*(?:hours?|days?|weeks?|months?)",  # Time metrics
+            r"\d+\s*(?:hours?|minutes?|days?|weeks?|months?)",  # Time metrics
+            r"\d+\s*(?:users?|customers?|clients?)",  # People metrics
+            r"\d+\s*(?:teams?|engineers?|developers?)",  # Team metrics
         ]
         return any(re.search(p, text, re.IGNORECASE) for p in patterns)
 

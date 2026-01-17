@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 import click
 
 from resume_as_code.config import get_config
+from resume_as_code.models.config import DEFAULT_TAILORED_NOTICE
 from resume_as_code.models.plan import SavedPlan
 from resume_as_code.models.resume import ContactInfo, ResumeData
 from resume_as_code.services.position_service import PositionService
@@ -72,6 +73,11 @@ if TYPE_CHECKING:
     default=None,
     help="Base filename for output (default: 'resume'). E.g., --name john-doe-cto",
 )
+@click.option(
+    "--tailored-notice/--no-tailored-notice",
+    default=None,
+    help="Include/exclude tailored resume footer notice (overrides config)",
+)
 @click.pass_context
 @handle_errors
 def build_command(
@@ -83,6 +89,7 @@ def build_command(
     template_name: str | None,
     strict_positions: bool,
     output_name: str | None,
+    tailored_notice: bool | None,
 ) -> None:
     """Build resume from plan or job description.
 
@@ -149,6 +156,10 @@ def build_command(
     # Build ResumeData with skill curation (Story 6.3) and position grouping (Story 6.7)
     contact = _load_contact_info(config)
     positions_path = config.positions_path
+
+    # Get full JD for action-level scoring (Story 7.18)
+    jd_for_scoring = _get_jd_for_scoring(plan_path, jd_path)
+
     resume = ResumeData.from_work_units(
         work_units=work_units,
         contact=contact,
@@ -157,8 +168,21 @@ def build_command(
         jd_keywords=jd_keywords if jd_keywords else None,  # Pass JD keywords for prioritization
         positions_path=positions_path if positions_path.exists() else None,  # Position grouping
         onet_config=config.onet,  # O*NET skill discovery (Story 7.17)
+        curation_config=config.curation,  # Action-level scoring config (Story 7.18)
+        jd=jd_for_scoring,  # Full JD for action scoring (Story 7.18)
     )
-    # Add config data to ResumeData (Story 6.2, 6.6, 6.13, 6.14, 6.15)
+    # Resolve tailored notice (Story 7.19)
+    # Do this BEFORE constructing final ResumeData so it's included
+    # CLI flag takes precedence over config
+    show_tailored_notice = (
+        tailored_notice if tailored_notice is not None else config.tailored_notice
+    )
+    actual_tailored_notice_text: str | None = None
+    if show_tailored_notice:
+        # Use custom text from config, or fall back to default
+        actual_tailored_notice_text = config.tailored_notice_text or DEFAULT_TAILORED_NOTICE
+
+    # Add config data to ResumeData (Story 6.2, 6.6, 6.13, 6.14, 6.15, 7.19)
     resume = ResumeData(
         contact=resume.contact,
         summary=resume.summary,
@@ -169,6 +193,7 @@ def build_command(
         career_highlights=list(config.career_highlights),
         board_roles=list(config.board_roles),
         publications=list(config.publications),
+        tailored_notice_text=actual_tailored_notice_text,
     )
 
     # Generate outputs atomically (AC: #4, #5, #7)
@@ -276,6 +301,42 @@ def _get_jd_keywords_from_plan(plan: SavedPlan) -> set[str]:
         return set()
 
 
+def _get_jd_for_scoring(
+    plan_path: Path | None,
+    jd_path: Path | None,
+) -> Any:
+    """Get full JobDescription for action-level scoring (Story 7.18).
+
+    Args:
+        plan_path: Path to saved plan file (has jd_path embedded).
+        jd_path: Direct path to JD file.
+
+    Returns:
+        JobDescription object, or None if JD not available.
+    """
+    from resume_as_code.services.jd_parser import parse_jd_file
+
+    # Direct JD path takes precedence
+    if jd_path and jd_path.exists():
+        try:
+            return parse_jd_file(jd_path)
+        except Exception:
+            return None
+
+    # Try to get JD from plan
+    if plan_path and plan_path.exists():
+        try:
+            plan = SavedPlan.load(plan_path)
+            if plan.jd_path:
+                jd_file = Path(plan.jd_path)
+                if jd_file.exists():
+                    return parse_jd_file(jd_file)
+        except Exception:
+            pass
+
+    return None
+
+
 def _load_work_units_from_plan(plan: SavedPlan, config: ResumeConfig) -> list[dict[str, Any]]:
     """Load Work Units by IDs from plan.
 
@@ -347,7 +408,7 @@ def _generate_outputs(
     if all generation succeeds. This prevents partial files on failure (AC: #7).
 
     Args:
-        resume: ResumeData to render.
+        resume: ResumeData to render (includes tailored_notice_text if set).
         plan: SavedPlan used for the build.
         work_units: List of Work Unit dictionaries included in build.
         output_format: Format to generate (pdf, docx, all).
