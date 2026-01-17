@@ -1,6 +1,6 @@
 # Story 7.21: Resume Init Command
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -68,45 +68,45 @@ So that **I can quickly start capturing work units without manually creating con
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create init command structure (AC: #1, #2, #3)
-  - [ ] 1.1 Create `src/resume_as_code/commands/init.py`
-  - [ ] 1.2 Add `@click.command("init")` with options
-  - [ ] 1.3 Implement interactive profile prompts using Rich
-  - [ ] 1.4 Implement `--non-interactive` mode with placeholders
-  - [ ] 1.5 Wire command into cli.py via `_register_commands()`
+- [x] Task 1: Create init command structure (AC: #1, #2, #3)
+  - [x] 1.1 Create `src/resume_as_code/commands/init.py`
+  - [x] 1.2 Add `@click.command("init")` with options
+  - [x] 1.3 Implement interactive profile prompts using Rich
+  - [x] 1.4 Implement `--non-interactive` mode with placeholders
+  - [x] 1.5 Wire command into cli.py via `_register_commands()`
 
-- [ ] Task 2: Implement file creation logic (AC: #1, #6)
-  - [ ] 2.1 Create default `.resume.yaml` with profile data
-  - [ ] 2.2 Create `work-units/` directory with `.gitkeep`
-  - [ ] 2.3 Create `positions.yaml` with `[]` content
-  - [ ] 2.4 Output success messages with Rich formatting
-  - [ ] 2.5 Display next steps suggestions
+- [x] Task 2: Implement file creation logic (AC: #1, #6)
+  - [x] 2.1 Create default `.resume.yaml` with profile data
+  - [x] 2.2 Create `work-units/` directory with `.gitkeep`
+  - [x] 2.3 Create `positions.yaml` with `[]` content
+  - [x] 2.4 Output success messages with Rich formatting
+  - [x] 2.5 Display next steps suggestions
 
-- [ ] Task 3: Implement safety checks (AC: #4, #5)
-  - [ ] 3.1 Check for existing `.resume.yaml` before proceeding
-  - [ ] 3.2 Implement `--force` flag with backup logic
-  - [ ] 3.3 Create backup: `.resume.yaml.bak`
-  - [ ] 3.4 Return appropriate exit codes
+- [x] Task 3: Implement safety checks (AC: #4, #5)
+  - [x] 3.1 Check for existing `.resume.yaml` before proceeding
+  - [x] 3.2 Implement `--force` flag with backup logic
+  - [x] 3.3 Create backup: `.resume.yaml.bak`
+  - [x] 3.4 Return appropriate exit codes
 
-- [ ] Task 4: JSON output support (AC: #7)
-  - [ ] 4.1 Use `JSONResponse` model from `models/output.py`
-  - [ ] 4.2 Include files_created list in data
-  - [ ] 4.3 Include backup_created if applicable
+- [x] Task 4: JSON output support (AC: #7)
+  - [x] 4.1 Use `JSONResponse` model from `models/output.py`
+  - [x] 4.2 Include files_created list in data
+  - [x] 4.3 Include backup_created if applicable
 
-- [ ] Task 5: Unit and integration tests
-  - [ ] 5.1 Test init creates expected files
-  - [ ] 5.2 Test init fails when config exists
-  - [ ] 5.3 Test --force creates backup
-  - [ ] 5.4 Test --non-interactive creates placeholders
-  - [ ] 5.5 Test JSON output format
-  - [ ] 5.6 Test interactive prompts (with mock input)
+- [x] Task 5: Unit and integration tests
+  - [x] 5.1 Test init creates expected files
+  - [x] 5.2 Test init fails when config exists
+  - [x] 5.3 Test --force creates backup
+  - [x] 5.4 Test --non-interactive creates placeholders
+  - [x] 5.5 Test JSON output format
+  - [x] 5.6 Test interactive prompts (with mock input)
 
-- [ ] Task 6: Quality checks
-  - [ ] 6.1 Run `ruff check src tests --fix`
-  - [ ] 6.2 Run `ruff format src tests`
-  - [ ] 6.3 Run `mypy src --strict` (zero errors)
-  - [ ] 6.4 Run full test suite
-  - [ ] 6.5 Update CLAUDE.md with new command
+- [x] Task 6: Quality checks
+  - [x] 6.1 Run `ruff check src tests --fix`
+  - [x] 6.2 Run `ruff format src tests`
+  - [x] 6.3 Run `mypy src --strict` (zero errors)
+  - [x] 6.4 Run full test suite
+  - [x] 6.5 Update CLAUDE.md with new command
 
 ## Dev Notes
 
@@ -512,16 +512,41 @@ Add to Quick Reference table:
 
 ### Agent Model Used
 
-<!-- Filled by dev agent -->
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
-<!-- Filled by dev agent -->
+- RED phase: 17 tests written, all failing (command not found)
+- GREEN phase: init command implemented, all 17 tests passing
+- REFACTOR phase: Lint fixes (ternary operator), format applied
 
 ### Completion Notes List
 
-<!-- Filled by dev agent -->
+- Implemented `resume init` command with interactive and non-interactive modes
+- Created init.py with all AC requirements: file creation, profile prompts, --force backup, JSON output
+- Wired command into cli.py via `_register_commands()`
+- All 17 unit tests pass covering all 7 acceptance criteria
+- ruff check and mypy --strict pass with zero errors
+- Updated CLAUDE.md Quick Reference table with init command entries
+
+### Code Review Fixes (2026-01-17)
+
+**Issues Addressed:**
+1. **[HIGH] AC #2 URL Validation** - Added `_is_valid_url()` function and `_prompt_for_url()` helper to validate linkedin, github, website URLs. Invalid URLs now prompt for re-entry.
+2. **[MEDIUM] JSON error output consistency** - Changed `_output_json_error()` to use `err_console.print()` instead of `click.echo()` for consistent stream handling
+3. **[MEDIUM] Unused parameter** - Removed unused `ctx` parameter from `_output_json_error()` function
+4. **[MEDIUM] Inline import** - Removed inline `import click` from `_output_json_error()` (click already imported at module level)
+5. **[MEDIUM] Test coverage** - Added 22 new tests for URL validation (9 valid URLs, 9 invalid URLs, 4 interactive validation tests)
+6. **[LOW] Docstring** - Added parameter documentation to `_output_json_error()` docstring
+
+**Test Results:** 39 tests passing (17 original + 22 URL validation tests)
 
 ### File List
 
-<!-- Filled by dev agent after implementation -->
+**New files:**
+- `src/resume_as_code/commands/init.py` - Init command implementation
+- `tests/unit/test_init_command.py` - Unit tests for init command
+
+**Modified files:**
+- `src/resume_as_code/cli.py` - Added init_command import and registration
+- `CLAUDE.md` - Added init command to Quick Reference table

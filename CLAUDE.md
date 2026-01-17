@@ -138,6 +138,9 @@ CLI tool for git-native resume generation from structured Work Units.
 | `resume --help` | Show all commands |
 | `resume --version` | Show version |
 | `resume config` | Show current configuration |
+| `resume init` | Initialize new resume project |
+| `resume init --non-interactive` | Quick setup with placeholders |
+| `resume init --force` | Reinitialize (backs up existing config) |
 | `resume new position` | Create new employment position |
 | `resume new position "Employer\|Title\|Start\|End"` | Inline position creation |
 | `resume list positions` | List all positions |

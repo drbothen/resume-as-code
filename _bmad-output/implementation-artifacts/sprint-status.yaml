@@ -155,7 +155,7 @@ development_status:
   7-18-score-actions-against-jd: done  # P2, 5 pts - Score action bullets against JD relevance
   7-19-tailored-resume-notice: review  # P3, 2 pts - Optional footer notice for tailored resumes
   7-20-employment-continuity-gap-detection: in-progress  # P2, 3 pts - Maintain timeline continuity
-  7-21-resume-init-command: ready-for-dev  # P2, 3 pts - Initialize project with resume init command
+  7-21-resume-init-command: done  # P2, 3 pts - Initialize project with resume init command
   epic-7-retrospective: optional
 
 # RESEARCH / TECH DEBT BACKLOG:
