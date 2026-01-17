@@ -14,7 +14,7 @@ This epic addresses schema inconsistencies identified during deep codebase analy
 - Evidence model requires URL even for local-only artifacts
 
 **Priority:** P1-P3 (foundational to advanced integration)
-**Total Points:** 29
+**Total Points:** 34
 
 ---
 
@@ -1843,3 +1843,436 @@ curation:
 - [ ] plan command shows action selection with --show-actions
 - [ ] Unit tests for action scoring (enabled and disabled modes)
 - [ ] Executive templates use action scoring by default
+
+---
+
+## Story 7.19: Tailored Resume Notice
+
+As a **job seeker**,
+I want **an optional footer notice indicating this resume is tailored for the role**,
+So that **recruiters understand relevant details were prioritized and can request my full history**.
+
+**Story Points:** 2
+**Priority:** P3
+
+**Problem Statement:**
+When resumes are tailored for specific JDs, some experience is intentionally omitted or condensed. Recruiters may wonder about gaps or want more details. A subtle footer notice sets expectations and invites further conversation.
+
+**Research Basis:**
+- Executive resume best practice: communicate that content is curated
+- Opens door for "tell me more" conversations in interviews
+- Professional way to acknowledge tailoring without appearing incomplete
+
+**Acceptance Criteria:**
+
+**Given** configuration `tailored_notice: true` in .resume.yaml
+**When** building a resume
+**Then** a footer notice appears on the last page
+**And** the notice reads: "This resume highlights experience most relevant to this role. Full details available upon request."
+
+**Given** CLI flag `--tailored-notice`
+**When** building a resume
+**Then** the footer notice is included regardless of config setting
+
+**Given** CLI flag `--no-tailored-notice`
+**When** building a resume
+**Then** the footer notice is excluded regardless of config setting
+
+**Given** neither config nor CLI flag is set
+**When** building a resume
+**Then** no footer notice is included (opt-in by default)
+
+**Given** configuration `tailored_notice_text: "Custom message here"`
+**When** building a resume
+**Then** the custom text is used instead of the default
+
+**Given** the footer notice is enabled
+**When** viewing the rendered PDF
+**Then** the notice appears as subtle text at the bottom of the last page
+**And** it uses smaller font (8-9pt) and muted color
+**And** it does not interfere with main resume content
+
+**Technical Notes:**
+```python
+# src/resume_as_code/models/config.py
+class ResumeConfig(BaseModel):
+    # ... existing fields ...
+    tailored_notice: bool = Field(
+        default=False,
+        description="Show footer notice that resume is tailored"
+    )
+    tailored_notice_text: str | None = Field(
+        default=None,
+        description="Custom tailored notice text (overrides default)"
+    )
+
+DEFAULT_TAILORED_NOTICE = (
+    "This resume highlights experience most relevant to this role. "
+    "Full details available upon request."
+)
+```
+
+**CLI Integration:**
+```python
+# src/resume_as_code/commands/build.py
+@click.option(
+    "--tailored-notice/--no-tailored-notice",
+    default=None,
+    help="Include/exclude tailored resume footer notice"
+)
+def build(tailored_notice: bool | None, ...):
+    # CLI flag overrides config
+    if tailored_notice is not None:
+        config.tailored_notice = tailored_notice
+```
+
+**Template Integration:**
+```html
+{# Add to base of all templates before </body> #}
+{% if tailored_notice %}
+<footer class="tailored-notice">
+    {{ tailored_notice_text }}
+</footer>
+{% endif %}
+```
+
+**CSS Styling:**
+```css
+.tailored-notice {
+    position: running(tailored-footer);
+    font-size: 8pt;
+    color: #666;
+    text-align: center;
+    font-style: italic;
+    margin-top: 2em;
+    padding-top: 0.5em;
+    border-top: 1px solid #ddd;
+}
+
+@page :last {
+    @bottom-center {
+        content: element(tailored-footer);
+    }
+}
+```
+
+**Config Extension:**
+```yaml
+# .resume.yaml
+tailored_notice: true
+tailored_notice_text: "Tailored resume. Complete history available on request."
+```
+
+**Files to Create/Modify:**
+- Modify: `src/resume_as_code/models/config.py` (add tailored_notice fields)
+- Modify: `src/resume_as_code/commands/build.py` (add CLI flag)
+- Modify: `src/resume_as_code/services/template_service.py` (pass notice to templates)
+- Modify: All template HTML files (add conditional footer)
+- Modify: All template CSS files (add footer styling)
+
+**Definition of Done:**
+- [ ] `tailored_notice` config option (default: false)
+- [ ] `tailored_notice_text` config option for custom text
+- [ ] `--tailored-notice` / `--no-tailored-notice` CLI flags
+- [ ] CLI flags override config settings
+- [ ] Footer renders on last page of all templates
+- [ ] Subtle styling (small font, muted color)
+- [ ] Unit tests for config and CLI integration
+- [ ] CLAUDE.md updated with new CLI option
+
+---
+
+## Story 7.20: Employment Continuity & Gap Detection
+
+As a **job seeker**,
+I want **my resume to maintain employment timeline continuity when work units are filtered by relevance**,
+So that **tailored resumes don't appear to have unexplained employment gaps**.
+
+**Story Points:** 3
+**Priority:** P2
+
+**Problem Statement:**
+When filtering work units by JD relevance, entire positions may be excluded if none of their work units score highly enough. This creates apparent employment gaps that raise red flags for recruiters, even though the candidate was continuously employed.
+
+**Research Basis:**
+- Employment gaps >3 months trigger ATS/recruiter scrutiny
+- Timeline continuity is a basic resume hygiene requirement
+- Tailoring should curate content, not create false narratives
+
+**Acceptance Criteria:**
+
+**Given** configuration `employment_continuity: minimum_bullet` (default)
+**When** filtering work units by JD relevance
+**Then** at least one work unit is included from each position
+**And** the highest-scoring work unit is selected even if below threshold
+
+**Given** configuration `employment_continuity: allow_gaps`
+**When** filtering work units by JD relevance
+**Then** pure relevance filtering is applied
+**And** positions with no relevant work units are excluded
+
+**Given** `employment_continuity: allow_gaps` is set
+**When** running `resume plan --jd job.txt`
+**Then** gap detection analyzes the resulting timeline
+**And** gaps >3 months are reported with warnings
+
+**Given** a gap is detected during `plan`
+**When** displaying results
+**Then** warning shows: "⚠️ Employment Gap Detected"
+**And** shows which position(s) would be omitted
+**And** shows gap duration between positions
+**And** suggests using `--no-allow-gaps` to force minimum inclusion
+
+**Given** CLI flag `--allow-gaps`
+**When** building a resume
+**Then** `employment_continuity: allow_gaps` behavior is used
+**And** gap detection warnings are shown
+
+**Given** CLI flag `--no-allow-gaps`
+**When** building a resume
+**Then** `employment_continuity: minimum_bullet` behavior is used
+**And** at least one bullet per position is guaranteed
+
+**Given** `--show-excluded` flag is used with detected gaps
+**When** displaying excluded work units
+**Then** excluded work units that would cause gaps are flagged
+**And** shows "⚠️ Excluding this creates X-month gap"
+
+**Technical Notes:**
+```python
+# src/resume_as_code/services/employment_continuity.py
+from dataclasses import dataclass
+from datetime import date
+from typing import Literal
+
+EmploymentContinuityMode = Literal["minimum_bullet", "allow_gaps"]
+
+@dataclass
+class EmploymentGap:
+    """Detected gap in employment timeline."""
+    start_date: date
+    end_date: date
+    duration_months: int
+    missing_position_id: str
+    missing_employer: str
+
+class EmploymentContinuityService:
+    """Ensure employment timeline continuity in tailored resumes."""
+
+    def __init__(self, mode: EmploymentContinuityMode = "minimum_bullet"):
+        self.mode = mode
+
+    def ensure_continuity(
+        self,
+        positions: list[Position],
+        selected_work_units: list[WorkUnit],
+        all_work_units: list[WorkUnit],
+    ) -> list[WorkUnit]:
+        """Ensure at least one work unit per position if mode is minimum_bullet.
+
+        Args:
+            positions: All positions in timeline.
+            selected_work_units: Work units selected by relevance scoring.
+            all_work_units: All available work units.
+
+        Returns:
+            Updated list of work units with continuity guaranteed.
+        """
+        if self.mode == "allow_gaps":
+            return selected_work_units
+
+        # Find positions with no selected work units
+        selected_position_ids = {wu.position_id for wu in selected_work_units if wu.position_id}
+
+        result = list(selected_work_units)
+
+        for position in positions:
+            if position.id not in selected_position_ids:
+                # Find highest-scoring work unit for this position
+                position_wus = [wu for wu in all_work_units if wu.position_id == position.id]
+                if position_wus:
+                    # Select the one with highest score (if scores available) or first
+                    best_wu = max(position_wus, key=lambda wu: getattr(wu, '_relevance_score', 0))
+                    result.append(best_wu)
+
+        return result
+
+    def detect_gaps(
+        self,
+        positions: list[Position],
+        selected_work_units: list[WorkUnit],
+        min_gap_months: int = 3,
+    ) -> list[EmploymentGap]:
+        """Detect employment gaps in the filtered resume.
+
+        Args:
+            positions: All positions in timeline.
+            selected_work_units: Work units selected for resume.
+            min_gap_months: Minimum gap duration to report.
+
+        Returns:
+            List of detected employment gaps.
+        """
+        # Get positions that have work units in the selection
+        included_position_ids = {wu.position_id for wu in selected_work_units if wu.position_id}
+        included_positions = [p for p in positions if p.id in included_position_ids]
+        excluded_positions = [p for p in positions if p.id not in included_position_ids]
+
+        if not excluded_positions:
+            return []
+
+        gaps = []
+
+        # Sort all positions by start date
+        all_sorted = sorted(positions, key=lambda p: p.start_date or "")
+
+        for excluded in excluded_positions:
+            # Find the gap this exclusion creates
+            exc_start = self._parse_date(excluded.start_date)
+            exc_end = self._parse_date(excluded.end_date) or date.today()
+
+            # Check if there's a gap before and after this position
+            gap_months = self._calculate_gap_months(exc_start, exc_end)
+
+            if gap_months >= min_gap_months:
+                gaps.append(EmploymentGap(
+                    start_date=exc_start,
+                    end_date=exc_end,
+                    duration_months=gap_months,
+                    missing_position_id=excluded.id,
+                    missing_employer=excluded.employer,
+                ))
+
+        return gaps
+
+    def format_gap_warning(self, gaps: list[EmploymentGap]) -> str:
+        """Format gap warnings for display."""
+        if not gaps:
+            return ""
+
+        lines = ["⚠️  Employment Gap Detected"]
+        for gap in gaps:
+            lines.append(f"    Missing: {gap.missing_employer} ({gap.start_date} to {gap.end_date})")
+            lines.append(f"    Gap: {gap.duration_months} months")
+        lines.append("")
+        lines.append("    Suggestion: Using --no-allow-gaps will include 1 bullet from each position")
+
+        return "\n".join(lines)
+```
+
+**Config Extension:**
+```yaml
+# .resume.yaml
+employment_continuity: minimum_bullet  # Options: minimum_bullet | allow_gaps
+# minimum_bullet (default): Always include at least 1 work unit per position
+# allow_gaps: Pure relevance filtering, but warns about detected gaps
+```
+
+**CLI Integration:**
+```python
+# src/resume_as_code/commands/build.py
+@click.option(
+    "--allow-gaps/--no-allow-gaps",
+    default=None,
+    help="Allow/prevent employment gaps in tailored resume"
+)
+def build(allow_gaps: bool | None, ...):
+    # CLI flag overrides config
+    if allow_gaps is not None:
+        mode = "allow_gaps" if allow_gaps else "minimum_bullet"
+        config.employment_continuity = mode
+```
+
+**Integration with plan command:**
+```python
+# src/resume_as_code/commands/plan.py
+def display_plan(plan: ResumePlan, config: ResumeConfig, show_excluded: bool):
+    # ... existing display logic ...
+
+    # Gap detection (always runs when allow_gaps mode)
+    if config.employment_continuity == "allow_gaps":
+        continuity_svc = EmploymentContinuityService(mode="allow_gaps")
+        gaps = continuity_svc.detect_gaps(
+            positions=all_positions,
+            selected_work_units=plan.selected_work_units,
+        )
+
+        if gaps:
+            console.print(continuity_svc.format_gap_warning(gaps), style="yellow")
+```
+
+**Files to Create/Modify:**
+- Create: `src/resume_as_code/services/employment_continuity.py`
+- Modify: `src/resume_as_code/models/config.py` (add employment_continuity field)
+- Modify: `src/resume_as_code/commands/plan.py` (add gap detection display)
+- Modify: `src/resume_as_code/commands/build.py` (add --allow-gaps flag)
+- Modify: `src/resume_as_code/services/ranker.py` (integrate continuity service)
+
+**Definition of Done:**
+- [ ] `employment_continuity` config option (default: minimum_bullet)
+- [ ] EmploymentContinuityService with ensure_continuity() method
+- [ ] Gap detection with configurable minimum (default 3 months)
+- [ ] `--allow-gaps` / `--no-allow-gaps` CLI flags
+- [ ] CLI flags override config settings
+- [ ] Gap warnings displayed during `plan` command
+- [ ] `--show-excluded` flags work units that would cause gaps
+- [ ] Unit tests for continuity and gap detection
+- [ ] CLAUDE.md updated with new CLI option
+
+---
+
+## Story 7.21: Resume Init Command
+
+As a **new user**,
+I want **a `resume init` command to scaffold my project with sensible defaults**,
+So that **I can quickly start capturing work units without manually creating config files**.
+
+**Story Points:** 3
+**Priority:** P2
+
+**Acceptance Criteria:**
+
+**Given** I run `resume init` in a directory without `.resume.yaml`
+**When** the command completes
+**Then** `.resume.yaml` is created with default configuration
+**And** `work-units/` directory is created
+**And** `positions.yaml` is created with empty list
+
+**Given** I run `resume init` interactively
+**When** prompts appear
+**Then** I can enter my name, email, phone, location, LinkedIn, GitHub, website
+**And** these are saved to `profile` section in `.resume.yaml`
+
+**Given** I run `resume init --non-interactive`
+**When** the command completes
+**Then** files are created with placeholder values
+**And** no prompts are displayed
+
+**Given** `.resume.yaml` already exists in the directory
+**When** I run `resume init`
+**Then** command fails with exit code 1
+**And** error message says: "Project already initialized. Use --force to reinitialize."
+
+**Given** `.resume.yaml` exists and I run `resume init --force`
+**When** prompted for confirmation
+**Then** existing config is backed up to `.resume.yaml.bak`
+**And** new config is created
+
+**Given** I run `resume init`
+**When** the command completes successfully
+**Then** a success message shows what was created
+**And** suggests next steps: `resume new position` and `resume new work-unit`
+
+**Files to Create/Modify:**
+- Create: `src/resume_as_code/commands/init.py`
+- Modify: `src/resume_as_code/cli.py` (add init command)
+
+**Definition of Done:**
+- [ ] `resume init` command creates .resume.yaml, work-units/, positions.yaml
+- [ ] Interactive mode prompts for profile info
+- [ ] `--non-interactive` flag uses defaults without prompts
+- [ ] Error if .resume.yaml exists (exit code 1)
+- [ ] `--force` flag backs up and reinitializes
+- [ ] Success output with next steps
+- [ ] CLAUDE.md updated with new command
+- [ ] Unit tests for all modes
