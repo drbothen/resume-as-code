@@ -22,6 +22,9 @@ DEFAULT_TAILORED_NOTICE = (
     "Full details available upon request."
 )
 
+# Employment continuity mode type (Story 7.20)
+EmploymentContinuityMode = Literal["minimum_bullet", "allow_gaps"]
+
 
 class BulletsPerPositionConfig(BaseModel):
     """Bullet limits based on position age.
@@ -345,6 +348,13 @@ class ResumeConfig(BaseModel):
     tailored_notice_text: str | None = Field(
         default=None,
         description="Custom tailored notice text (overrides default)",
+    )
+
+    # Employment continuity mode (Story 7.20)
+    employment_continuity: EmploymentContinuityMode = Field(
+        default="minimum_bullet",
+        description="minimum_bullet: always include 1 work unit per position; "
+        "allow_gaps: pure relevance filtering with gap warnings",
     )
 
     # O*NET API configuration

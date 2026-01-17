@@ -38,6 +38,10 @@ from resume_as_code.services.education_matcher import (
     EducationMatcher,
     EducationMatchResult,
 )
+from resume_as_code.services.employment_continuity import (
+    EmploymentContinuityService,
+    EmploymentGap,
+)
 from resume_as_code.services.jd_parser import parse_jd_file
 from resume_as_code.services.position_service import PositionService
 from resume_as_code.services.ranker import HybridRanker, RankingResult
@@ -236,6 +240,13 @@ class CurationPreview:
     is_flag=True,
     help="Validate position_id references exist before planning (fail on invalid refs)",
 )
+@click.option(
+    "--allow-gaps/--no-allow-gaps",
+    "allow_gaps",
+    default=None,
+    help="Override employment_continuity mode: --allow-gaps for pure relevance, "
+    "--no-allow-gaps for minimum_bullet (default from config)",
+)
 @click.pass_context
 @handle_errors
 def plan_command(
@@ -247,6 +258,7 @@ def plan_command(
     show_excluded: bool,
     show_all_excluded: bool,
     strict_positions: bool,
+    allow_gaps: bool | None,
 ) -> None:
     """Preview which Work Units will be included in a resume.
 
@@ -303,9 +315,44 @@ def plan_command(
         work_units, jd, top_k=top, scoring_weights=config.scoring_weights, positions=positions
     )
 
-    # Run coverage analysis on selected Work Units
+    # Determine employment continuity mode (Story 7.20)
+    # CLI flag overrides config when set
+    if allow_gaps is None:
+        continuity_mode = config.employment_continuity
+    else:
+        continuity_mode = "allow_gaps" if allow_gaps else "minimum_bullet"
+
+    # Apply employment continuity (Story 7.20)
+    continuity_service = EmploymentContinuityService(mode=continuity_mode)
+    position_list = list(positions.values())
+
+    # Build scores dict for tiebreaking
+    scores = {r.work_unit_id: r.score for r in ranking.results}
+
+    # Get initial selection
     selected = ranking.results[:top]
     selected_wu_dicts = [r.work_unit for r in selected]
+
+    # Convert selected work units to WorkUnit objects for continuity service
+    from resume_as_code.models.work_unit import WorkUnit
+
+    selected_wus = [WorkUnit.model_validate(wu) for wu in selected_wu_dicts]
+    all_wus = [WorkUnit.model_validate(wu) for wu in work_units]
+
+    # Ensure continuity - may add work units from missing positions
+    enhanced_wus = continuity_service.ensure_continuity(
+        position_list, selected_wus, all_wus, scores
+    )
+
+    # Detect gaps for warning display (always detect, but only warn in allow_gaps mode)
+    employment_gaps = continuity_service.detect_gaps(position_list, enhanced_wus)
+
+    # Update selected_wu_dicts with enhanced selection
+    {wu.id for wu in enhanced_wus}
+    # Rebuild selected_wu_dicts from enhanced work units
+    selected_wu_dicts = [wu.model_dump() for wu in enhanced_wus]
+
+    # Run coverage analysis on selected Work Units
     coverage = analyze_coverage(jd.skills, selected_wu_dicts)
 
     # Lowercase JD keywords once for reuse in curation and display
@@ -360,6 +407,8 @@ def plan_command(
             board_roles_preview,
             publications_preview,
             curation_preview,
+            employment_gaps=employment_gaps,
+            continuity_mode=continuity_mode,
         )
     else:
         _output_rich(
@@ -379,6 +428,9 @@ def plan_command(
             board_roles_preview,
             publications_preview,
             curation_preview,
+            employment_gaps=employment_gaps,
+            continuity_mode=continuity_mode,
+            positions=positions,
         )
 
 
@@ -830,6 +882,9 @@ def _output_rich(
     board_roles_preview: BoardRolesPreview | None = None,
     publications_preview: PublicationsPreview | None = None,
     curation_preview: CurationPreview | None = None,
+    employment_gaps: list[EmploymentGap] | None = None,
+    continuity_mode: str | None = None,
+    positions: dict[str, Any] | None = None,
 ) -> None:
     """Display plan with Rich formatting."""
     selected = results[:top]
@@ -869,6 +924,20 @@ def _output_rich(
             for reason in result.match_reasons:
                 console.print(f"       [cyan]>[/cyan] {reason}")
         console.print()
+
+    # Employment Gap Warning (Story 7.20 AC4)
+    # Only show in allow_gaps mode when gaps exist
+    if continuity_mode == "allow_gaps" and employment_gaps:
+        from resume_as_code.services.employment_continuity import (
+            EmploymentContinuityService,
+        )
+
+        service = EmploymentContinuityService()
+        gap_warning = service.format_gap_warning(employment_gaps)
+        if gap_warning:
+            console.print()
+            console.print(gap_warning)
+            console.print()
 
     # Content Analysis
     _display_content_analysis(selected)
@@ -910,7 +979,18 @@ def _output_rich(
 
     # Excluded (if requested)
     if show_excluded and excluded:
-        _display_excluded(excluded, show_all=show_all)
+        # Calculate selected position IDs for gap flagging (Story 7.20 AC7)
+        selected_position_ids: set[str] = set()
+        for r in selected:
+            pos_id = r.work_unit.get("position_id")
+            if pos_id and isinstance(pos_id, str):
+                selected_position_ids.add(pos_id)
+        _display_excluded(
+            excluded,
+            show_all=show_all,
+            selected_position_ids=selected_position_ids,
+            positions=positions,
+        )
 
 
 def _display_position_grouping(grouping: PositionGroupingResult) -> None:
@@ -1484,8 +1564,22 @@ def _display_skills_curation(
         console.print(f"[dim]Excluded: {len(curation_result.excluded)} skills[/dim]")
 
 
-def _display_excluded(excluded: list[RankingResult], show_all: bool = False) -> None:
-    """Display excluded Work Units with reasons."""
+def _display_excluded(
+    excluded: list[RankingResult],
+    show_all: bool = False,
+    selected_position_ids: set[str] | None = None,
+    positions: dict[str, Any] | None = None,
+) -> None:
+    """Display excluded Work Units with reasons.
+
+    Args:
+        excluded: List of excluded ranking results.
+        show_all: If True, show all excluded work units.
+        selected_position_ids: Set of position IDs that have work units in the selection.
+        positions: Dictionary of position_id -> Position for gap duration calculation.
+    """
+    from resume_as_code.services.employment_continuity import EmploymentContinuityService
+
     total_excluded = len(excluded)
     to_show = excluded if show_all else excluded[:5]
 
@@ -1496,12 +1590,39 @@ def _display_excluded(excluded: list[RankingResult], show_all: bool = False) -> 
             f"\n[bold dim]EXCLUDED[/bold dim] ({total_excluded} total, showing {len(to_show)})\n"
         )
 
+    # Create continuity service for gap duration calculation
+    continuity_service = EmploymentContinuityService()
+
     for result in to_show:
         title = result.work_unit.get("title", "Untitled")
         reason = get_exclusion_reason(result.score)
+        position_id = result.work_unit.get("position_id")
 
         console.print(f"  [dim]{result.score:.0%}[/dim] [dim]{title}[/dim]")
         console.print(f"       [dim italic]{reason.message}[/dim italic]")
+
+        # Story 7.20 AC7: Flag excluded work units that would cause gaps
+        if (
+            position_id
+            and selected_position_ids is not None
+            and positions is not None
+            and position_id not in selected_position_ids
+        ):
+            # This excluded work unit is from a position with no representation
+            position = positions.get(position_id)
+            if position:
+                # Calculate gap duration from position dates
+                start_date = continuity_service._parse_date(position.start_date)
+                end_date = continuity_service._parse_date(position.end_date)
+                if start_date:
+                    from datetime import date
+
+                    if end_date is None:
+                        end_date = date.today()
+                    gap_months = continuity_service._months_between(start_date, end_date)
+                    if gap_months >= 3:
+                        gap_msg = f"⚠️ Excluding this creates {gap_months}-month gap"
+                        console.print(f"       [yellow]{gap_msg}[/yellow]")
 
         if reason.suggestion:
             console.print(f"       [blue]💡 {reason.suggestion}[/blue]")
@@ -1526,6 +1647,8 @@ def _output_json(
     board_roles_preview: BoardRolesPreview | None = None,
     publications_preview: PublicationsPreview | None = None,
     curation_preview: CurationPreview | None = None,
+    employment_gaps: list[EmploymentGap] | None = None,
+    continuity_mode: str | None = None,
 ) -> None:
     """Output plan as JSON."""
     selected = results[:top]
@@ -1715,6 +1838,21 @@ def _output_json(
             "board_roles": board_roles_data,
             "publications": publications_data,
             "content_curation": curation_preview_data,
+            "employment_continuity": {
+                "mode": continuity_mode,
+                "gaps": [
+                    {
+                        "position_id": gap.missing_position_id,
+                        "employer": gap.missing_employer,
+                        "start_date": gap.start_date.isoformat(),
+                        "end_date": gap.end_date.isoformat(),
+                        "duration_months": gap.duration_months,
+                    }
+                    for gap in (employment_gaps or [])
+                ],
+            }
+            if continuity_mode
+            else None,
         },
     )
     json_output(response.to_json())

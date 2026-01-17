@@ -78,6 +78,13 @@ if TYPE_CHECKING:
     default=None,
     help="Include/exclude tailored resume footer notice (overrides config)",
 )
+@click.option(
+    "--allow-gaps/--no-allow-gaps",
+    "allow_gaps",
+    default=None,
+    help="Override employment_continuity mode: --allow-gaps for pure relevance filtering, "
+    "--no-allow-gaps to guarantee at least one bullet per position (Story 7.20)",
+)
 @click.pass_context
 @handle_errors
 def build_command(
@@ -90,6 +97,7 @@ def build_command(
     strict_positions: bool,
     output_name: str | None,
     tailored_notice: bool | None,
+    allow_gaps: bool | None,
 ) -> None:
     """Build resume from plan or job description.
 
@@ -138,7 +146,7 @@ def build_command(
     else:
         # Generate implicit plan (same as `resume plan`) (AC: #2)
         assert jd_path is not None  # Guaranteed by validation above
-        plan, jd_keywords = _generate_implicit_plan(jd_path, config, strict_positions)
+        plan, jd_keywords = _generate_implicit_plan(jd_path, config, strict_positions, allow_gaps)
         if not ctx.obj.quiet:
             info("Generated implicit plan from JD")
 
@@ -217,6 +225,7 @@ def _generate_implicit_plan(
     jd_path: Path,
     config: ResumeConfig,
     strict_positions: bool = False,
+    allow_gaps: bool | None = None,
 ) -> tuple[SavedPlan, set[str]]:
     """Generate plan on-the-fly from JD.
 
@@ -224,10 +233,12 @@ def _generate_implicit_plan(
         jd_path: Path to job description file.
         config: Application configuration.
         strict_positions: If True, validate position_id references before planning.
+        allow_gaps: Override employment_continuity mode (None = use config).
 
     Returns:
         Tuple of (SavedPlan created from ranking results, JD keywords set).
     """
+    from resume_as_code.services.employment_continuity import EmploymentContinuityService
     from resume_as_code.services.jd_parser import parse_jd_file
     from resume_as_code.services.ranker import HybridRanker
 
@@ -268,8 +279,62 @@ def _generate_implicit_plan(
         positions=positions,
     )
 
-    # Create plan
+    # Apply employment continuity (Story 7.20)
+    # Resolve mode: CLI flag > config
+
+    from resume_as_code.models.config import EmploymentContinuityMode
+    from resume_as_code.models.work_unit import WorkUnit
+
+    if allow_gaps is True:
+        continuity_mode: EmploymentContinuityMode = "allow_gaps"
+    elif allow_gaps is False:
+        continuity_mode = "minimum_bullet"
+    else:
+        continuity_mode = config.employment_continuity
+
+    continuity_service = EmploymentContinuityService(mode=continuity_mode)
+
+    # Convert work unit dicts to WorkUnit objects for continuity service
+    all_wu_objects = [WorkUnit.model_validate(wu) for wu in work_units]
+
+    # Get selected work units from ranking
+    selected_wu_ids = {result.work_unit_id for result in ranking.results[: config.default_top_k]}
+    selected_wu_objects = [wu for wu in all_wu_objects if wu.id in selected_wu_ids]
+    scores = {result.work_unit_id: result.score for result in ranking.results}
+
+    # Ensure continuity (adds missing position work units in minimum_bullet mode)
+    position_list = list(positions.values())
+    enhanced_work_units = continuity_service.ensure_continuity(
+        positions=position_list,
+        selected_work_units=selected_wu_objects,
+        all_work_units=all_wu_objects,
+        scores=scores,
+    )
+
+    # Get IDs of enhanced work units
+    enhanced_wu_ids = {wu.id for wu in enhanced_work_units}
+
+    # Create plan from ranking, including enhanced selection
+    # The ranking already contains the original results; we need to add continuity additions
     plan = SavedPlan.from_ranking(ranking, jd, jd_path, top_k=config.default_top_k)
+
+    # If continuity service added work units, update the plan
+    added_wu_ids = enhanced_wu_ids - selected_wu_ids
+    if added_wu_ids:
+        # Add missing work units to the plan's selected list
+        from resume_as_code.models.plan import SelectedWorkUnit
+
+        for wu in enhanced_work_units:
+            if wu.id in added_wu_ids:
+                plan.selected_work_units.append(
+                    SelectedWorkUnit(
+                        id=wu.id,
+                        title=wu.title,
+                        score=scores.get(wu.id, 0.0),
+                        match_reasons=["Added for employment continuity"],
+                    )
+                )
+        plan.selection_count = len(plan.selected_work_units)
 
     # Return both plan and JD keywords for skill curation
     return plan, set(jd.keywords)

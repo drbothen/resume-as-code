@@ -190,6 +190,8 @@ CLI tool for git-native resume generation from structured Work Units.
 | `--show-excluded` | Show top 5 excluded Work Units with reasons |
 | `--show-all-excluded` | Show all excluded Work Units with reasons |
 | `--strict-positions` | Validate position_id references exist (fail on invalid) |
+| `--allow-gaps` | Allow employment gaps in resume (pure relevance filtering) |
+| `--no-allow-gaps` | Guarantee at least one bullet per position (default behavior) |
 
 ### Build Command Options
 
@@ -204,6 +206,8 @@ CLI tool for git-native resume generation from structured Work Units.
 | `--strict-positions` | Validate position_id references exist (fail on invalid) |
 | `--tailored-notice` | Include footer notice that resume is tailored for role |
 | `--no-tailored-notice` | Exclude footer notice (overrides config) |
+| `--allow-gaps` | Allow employment gaps in resume (pure relevance filtering) |
+| `--no-allow-gaps` | Guarantee at least one bullet per position (default behavior) |
 
 **Config-based tailored notice options** (in `.resume.yaml`):
 ```yaml
@@ -211,6 +215,13 @@ tailored_notice: true  # Enable footer notice by default
 tailored_notice_text: "Custom message here"  # Optional custom text
 ```
 Default text: "This resume highlights experience most relevant to this role. Full details available upon request."
+
+**Config-based employment continuity options** (in `.resume.yaml`):
+```yaml
+employment_continuity: minimum_bullet  # Default: ensure 1 bullet per position
+# employment_continuity: allow_gaps    # Alternative: pure relevance filtering with gap warnings
+```
+When using `allow_gaps`, the CLI will detect and warn about employment gaps >3 months.
 
 ### List Command Options
 

@@ -1,6 +1,6 @@
 # Story 7.20: Employment Continuity & Gap Detection
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -51,42 +51,42 @@ So that **tailored resumes don't appear to have unexplained employment gaps**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add configuration and type definitions (AC: #1, #2)
-  - [ ] 1.1 Add `EmploymentContinuityMode` type alias: `Literal["minimum_bullet", "allow_gaps"]`
-  - [ ] 1.2 Add `employment_continuity: EmploymentContinuityMode = "minimum_bullet"` to `ResumeConfig`
-  - [ ] 1.3 Add unit tests for config validation
+- [x] Task 1: Add configuration and type definitions (AC: #1, #2)
+  - [x] 1.1 Add `EmploymentContinuityMode` type alias: `Literal["minimum_bullet", "allow_gaps"]`
+  - [x] 1.2 Add `employment_continuity: EmploymentContinuityMode = "minimum_bullet"` to `ResumeConfig`
+  - [x] 1.3 Add unit tests for config validation
 
-- [ ] Task 2: Create EmploymentContinuityService (AC: #1, #3)
-  - [ ] 2.1 Create `services/employment_continuity.py`
-  - [ ] 2.2 Implement `EmploymentGap` dataclass
-  - [ ] 2.3 Implement `ensure_continuity()` method
-  - [ ] 2.4 Implement `detect_gaps()` method
-  - [ ] 2.5 Implement `format_gap_warning()` method
-  - [ ] 2.6 Add unit tests for service
+- [x] Task 2: Create EmploymentContinuityService (AC: #1, #3)
+  - [x] 2.1 Create `services/employment_continuity.py`
+  - [x] 2.2 Implement `EmploymentGap` dataclass
+  - [x] 2.3 Implement `ensure_continuity()` method
+  - [x] 2.4 Implement `detect_gaps()` method
+  - [x] 2.5 Implement `format_gap_warning()` method
+  - [x] 2.6 Add unit tests for service
 
-- [ ] Task 3: Wire into plan command (AC: #3, #4)
-  - [ ] 3.1 Call `ensure_continuity()` after relevance scoring
-  - [ ] 3.2 Call `detect_gaps()` when mode is `allow_gaps`
-  - [ ] 3.3 Display gap warnings with Rich formatting
-  - [ ] 3.4 Add integration tests for plan with gaps
+- [x] Task 3: Wire into plan command (AC: #3, #4)
+  - [x] 3.1 Call `ensure_continuity()` after relevance scoring
+  - [x] 3.2 Call `detect_gaps()` when mode is `allow_gaps`
+  - [x] 3.3 Display gap warnings with Rich formatting
+  - [x] 3.4 Add integration tests for plan with gaps
 
-- [ ] Task 4: Add CLI flags (AC: #5, #6)
-  - [ ] 4.1 Add `--allow-gaps/--no-allow-gaps` flag to plan.py
-  - [ ] 4.2 Add `--allow-gaps/--no-allow-gaps` flag to build.py
-  - [ ] 4.3 CLI flag overrides config when set
-  - [ ] 4.4 Add unit tests for CLI flag behavior
+- [x] Task 4: Add CLI flags (AC: #5, #6)
+  - [x] 4.1 Add `--allow-gaps/--no-allow-gaps` flag to plan.py
+  - [x] 4.2 Add `--allow-gaps/--no-allow-gaps` flag to build.py
+  - [x] 4.3 CLI flag overrides config when set
+  - [x] 4.4 Add unit tests for CLI flag behavior
 
-- [ ] Task 5: Enhance --show-excluded output (AC: #7)
-  - [ ] 5.1 Flag excluded work units that would cause gaps
-  - [ ] 5.2 Show gap duration in excluded output
-  - [ ] 5.3 Add integration test for enhanced output
+- [x] Task 5: Enhance --show-excluded output (AC: #7)
+  - [x] 5.1 Flag excluded work units that would cause gaps
+  - [x] 5.2 Show gap duration in excluded output
+  - [x] 5.3 Add integration test for enhanced output
 
-- [ ] Task 6: Quality checks
-  - [ ] 6.1 Run `ruff check src tests --fix`
-  - [ ] 6.2 Run `ruff format src tests`
-  - [ ] 6.3 Run `mypy src --strict` (zero errors)
-  - [ ] 6.4 Update CLAUDE.md with new CLI options
-  - [ ] 6.5 Run full test suite
+- [x] Task 6: Quality checks
+  - [x] 6.1 Run `ruff check src tests --fix`
+  - [x] 6.2 Run `ruff format src tests`
+  - [x] 6.3 Run `mypy src --strict` (zero errors)
+  - [x] 6.4 Update CLAUDE.md with new CLI options
+  - [x] 6.5 Run full test suite
 
 ## Dev Notes
 
@@ -390,16 +390,44 @@ From `project-context.md`:
 
 ### Agent Model Used
 
-<!-- Filled by dev agent -->
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
-<!-- Filled by dev agent -->
+N/A
 
 ### Completion Notes List
 
-<!-- Filled by dev agent -->
+1. Implemented `EmploymentContinuityService` with two modes:
+   - `minimum_bullet` (default): Guarantees at least one work unit per position
+   - `allow_gaps`: Pure relevance filtering with gap detection warnings
+
+2. Added `--allow-gaps/--no-allow-gaps` CLI flags to both `plan` and `build` commands
+
+3. Employment gaps are detected and displayed with warnings showing:
+   - Missing employer and position
+   - Gap duration in months
+   - Suggestion to use `--no-allow-gaps` to force continuity
+
+4. Enhanced `--show-excluded` output to flag work units that would cause gaps
+
+5. JSON output includes `employment_continuity` section with mode and gaps array
+
+6. All quality checks passed:
+   - `ruff check src tests` - 0 errors
+   - `ruff format src tests` - clean
+   - `mypy src --strict` - 0 errors
+   - 21 tests pass (14 unit + 7 integration)
 
 ### File List
 
-<!-- Filled by dev agent after implementation -->
+**New Files:**
+- `src/resume_as_code/services/employment_continuity.py` - EmploymentContinuityService and EmploymentGap dataclass
+- `tests/unit/test_employment_continuity.py` - Unit tests for employment continuity service
+
+**Modified Files:**
+- `src/resume_as_code/models/config.py` - Added `EmploymentContinuityMode` type and `employment_continuity` config field
+- `src/resume_as_code/commands/plan.py` - Added CLI flag, continuity service integration, gap warnings display
+- `src/resume_as_code/commands/build.py` - Added CLI flag, continuity service integration for implicit plans
+- `tests/integration/test_plan_command.py` - Added `TestPlanCommandEmploymentContinuity` test class with 7 tests
+- `CLAUDE.md` - Added documentation for new CLI options

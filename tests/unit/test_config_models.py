@@ -463,6 +463,39 @@ class TestResumeConfigCuration:
         assert config.curation.min_action_relevance_score == 0.5
 
 
+class TestResumeConfigEmploymentContinuity:
+    """Test employment_continuity field in ResumeConfig (Story 7.20)."""
+
+    def test_default_employment_continuity_is_minimum_bullet(self) -> None:
+        """Default employment_continuity should be 'minimum_bullet'."""
+        config = ResumeConfig()
+        assert config.employment_continuity == "minimum_bullet"
+
+    def test_employment_continuity_minimum_bullet(self) -> None:
+        """ResumeConfig should accept 'minimum_bullet' mode."""
+        config = ResumeConfig(employment_continuity="minimum_bullet")
+        assert config.employment_continuity == "minimum_bullet"
+
+    def test_employment_continuity_allow_gaps(self) -> None:
+        """ResumeConfig should accept 'allow_gaps' mode."""
+        config = ResumeConfig(employment_continuity="allow_gaps")
+        assert config.employment_continuity == "allow_gaps"
+
+    def test_employment_continuity_invalid_mode_rejected(self) -> None:
+        """Invalid employment_continuity mode should raise ValueError."""
+        import pytest
+
+        with pytest.raises(ValueError):
+            ResumeConfig(employment_continuity="invalid_mode")
+
+    def test_employment_continuity_mode_type_exported(self) -> None:
+        """EmploymentContinuityMode type should be importable."""
+        from resume_as_code.models.config import EmploymentContinuityMode
+
+        # Type checking - ensure it's a Literal type with correct values
+        assert EmploymentContinuityMode is not None
+
+
 class TestResumeConfigTailoredNotice:
     """Test tailored_notice fields in ResumeConfig (Story 7.19)."""
 

@@ -890,6 +890,16 @@
       "description": "Custom tailored notice text (overrides default)",
       "title": "Tailored Notice Text"
     },
+    "employment_continuity": {
+      "default": "minimum_bullet",
+      "description": "minimum_bullet: always include 1 work unit per position; allow_gaps: pure relevance filtering with gap warnings",
+      "enum": [
+        "minimum_bullet",
+        "allow_gaps"
+      ],
+      "title": "Employment Continuity",
+      "type": "string"
+    },
     "onet": {
       "anyOf": [
         {

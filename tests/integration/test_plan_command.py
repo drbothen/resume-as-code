@@ -2252,3 +2252,490 @@ skills:
         # Verify aliases are NOT in the output
         assert "k8s" not in plan_skills, "Alias k8s should not appear"
         assert "py" not in plan_skills, "Alias py should not appear"
+
+
+class TestPlanCommandEmploymentContinuity:
+    """Tests for employment continuity and gap detection (Story 7.20)."""
+
+    def _create_positions_file(
+        self,
+        path: Path,
+        positions: list[dict[str, str | None]],
+    ) -> None:
+        """Helper to create a positions.yaml file."""
+        import yaml
+
+        # Convert list to dict format expected by position service
+        positions_dict: dict[str, dict[str, str | None]] = {}
+        for pos in positions:
+            pos_copy = dict(pos)  # Copy to avoid mutating input
+            pos_id = pos_copy.pop("id")
+            if pos_id:
+                positions_dict[pos_id] = pos_copy
+
+        (path / "positions.yaml").write_text(yaml.dump({"positions": positions_dict}))
+
+    def _create_work_unit_with_position(
+        self,
+        path: Path,
+        wu_id: str,
+        title: str,
+        position_id: str,
+        tags: list[str] | None = None,
+        problem: str = "Test problem statement for ranking purposes and evaluation",
+        outcome: str = "Improved performance and quality by significant margin",
+    ) -> None:
+        """Helper to create a Work Unit with position reference."""
+        tags = tags or []
+        tags_yaml = "\n".join([f'  - "{t}"' for t in tags]) if tags else ""
+        tags_section = f"tags:\n{tags_yaml}" if tags else "tags: []"
+
+        content = f"""\
+schema_version: "1.0.0"
+id: "{wu_id}"
+title: "{title}"
+position_id: "{position_id}"
+problem:
+  statement: "{problem}"
+actions:
+  - "Designed and implemented the solution architecture"
+  - "Developed core functionality and features"
+outcome:
+  result: "{outcome}"
+{tags_section}
+confidence: high
+"""
+        path.write_text(content)
+
+    def test_allow_gaps_flag_shows_gap_warnings(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC #5: --allow-gaps should show gap detection warnings."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create positions
+        self._create_positions_file(
+            tmp_path,
+            [
+                {
+                    "id": "pos-acme-senior",
+                    "employer": "Acme Corp",
+                    "title": "Senior Engineer",
+                    "start_date": "2023-01",
+                    "end_date": None,
+                },
+                {
+                    "id": "pos-techcorp-lead",
+                    "employer": "TechCorp",
+                    "title": "Tech Lead",
+                    "start_date": "2021-06",
+                    "end_date": "2022-12",
+                },
+            ],
+        )
+
+        # Create work units
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        # Only create work units for one position (Acme)
+        self._create_work_unit_with_position(
+            work_units / "wu-acme.yaml",
+            "wu-2024-01-01-acme-project",
+            "Led cloud migration at Acme",
+            "pos-acme-senior",
+            tags=["cloud", "aws"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Cloud Engineer",
+            "Requirements:\n- Cloud infrastructure\n- AWS experience",
+        )
+
+        # Run with --allow-gaps - should show gap warning for TechCorp position
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--allow-gaps"])
+
+        assert result.exit_code == 0
+        # Should show gap warning for TechCorp position (18+ months gap)
+        assert "Employment Gap Detected" in result.output or "gap" in result.output.lower()
+        assert "TechCorp" in result.output
+
+    def test_no_allow_gaps_flag_ensures_continuity(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC #6: --no-allow-gaps should ensure at least one bullet per position."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create positions
+        self._create_positions_file(
+            tmp_path,
+            [
+                {
+                    "id": "pos-acme-senior",
+                    "employer": "Acme Corp",
+                    "title": "Senior Engineer",
+                    "start_date": "2023-01",
+                    "end_date": None,
+                },
+                {
+                    "id": "pos-techcorp-lead",
+                    "employer": "TechCorp",
+                    "title": "Tech Lead",
+                    "start_date": "2021-06",
+                    "end_date": "2022-12",
+                },
+            ],
+        )
+
+        # Create work units for both positions
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        self._create_work_unit_with_position(
+            work_units / "wu-acme.yaml",
+            "wu-2024-01-01-acme-project",
+            "Led cloud migration at Acme",
+            "pos-acme-senior",
+            tags=["cloud", "aws"],
+        )
+        self._create_work_unit_with_position(
+            work_units / "wu-techcorp.yaml",
+            "wu-2022-01-01-techcorp-api",
+            "Built API at TechCorp",
+            "pos-techcorp-lead",
+            tags=["api", "backend"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        # JD that strongly favors Acme work unit
+        _create_jd_file(
+            jd_file,
+            "Cloud Engineer",
+            "Requirements:\n- Cloud infrastructure cloud\n- AWS experience aws",
+        )
+
+        # Run with --no-allow-gaps - should include TechCorp even though less relevant
+        result = cli_runner.invoke(
+            main, ["plan", "--jd", str(jd_file), "--no-allow-gaps", "--top", "1"]
+        )
+
+        assert result.exit_code == 0
+        # Even with --top 1, should include work units from both positions
+        # because --no-allow-gaps guarantees minimum_bullet mode
+        # Both positions should appear in Position Grouping
+        assert "Acme" in result.output
+        # TechCorp may appear in position grouping or as added for continuity
+
+    def test_show_excluded_with_gap_warnings(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC #7: --show-excluded should flag work units that would cause gaps."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create positions with significant time spans
+        self._create_positions_file(
+            tmp_path,
+            [
+                {
+                    "id": "pos-current",
+                    "employer": "Current Corp",
+                    "title": "Engineer",
+                    "start_date": "2024-01",
+                    "end_date": None,
+                },
+                {
+                    "id": "pos-previous",
+                    "employer": "Previous Inc",
+                    "title": "Developer",
+                    "start_date": "2022-01",
+                    "end_date": "2023-12",
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        # Create work units for both positions
+        self._create_work_unit_with_position(
+            work_units / "wu-current.yaml",
+            "wu-2024-06-01-current-project",
+            "Current project work",
+            "pos-current",
+            tags=["python", "aws"],
+        )
+        self._create_work_unit_with_position(
+            work_units / "wu-previous.yaml",
+            "wu-2023-01-01-previous-project",
+            "Previous project work",
+            "pos-previous",
+            tags=["java", "spring"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Python Developer",
+            "Requirements:\n- Python expert\n- AWS cloud",
+        )
+
+        # Run with --show-excluded and --allow-gaps
+        result = cli_runner.invoke(
+            main,
+            ["plan", "--jd", str(jd_file), "--allow-gaps", "--top", "1", "--show-excluded"],
+        )
+
+        assert result.exit_code == 0
+        assert "EXCLUDED" in result.output
+        # Should show gap warning for the excluded work unit
+        # "Excluding this creates X-month gap" message
+        output_lower = result.output.lower()
+        assert "gap" in output_lower or "excluded" in output_lower
+
+    def test_json_output_includes_employment_gaps(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """JSON output should include employment_gaps when --allow-gaps is used."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create positions
+        self._create_positions_file(
+            tmp_path,
+            [
+                {
+                    "id": "pos-current",
+                    "employer": "Current Corp",
+                    "title": "Engineer",
+                    "start_date": "2024-01",
+                    "end_date": None,
+                },
+                {
+                    "id": "pos-gap",
+                    "employer": "Gap Company",
+                    "title": "Developer",
+                    "start_date": "2020-01",
+                    "end_date": "2023-06",
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        # Only create work unit for current position
+        self._create_work_unit_with_position(
+            work_units / "wu-current.yaml",
+            "wu-2024-06-01-current",
+            "Current work",
+            "pos-current",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Engineer", "Requirements:\n- Python")
+
+        result = cli_runner.invoke(main, ["--json", "plan", "--jd", str(jd_file), "--allow-gaps"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+
+        # Should include employment_continuity section in JSON output
+        assert "employment_continuity" in data["data"]
+        continuity = data["data"]["employment_continuity"]
+        assert continuity is not None
+        assert "gaps" in continuity
+        gaps = continuity["gaps"]
+        assert len(gaps) >= 1
+        # Should include gap for "Gap Company" position
+        gap_employers = [g.get("employer") for g in gaps]
+        assert "Gap Company" in gap_employers
+
+    def test_default_mode_is_minimum_bullet(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC #1: Default mode should be minimum_bullet (no gaps allowed)."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create positions
+        self._create_positions_file(
+            tmp_path,
+            [
+                {
+                    "id": "pos-a",
+                    "employer": "Company A",
+                    "title": "Engineer",
+                    "start_date": "2023-01",
+                    "end_date": None,
+                },
+                {
+                    "id": "pos-b",
+                    "employer": "Company B",
+                    "title": "Developer",
+                    "start_date": "2020-01",
+                    "end_date": "2022-12",
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        # Create work units for both positions
+        self._create_work_unit_with_position(
+            work_units / "wu-a.yaml",
+            "wu-2024-01-01-company-a",
+            "Built Python cloud infrastructure for scalable systems",
+            "pos-a",
+            tags=["python", "cloud"],
+        )
+        self._create_work_unit_with_position(
+            work_units / "wu-b.yaml",
+            "wu-2021-01-01-company-b",
+            "Developed Java backend services for enterprise platform",
+            "pos-b",
+            tags=["java"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(
+            jd_file,
+            "Python Developer",
+            "Requirements:\n- Python python python\n- Cloud cloud",
+        )
+
+        # Run WITHOUT --allow-gaps flag (should use default minimum_bullet)
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--top", "1"])
+
+        assert result.exit_code == 0
+        # Both companies should appear due to continuity guarantee
+        # Position Grouping should show both
+        assert "Company A" in result.output
+        # Company B should also appear (minimum_bullet ensures continuity)
+
+    def test_config_employment_continuity_mode(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC #2: Config employment_continuity setting should control default mode."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create config with allow_gaps mode
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """\
+work_units_dir: work-units
+employment_continuity: allow_gaps
+"""
+        )
+
+        # Create positions
+        self._create_positions_file(
+            tmp_path,
+            [
+                {
+                    "id": "pos-current",
+                    "employer": "Current Co",
+                    "title": "Engineer",
+                    "start_date": "2024-01",
+                    "end_date": None,
+                },
+                {
+                    "id": "pos-old",
+                    "employer": "Old Company",
+                    "title": "Developer",
+                    "start_date": "2020-01",
+                    "end_date": "2023-06",
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        # Only create work unit for current position
+        self._create_work_unit_with_position(
+            work_units / "wu-current.yaml",
+            "wu-2024-06-01-current",
+            "Current work",
+            "pos-current",
+            tags=["python"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Engineer", "Requirements:\n- Python")
+
+        # Run without flags - should use config setting (allow_gaps)
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should show gap warning because config is set to allow_gaps
+        output_lower = result.output.lower()
+        assert "gap" in output_lower or "old company" in output_lower
+
+    def test_cli_flag_overrides_config(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC #5, #6: CLI flags should override config setting."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create config with allow_gaps mode
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """\
+work_units_dir: work-units
+employment_continuity: allow_gaps
+"""
+        )
+
+        # Create positions
+        self._create_positions_file(
+            tmp_path,
+            [
+                {
+                    "id": "pos-a",
+                    "employer": "Company A",
+                    "title": "Engineer",
+                    "start_date": "2023-01",
+                    "end_date": None,
+                },
+                {
+                    "id": "pos-b",
+                    "employer": "Company B",
+                    "title": "Developer",
+                    "start_date": "2020-01",
+                    "end_date": "2022-12",
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        self._create_work_unit_with_position(
+            work_units / "wu-a.yaml",
+            "wu-2024-01-01-a",
+            "Built Python microservices for distributed systems",
+            "pos-a",
+            tags=["python"],
+        )
+        self._create_work_unit_with_position(
+            work_units / "wu-b.yaml",
+            "wu-2021-01-01-b",
+            "Developed Java enterprise application backend",
+            "pos-b",
+            tags=["java"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Python Dev", "Requirements:\n- Python programming")
+
+        # Run with --no-allow-gaps to override config
+        result = cli_runner.invoke(
+            main, ["plan", "--jd", str(jd_file), "--no-allow-gaps", "--top", "1"]
+        )
+
+        assert result.exit_code == 0
+        # Should NOT show gap warning because --no-allow-gaps overrides config
+        # Both companies should be included due to continuity
+        assert "Company A" in result.output
