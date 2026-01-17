@@ -117,7 +117,7 @@ h2 {
 /* Executive Role styling */
 .executive-role {
     margin-bottom: 1em;
-    page-break-inside: avoid;
+    /* Allow roles to break across pages to prevent page 1 empty space */
 }
 
 .role-header {
@@ -324,16 +324,14 @@ h2 {
         color: #006600;
     }
 
-    /* Prevent page breaks inside important elements */
-    .executive-role,
-    .edu-item,
-    section {
+    /* Allow content to flow naturally - only protect small elements */
+    .edu-item {
         page-break-inside: avoid;
     }
 
-    /* Allow page breaks between roles */
-    .executive-role {
-        page-break-after: auto;
+    /* Prevent orphaned section headers */
+    h2 {
+        page-break-after: avoid;
     }
 }
 

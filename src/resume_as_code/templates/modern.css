@@ -111,7 +111,7 @@ h2 {
 /* Experience / Job styles */
 .job {
     margin-bottom: 0.8em;
-    page-break-inside: avoid;
+    /* Allow jobs to break across pages to prevent page 1 empty space */
 }
 
 .job-header {
@@ -262,10 +262,8 @@ h2 {
         text-decoration: none;
     }
 
-    /* Prevent page breaks inside important elements */
-    .job,
-    .edu-item,
-    section {
+    /* Allow content to flow naturally - only protect small elements */
+    .edu-item {
         page-break-inside: avoid;
     }
 

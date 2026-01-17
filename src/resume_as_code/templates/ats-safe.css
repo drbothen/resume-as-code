@@ -107,13 +107,10 @@ a {
         font-size: 10pt;
     }
 
-    /* Ensure proper page breaks */
-    .entry {
-        page-break-inside: avoid;
-    }
-
-    section {
-        page-break-inside: avoid;
+    /* Allow content to flow naturally - prevents page 1 empty space */
+    /* Only protect section headers from being orphaned */
+    h2 {
+        page-break-after: avoid;
     }
 }
 
