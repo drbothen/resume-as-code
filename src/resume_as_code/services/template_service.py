@@ -69,8 +69,10 @@ class TemplateService:
 
     # Template inheritance map for CSS loading (Story 6.17: CTO template)
     # Child templates that extend a parent should inherit parent CSS
+    # Chain is followed recursively: cto-results → cto → executive
     _css_inheritance: dict[str, str] = {
         "cto": "executive",
+        "cto-results": "cto",
     }
 
     def get_css(self, template_name: str = "modern") -> str:
@@ -78,6 +80,9 @@ class TemplateService:
 
         For templates that extend another template (e.g., cto extends executive),
         the parent CSS is loaded first, then the child's CSS additions are appended.
+        Inheritance is followed recursively, so cto-results → cto → executive
+        will load executive.css, then cto.css, then cto-results.css.
+
         This ensures AC #7: templates share the same CSS base styling.
 
         Args:
@@ -88,12 +93,19 @@ class TemplateService:
         """
         css_parts: list[str] = []
 
-        # Load parent CSS if template extends another (AC #7: shared styling)
-        if template_name in self._css_inheritance:
-            parent_name = self._css_inheritance[template_name]
-            parent_css_path = self.templates_dir / f"{parent_name}.css"
-            if parent_css_path.exists():
-                css_parts.append(parent_css_path.read_text())
+        # Build inheritance chain by following parent links recursively
+        chain: list[str] = []
+        current = template_name
+        while current in self._css_inheritance:
+            parent = self._css_inheritance[current]
+            chain.append(parent)
+            current = parent
+
+        # Load CSS in order from root parent to current template
+        for ancestor in reversed(chain):
+            ancestor_css_path = self.templates_dir / f"{ancestor}.css"
+            if ancestor_css_path.exists():
+                css_parts.append(ancestor_css_path.read_text())
 
         # Load template-specific CSS
         css_path = self.templates_dir / f"{template_name}.css"

@@ -91,6 +91,7 @@
             </p>
             {% endif %}
 
+            {% block achievements scoped %}
             {% if item.bullets %}
             <ul class="achievements">
                 {% for bullet in item.bullets %}
@@ -98,6 +99,7 @@
                 {% endfor %}
             </ul>
             {% endif %}
+            {% endblock %}
         </article>
         {% endfor %}
     </section>

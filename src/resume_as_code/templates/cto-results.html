@@ -1,0 +1,23 @@
+{# CTO Results-Only Template - Shows only outcome results, not action bullets
+   Story: 7.18-score-actions-against-jd (related)
+   Purpose: For executive resumes where actions are implementation details
+   that dilute the high-level impact narrative. Shows only the result/outcome
+   from each work unit, keeping content density appropriate for 2-page CTO resumes.
+
+   Research Note: Executive resumes should emphasize results/achievements over
+   implementation details. Action bullets ("Built X", "Implemented Y") are
+   appropriate for IC roles but can make executive resumes too long and
+   detail-focused.
+#}
+{% extends "cto.html" %}
+
+{# Override achievements block to show only the first bullet (the result) #}
+{% block achievements scoped %}
+{% if item.bullets %}
+<ul class="achievements">
+    {# Only show first bullet - this is the result/outcome, not actions #}
+    {% set bullet = item.bullets[0] %}
+    <li>{{ bullet.text }}{% if bullet.metrics %} — <em class="metrics">{{ bullet.metrics }}</em>{% endif %}</li>
+</ul>
+{% endif %}
+{% endblock %}

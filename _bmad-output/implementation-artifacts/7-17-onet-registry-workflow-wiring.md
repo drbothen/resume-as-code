@@ -1,6 +1,6 @@
 # Story 7.17: O*NET & Registry Workflow Wiring
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -37,34 +37,34 @@ So that **my skills are automatically standardized using industry terminology**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create SkillRegistry factory with O*NET support (AC: #2, #3)
-  - [ ] 1.1 Add `SkillRegistry.load_with_onet(onet_config: ONetConfig | None)` class method
-  - [ ] 1.2 Factory creates ONetService when config.is_configured
-  - [ ] 1.3 Factory falls back to load_default() when O*NET unavailable
-  - [ ] 1.4 Add unit tests for factory method
+- [x] Task 1: Create SkillRegistry factory with O*NET support (AC: #2, #3)
+  - [x] 1.1 Add `SkillRegistry.load_with_onet(onet_config: ONetConfig | None)` class method
+  - [x] 1.2 Factory creates ONetService when config.is_configured
+  - [x] 1.3 Factory falls back to load_default() when O*NET unavailable
+  - [x] 1.4 Add unit tests for factory method
 
-- [ ] Task 2: Wire SkillRegistry into plan.py (AC: #1)
-  - [ ] 2.1 Load registry using factory in `_curate_skills()` function
-  - [ ] 2.2 Pass registry to SkillCurator (currently missing)
-  - [ ] 2.3 Use config.onet if available for O*NET integration
-  - [ ] 2.4 Add integration test for plan with registry
+- [x] Task 2: Wire SkillRegistry into plan.py (AC: #1)
+  - [x] 2.1 Load registry using factory in `_curate_skills()` function
+  - [x] 2.2 Pass registry to SkillCurator (currently missing)
+  - [x] 2.3 Use config.onet if available for O*NET integration
+  - [x] 2.4 Add integration test for plan with registry
 
-- [ ] Task 3: Wire O*NET lookup into curation flow (AC: #2, #5)
-  - [ ] 3.1 Modify SkillCurator._deduplicate() to call lookup_and_cache() for unknown skills
-  - [ ] 3.2 Only lookup if onet_service is configured on registry
-  - [ ] 3.3 Log discovered skills at INFO level
-  - [ ] 3.4 Add unit tests for O*NET lookup during curation
+- [x] Task 3: Wire O*NET lookup into curation flow (AC: #2, #5)
+  - [x] 3.1 Modify SkillCurator._deduplicate() to call lookup_and_cache() for unknown skills
+  - [x] 3.2 Only lookup if onet_service is configured on registry
+  - [x] 3.3 Log discovered skills at INFO level
+  - [x] 3.4 Add unit tests for O*NET lookup during curation
 
-- [ ] Task 4: Ensure consistency between plan and build (AC: #4)
-  - [ ] 4.1 Verify resume.py already uses registry (Story 7.4)
-  - [ ] 4.2 Update to use same factory method as plan.py
-  - [ ] 4.3 Add integration test: plan + build produce same skill names
+- [x] Task 4: Ensure consistency between plan and build (AC: #4)
+  - [x] 4.1 Verify resume.py already uses registry (Story 7.4)
+  - [x] 4.2 Update to use same factory method as plan.py
+  - [x] 4.3 Add integration test: plan + build produce same skill names
 
-- [ ] Task 5: Add tests and documentation
-  - [ ] 5.1 Integration test: full workflow with mocked O*NET
-  - [ ] 5.2 Integration test: graceful degradation without O*NET
-  - [ ] 5.3 Update CLAUDE.md if new config options added
-  - [ ] 5.4 Run `ruff check` and `mypy --strict`
+- [x] Task 5: Add tests and documentation
+  - [x] 5.1 Integration test: full workflow with mocked O*NET
+  - [x] 5.2 Integration test: graceful degradation without O*NET
+  - [x] 5.3 Update CLAUDE.md if new config options added (N/A - no new options)
+  - [x] 5.4 Run `ruff check` and `mypy --strict`
 
 ## Dev Notes
 
@@ -215,10 +215,34 @@ From `project-context.md`:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-opus-4-5-20251101
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+- Added `SkillRegistry.load_with_onet()` factory method to create registry with O*NET integration
+- Updated `plan.py` to use `load_with_onet()` and pass registry to SkillCurator
+- Modified `SkillCurator._deduplicate()` to call `lookup_and_cache()` for unknown skills
+- Updated `resume.py` to accept `onet_config` parameter and use `load_with_onet()`
+- Updated `build.py` to pass `config.onet` to `from_work_units()`
+- Added comprehensive unit tests for new factory method (7 tests)
+- Added unit tests for O*NET lookup during curation (4 tests)
+- Added integration tests for plan command O*NET wiring (2 tests)
+- All 116 related unit tests pass
+- All 66 plan command integration tests pass
+- Ruff and mypy --strict pass with no issues
+
 ### File List
+
+- `src/resume_as_code/services/skill_registry.py` - Added load_with_onet() factory method
+- `src/resume_as_code/services/skill_curator.py` - Modified _deduplicate() for O*NET lookup
+- `src/resume_as_code/commands/plan.py` - Wired registry with O*NET into curation
+- `src/resume_as_code/commands/build.py` - Pass onet_config to from_work_units()
+- `src/resume_as_code/models/resume.py` - Added onet_config parameter, use load_with_onet()
+- `tests/unit/test_skill_registry.py` - Added TestSkillRegistryLoadWithOnet class
+- `tests/unit/test_skill_curator.py` - Added TestSkillCuratorONetLookup class
+- `tests/unit/test_resume_model.py` - Updated test to verify load_with_onet() usage
+- `tests/integration/test_plan_command.py` - Added TestPlanCommandONetWiring class

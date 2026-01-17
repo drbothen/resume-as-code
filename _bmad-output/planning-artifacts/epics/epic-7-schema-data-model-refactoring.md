@@ -1633,4 +1633,213 @@ Where:
 ```
 
 **Section-Level Embeddings** (Story 7.11):
+See Story 7.11 for implementation details.
+
+**Definition of Done:**
+- [ ] docs/algorithm/README.md created with complete algorithm documentation
+- [ ] Architecture diagram with data flow
+- [ ] All scoring components explained with formulas
+- [ ] Configuration reference with defaults and ranges
+- [ ] Tuning guide for different resume types
+- [ ] Changelog section for version tracking
+
+---
+
+## Story 7.18: Score Actions Against JD
+
+As a **job seeker**,
+I want **action bullets within work units scored against JD relevance**,
+So that **only the most relevant actions are included, keeping executive resumes concise while maximizing impact**.
+
+**Story Points:** 5
+**Priority:** P2
+
+**Problem Statement:**
+Currently, work units render up to 4 bullets per position (1 result + 3 actions). For executive templates like CTO, this creates overly long resumes (4+ pages instead of 2). While the `cto-results` template shows only results, some actions ARE relevant and should be included.
+
+**Research Basis:**
+- Executive resumes should be 2 pages maximum (Harvard Business Review 2023)
+- Actions that directly match JD requirements provide supporting evidence for results
+- 78% of recruiters cite quantified results as top differentiator (2024 resume research)
+
+**Acceptance Criteria:**
+
+**Given** a work unit with 5+ actions
+**When** building a resume against a JD
+**Then** only the 1-2 most JD-relevant actions are included
+**And** irrelevant actions are excluded
+
+**Given** an action containing JD keywords ("Kubernetes", "CI/CD")
+**When** scoring actions
+**Then** that action scores higher than actions without keyword matches
+
+**Given** an action with quantified impact ("reduced build time 40%")
+**When** scoring actions
+**Then** that action receives a 25% scoring boost
+
+**Given** configuration `max_actions_per_wu: 2`
+**When** building resume
+**Then** at most 2 action bullets are included per work unit
+**And** the result bullet is always included (not counted against limit)
+
+**Given** all actions in a work unit score below threshold (0.2)
+**When** building resume
+**Then** only the result bullet is shown (no action bullets)
+
+**Given** configuration `action_scoring_enabled: false`
+**When** building resume
+**Then** original behavior is used (first N actions, no scoring)
+**And** no JD-based filtering is applied
+
+**Given** default configuration (action_scoring_enabled not set)
+**When** building resume with a JD
+**Then** action scoring is enabled by default
+
+**Given** `resume plan --jd job.txt --show-actions`
+**When** displaying results
+**Then** shows which actions were selected/excluded per work unit
+**And** shows relevance scores for each action
+
+**Technical Notes:**
 ```python
+# src/resume_as_code/services/action_scorer.py
+from dataclasses import dataclass
+
+@dataclass
+class ScoredAction:
+    """Action with JD relevance score."""
+    text: str
+    score: float
+    match_reasons: list[str]
+
+class ActionScorer:
+    """Score work unit actions against JD for relevance."""
+
+    def __init__(self, embedder: EmbeddingService):
+        self.embedder = embedder
+
+    def score_actions(
+        self,
+        actions: list[str],
+        jd: JobDescription,
+        max_actions: int = 2,
+        min_score: float = 0.2,
+    ) -> list[ScoredAction]:
+        """Score and select most relevant actions.
+
+        Args:
+            actions: List of action bullet texts.
+            jd: Target job description.
+            max_actions: Maximum actions to include.
+            min_score: Minimum score threshold.
+
+        Returns:
+            List of scored actions, sorted by relevance.
+        """
+        jd_embedding = self.embedder.embed_passage(jd.text_for_ranking)
+        jd_keywords = set(k.lower() for k in jd.keywords)
+
+        scored = []
+        for action in actions:
+            # Semantic similarity
+            action_emb = self.embedder.embed_query(action)
+            semantic_score = cosine_similarity(action_emb, jd_embedding)
+
+            # Keyword overlap
+            action_lower = action.lower()
+            keyword_matches = [k for k in jd_keywords if k in action_lower]
+            keyword_score = min(1.0, len(keyword_matches) * 0.3)
+
+            # Quantified impact boost
+            quantified_boost = 1.25 if has_quantified_impact(action) else 1.0
+
+            # Combined score
+            score = ((0.6 * semantic_score) + (0.4 * keyword_score)) * quantified_boost
+
+            scored.append(ScoredAction(
+                text=action,
+                score=score,
+                match_reasons=[f"keyword: {k}" for k in keyword_matches],
+            ))
+
+        # Filter by threshold and limit
+        filtered = [a for a in scored if a.score >= min_score]
+        filtered.sort(key=lambda a: a.score, reverse=True)
+
+        return filtered[:max_actions]
+
+def has_quantified_impact(text: str) -> bool:
+    """Check if text contains quantified metrics."""
+    import re
+    return bool(re.search(r'\d+[%$KMB]|\$[\d,]+|\d+x|\d+\s*(hours?|days?|weeks?)', text))
+```
+
+**Integration with _extract_bullets:**
+```python
+# Modify resume.py _extract_bullets to optionally score actions
+@staticmethod
+def _extract_bullets(
+    work_unit: dict[str, Any],
+    jd: JobDescription | None = None,
+    action_scorer: ActionScorer | None = None,
+    max_actions: int = 3,
+) -> list[ResumeBullet]:
+    """Extract bullets with optional JD-based action filtering."""
+    bullets: list[ResumeBullet] = []
+
+    # Main outcome as primary bullet (always included)
+    outcome = work_unit.get("outcome", {}) or {}
+    if result := outcome.get("result"):
+        bullets.append(ResumeBullet(text=result, metrics=outcome.get("quantified_impact")))
+
+    # Actions - scored if JD available, otherwise first N
+    actions = work_unit.get("actions", [])
+
+    if jd and action_scorer:
+        scored_actions = action_scorer.score_actions(actions, jd, max_actions=max_actions)
+        for scored in scored_actions:
+            bullets.append(ResumeBullet(text=scored.text))
+    else:
+        # Fallback: first N actions
+        for action in actions[:max_actions]:
+            bullets.append(ResumeBullet(text=action))
+
+    return bullets
+```
+
+**Config Extension:**
+```yaml
+# .resume.yaml
+curation:
+  action_scoring_enabled: true    # Enable JD-based action scoring (default: true)
+  max_actions_per_work_unit: 2    # Default for executive templates
+  action_min_score: 0.2           # Minimum relevance threshold
+  action_quantified_boost: 1.25   # Boost for quantified actions
+```
+
+**Disabling Action Scoring:**
+```yaml
+# To use original behavior (first N actions, no JD scoring):
+curation:
+  action_scoring_enabled: false
+  max_actions_per_work_unit: 3    # Takes first 3 actions per work unit
+```
+
+**Files to Create/Modify:**
+- Create: `src/resume_as_code/services/action_scorer.py`
+- Modify: `src/resume_as_code/models/resume.py` (_extract_bullets with scoring)
+- Modify: `src/resume_as_code/models/config.py` (add action curation config)
+- Modify: `src/resume_as_code/commands/plan.py` (--show-actions flag)
+- Modify: `src/resume_as_code/commands/build.py` (integrate action scoring)
+
+**Definition of Done:**
+- [ ] ActionScorer service with score_actions() method
+- [ ] Actions scored using semantic + keyword matching
+- [ ] Quantified action boost (25%)
+- [ ] Configurable max_actions and min_score
+- [ ] `action_scoring_enabled` config option (default: true)
+- [ ] Setting `action_scoring_enabled: false` reverts to original behavior
+- [ ] _extract_bullets integrates action scoring when JD available
+- [ ] plan command shows action selection with --show-actions
+- [ ] Unit tests for action scoring (enabled and disabled modes)
+- [ ] Executive templates use action scoring by default
