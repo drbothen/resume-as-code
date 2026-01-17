@@ -158,6 +158,13 @@ development_status:
   7-21-resume-init-command: done  # P2, 3 pts - Initialize project with resume init command
   epic-7-retrospective: optional
 
+  # Epic 10: Distribution & Release Management
+  # Goal: Make resume-as-code installable via pip from PyPI
+  # User Outcome: Simple installation with `pip install resume-as-code`
+  # Total Points: 5 (1 story)
+  epic-10: backlog
+  10-1-pypi-package-distribution: ready-for-dev  # P1, 5 pts - PyPI publishing and GitHub Actions release workflow
+
   # Epic 8: Resume Template Enhancements
   # Goal: Improve resume template rendering for better visual presentation and professional formatting
   # User Outcome: Professionally formatted resumes with grouped employer positions and curated publications
