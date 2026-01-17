@@ -199,6 +199,7 @@ CLI tool for git-native resume generation from structured Work Units.
 | `-j, --jd PATH` | Path to job description file (creates implicit plan) |
 | `-f, --format [pdf\|docx\|all]` | Output format(s) to generate |
 | `-o, --output-dir PATH` | Output directory (default: dist) |
+| `-n, --name TEXT` | Base filename for output (default: 'resume') |
 | `-t, --template TEXT` | Template to use for rendering |
 | `--strict-positions` | Validate position_id references exist (fail on invalid) |
 
@@ -240,6 +241,9 @@ resume new work-unit --archetype incident
 resume validate
 resume plan --jd job-description.txt
 resume build --jd job-description.txt
+
+# Build with custom filename and output directory
+resume build --jd job.txt --name john-doe-cto --output-dir ./applications/acme/
 ```
 
 ### JSON Mode

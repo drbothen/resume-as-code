@@ -825,10 +825,10 @@ created_at: "2024-01-01T00:00:00"
             )
 
             assert result.exit_code == 0
-            assert (output_dir / "manifest.yaml").exists()
+            assert (output_dir / "resume-manifest.yaml").exists()
 
             # Verify manifest content
-            manifest_content = (output_dir / "manifest.yaml").read_text()
+            manifest_content = (output_dir / "resume-manifest.yaml").read_text()
             assert "jd_hash" in manifest_content
             assert "abc123def456" in manifest_content
             assert "wu-test" in manifest_content
@@ -895,7 +895,7 @@ created_at: "2024-01-01T00:00:00"
                 ],
             )
 
-            manifest_content = (output_dir / "manifest.yaml").read_text()
+            manifest_content = (output_dir / "resume-manifest.yaml").read_text()
             assert "output_formats" in manifest_content
             assert "pdf" in manifest_content
 

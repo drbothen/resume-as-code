@@ -1,0 +1,39 @@
+Chief Technology Officer (CTO)
+TechForward Inc. - San Francisco, CA
+
+About Us:
+TechForward is a Series C startup ($150M raised) disrupting the enterprise software space with AI-powered solutions. We're scaling rapidly from 100 to 300 engineers over the next 18 months.
+
+The Role:
+We're seeking an experienced CTO to lead our technology organization through this critical growth phase. You'll own the technical vision, architecture decisions, and engineering culture as we scale.
+
+Responsibilities:
+- Define and execute the technology strategy aligned with business objectives
+- Scale the engineering organization from 100 to 300+ engineers
+- Architect cloud-native platform handling billions of transactions
+- Build and mentor a world-class engineering leadership team
+- Drive DevOps excellence with CI/CD best practices
+- Establish platform engineering to improve developer productivity
+- Lead AI/ML initiatives to maintain competitive advantage
+- Manage $50M+ technology budget and vendor relationships
+
+Requirements:
+- Master's degree in Computer Science or related field preferred
+- 15+ years of software engineering experience, 8+ in leadership roles
+- Proven track record scaling engineering organizations (100+ engineers)
+- Deep expertise in cloud architecture (AWS, GCP, or Azure)
+- Experience with real-time data platforms and streaming architectures
+- Strong background in AI/ML platform development
+- Excellence in building developer platforms and tooling
+- Track record of driving DevOps transformation
+
+Technical Skills:
+- Cloud Platforms: AWS, Kubernetes, Terraform
+- Data: Kafka, Apache Flink, real-time streaming
+- AI/ML: Platform architecture, MLOps
+- DevOps: CI/CD, GitHub Actions, observability (Prometheus, Grafana)
+
+What We Offer:
+- Competitive salary ($400-500K) + equity
+- Opportunity to shape a category-defining company
+- World-class team and board

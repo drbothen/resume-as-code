@@ -65,6 +65,13 @@ if TYPE_CHECKING:
     is_flag=True,
     help="Validate position_id references exist before building (fail on invalid refs)",
 )
+@click.option(
+    "--name",
+    "-n",
+    "output_name",
+    default=None,
+    help="Base filename for output (default: 'resume'). E.g., --name john-doe-cto",
+)
 @click.pass_context
 @handle_errors
 def build_command(
@@ -75,6 +82,7 @@ def build_command(
     output_dir: Path | None,
     template_name: str | None,
     strict_positions: bool,
+    output_name: str | None,
 ) -> None:
     """Build resume from plan or job description.
 
@@ -91,6 +99,9 @@ def build_command(
 
         # Build PDF only to custom directory
         resume build --jd job.txt --format pdf --output-dir ./applications/google/
+
+        # Build with custom filename
+        resume build --jd job.txt --name john-doe-cto
     """
     config = get_config()
 
@@ -161,6 +172,7 @@ def build_command(
     )
 
     # Generate outputs atomically (AC: #4, #5, #7)
+    actual_name = output_name if output_name else "resume"
     _generate_outputs(
         resume=resume,
         plan=plan,
@@ -168,6 +180,7 @@ def build_command(
         output_format=actual_format,
         output_dir=actual_output_dir,
         template_name=actual_template,
+        output_name=actual_name,
     )
 
     # AC: #6 - Success exit code is 0 (automatic if no exception)
@@ -326,6 +339,7 @@ def _generate_outputs(
     output_format: str,
     output_dir: Path,
     template_name: str,
+    output_name: str = "resume",
 ) -> None:
     """Generate output files atomically.
 
@@ -339,6 +353,7 @@ def _generate_outputs(
         output_format: Format to generate (pdf, docx, all).
         output_dir: Target output directory.
         template_name: Name of template to use.
+        output_name: Base filename for output files (default: 'resume').
 
     Raises:
         RenderError: If generation fails.
@@ -363,10 +378,10 @@ def _generate_outputs(
             pdf_page_count: int | None = None
             if output_format in ("pdf", "all"):
                 pdf_provider = PDFProvider(template_name=template_name)
-                tmp_pdf = tmp_path / "resume.pdf"
+                tmp_pdf = tmp_path / f"{output_name}.pdf"
                 result = pdf_provider.render(resume, tmp_pdf)
                 pdf_page_count = result.page_count
-                generated_files.append((tmp_pdf, output_dir / "resume.pdf"))
+                generated_files.append((tmp_pdf, output_dir / f"{output_name}.pdf"))
                 formats_generated.append("pdf")
                 console.print("[green]\u2713[/green] Generated PDF")
 
@@ -380,15 +395,15 @@ def _generate_outputs(
             # Generate DOCX (AC: #4)
             if output_format in ("docx", "all"):
                 docx_provider = DOCXProvider()
-                tmp_docx = tmp_path / "resume.docx"
+                tmp_docx = tmp_path / f"{output_name}.docx"
                 docx_provider.render(resume, tmp_docx)
-                generated_files.append((tmp_docx, output_dir / "resume.docx"))
+                generated_files.append((tmp_docx, output_dir / f"{output_name}.docx"))
                 formats_generated.append("docx")
                 console.print("[green]\u2713[/green] Generated DOCX")
 
             # Generate manifest (Story 5.5 - Provenance)
             manifest_provider = ManifestProvider()
-            tmp_manifest = tmp_path / "manifest.yaml"
+            tmp_manifest = tmp_path / f"{output_name}-manifest.yaml"
             manifest_provider.generate(
                 plan=plan,
                 work_units=work_units,
@@ -396,7 +411,7 @@ def _generate_outputs(
                 output_formats=formats_generated,
                 output_path=tmp_manifest,
             )
-            generated_files.append((tmp_manifest, output_dir / "manifest.yaml"))
+            generated_files.append((tmp_manifest, output_dir / f"{output_name}-manifest.yaml"))
             console.print("[green]\u2713[/green] Generated manifest")
 
             # All succeeded - move to final location (AC: #5)
