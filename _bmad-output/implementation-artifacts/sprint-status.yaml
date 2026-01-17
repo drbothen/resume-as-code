@@ -153,7 +153,7 @@ development_status:
   7-16-cli-config-file-override: done  # P1, 2 pts - --config flag for custom config paths
   7-17-onet-registry-workflow-wiring: done  # P2, 5 pts - Wire O*NET & Registry into plan/build workflow
   7-18-score-actions-against-jd: done  # P2, 5 pts - Score action bullets against JD relevance
-  7-19-tailored-resume-notice: done  # P3, 2 pts - Optional footer notice for tailored resumes
+  7-19-tailored-resume-notice: review  # P3, 2 pts - Optional footer notice for tailored resumes
   7-20-employment-continuity-gap-detection: ready-for-dev  # P2, 3 pts - Maintain timeline continuity
   7-21-resume-init-command: ready-for-dev  # P2, 3 pts - Initialize project with resume init command
   epic-7-retrospective: optional

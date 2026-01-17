@@ -1,6 +1,6 @@
 # Story 7.19: Tailored Resume Notice
 
-Status: complete
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
