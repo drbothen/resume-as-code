@@ -204,6 +204,13 @@ class TestSkillRegistryLoadWithOnet:
         assert registry.normalize("k8s") == "Kubernetes"
         assert registry.normalize("ts") == "TypeScript"
 
+    def test_load_with_onet_picks_up_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """load_with_onet(None) enables O*NET when ONET_API_KEY env var is set."""
+        monkeypatch.setenv("ONET_API_KEY", "test-env-key")
+        registry = SkillRegistry.load_with_onet(None)
+        assert registry._onet_service is not None
+        assert registry._user_skills_path is not None
+
     def test_load_with_onet_user_skills_path_set(self) -> None:
         """Configured registry has user skills path for persistence (AC #5)."""
         config = ONetConfig(enabled=True, api_key="test-key")

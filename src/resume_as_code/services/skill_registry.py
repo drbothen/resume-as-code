@@ -337,9 +337,12 @@ class SkillRegistry:
         when configured. Falls back to local-only registry when O*NET is
         unavailable or not configured.
 
+        If no config is provided, automatically checks for ONET_API_KEY
+        environment variable and enables O*NET if present.
+
         Args:
-            onet_config: O*NET configuration with API key. If None or not
-                configured, creates registry without O*NET support.
+            onet_config: O*NET configuration with API key. If None, creates
+                default config that checks ONET_API_KEY env var.
 
         Returns:
             SkillRegistry with O*NET service if configured, otherwise
@@ -366,11 +369,16 @@ class SkillRegistry:
         entries = [SkillEntry(**entry) for entry in data.get("skills", [])]
 
         # Create O*NET service if configured
+        # If no config provided, create default which picks up ONET_API_KEY env var
+        from resume_as_code.models.config import ONetConfig
+
+        effective_config = onet_config if onet_config is not None else ONetConfig()
+
         onet_service: ONetService | None = None
         user_skills_path: Path | None = None
 
-        if onet_config is not None and onet_config.is_configured:
-            onet_service = ONetService(onet_config)
+        if effective_config.is_configured:
+            onet_service = ONetService(effective_config)
             # Set up user skills persistence path
             user_skills_path = Path.home() / ".config" / "resume-as-code" / "user-skills.yaml"
             logger.info("O*NET service enabled for skill discovery")
