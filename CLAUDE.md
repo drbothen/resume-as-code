@@ -202,6 +202,8 @@ CLI tool for git-native resume generation from structured Work Units.
 | `-n, --name TEXT` | Base filename for output (default: 'resume') |
 | `-t, --template TEXT` | Template to use for rendering |
 | `--strict-positions` | Validate position_id references exist (fail on invalid) |
+| `--tailored-notice` | Include footer notice that resume is tailored for role |
+| `--no-tailored-notice` | Exclude footer notice (overrides config) |
 
 ### List Command Options
 
