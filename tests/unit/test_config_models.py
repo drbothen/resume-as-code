@@ -8,6 +8,7 @@ import pytest
 
 from resume_as_code.models.config import (
     ConfigSource,
+    CurationConfig,
     ONetConfig,
     ResumeConfig,
     ScoringWeights,
@@ -277,8 +278,9 @@ class TestONetConfig:
         config = ONetConfig()
         assert config.enabled is True
 
-    def test_default_api_key_is_none(self) -> None:
-        """Default api_key should be None."""
+    def test_default_api_key_is_none(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Default api_key should be None when env var not set."""
+        monkeypatch.delenv("ONET_API_KEY", raising=False)
         config = ONetConfig()
         assert config.api_key is None
 
@@ -332,8 +334,9 @@ class TestONetConfig:
         config = ONetConfig(enabled=True, api_key="test-key")
         assert config.is_configured is True
 
-    def test_is_configured_without_api_key(self) -> None:
+    def test_is_configured_without_api_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """is_configured should return False when api_key is None."""
+        monkeypatch.delenv("ONET_API_KEY", raising=False)
         config = ONetConfig(enabled=True, api_key=None)
         assert config.is_configured is False
 
@@ -381,3 +384,80 @@ class TestResumeConfigONet:
         assert config.onet is not None
         assert config.onet.api_key == "test-key"
         assert config.onet.cache_ttl == 7200
+
+
+class TestCurationConfig:
+    """Test CurationConfig model (Story 7.14 + 7.18 action scoring)."""
+
+    def test_default_action_scoring_enabled(self) -> None:
+        """Default action_scoring_enabled should be True."""
+        config = CurationConfig()
+        assert config.action_scoring_enabled is True
+
+    def test_default_min_action_relevance_score(self) -> None:
+        """Default min_action_relevance_score should be 0.25."""
+        config = CurationConfig()
+        assert config.min_action_relevance_score == 0.25
+
+    def test_custom_action_scoring_enabled_false(self) -> None:
+        """CurationConfig should accept action_scoring_enabled=False."""
+        config = CurationConfig(action_scoring_enabled=False)
+        assert config.action_scoring_enabled is False
+
+    def test_custom_min_action_relevance_score(self) -> None:
+        """CurationConfig should accept custom min_action_relevance_score."""
+        config = CurationConfig(min_action_relevance_score=0.5)
+        assert config.min_action_relevance_score == 0.5
+
+    def test_min_action_relevance_score_minimum_bound(self) -> None:
+        """min_action_relevance_score should have minimum value of 0.0."""
+        config = CurationConfig(min_action_relevance_score=0.0)
+        assert config.min_action_relevance_score == 0.0
+
+        with pytest.raises(ValueError):
+            CurationConfig(min_action_relevance_score=-0.1)
+
+    def test_min_action_relevance_score_maximum_bound(self) -> None:
+        """min_action_relevance_score should have maximum value of 1.0."""
+        config = CurationConfig(min_action_relevance_score=1.0)
+        assert config.min_action_relevance_score == 1.0
+
+        with pytest.raises(ValueError):
+            CurationConfig(min_action_relevance_score=1.1)
+
+    def test_existing_min_relevance_score(self) -> None:
+        """Existing min_relevance_score should still work."""
+        config = CurationConfig(min_relevance_score=0.5)
+        assert config.min_relevance_score == 0.5
+
+    def test_full_action_scoring_config(self) -> None:
+        """CurationConfig should accept all action scoring fields together."""
+        config = CurationConfig(
+            action_scoring_enabled=True,
+            min_action_relevance_score=0.3,
+            min_relevance_score=0.4,
+        )
+        assert config.action_scoring_enabled is True
+        assert config.min_action_relevance_score == 0.3
+        assert config.min_relevance_score == 0.4
+
+
+class TestResumeConfigCuration:
+    """Test curation field in ResumeConfig."""
+
+    def test_default_curation_config(self) -> None:
+        """ResumeConfig should have default CurationConfig."""
+        config = ResumeConfig()
+        assert config.curation.action_scoring_enabled is True
+        assert config.curation.min_action_relevance_score == 0.25
+
+    def test_custom_curation_config(self) -> None:
+        """ResumeConfig should accept custom curation configuration."""
+        config = ResumeConfig(
+            curation=CurationConfig(
+                action_scoring_enabled=False,
+                min_action_relevance_score=0.5,
+            )
+        )
+        assert config.curation.action_scoring_enabled is False
+        assert config.curation.min_action_relevance_score == 0.5
