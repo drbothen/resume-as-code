@@ -1,6 +1,6 @@
 # Story 7.20: Employment Continuity & Gap Detection
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -431,3 +431,44 @@ N/A
 - `src/resume_as_code/commands/build.py` - Added CLI flag, continuity service integration for implicit plans
 - `tests/integration/test_plan_command.py` - Added `TestPlanCommandEmploymentContinuity` test class with 7 tests
 - `CLAUDE.md` - Added documentation for new CLI options
+
+## Senior Developer Review (AI)
+
+**Reviewer:** Claude Opus 4.5 (Amelia - Dev Agent)
+**Date:** 2026-01-17
+**Outcome:** APPROVED
+
+### Review Summary
+
+All 7 Acceptance Criteria verified against implementation. All 6 tasks with 23 subtasks confirmed complete.
+
+### Issues Found & Remediated
+
+| Severity | Issue | Resolution |
+|----------|-------|------------|
+| MEDIUM | Dead code in `plan.py:351` - orphan set comprehension `{wu.id for wu in enhanced_wus}` | Removed dead line |
+| LOW | Comment clarity on gap detection logic | Improved comment to clarify minimum_bullet vs allow_gaps behavior |
+
+### Verification
+
+- `ruff check`: All checks passed
+- `mypy --strict`: No issues found
+- Unit tests: 14 passed
+- Integration tests: 7 passed
+- Total: 21 tests passing
+
+### Files Reviewed
+
+- `src/resume_as_code/services/employment_continuity.py` - Clean implementation
+- `src/resume_as_code/models/config.py` - Proper type definition
+- `src/resume_as_code/commands/plan.py` - Fixed dead code, good integration
+- `src/resume_as_code/commands/build.py` - Correct flag handling
+- `tests/unit/test_employment_continuity.py` - Comprehensive coverage
+- `tests/integration/test_plan_command.py` - All scenarios tested
+
+## Change Log
+
+| Date | Author | Change |
+|------|--------|--------|
+| 2026-01-17 | Dev Agent | Initial implementation complete |
+| 2026-01-17 | Code Review | Fixed dead code in plan.py:351, improved comment clarity |

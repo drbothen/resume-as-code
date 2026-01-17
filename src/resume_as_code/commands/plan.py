@@ -344,11 +344,10 @@ def plan_command(
         position_list, selected_wus, all_wus, scores
     )
 
-    # Detect gaps for warning display (always detect, but only warn in allow_gaps mode)
+    # Detect gaps in the enhanced selection (only relevant in allow_gaps mode,
+    # since minimum_bullet mode ensures all positions have coverage)
     employment_gaps = continuity_service.detect_gaps(position_list, enhanced_wus)
 
-    # Update selected_wu_dicts with enhanced selection
-    {wu.id for wu in enhanced_wus}
     # Rebuild selected_wu_dicts from enhanced work units
     selected_wu_dicts = [wu.model_dump() for wu in enhanced_wus]
 
