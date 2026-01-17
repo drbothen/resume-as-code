@@ -249,10 +249,12 @@ def plan_command(
         warning("No Work Units found. Run `resume new work-unit` to create some.")
         return
 
+    # Load positions for seniority inference (Story 7.12)
+    position_service = PositionService(config.positions_path)
+    positions = position_service.load_positions()
+
     # Validate position references if strict mode enabled (Story 7.6)
     if strict_positions:
-        position_service = PositionService(config.positions_path)
-        positions = position_service.load_positions()
         # Always validate - even if positions dict is empty, work units
         # with position_id references should fail validation
         loader = WorkUnitLoader(config.work_units_dir)
@@ -273,8 +275,11 @@ def plan_command(
         info(f"Analyzing: {jd.title or jd_path.name}")
 
     # Run ranking with scoring weights from config (AC: #3)
+    # Pass positions for seniority inference from position title/scope (Story 7.12)
     ranker = HybridRanker()
-    ranking = ranker.rank(work_units, jd, top_k=top, scoring_weights=config.scoring_weights)
+    ranking = ranker.rank(
+        work_units, jd, top_k=top, scoring_weights=config.scoring_weights, positions=positions
+    )
 
     # Run coverage analysis on selected Work Units
     selected = ranking.results[:top]

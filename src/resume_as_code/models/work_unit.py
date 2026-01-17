@@ -18,6 +18,8 @@ from pydantic import (
     model_validator,
 )
 
+from resume_as_code.models.job_description import ExperienceLevel
+
 if TYPE_CHECKING:
     from resume_as_code.models.position import Position
 
@@ -360,6 +362,12 @@ class WorkUnit(BaseModel):
     # Position reference for employment history grouping
     position_id: str | None = Field(
         default=None, description="Reference to position in positions.yaml for employer grouping"
+    )
+
+    # Seniority level for matching (Story 7.12)
+    seniority_level: ExperienceLevel | None = Field(
+        default=None,
+        description="Seniority level for matching. If not set, inferred from position title.",
     )
 
     # Optional metadata

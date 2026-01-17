@@ -3,7 +3,7 @@
 **Epic:** Epic 7 - Schema & Data Model Refactoring
 **Story Points:** 5
 **Priority:** P3
-**Status:** Ready for Dev
+**Status:** Review
 
 ---
 
@@ -533,19 +533,19 @@ class TestRankerSeniorityScoring:
 
 ## Definition of Done
 
-- [ ] `seniority_level` field added to WorkUnit model (optional, ExperienceLevel enum)
-- [ ] `seniority_inference.py` service created with:
-  - [ ] `infer_seniority_from_title()` function
-  - [ ] `infer_seniority()` function (handles position scope)
-  - [ ] `calculate_seniority_alignment()` function
-- [ ] Config extended with `use_seniority_matching` and `seniority_blend`
-- [ ] HybridRanker integrates seniority scoring
-- [ ] Match reasons include seniority alignment info
-- [ ] Unit tests pass for inference logic
-- [ ] Integration tests pass for ranker
-- [ ] Backward compatible (no seniority_level = inference kicks in)
-- [ ] `uv run ruff check` passes
-- [ ] `uv run mypy src --strict` passes
+- [x] `seniority_level` field added to WorkUnit model (optional, ExperienceLevel enum)
+- [x] `seniority_inference.py` service created with:
+  - [x] `infer_seniority_from_title()` function
+  - [x] `infer_seniority()` function (handles position scope)
+  - [x] `calculate_seniority_alignment()` function
+- [x] Config extended with `use_seniority_matching` and `seniority_blend`
+- [x] HybridRanker integrates seniority scoring
+- [x] Match reasons include seniority alignment info
+- [x] Unit tests pass for inference logic
+- [x] Integration tests pass for ranker
+- [x] Backward compatible (no seniority_level = inference kicks in)
+- [x] `uv run ruff check` passes
+- [x] `uv run mypy src --strict` passes
 
 ---
 
@@ -560,3 +560,16 @@ class TestRankerSeniorityScoring:
 4. **Blend Weight**: Default 10% is conservative. Users can tune up to 30% for roles where seniority fit is critical.
 
 5. **Graceful Degradation**: If position isn't attached to work unit, fall back to work unit title inference.
+
+---
+
+## Implementation Learnings
+
+**Position Wiring Required**: The original design assumed positions would be attached to WorkUnit models via `_position` PrivateAttr. However, the ranker receives raw dicts, not model instances.
+
+**Fix applied**: Added `positions: dict[str, Any] | None` parameter to `HybridRanker.rank()` and `_calculate_seniority_score()`. Updated `plan.py` and `build.py` to always load positions and pass to ranker. This enables scope-based boosting (P&L, revenue, team size) to work correctly.
+
+**Files modified beyond original scope**:
+- `plan.py`: Load positions unconditionally, pass to `ranker.rank()`
+- `build.py`: Load positions unconditionally, pass to `ranker.rank()`
+- `ranker.py`: Add `positions` parameter, look up by `position_id`

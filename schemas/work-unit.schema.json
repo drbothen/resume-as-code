@@ -154,6 +154,20 @@
       "title": "DocumentEvidence",
       "type": "object"
     },
+    "ExperienceLevel": {
+      "description": "Experience level indicators.",
+      "enum": [
+        "entry",
+        "mid",
+        "senior",
+        "staff",
+        "lead",
+        "principal",
+        "executive"
+      ],
+      "title": "ExperienceLevel",
+      "type": "string"
+    },
     "Framing": {
       "additionalProperties": false,
       "description": "Strategic framing guidance for resume presentation.",
@@ -767,6 +781,18 @@
       "default": null,
       "description": "Reference to position in positions.yaml for employer grouping",
       "title": "Position Id"
+    },
+    "seniority_level": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExperienceLevel"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Seniority level for matching. If not set, inferred from position title."
     },
     "skills_demonstrated": {
       "items": {

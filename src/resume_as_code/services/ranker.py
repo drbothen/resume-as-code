@@ -10,6 +10,10 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 from rank_bm25 import BM25Okapi  # type: ignore[import-untyped]
 
+from resume_as_code.services.seniority_inference import (
+    calculate_seniority_alignment,
+    infer_seniority,
+)
 from resume_as_code.utils.tokenizer import get_tokenizer
 from resume_as_code.utils.work_unit_text import (
     extract_experience_text,
@@ -36,6 +40,7 @@ class RankingResult:
     bm25_rank: int
     semantic_rank: int
     match_reasons: list[str] = field(default_factory=list)
+    seniority_score: float = field(default=1.0)  # 0.0 to 1.0, Story 7.12
 
 
 @dataclass
@@ -102,6 +107,7 @@ class HybridRanker:
         jd: JobDescription,
         top_k: int = 10,
         scoring_weights: ScoringWeights | None = None,
+        positions: dict[str, Any] | None = None,
     ) -> RankingOutput:
         """Rank Work Units against a job description.
 
@@ -110,6 +116,7 @@ class HybridRanker:
             jd: Parsed JobDescription.
             top_k: Number of top results to return.
             scoring_weights: Optional weights for BM25/semantic balance.
+            positions: Optional dict of position_id -> Position for seniority inference.
 
         Returns:
             RankingOutput with sorted results.
@@ -149,8 +156,15 @@ class HybridRanker:
         # Calculate recency scores for each work unit (Story 7.9)
         recency_scores = [self._calculate_recency_score(wu, scoring_weights) for wu in work_units]
 
-        # Blend relevance and recency scores (Story 7.9 AC#5)
-        final_scores = self._blend_scores(normalized_relevance, recency_scores, scoring_weights)
+        # Calculate seniority alignment scores (Story 7.12)
+        seniority_scores = [
+            self._calculate_seniority_score(wu, jd, scoring_weights, positions) for wu in work_units
+        ]
+
+        # Blend relevance, recency, and seniority scores
+        final_scores = self._blend_scores(
+            normalized_relevance, recency_scores, seniority_scores, scoring_weights
+        )
 
         # Sort by final score (higher is better), then by ID for determinism
         sorted_indices = sorted(
@@ -162,7 +176,9 @@ class HybridRanker:
         # Build results - return top_k * 2 for exclusion display
         results: list[RankingResult] = []
         for idx in sorted_indices[: top_k * 2]:
-            match_reasons = self._extract_match_reasons(work_units[idx], jd)
+            match_reasons = self._extract_match_reasons(
+                work_units[idx], jd, seniority_scores[idx], scoring_weights
+            )
             results.append(
                 RankingResult(
                     work_unit_id=wu_ids[idx],
@@ -171,6 +187,7 @@ class HybridRanker:
                     bm25_rank=bm25_ranks[idx],
                     semantic_rank=semantic_ranks[idx],
                     match_reasons=match_reasons,
+                    seniority_score=seniority_scores[idx],
                 )
             )
 
@@ -480,11 +497,17 @@ class HybridRanker:
             scores.append(rrf_score)
         return scores
 
-    def _extract_match_reasons(self, work_unit: dict[str, Any], jd: JobDescription) -> list[str]:
+    def _extract_match_reasons(
+        self,
+        work_unit: dict[str, Any],
+        jd: JobDescription,
+        seniority_score: float = 1.0,
+        scoring_weights: ScoringWeights | None = None,
+    ) -> list[str]:
         """Extract reasons why this Work Unit matched.
 
         Returns up to 3 reasons explaining the match, with field indication.
-        Field types: Title match, Skills match, Experience match.
+        Field types: Title match, Skills match, Experience match, Seniority.
         """
         reasons: list[str] = []
 
@@ -509,6 +532,15 @@ class HybridRanker:
         ]
         if experience_keyword_matches:
             reasons.append(f"Experience match: {', '.join(experience_keyword_matches[:3])}")
+
+        # Seniority alignment reason (Story 7.12)
+        if scoring_weights and scoring_weights.use_seniority_matching:
+            if seniority_score >= 0.9:
+                reasons.append("Seniority level matches JD requirements")
+            elif seniority_score >= 0.7:
+                reasons.append("Seniority level close to JD requirements")
+            elif seniority_score < 0.5:
+                reasons.append(f"Seniority mismatch (score: {seniority_score:.0%})")
 
         # Limit to max reasons (prevents UI clutter)
         if reasons:
@@ -574,19 +606,75 @@ class HybridRanker:
 
         return recency_score
 
+    def _calculate_seniority_score(
+        self,
+        work_unit: dict[str, Any],
+        jd: JobDescription,
+        scoring_weights: ScoringWeights | None,
+        positions: dict[str, Any] | None = None,
+    ) -> float:
+        """Calculate seniority alignment score for a work unit.
+
+        Returns 1.0 if seniority matching is disabled.
+
+        Args:
+            work_unit: Work Unit dictionary.
+            jd: JobDescription with experience_level.
+            scoring_weights: Scoring weights with seniority config.
+            positions: Optional dict of position_id -> Position for scope lookup.
+
+        Returns:
+            Seniority alignment score between 0.0 and 1.0.
+        """
+        # No seniority matching if disabled or no weights
+        if scoring_weights is None or not scoring_weights.use_seniority_matching:
+            return 1.0
+
+        # Create a minimal WorkUnit for inference
+        from resume_as_code.models.work_unit import WorkUnit
+
+        try:
+            # Reconstruct WorkUnit from dict to use seniority_level field
+            wu_model = WorkUnit.model_validate(work_unit)
+        except Exception:
+            # Fall back to title-only inference if validation fails
+            from resume_as_code.services.seniority_inference import (
+                infer_seniority_from_title,
+            )
+
+            wu_level = infer_seniority_from_title(work_unit.get("title", ""))
+            return calculate_seniority_alignment(wu_level, jd.experience_level)
+
+        # Look up position from positions dict if available
+        position = None
+        if positions and wu_model.position_id:
+            position = positions.get(wu_model.position_id)
+
+        # Infer work unit seniority
+        wu_level = infer_seniority(wu_model, position)
+
+        # Calculate alignment
+        return calculate_seniority_alignment(wu_level, jd.experience_level)
+
     def _blend_scores(
         self,
         relevance_scores: list[float],
         recency_scores: list[float],
+        seniority_scores: list[float],
         scoring_weights: ScoringWeights | None,
     ) -> list[float]:
-        """Blend relevance and recency scores.
+        """Blend relevance, recency, and seniority scores.
 
-        Formula: final = (relevance_blend × relevance) + (recency_blend × recency)
+        Formula: final = relevance × relevance_blend
+                       + recency × recency_blend
+                       + seniority × seniority_blend
+
+        Where: relevance_blend = 1.0 - recency_blend - seniority_blend
 
         Args:
             relevance_scores: Normalized relevance scores (0-1).
             recency_scores: Recency decay scores (0-1).
+            seniority_scores: Seniority alignment scores (0-1).
             scoring_weights: Weights configuration.
 
         Returns:
@@ -596,9 +684,12 @@ class HybridRanker:
             return relevance_scores
 
         recency_blend = scoring_weights.recency_blend
-        relevance_blend = 1.0 - recency_blend
+        seniority_blend = scoring_weights.seniority_blend
+        relevance_blend = 1.0 - recency_blend - seniority_blend
 
         return [
-            (relevance_blend * rel) + (recency_blend * rec)
-            for rel, rec in zip(relevance_scores, recency_scores, strict=True)
+            (relevance_blend * rel) + (recency_blend * rec) + (seniority_blend * sen)
+            for rel, rec, sen in zip(
+                relevance_scores, recency_scores, seniority_scores, strict=True
+            )
         ]

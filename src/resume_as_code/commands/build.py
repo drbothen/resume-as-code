@@ -198,10 +198,12 @@ def _generate_implicit_plan(
     # Load Work Units
     work_units = load_all_work_units(config.work_units_dir)
 
+    # Load positions for seniority inference (Story 7.12)
+    position_service = PositionService(config.positions_path)
+    positions = position_service.load_positions()
+
     # Validate position references if strict mode enabled (Story 7.6)
     if strict_positions:
-        position_service = PositionService(config.positions_path)
-        positions = position_service.load_positions()
         # Always validate - even if positions dict is empty, work units
         # with position_id references should fail validation
         loader = WorkUnitLoader(config.work_units_dir)
@@ -217,9 +219,14 @@ def _generate_implicit_plan(
             ) from e
 
     # Rank with scoring weights from config (AC: #3)
+    # Pass positions for seniority inference from position title/scope (Story 7.12)
     ranker = HybridRanker()
     ranking = ranker.rank(
-        work_units, jd, top_k=config.default_top_k, scoring_weights=config.scoring_weights
+        work_units,
+        jd,
+        top_k=config.default_top_k,
+        scoring_weights=config.scoring_weights,
+        positions=positions,
     )
 
     # Create plan

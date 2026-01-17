@@ -135,6 +135,18 @@ class ScoringWeights(BaseModel):
         description="Weight for title section in semantic scoring.",
     )
 
+    # Seniority matching (Story 7.12)
+    use_seniority_matching: bool = Field(
+        default=True,
+        description="Enable seniority level matching against JD.",
+    )
+    seniority_blend: float = Field(
+        default=0.1,
+        ge=0.0,
+        le=0.3,
+        description="How much seniority alignment affects final score (0.1 = 10%).",
+    )
+
     @model_validator(mode="after")
     def validate_section_weights_sum(self) -> ScoringWeights:
         """Validate section weights sum to ~1.0 when sectioned semantic is enabled."""
