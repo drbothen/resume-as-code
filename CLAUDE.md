@@ -146,6 +146,7 @@ CLI tool for git-native resume generation from structured Work Units.
 | `resume new work-unit` | Create new Work Unit |
 | `resume new work-unit --position "..."` | Create with inline position |
 | `resume list` | List all Work Units |
+| `resume list -f tag:aws -s date` | Filter and sort Work Units |
 | `resume show work-unit <id>` | Show work unit details |
 | `resume remove work-unit <id>` | Remove a work unit |
 | `resume new certification` | Create new certification |
@@ -153,6 +154,19 @@ CLI tool for git-native resume generation from structured Work Units.
 | `resume list certifications` | List all certifications with status |
 | `resume show certification <name>` | Show certification details |
 | `resume remove certification <name>` | Remove a certification |
+| `resume new education` | Create new education entry |
+| `resume new education "Degree\|Institution\|Year\|Honors"` | Inline education creation |
+| `resume list education` | List all education entries |
+| `resume new board-role` | Create new board/advisory role |
+| `resume new board-role "Org\|Role\|Type\|Start\|End\|Focus"` | Inline board role creation |
+| `resume list board-roles` | List all board roles |
+| `resume new publication` | Create new publication/speaking |
+| `resume new publication "Title\|Type\|Venue\|Date\|URL"` | Inline publication creation |
+| `resume list publications` | List all publications |
+| `resume new highlight --text "..."` | Create career highlight |
+| `resume list highlights` | List all career highlights |
+| `resume cache stats` | Show embedding cache statistics |
+| `resume cache clear` | Clear stale cache entries |
 | `resume validate [PATH]` | Validate Work Units against schema |
 | `resume plan --jd <file>` | Analyze JD, select Work Units |
 | `resume build --jd <file>` | Generate resume files |
@@ -165,10 +179,42 @@ CLI tool for git-native resume generation from structured Work Units.
 | `--content-density` | Check content density (bullet length) |
 | `--check-positions` | Validate position_id references exist in positions.yaml |
 
+### Plan Command Options
+
+| Flag | Description |
+|------|-------------|
+| `-j, --jd PATH` | Path to job description file |
+| `-o, --output PATH` | Save plan to file |
+| `-l, --load PATH` | Load and display saved plan |
+| `-t, --top INTEGER` | Number of top Work Units to select (default: 8) |
+| `--show-excluded` | Show top 5 excluded Work Units with reasons |
+| `--show-all-excluded` | Show all excluded Work Units with reasons |
+| `--strict-positions` | Validate position_id references exist (fail on invalid) |
+
+### Build Command Options
+
+| Flag | Description |
+|------|-------------|
+| `-p, --plan PATH` | Path to saved plan file |
+| `-j, --jd PATH` | Path to job description file (creates implicit plan) |
+| `-f, --format [pdf\|docx\|all]` | Output format(s) to generate |
+| `-o, --output-dir PATH` | Output directory (default: dist) |
+| `-t, --template TEXT` | Template to use for rendering |
+| `--strict-positions` | Validate position_id references exist (fail on invalid) |
+
+### List Command Options
+
+| Flag | Description |
+|------|-------------|
+| `-f, --filter TEXT` | Filter Work Units (tag:value, confidence:value, or free text) |
+| `-s, --sort [date\|title\|confidence]` | Sort field (default: date) |
+| `-r, --reverse` | Reverse sort order (ascending) |
+
 ### Global Flags
 
 | Flag | Description |
 |------|-------------|
+| `--config FILE` | Path to custom config file (overrides .resume.yaml) |
 | `--json` | Output in JSON format for programmatic parsing |
 | `-v, --verbose` | Show verbose debug output |
 | `-q, --quiet` | Suppress all output, exit code only |
@@ -377,6 +423,123 @@ Files stored as: `work-units/{id}.yaml`
 
 Example: `wu-2024-01-30-ics-assessment`
 
+### Work Unit Creation Flags
+
+| Flag | Description |
+|------|-------------|
+| `-a, --archetype` | Template: cultural, greenfield, incident, leadership, migration, minimal, optimization, strategic, transformation |
+| `-t, --title TEXT` | Work Unit title (used to generate ID slug) |
+| `--position TEXT` | Create/reuse position: 'Employer\|Title\|Start\|End' |
+| `-p, --position-id TEXT` | Position ID to associate with |
+| `--problem TEXT` | Problem statement (min 20 chars) |
+| `--action TEXT` | Action taken (repeatable, min 10 chars each) |
+| `--result TEXT` | Outcome result (min 10 chars) |
+| `--impact TEXT` | Quantified impact (optional) |
+| `--skill TEXT` | Skill demonstrated (repeatable) |
+| `--tag TEXT` | Tag for filtering (repeatable) |
+| `--start-date TEXT` | Start date (YYYY-MM-DD or YYYY-MM) |
+| `--end-date TEXT` | End date (YYYY-MM-DD or YYYY-MM) |
+| `--from-memory` | Quick capture mode with minimal template |
+| `--no-edit` | Don't open editor after creation |
+
+---
+
+## Board Role Management
+
+For executive resumes - track board positions and advisory roles.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `resume new board-role` | Create board role (interactive or pipe-separated) |
+| `resume new board-role "Org\|Role\|Type\|Start\|End\|Focus"` | Inline creation |
+| `resume list board-roles` | List all board and advisory roles |
+| `resume show board-role <org>` | Show board role details (partial match) |
+| `resume remove board-role <org>` | Remove by organization name (partial match) |
+
+### Board Role Types
+
+| Type | Description |
+|------|-------------|
+| `director` | Board of Directors position |
+| `advisory` | Advisory board or technical advisor |
+| `committee` | Committee member |
+
+### Pipe-Separated Format
+
+```bash
+resume new board-role "CyberShield Ventures|Technical Advisor|advisory|2022-03||AI/ML strategy"
+```
+
+---
+
+## Publication Management
+
+Track publications, conference talks, and speaking engagements.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `resume new publication` | Create publication (interactive or pipe-separated) |
+| `resume new publication "Title\|Type\|Venue\|Date\|URL"` | Inline creation |
+| `resume list publications` | List all publications and speaking engagements |
+| `resume show publication <title>` | Show publication details (partial match) |
+| `resume remove publication <title>` | Remove by title (partial match) |
+
+### Publication Types
+
+| Type | Description |
+|------|-------------|
+| `conference` | Conference presentation |
+| `article` | Published article |
+| `whitepaper` | Technical whitepaper |
+| `book` | Book or book chapter |
+| `podcast` | Podcast appearance |
+| `webinar` | Webinar presentation |
+
+### Pipe-Separated Format
+
+```bash
+resume new publication "Zero Trust Architecture|conference|RSA Conference|2022-06|"
+```
+
+---
+
+## Career Highlight Management
+
+Top-line achievements for executive summary sections.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `resume new highlight --text "..."` | Create highlight (non-interactive) |
+| `resume new highlight` | Create highlight (interactive) |
+| `resume list highlights` | List all career highlights |
+| `resume show highlight <index>` | Show highlight by index (0-indexed) |
+| `resume remove highlight <index>` | Remove highlight by index (0-indexed) |
+
+### Example
+
+```bash
+resume new highlight --text "Led digital transformation generating \$50M revenue through AI/ML initiatives"
+```
+
+---
+
+## Cache Management
+
+Manage the embedding cache used for semantic matching.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `resume cache stats` | Show cache statistics (entries, size) |
+| `resume cache clear` | Clear stale or all cache entries |
+
 ---
 
 ## AI Agent Workflows
@@ -520,6 +683,9 @@ For each new resource type, implement:
 | position | ✓ | ✓ | ✓ | ✓ | Complete |
 | certification | ✓ | ✓ | ✓ | ✓ | Complete |
 | education | ✓ | ✓ | ✓ | ✓ | Complete |
+| board-role | ✓ | ✓ | ✓ | ✓ | Complete |
+| publication | ✓ | ✓ | ✓ | ✓ | Complete |
+| highlight | ✓ | ✓ | ✓ | ✓ | Complete |
 
 ### Naming Conventions
 
@@ -536,6 +702,10 @@ For LLM-optimized non-interactive creation:
 resume new position "Employer|Title|Start|End"
 resume new certification "Name|Issuer|Date|Expires"
 resume new education "Degree|Institution|Year|Honors"
+resume new board-role "Org|Role|Type|Start|End|Focus"
+resume new publication "Title|Type|Venue|Date|URL"
+# highlight uses --text flag instead:
+resume new highlight --text "Achievement text here"
 ```
 
 - Empty trailing fields can be omitted
