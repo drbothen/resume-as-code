@@ -121,7 +121,7 @@ def _set_config_value(ctx: click.Context, key: str, value: str) -> None:
 
 def _get_config_value(ctx: click.Context, key: str, list_flag: bool = False) -> None:
     """Get a single config value."""
-    config = get_config()
+    config = get_config(project_config_path=ctx.obj.config_path)
     sources = get_config_sources()
 
     # Special handling for certifications with --list flag (Story 6.2, AC #6)
@@ -172,7 +172,7 @@ def _get_config_value(ctx: click.Context, key: str, list_flag: bool = False) -> 
 
 def _show_all_config(ctx: click.Context, _list_all: bool) -> None:
     """Show all configuration values with sources (AC: #5)."""
-    config = get_config()
+    config = get_config(project_config_path=ctx.obj.config_path)
     sources = get_config_sources()
 
     if ctx.obj.json_output:
@@ -330,7 +330,7 @@ def _show_onet_status(ctx: click.Context) -> None:
     from resume_as_code.models.config import ONetConfig
     from resume_as_code.services.onet_service import ONetService
 
-    config = get_config()
+    config = get_config(project_config_path=ctx.obj.config_path)
 
     # Get O*NET config (may be None if not configured)
     onet_config = config.onet or ONetConfig()

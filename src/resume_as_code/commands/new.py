@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 from datetime import date, datetime
-from pathlib import Path
 from typing import Any, cast
 
 import click
@@ -1112,7 +1111,7 @@ def new_certification(
     3. Interactive: resume new certification
     """
     # Use Path.cwd() for config location (certifications stored in .resume.yaml)
-    service = CertificationService(config_path=Path.cwd() / ".resume.yaml")
+    service = CertificationService(config_path=ctx.obj.effective_config_path)
 
     # Parse pipe-separated format if provided
     if certification_spec:
@@ -1255,7 +1254,7 @@ def new_education(
     3. Interactive: resume new education
     """
     # Use Path.cwd() for config location (education stored in .resume.yaml)
-    service = EducationService(config_path=Path.cwd() / ".resume.yaml")
+    service = EducationService(config_path=ctx.obj.effective_config_path)
 
     # Parse pipe-separated format if provided
     if education_spec:
@@ -1377,7 +1376,7 @@ def new_highlight(
         resume new highlight
     """
     # Use Path.cwd() for config location (highlights stored in .resume.yaml)
-    service = HighlightService(config_path=Path.cwd() / ".resume.yaml")
+    service = HighlightService(config_path=ctx.obj.effective_config_path)
 
     # Non-interactive mode if --text provided
     if text is not None:
@@ -1484,7 +1483,7 @@ def new_board_role(
     3. Interactive: resume new board-role
     """
     # Use Path.cwd() for config location (board roles stored in .resume.yaml)
-    service = BoardRoleService(config_path=Path.cwd() / ".resume.yaml")
+    service = BoardRoleService(config_path=ctx.obj.effective_config_path)
 
     # Parse pipe-separated format if provided
     if board_role_spec:
@@ -1651,7 +1650,7 @@ def new_publication(
     Types: conference, article, whitepaper, book, podcast, webinar
     """
     # Use Path.cwd() for config location (publications stored in .resume.yaml)
-    service = PublicationService(config_path=Path.cwd() / ".resume.yaml")
+    service = PublicationService(config_path=ctx.obj.effective_config_path)
 
     # Parse pipe-separated format if provided
     if publication_spec:

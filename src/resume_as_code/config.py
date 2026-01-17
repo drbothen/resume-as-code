@@ -24,8 +24,10 @@ PROJECT_CONFIG_NAME = ".resume.yaml"
 # Environment variable prefix
 ENV_PREFIX = "RESUME_"
 
-# Singleton config instance
-_config: ResumeConfig | None = None
+# Config source tracking for the most recent get_config() call
+# Note: We don't cache ResumeConfig instances because:
+# 1. CLI invocations are separate processes (no caching benefit)
+# 2. Tests use different cwd/configs and caching causes isolation issues
 _config_sources: dict[str, ConfigSource] = {}
 
 
@@ -51,8 +53,23 @@ def load_user_config() -> tuple[dict[str, Any], Path | None]:
     return {}, None
 
 
-def load_project_config() -> tuple[dict[str, Any], Path | None]:
-    """Load project config from .resume.yaml in current directory."""
+def load_project_config(
+    config_path: Path | None = None,
+) -> tuple[dict[str, Any], Path | None]:
+    """Load project config from specified path or default .resume.yaml.
+
+    Args:
+        config_path: Explicit path to config file. If provided, uses this
+            instead of looking for .resume.yaml in current directory.
+
+    Returns:
+        Tuple of (config dict, path used) or ({}, None) if no config found.
+    """
+    if config_path is not None:
+        # Explicit path provided - Click validates existence
+        return load_yaml_file(config_path), config_path
+
+    # Default behavior: check cwd
     project_path = Path.cwd() / PROJECT_CONFIG_NAME
     if project_path.exists():
         return load_yaml_file(project_path), project_path
@@ -89,22 +106,33 @@ def merge_configs(
 
 
 def reset_config() -> None:
-    """Reset the singleton config. Primarily for testing."""
-    global _config, _config_sources
-    _config = None
+    """Reset config source tracking. Primarily for testing."""
+    global _config_sources
     _config_sources = {}
 
 
-def get_config(cli_overrides: dict[str, Any] | None = None) -> ResumeConfig:
-    """Get the effective configuration with all sources merged."""
-    global _config, _config_sources
+def get_config(
+    cli_overrides: dict[str, Any] | None = None,
+    project_config_path: Path | None = None,
+) -> ResumeConfig:
+    """Get the effective configuration with all sources merged.
+
+    Args:
+        cli_overrides: CLI flag values to override config.
+        project_config_path: Custom path to project config file. If provided,
+            uses this instead of looking for .resume.yaml in current directory.
+
+    Returns:
+        The merged ResumeConfig instance.
+    """
+    global _config_sources
 
     # Get defaults from model
     defaults = ResumeConfig().model_dump()
 
     # Load from sources
     user_config, user_path = load_user_config()
-    project_config, project_path = load_project_config()
+    project_config, project_path = load_project_config(config_path=project_config_path)
     env_config = load_env_config()
 
     # Merge with precedence
@@ -117,22 +145,33 @@ def get_config(cli_overrides: dict[str, Any] | None = None) -> ResumeConfig:
     )
 
     # Track sources for each value
-    _config_sources = _track_sources(
-        defaults,
-        user_config,
-        project_config,
-        env_config,
-        cli_overrides or {},
-        user_path,
-        project_path,
+    _config_sources.clear()
+    _config_sources.update(
+        _track_sources(
+            defaults,
+            user_config,
+            project_config,
+            env_config,
+            cli_overrides or {},
+            user_path,
+            project_path,
+        )
     )
 
-    _config = ResumeConfig(**merged)
-    return _config
+    return ResumeConfig(**merged)
 
 
 def get_config_sources() -> dict[str, ConfigSource]:
-    """Get the source tracking for current config."""
+    """Get the source tracking for the most recently loaded config.
+
+    Returns:
+        Dictionary mapping config keys to their ConfigSource, showing where
+        each value came from (default, user, project, env, or cli).
+
+    Note:
+        Returns sources for the last config loaded via get_config().
+        Call get_config() first to ensure sources are populated.
+    """
     return _config_sources
 
 

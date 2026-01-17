@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import click
 
 from resume_as_code import __version__
@@ -17,12 +19,25 @@ __all__ = ["Context", "main", "pass_context"]
 
 @click.group(invoke_without_command=True)
 @click.version_option(version=__version__, prog_name="resume")
+@click.option(
+    "--config",
+    "config_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Path to config file (overrides .resume.yaml). "
+    "Example: --config ~/.resume-profiles/executive.yaml",
+)
 @click.option("--json", "json_output", is_flag=True, help="Output in JSON format")
 @click.option("-v", "--verbose", is_flag=True, help="Show verbose debug output")
 @click.option("-q", "--quiet", is_flag=True, help="Suppress all output, exit code only")
 @click.pass_context
 @handle_errors
-def main(ctx: click.Context, json_output: bool, verbose: bool, quiet: bool) -> None:
+def main(
+    ctx: click.Context,
+    config_path: Path | None,
+    json_output: bool,
+    verbose: bool,
+    quiet: bool,
+) -> None:
     """Resume as Code - CLI tool for git-native resume generation.
 
     All commands are designed for non-interactive operation, suitable for
@@ -30,6 +45,7 @@ def main(ctx: click.Context, json_output: bool, verbose: bool, quiet: bool) -> N
     all required input must come from flags, environment variables, or config files.
     """
     ctx.ensure_object(Context)
+    ctx.obj.config_path = config_path
     ctx.obj.json_output = json_output
     ctx.obj.verbose = verbose
     ctx.obj.quiet = quiet

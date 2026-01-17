@@ -125,6 +125,33 @@ class TestLoadProjectConfig:
         assert config == {"output_dir": "./project-dist"}
         assert path == project_file
 
+    def test_load_project_config_with_explicit_path(self, tmp_path: Path) -> None:
+        """Loading project config with explicit path should use that path."""
+        custom_file = tmp_path / "custom.yaml"
+        custom_file.write_text("output_dir: ./custom-dist\n")
+
+        config, path = load_project_config(config_path=custom_file)
+        assert config == {"output_dir": "./custom-dist"}
+        assert path == custom_file
+
+    def test_load_project_config_explicit_path_overrides_cwd(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Explicit path should be used even when .resume.yaml exists in cwd."""
+        # Create default config in cwd
+        default_file = tmp_path / ".resume.yaml"
+        default_file.write_text("output_dir: ./default-dist\n")
+
+        # Create custom config
+        custom_file = tmp_path / "custom.yaml"
+        custom_file.write_text("output_dir: ./custom-dist\n")
+
+        monkeypatch.chdir(tmp_path)
+
+        config, path = load_project_config(config_path=custom_file)
+        assert config == {"output_dir": "./custom-dist"}
+        assert path == custom_file
+
 
 class TestLoadEnvConfig:
     """Test environment variable config loading."""
@@ -252,6 +279,35 @@ class TestGetConfig:
         with patch.dict("os.environ", {}, clear=True):
             config = get_config(cli_overrides={"output_dir": "./cli-dist"})
             assert config.output_dir == Path("./cli-dist")
+
+    def test_get_config_with_project_config_path(self, tmp_path: Path) -> None:
+        """get_config should use explicit project config path."""
+        reset_config()
+        custom_file = tmp_path / "custom.yaml"
+        custom_file.write_text("output_dir: ./custom-dist\n")
+
+        with patch.dict("os.environ", {}, clear=True):
+            config = get_config(project_config_path=custom_file)
+            assert config.output_dir == Path("./custom-dist")
+
+    def test_get_config_project_path_overrides_cwd(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Explicit project config path should override .resume.yaml in cwd."""
+        reset_config()
+        # Create default config in cwd
+        default_file = tmp_path / ".resume.yaml"
+        default_file.write_text("output_dir: ./default-dist\n")
+
+        # Create custom config
+        custom_file = tmp_path / "custom.yaml"
+        custom_file.write_text("output_dir: ./custom-dist\n")
+
+        monkeypatch.chdir(tmp_path)
+
+        with patch.dict("os.environ", {}, clear=True):
+            config = get_config(project_config_path=custom_file)
+            assert config.output_dir == Path("./custom-dist")
 
 
 class TestGetConfigSources:

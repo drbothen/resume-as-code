@@ -148,7 +148,7 @@ def list_positions(ctx: click.Context) -> None:
 @handle_errors
 def list_certifications(ctx: click.Context) -> None:
     """List all certifications with expiration status."""
-    service = CertificationService(config_path=Path.cwd() / ".resume.yaml")
+    service = CertificationService(config_path=ctx.obj.effective_config_path)
     certifications = service.load_certifications()
 
     if not certifications:
@@ -175,7 +175,7 @@ def list_certifications(ctx: click.Context) -> None:
 @handle_errors
 def list_education(ctx: click.Context) -> None:
     """List all education entries."""
-    service = EducationService(config_path=Path.cwd() / ".resume.yaml")
+    service = EducationService(config_path=ctx.obj.effective_config_path)
     education = service.load_education()
 
     if not education:
@@ -202,7 +202,7 @@ def list_education(ctx: click.Context) -> None:
 @handle_errors
 def list_highlights(ctx: click.Context) -> None:
     """List all career highlights."""
-    service = HighlightService(config_path=Path.cwd() / ".resume.yaml")
+    service = HighlightService(config_path=ctx.obj.effective_config_path)
     highlights = service.load_highlights()
 
     if not highlights:
@@ -229,7 +229,7 @@ def list_highlights(ctx: click.Context) -> None:
 @handle_errors
 def list_board_roles(ctx: click.Context) -> None:
     """List all board and advisory roles."""
-    service = BoardRoleService(config_path=Path.cwd() / ".resume.yaml")
+    service = BoardRoleService(config_path=ctx.obj.effective_config_path)
     board_roles = service.load_board_roles()
 
     if not board_roles:
@@ -720,7 +720,7 @@ def _format_tags(tags: list[Any]) -> str:
 @handle_errors
 def list_publications(ctx: click.Context) -> None:
     """List all publications and speaking engagements."""
-    service = PublicationService(config_path=Path.cwd() / ".resume.yaml")
+    service = PublicationService(config_path=ctx.obj.effective_config_path)
     publications = service.load_publications()
 
     if not publications:

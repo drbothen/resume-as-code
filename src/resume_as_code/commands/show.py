@@ -295,7 +295,7 @@ def show_certification(ctx: click.Context, name: str) -> None:
 
     NAME is the certification name (partial match supported).
     """
-    service = CertificationService(config_path=Path.cwd() / ".resume.yaml")
+    service = CertificationService(config_path=ctx.obj.effective_config_path)
     matching = service.find_certifications_by_name(name)
 
     if not matching:
@@ -395,7 +395,7 @@ def show_education(ctx: click.Context, degree: str) -> None:
 
     DEGREE is the degree name (partial match supported).
     """
-    service = EducationService(config_path=Path.cwd() / ".resume.yaml")
+    service = EducationService(config_path=ctx.obj.effective_config_path)
     matching = service.find_educations_by_degree(degree)
 
     if not matching:
@@ -479,7 +479,7 @@ def show_highlight(ctx: click.Context, index: int) -> None:
 
     INDEX is the 0-based index of the highlight (use 'list highlights' to see indices).
     """
-    service = HighlightService(config_path=Path.cwd() / ".resume.yaml")
+    service = HighlightService(config_path=ctx.obj.effective_config_path)
     highlights = service.load_highlights()
 
     if not highlights:
@@ -530,7 +530,7 @@ def show_board_role(ctx: click.Context, organization: str) -> None:
 
     ORGANIZATION is the organization name (partial match supported).
     """
-    service = BoardRoleService(config_path=Path.cwd() / ".resume.yaml")
+    service = BoardRoleService(config_path=ctx.obj.effective_config_path)
     matching = service.find_board_roles_by_organization(organization)
 
     if not matching:
@@ -620,7 +620,7 @@ def show_publication(ctx: click.Context, title: str) -> None:
 
     TITLE is the publication title (partial match supported).
     """
-    service = PublicationService(config_path=Path.cwd() / ".resume.yaml")
+    service = PublicationService(config_path=ctx.obj.effective_config_path)
     matches = service.find_publications_by_title(title)
 
     if not matches:

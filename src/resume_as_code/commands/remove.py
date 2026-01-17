@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import click
 from rich.prompt import Confirm
 
@@ -35,7 +33,7 @@ def remove_certification(ctx: click.Context, name: str, yes: bool) -> None:
     Performs case-insensitive partial matching on the certification name.
     If multiple certifications match, asks for clarification.
     """
-    service = CertificationService(config_path=Path.cwd() / ".resume.yaml")
+    service = CertificationService(config_path=ctx.obj.effective_config_path)
 
     # Find matching certifications
     matching = service.find_certifications_by_name(name)
@@ -214,7 +212,7 @@ def remove_education(ctx: click.Context, degree: str, yes: bool) -> None:
     Performs case-insensitive partial matching on the degree name.
     If multiple education entries match, asks for clarification.
     """
-    service = EducationService(config_path=Path.cwd() / ".resume.yaml")
+    service = EducationService(config_path=ctx.obj.effective_config_path)
 
     # Find matching education entries
     matching = service.find_educations_by_degree(degree)
@@ -299,7 +297,7 @@ def remove_highlight(ctx: click.Context, index: int, yes: bool) -> None:
 
     Use 'resume list highlights' to see indices.
     """
-    service = HighlightService(config_path=Path.cwd() / ".resume.yaml")
+    service = HighlightService(config_path=ctx.obj.effective_config_path)
     highlights = service.load_highlights()
 
     if not highlights:
@@ -474,7 +472,7 @@ def remove_board_role(ctx: click.Context, organization: str, yes: bool) -> None:
     Performs case-insensitive partial matching on the organization name.
     If multiple board roles match, asks for clarification.
     """
-    service = BoardRoleService(config_path=Path.cwd() / ".resume.yaml")
+    service = BoardRoleService(config_path=ctx.obj.effective_config_path)
 
     # Find matching board roles
     matching = service.find_board_roles_by_organization(organization)
@@ -563,7 +561,7 @@ def remove_publication(ctx: click.Context, title: str, yes: bool) -> None:
     Performs case-insensitive partial matching on the publication title.
     If multiple publications match, asks for clarification.
     """
-    service = PublicationService(config_path=Path.cwd() / ".resume.yaml")
+    service = PublicationService(config_path=ctx.obj.effective_config_path)
 
     # Find matching publications
     matching = service.find_publications_by_title(title)
