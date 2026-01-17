@@ -3,7 +3,7 @@
 **Epic:** Epic 7 - Schema & Data Model Refactoring
 **Story Points:** 5
 **Priority:** P3 (innovative)
-**Status:** Ready for Dev
+**Status:** Review
 
 ---
 
@@ -723,20 +723,20 @@ class TestRankerImpactScoring:
 
 ## Definition of Done
 
-- [ ] `impact_classifier.py` service created with:
-  - [ ] `classify_impact()` function with pattern matching
-  - [ ] `has_quantified_impact()` function
-  - [ ] `infer_role_type()` function
-  - [ ] `calculate_impact_alignment()` function
-- [ ] Config extended with `use_impact_matching`, `impact_blend`, `quantified_boost`
-- [ ] HybridRanker integrates impact scoring via `_calculate_impact_score()`
-- [ ] Match reasons include impact alignment info
-- [ ] Score blending updated to include impact component
-- [ ] Unit tests pass for classification patterns
-- [ ] Integration tests pass for ranker
-- [ ] Backward compatible (disabled = neutral 0.5 score)
-- [ ] `uv run ruff check` passes
-- [ ] `uv run mypy src --strict` passes
+- [x] `impact_classifier.py` service created with:
+  - [x] `classify_impact()` function with pattern matching
+  - [x] `has_quantified_impact()` function
+  - [x] `infer_role_type()` function
+  - [x] `calculate_impact_alignment()` function
+- [x] Config extended with `use_impact_matching`, `impact_blend`, `quantified_boost`
+- [x] HybridRanker integrates impact scoring via `_calculate_impact_score()`
+- [x] Match reasons include impact alignment info
+- [x] Score blending updated to include impact component
+- [x] Unit tests pass for classification patterns
+- [x] Integration tests pass for ranker
+- [x] Backward compatible (disabled = neutral 0.5 score)
+- [x] `uv run ruff check` passes
+- [x] `uv run mypy src --strict` passes
 
 ---
 
