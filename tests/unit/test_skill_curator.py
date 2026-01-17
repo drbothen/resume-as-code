@@ -75,6 +75,53 @@ class TestSkillCuratorDeduplication:
         assert len(result.included) == 1
         assert result.included[0] == "Machine Learning Ops"
 
+    def test_hyphenated_acronyms_uppercased(self) -> None:
+        """Short words (<=3 chars) in hyphenated strings should be uppercased."""
+        curator = SkillCurator()
+        result = curator.curate({"ci-cd"})
+
+        assert len(result.included) == 1
+        assert result.included[0] == "CI CD"
+
+    def test_hyphenated_mixed_acronym_and_word(self) -> None:
+        """Hyphenated strings with mixed acronyms and words."""
+        curator = SkillCurator()
+        result = curator.curate({"aws-lambda", "api-gateway", "ot-security"})
+
+        assert len(result.included) == 3
+        assert "AWS Lambda" in result.included
+        assert "API Gateway" in result.included
+        assert "OT Security" in result.included
+
+    def test_non_hyphenated_acronyms_preserved(self) -> None:
+        """Non-hyphenated acronyms should pass through unchanged."""
+        curator = SkillCurator()
+        result = curator.curate({"AWS", "API", "CI/CD"})
+
+        assert "AWS" in result.included
+        assert "API" in result.included
+        assert "CI/CD" in result.included
+
+    def test_lowercase_words_title_cased(self) -> None:
+        """All-lowercase words longer than 3 chars should be title-cased."""
+        curator = SkillCurator()
+        result = curator.curate({"compliance", "consulting", "python"})
+
+        assert "Compliance" in result.included
+        assert "Consulting" in result.included
+        assert "Python" in result.included
+
+    def test_short_lowercase_words_unchanged(self) -> None:
+        """Short lowercase words (<=3 chars) should pass through unchanged (likely acronyms)."""
+        curator = SkillCurator()
+        result = curator.curate({"aws", "k8s", "sql"})
+
+        # Short lowercase words pass through unchanged
+        # (deduplication would prefer uppercase versions if both exist)
+        assert "aws" in result.included
+        assert "k8s" in result.included
+        assert "sql" in result.included
+
 
 class TestSkillCuratorEmptyStrings:
     """Tests for empty/whitespace string handling."""

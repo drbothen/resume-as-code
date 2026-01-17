@@ -103,6 +103,50 @@ class SkillCurator:
             },
         )
 
+    def _normalize_display_format(self, skill: str) -> str:
+        """Normalize skill tags to proper display format.
+
+        Converts hyphenated tags (e.g., "cloud-migration") to proper
+        display format (e.g., "Cloud Migration"). Also title-cases
+        all-lowercase skills (e.g., "compliance" -> "Compliance").
+        Preserves existing casing for mixed-case or uppercase skills
+        (e.g., "AWS", "Python", "CI/CD").
+
+        For hyphenated strings:
+        - Words ≤3 chars are uppercased (likely acronyms: ci, cd, api, aws, ot)
+        - Words >3 chars get title case
+
+        For non-hyphenated strings:
+        - All lowercase -> title case (e.g., "compliance" -> "Compliance")
+        - Mixed/uppercase -> unchanged (e.g., "AWS", "Python")
+
+        Args:
+            skill: Raw skill string
+
+        Returns:
+            Normalized display string.
+        """
+        # Handle hyphenated strings
+        if "-" in skill:
+            words = skill.replace("-", " ").split()
+            result = []
+            for word in words:
+                if len(word) <= 3:
+                    # Short words are likely acronyms (CI, CD, API, AWS, OT, IT, ML)
+                    result.append(word.upper())
+                else:
+                    # Longer words get title case
+                    result.append(word.title())
+            return " ".join(result)
+
+        # Handle non-hyphenated all-lowercase strings
+        # Only title-case if longer than 3 chars (short ones like aws, k8s are likely acronyms)
+        if skill.islower() and len(skill) > 3:
+            return skill.title()
+
+        # Preserve existing casing (AWS, Python, CI/CD, etc.)
+        return skill
+
     def _deduplicate(self, skills: set[str]) -> dict[str, str]:
         """Deduplicate skills case-insensitively, keeping best casing.
 
@@ -113,6 +157,7 @@ class SkillCurator:
         Returns dict mapping normalized key -> display form.
         Key normalization: lowercase + hyphens converted to spaces.
         This ensures "business-development" and "Business Development" dedupe.
+        Display normalization: hyphens to spaces, title case applied.
         Prefers: Title Case > UPPERCASE > lowercase
         Filters out empty and whitespace-only strings.
         """
@@ -132,6 +177,10 @@ class SkillCurator:
                     display = entry.canonical if entry is not None else skill
                 else:
                     display = normalized_skill
+
+            # Normalize display format: hyphens to spaces, title case
+            # e.g., "cloud-migration" -> "Cloud Migration"
+            display = self._normalize_display_format(display)
 
             # Normalize key: lowercase + hyphens to spaces for deduplication
             # e.g., "business-development" dedupes with "Business Development"
