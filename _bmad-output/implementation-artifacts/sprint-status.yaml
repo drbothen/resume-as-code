@@ -158,6 +158,13 @@ development_status:
   7-21-resume-init-command: done  # P2, 3 pts - Initialize project with resume init command
   epic-7-retrospective: optional
 
+  # Epic 8: Resume Template Enhancements
+  # Goal: Improve resume template rendering for better visual presentation and professional formatting
+  # User Outcome: Professionally formatted resumes with grouped employer positions showing career progression
+  # Total Points: 5 (initial)
+  epic-8: backlog
+  8-1-employer-grouped-position-rendering: backlog  # P2, 5 pts - Nest positions under same employer
+
 # RESEARCH / TECH DEBT BACKLOG:
 # =============================
 # Items identified during code review that warrant future investigation.
