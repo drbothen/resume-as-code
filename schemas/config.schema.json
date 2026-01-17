@@ -449,7 +449,7 @@
       "type": "object"
     },
     "ScoringWeights": {
-      "description": "Weights for ranking algorithm.\n\nBM25 vs Semantic weights control the balance in RRF fusion.\nHigher bm25_weight emphasizes keyword matching.\nHigher semantic_weight emphasizes meaning/context matching.\n\nRecency decay (Story 7.9) uses exponential decay to weight recent\nexperience higher than older experience:\n\n    recency_score = e^(-\u03bb \u00d7 years_ago)\n\nWhere:\n    \u03bb = ln(2) / recency_half_life  (decay constant)\n    years_ago = (today - time_ended).days / 365.25\n\nExample with 5-year half-life:\n    Current position \u2192 100% weight\n    1 year ago \u2192 ~87% weight\n    5 years ago \u2192 50% weight\n    10 years ago \u2192 25% weight\n\nFinal score blends relevance and recency:\n    final = (1 - recency_blend) \u00d7 relevance + recency_blend \u00d7 recency",
+      "description": "Weights for ranking algorithm.\n\nBM25 vs Semantic weights control the balance in RRF fusion.\nHigher bm25_weight emphasizes keyword matching.\nHigher semantic_weight emphasizes meaning/context matching.\n\nRecency decay (Story 7.9) uses exponential decay to weight recent\nexperience higher than older experience:\n\n    recency_score = e^(-\u03bb \u00d7 years_ago)\n\nWhere:\n    \u03bb = ln(2) / recency_half_life  (decay constant)\n    years_ago = (today - time_ended).days / 365.25\n\nExample with 5-year half-life:\n    Current position \u2192 100% weight\n    1 year ago \u2192 ~87% weight\n    5 years ago \u2192 50% weight\n    10 years ago \u2192 25% weight\n\nFinal score blends relevance and recency:\n    final = (1 - recency_blend) \u00d7 relevance + recency_blend \u00d7 recency\n\nSection-level semantic matching (Story 7.11):\n    When use_sectioned_semantic is True, matches work unit sections\n    against JD sections with configurable weights:\n    - Outcome \u2194 JD Requirements: 40% (most predictive of job fit)\n    - Actions \u2194 JD Requirements: 30% (what candidate did)\n    - Skills \u2194 JD Skills: 20% (technical alignment)\n    - Title \u2194 JD Full: 10% (role alignment)",
       "properties": {
         "bm25_weight": {
           "default": 1.0,
@@ -507,6 +507,44 @@
           "maximum": 0.5,
           "minimum": 0.0,
           "title": "Recency Blend",
+          "type": "number"
+        },
+        "use_sectioned_semantic": {
+          "default": false,
+          "description": "Enable section-level semantic matching (more precise but slower).",
+          "title": "Use Sectioned Semantic",
+          "type": "boolean"
+        },
+        "section_outcome_weight": {
+          "default": 0.4,
+          "description": "Weight for outcome section in semantic scoring.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Section Outcome Weight",
+          "type": "number"
+        },
+        "section_actions_weight": {
+          "default": 0.3,
+          "description": "Weight for actions section in semantic scoring.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Section Actions Weight",
+          "type": "number"
+        },
+        "section_skills_weight": {
+          "default": 0.2,
+          "description": "Weight for skills section in semantic scoring.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Section Skills Weight",
+          "type": "number"
+        },
+        "section_title_weight": {
+          "default": 0.1,
+          "description": "Weight for title section in semantic scoring.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Section Title Weight",
           "type": "number"
         }
       },

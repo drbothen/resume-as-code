@@ -1,6 +1,6 @@
 # Story 7.11: Section-Level Semantic Embeddings
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -39,33 +39,33 @@ So that **semantic matching is more precise and relevant**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add section embedding methods to EmbeddingService (AC: #1, #5)
-  - [ ] 1.1 Create `embed_work_unit_sections()` method
-  - [ ] 1.2 Extract sections: title, problem, actions, outcome, skills
-  - [ ] 1.3 Embed each section separately
-  - [ ] 1.4 Cache with section-prefixed keys for efficiency
+- [x] Task 1: Add section embedding methods to EmbeddingService (AC: #1, #5)
+  - [x] 1.1 Create `embed_work_unit_sections()` method
+  - [x] 1.2 Extract sections: title, problem, actions, outcome, skills
+  - [x] 1.3 Embed each section separately
+  - [x] 1.4 Cache with section-prefixed keys for efficiency
 
-- [ ] Task 2: Add JD section embedding (AC: #2)
-  - [ ] 2.1 Create `embed_jd_sections()` method
-  - [ ] 2.2 Extract JD sections: requirements, skills, responsibilities
-  - [ ] 2.3 Embed JD sections separately
+- [x] Task 2: Add JD section embedding (AC: #2)
+  - [x] 2.1 Create `embed_jd_sections()` method
+  - [x] 2.2 Extract JD sections: requirements, skills, responsibilities
+  - [x] 2.3 Embed JD sections separately
 
-- [ ] Task 3: Implement sectioned semantic ranking (AC: #2, #3, #4)
-  - [ ] 3.1 Create `_semantic_rank_sectioned()` method in HybridRanker
-  - [ ] 3.2 Compute cross-section similarity scores
-  - [ ] 3.3 Apply weighted aggregation formula
-  - [ ] 3.4 Add section weights to ScoringWeights config
+- [x] Task 3: Implement sectioned semantic ranking (AC: #2, #3, #4)
+  - [x] 3.1 Create `_semantic_rank_sectioned()` method in HybridRanker
+  - [x] 3.2 Compute cross-section similarity scores
+  - [x] 3.3 Apply weighted aggregation formula
+  - [x] 3.4 Add section weights to ScoringWeights config
 
-- [ ] Task 4: Integrate with rank() method (AC: #3, #4)
-  - [ ] 4.1 Add config option to enable sectioned semantic ranking
-  - [ ] 4.2 Fall back to full-document ranking when disabled
-  - [ ] 4.3 Ensure backward compatibility
+- [x] Task 4: Integrate with rank() method (AC: #3, #4)
+  - [x] 4.1 Add config option to enable sectioned semantic ranking
+  - [x] 4.2 Fall back to full-document ranking when disabled
+  - [x] 4.3 Ensure backward compatibility
 
-- [ ] Task 5: Add tests and quality checks
-  - [ ] 5.1 Unit tests for section embedding
-  - [ ] 5.2 Unit tests for weighted aggregation
-  - [ ] 5.3 Integration tests for sectioned ranking
-  - [ ] 5.4 Run `ruff check` and `mypy --strict`
+- [x] Task 5: Add tests and quality checks
+  - [x] 5.1 Unit tests for section embedding
+  - [x] 5.2 Unit tests for weighted aggregation
+  - [x] 5.3 Integration tests for sectioned ranking
+  - [x] 5.4 Run `ruff check` and `mypy --strict`
 
 ## Dev Notes
 
@@ -150,17 +150,15 @@ def embed_work_unit_sections(
     Returns:
         Dictionary of section -> embedding arrays.
     """
-    from resume_as_code.utils.work_unit_text import (
-        extract_experience_text,
-        extract_skills_text,
-        extract_title_text,
-    )
+    from resume_as_code.utils.work_unit_text import extract_skills_text
 
     sections: dict[str, str] = {}
 
     # Title
-    if title := extract_title_text(work_unit):
-        sections["title"] = title
+    if title := work_unit.get("title"):
+        title_str = str(title).strip()
+        if title_str:
+            sections["title"] = title_str
 
     # Problem (statement + context)
     if problem := work_unit.get("problem"):
@@ -258,7 +256,7 @@ class ScoringWeights(BaseModel):
     # Section-level semantic weights (Story 7.11)
     use_sectioned_semantic: bool = Field(
         default=False,
-        description="Enable section-level semantic matching (more precise but slower)",
+        description="Enable section-level semantic matching (more precise but slower).",
     )
     section_outcome_weight: float = Field(
         default=0.4, ge=0.0, le=1.0,
@@ -693,11 +691,31 @@ From `project-context.md`:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
+
+- AC#1: Section embedding via `embed_work_unit_sections()` - extracts title, problem, actions, outcome, skills separately
+- AC#2: JD section embedding via `embed_jd_sections()` - embeds requirements, skills, full text; cross-matched with WU sections
+- AC#3: Weighted aggregation formula implemented: Outcome 40%, Actions 30%, Skills 20%, Title 10%
+- AC#4: Partial relevance reflected via weighted scores - strong skills with weak experience shows proportional match
+- AC#5: Section-prefixed cache keys: `[section:wu_id] text` format for cache differentiation
+- Feature gated by `use_sectioned_semantic` flag (default: False) for backward compatibility
+- All 1998 tests pass, ruff clean, mypy --strict clean
 
 ### File List
 
+**New Files:**
+- `src/resume_as_code/models/embeddings.py` - WorkUnitSectionEmbeddings, JDSectionEmbeddings types
+- `tests/unit/services/test_embedder_sections.py` - 14 tests for section embedding
+- `tests/unit/services/test_ranker_sectioned.py` - 12 tests for sectioned ranking
+
+**Modified Files:**
+- `src/resume_as_code/services/embedder.py` - Added embed_work_unit_sections(), embed_jd_sections()
+- `src/resume_as_code/services/ranker.py` - Added _semantic_rank_sectioned(), _cosine_sim_single(), updated rank()
+- `src/resume_as_code/models/config.py` - Added section weights to ScoringWeights with validation
+- `src/resume_as_code/models/job_description.py` - Added requirements_text property

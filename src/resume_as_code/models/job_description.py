@@ -72,3 +72,14 @@ class JobDescription(BaseModel):
         if self.title:
             parts.insert(0, self.title)
         return " ".join(parts)
+
+    @property
+    def requirements_text(self) -> str:
+        """Get combined requirements as text for embedding.
+
+        Concatenates all requirement texts into a single string.
+        Useful for section-level semantic matching (Story 7.11).
+        """
+        if not self.requirements:
+            return ""
+        return " ".join(req.text for req in self.requirements)

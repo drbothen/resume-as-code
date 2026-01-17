@@ -127,8 +127,11 @@ class HybridRanker:
         else:
             bm25_ranks = self._bm25_rank(wu_texts, jd.text_for_ranking)
 
-        # Semantic ranking
-        semantic_ranks = self._semantic_rank(wu_texts, jd.text_for_ranking)
+        # Semantic ranking - use sectioned when enabled (Story 7.11)
+        if scoring_weights and scoring_weights.use_sectioned_semantic:
+            semantic_ranks = self._semantic_rank_sectioned(work_units, jd, scoring_weights)
+        else:
+            semantic_ranks = self._semantic_rank(wu_texts, jd.text_for_ranking)
 
         # RRF fusion with optional weights (AC: #3)
         rrf_scores = self._rrf_fusion(bm25_ranks, semantic_ranks, scoring_weights)
@@ -310,6 +313,110 @@ class HybridRanker:
             ranks[idx] = rank
 
         return ranks
+
+    def _semantic_rank_sectioned(
+        self,
+        work_units: list[dict[str, Any]],
+        jd: JobDescription,
+        scoring_weights: ScoringWeights,
+    ) -> list[int]:
+        """Semantic ranking with section-level matching (Story 7.11).
+
+        Computes cross-section similarity:
+        - Work unit outcome ↔ JD requirements
+        - Work unit actions ↔ JD requirements
+        - Work unit skills ↔ JD skills
+        - Work unit title ↔ JD full text
+
+        Args:
+            work_units: List of Work Unit dictionaries.
+            jd: Parsed JobDescription.
+            scoring_weights: Weights configuration.
+
+        Returns:
+            List of ranks (1-indexed, lower is better).
+        """
+        # Embed JD sections
+        jd_sections = self.embedding_service.embed_jd_sections(jd)
+        jd_requirements = jd_sections.get("requirements", jd_sections.get("full"))
+        jd_skills = jd_sections.get("skills", jd_sections.get("full"))
+        jd_full = jd_sections.get("full")
+
+        # Fallback if no requirements embedding
+        if jd_requirements is None:
+            jd_requirements = jd_full
+        if jd_skills is None:
+            jd_skills = jd_full
+
+        scores: list[float] = []
+
+        for wu in work_units:
+            wu_sections = self.embedding_service.embed_work_unit_sections(wu)
+
+            # Cross-section matching
+            outcome_score = 0.0
+            actions_score = 0.0
+            skills_score = 0.0
+            title_score = 0.0
+
+            # Outcome ↔ Requirements
+            if "outcome" in wu_sections and jd_requirements is not None:
+                outcome_score = self._cosine_sim_single(wu_sections["outcome"], jd_requirements)
+
+            # Actions ↔ Requirements
+            if "actions" in wu_sections and jd_requirements is not None:
+                actions_score = self._cosine_sim_single(wu_sections["actions"], jd_requirements)
+
+            # Skills ↔ JD Skills
+            if "skills" in wu_sections and jd_skills is not None:
+                skills_score = self._cosine_sim_single(wu_sections["skills"], jd_skills)
+
+            # Title ↔ Full JD
+            if "title" in wu_sections and jd_full is not None:
+                title_score = self._cosine_sim_single(wu_sections["title"], jd_full)
+
+            # Weighted aggregation
+            weighted_score = (
+                scoring_weights.section_outcome_weight * outcome_score
+                + scoring_weights.section_actions_weight * actions_score
+                + scoring_weights.section_skills_weight * skills_score
+                + scoring_weights.section_title_weight * title_score
+            )
+            scores.append(weighted_score)
+
+        # Convert to ranks (1-indexed, lower is better)
+        sorted_indices = np.argsort(scores)[::-1]
+        ranks = [0] * len(scores)
+        for rank, idx in enumerate(sorted_indices, 1):
+            ranks[idx] = rank
+
+        return ranks
+
+    def _cosine_sim_single(
+        self,
+        vec1: NDArray[np.float32],
+        vec2: NDArray[np.float32],
+    ) -> float:
+        """Compute cosine similarity between two vectors.
+
+        Args:
+            vec1: First embedding vector.
+            vec2: Second embedding vector.
+
+        Returns:
+            Cosine similarity (0.0 to 1.0, normalized from [-1, 1]).
+        """
+        # Normalize vectors
+        norm1 = np.linalg.norm(vec1)
+        norm2 = np.linalg.norm(vec2)
+
+        if norm1 < 1e-9 or norm2 < 1e-9:
+            return 0.0
+
+        similarity = float(np.dot(vec1, vec2) / (norm1 * norm2))
+
+        # Normalize from [-1, 1] to [0, 1]
+        return (similarity + 1.0) / 2.0
 
     def _cosine_similarity(
         self,

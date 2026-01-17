@@ -72,6 +72,14 @@ class ScoringWeights(BaseModel):
 
     Final score blends relevance and recency:
         final = (1 - recency_blend) × relevance + recency_blend × recency
+
+    Section-level semantic matching (Story 7.11):
+        When use_sectioned_semantic is True, matches work unit sections
+        against JD sections with configurable weights:
+        - Outcome ↔ JD Requirements: 40% (most predictive of job fit)
+        - Actions ↔ JD Requirements: 30% (what candidate did)
+        - Skills ↔ JD Skills: 20% (technical alignment)
+        - Title ↔ JD Full: 10% (role alignment)
     """
 
     # BM25 vs Semantic balance for RRF fusion
@@ -96,6 +104,51 @@ class ScoringWeights(BaseModel):
         le=0.5,
         description="Weight of recency in final score (0.2 = 20%).",
     )
+
+    # Section-level semantic weights (Story 7.11)
+    use_sectioned_semantic: bool = Field(
+        default=False,
+        description="Enable section-level semantic matching (more precise but slower).",
+    )
+    section_outcome_weight: float = Field(
+        default=0.4,
+        ge=0.0,
+        le=1.0,
+        description="Weight for outcome section in semantic scoring.",
+    )
+    section_actions_weight: float = Field(
+        default=0.3,
+        ge=0.0,
+        le=1.0,
+        description="Weight for actions section in semantic scoring.",
+    )
+    section_skills_weight: float = Field(
+        default=0.2,
+        ge=0.0,
+        le=1.0,
+        description="Weight for skills section in semantic scoring.",
+    )
+    section_title_weight: float = Field(
+        default=0.1,
+        ge=0.0,
+        le=1.0,
+        description="Weight for title section in semantic scoring.",
+    )
+
+    @model_validator(mode="after")
+    def validate_section_weights_sum(self) -> ScoringWeights:
+        """Validate section weights sum to ~1.0 when sectioned semantic is enabled."""
+        if self.use_sectioned_semantic:
+            total = (
+                self.section_outcome_weight
+                + self.section_actions_weight
+                + self.section_skills_weight
+                + self.section_title_weight
+            )
+            if not (0.99 <= total <= 1.01):
+                msg = f"Section weights must sum to 1.0, got {total:.2f}"
+                raise ValueError(msg)
+        return self
 
 
 class ONetConfig(BaseModel):
