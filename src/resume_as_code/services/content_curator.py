@@ -9,6 +9,7 @@ Research Basis: 2024-2025 resume studies analyzing 18.4M resumes.
 
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass, field
 from datetime import date
@@ -140,7 +141,10 @@ class ContentCurator:
 
         scores: dict[str, float] = {}
 
-        for i, highlight in enumerate(highlights):
+        for highlight in highlights:
+            # Use content-based key (short hash) for reliable score lookup
+            key = self._highlight_key(highlight)
+
             # Semantic similarity (60% weight)
             highlight_emb = self.embedder.embed_query(highlight)
             semantic_score = self._cosine_similarity(highlight_emb, jd_embedding)
@@ -149,26 +153,18 @@ class ContentCurator:
             keyword_score = self._keyword_overlap(highlight, jd_keywords)
 
             # Combined score
-            scores[f"highlight_{i}"] = (0.6 * semantic_score) + (0.4 * keyword_score)
+            scores[key] = (0.6 * semantic_score) + (0.4 * keyword_score)
 
-        # Sort by score and select top N
-        ranked_indices = sorted(
-            range(len(highlights)),
-            key=lambda i: scores[f"highlight_{i}"],
-            reverse=True,
-        )
+        # Sort by score descending
+        ranked = sorted(highlights, key=lambda h: scores[self._highlight_key(h)], reverse=True)
 
         # Filter by minimum relevance score
-        qualified_indices = [
-            i for i in ranked_indices if scores[f"highlight_{i}"] >= self.min_relevance_score
-        ]
+        min_score = self.min_relevance_score
+        qualified = [h for h in ranked if scores[self._highlight_key(h)] >= min_score]
+        below_threshold = [h for h in ranked if scores[self._highlight_key(h)] < min_score]
 
-        selected = [highlights[i] for i in qualified_indices[:max_count]]
-        excluded = [highlights[i] for i in qualified_indices[max_count:]] + [
-            highlights[i]
-            for i in ranked_indices
-            if scores[f"highlight_{i}"] < self.min_relevance_score
-        ]
+        selected = qualified[:max_count]
+        excluded = qualified[max_count:] + below_threshold
 
         return CurationResult(
             selected=selected,
@@ -234,10 +230,14 @@ class ContentCurator:
         # Rank candidates by score
         ranked = sorted(candidates, key=lambda c: scores.get(c.name, 0), reverse=True)
 
+        # Filter by minimum relevance score
+        qualified = [c for c in ranked if scores.get(c.name, 0) >= self.min_relevance_score]
+        below_threshold = [c for c in ranked if scores.get(c.name, 0) < self.min_relevance_score]
+
         # Fill remaining slots after always-include
         remaining_slots = max(0, max_count - len(always_include))
-        selected = always_include + ranked[:remaining_slots]
-        excluded = ranked[remaining_slots:]
+        selected = always_include + qualified[:remaining_slots]
+        excluded = qualified[remaining_slots:] + below_threshold
 
         selected_by_relevance = len(selected) - len(always_include)
         return CurationResult(
@@ -301,10 +301,16 @@ class ContentCurator:
 
         # Rank and select
         ranked = sorted(candidates, key=lambda r: scores.get(r.organization, 0), reverse=True)
+
+        # Filter by minimum relevance score
+        min_score = self.min_relevance_score
+        qualified = [r for r in ranked if scores.get(r.organization, 0) >= min_score]
+        below_threshold = [r for r in ranked if scores.get(r.organization, 0) < min_score]
+
         remaining_slots = max(0, max_count - len(always_include))
 
-        selected = always_include + ranked[:remaining_slots]
-        excluded = ranked[remaining_slots:]
+        selected = always_include + qualified[:remaining_slots]
+        excluded = qualified[remaining_slots:] + below_threshold
 
         context = "executive" if is_executive_role else "non-executive"
         return CurationResult(
@@ -400,6 +406,22 @@ class ContentCurator:
         matches = sum(1 for kw in keywords if kw in text_lower)
         # Normalize: 3+ matches = 1.0
         return min(1.0, matches / 3)
+
+    @staticmethod
+    def _highlight_key(highlight: str) -> str:
+        """Generate a stable, content-based key for a highlight.
+
+        Uses a short hash to ensure reliable score lookup regardless of
+        highlight ordering or filtering.
+
+        Args:
+            highlight: The highlight text.
+
+        Returns:
+            A stable key string like 'hl_a1b2c3d4'.
+        """
+        digest = hashlib.md5(highlight.encode(), usedforsecurity=False).hexdigest()[:8]
+        return f"hl_{digest}"
 
     def _position_age_years(self, position: Position) -> float:
         """Calculate position age in years from end date."""

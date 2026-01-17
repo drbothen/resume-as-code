@@ -1297,8 +1297,10 @@ def _display_curation_preview(preview: CurationPreview) -> None:
     if preview.highlights_result:
         hr = preview.highlights_result
         lines.append("[bold cyan]Career Highlights[/bold cyan] (by JD relevance):")
-        for i, highlight in enumerate(hr.selected):
-            score = hr.scores.get(f"highlight_{i}", 0.0)
+        for highlight in hr.selected:
+            # Use content-based key for score lookup
+            key = ContentCurator._highlight_key(highlight)
+            score = hr.scores.get(key, 0.0)
             score_color = "green" if score >= 0.5 else "yellow"
             lines.append(f"  [{score_color}]{score:.0%}[/{score_color}] {highlight[:60]}...")
         if hr.excluded:

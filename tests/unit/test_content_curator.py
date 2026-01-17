@@ -24,6 +24,8 @@ from resume_as_code.services.content_curator import (
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
+    from resume_as_code.services.embedder import EmbeddingService
+
 
 @pytest.fixture
 def mock_embedder() -> MagicMock:
@@ -149,11 +151,26 @@ class TestCurateHighlights:
         """Should exclude items below min_relevance_score."""
         config = CurationConfig(min_relevance_score=0.9)  # Very high threshold
         curator = ContentCurator(embedder=mock_embedder, config=config)
-        highlights = ["Python dev", "Something unrelated"]
+        highlights = ["Python dev", "Something unrelated", "Random content"]
 
-        # With high threshold, likely some items excluded
-        # The exact count depends on mock embedder behavior
-        curator.curate_highlights(highlights, sample_jd)  # Verifies no error raised
+        result = curator.curate_highlights(highlights, sample_jd)
+
+        # With high threshold (0.9), items with scores below should be excluded
+        # Verify that at least some items are excluded due to threshold
+        all_scores = list(result.scores.values())
+        below_threshold = [s for s in all_scores if s < 0.9]
+
+        # If any scores are below threshold, those items should be in excluded
+        if below_threshold:
+            assert len(result.excluded) > 0, "Items below threshold should be excluded"
+
+        # Verify selected items have scores >= threshold
+        for highlight in result.selected:
+            key = ContentCurator._highlight_key(highlight)
+            score = result.scores.get(key, 0)
+            assert score >= 0.9, (
+                f"Selected item '{highlight[:30]}' has score {score} below threshold"
+            )
 
 
 class TestCurateCertifications:
@@ -220,6 +237,31 @@ class TestCurateCertifications:
         assert result.scores.get("AWS Solutions Architect", 0) >= result.scores.get(
             "Unrelated Cert", 0
         )
+
+    def test_curate_certifications_respects_min_relevance(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Should exclude certifications below min_relevance_score threshold."""
+        config = CurationConfig(min_relevance_score=0.9)  # Very high threshold
+        curator = ContentCurator(embedder=mock_embedder, config=config)
+        certs = [
+            Certification(name="AWS Solutions Architect", issuer="Amazon"),
+            Certification(name="Unrelated Cert", issuer="Unknown"),
+            Certification(name="Random Cert", issuer="Random"),
+        ]
+
+        result = curator.curate_certifications(certs, sample_jd)
+
+        # Verify selected certifications have scores >= threshold
+        for cert in result.selected:
+            score = result.scores.get(cert.name, 0)
+            assert score >= 0.9, f"Selected cert '{cert.name}' has score {score} below threshold"
+
+        # Verify excluded certifications below threshold are in excluded list
+        for cert_name, score in result.scores.items():
+            if score < 0.9:
+                cert_in_excluded = any(c.name == cert_name for c in result.excluded)
+                assert cert_in_excluded, f"Cert '{cert_name}' with score {score} should be excluded"
 
 
 class TestCurateBoardRoles:
@@ -293,6 +335,33 @@ class TestCurateBoardRoles:
 
         assert result.selected == []
         assert "No board roles" in result.reason
+
+    def test_curate_board_roles_respects_min_relevance(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Should exclude board roles below min_relevance_score threshold."""
+        config = CurationConfig(min_relevance_score=0.9)  # Very high threshold
+        curator = ContentCurator(embedder=mock_embedder, config=config)
+        roles = [
+            BoardRole(organization="Tech Startup A", role="Advisor", start_date="2022-01"),
+            BoardRole(organization="Random Org B", role="Member", start_date="2021-01"),
+            BoardRole(organization="Unrelated C", role="Advisor", start_date="2020-01"),
+        ]
+
+        result = curator.curate_board_roles(roles, sample_jd, is_executive_role=False)
+
+        # Verify selected roles have scores >= threshold
+        for role in result.selected:
+            score = result.scores.get(role.organization, 0)
+            assert score >= 0.9, (
+                f"Selected role '{role.organization}' has score {score} below threshold"
+            )
+
+        # Verify excluded roles below threshold are in excluded list
+        for org_name, score in result.scores.items():
+            if score < 0.9:
+                role_in_excluded = any(r.organization == org_name for r in result.excluded)
+                assert role_in_excluded, f"Role '{org_name}' with score {score} should be excluded"
 
 
 class TestCuratePositionBullets:
@@ -610,3 +679,102 @@ class TestHelperMethods:
         )
 
         assert curator._has_quantified_impact(wu) is False
+
+    def test_highlight_key_generates_stable_keys(self, mock_embedder: MagicMock) -> None:
+        """Highlight key should be deterministic for same content."""
+        curator = ContentCurator(embedder=mock_embedder)
+        highlight = "Led migration to AWS cloud infrastructure"
+
+        key1 = curator._highlight_key(highlight)
+        key2 = curator._highlight_key(highlight)
+
+        assert key1 == key2
+        assert key1.startswith("hl_")
+        assert len(key1) == 11  # "hl_" + 8 hex chars
+
+    def test_highlight_key_different_for_different_content(self, mock_embedder: MagicMock) -> None:
+        """Different highlights should have different keys."""
+        curator = ContentCurator(embedder=mock_embedder)
+        highlight1 = "Led migration to AWS"
+        highlight2 = "Built Kubernetes cluster"
+
+        key1 = curator._highlight_key(highlight1)
+        key2 = curator._highlight_key(highlight2)
+
+        assert key1 != key2
+
+
+class TestIntegrationWithRealEmbeddings:
+    """Integration tests using real EmbeddingService.
+
+    These tests verify the actual semantic matching behavior with real embeddings.
+    Marked with pytest.mark.slow for optional skipping in CI.
+    """
+
+    @pytest.fixture
+    def real_embedder(self) -> EmbeddingService:
+        """Create a real EmbeddingService for integration testing."""
+        from resume_as_code.services.embedder import EmbeddingService
+
+        return EmbeddingService()
+
+    @pytest.fixture
+    def python_jd(self) -> JobDescription:
+        """Create a Python-focused job description."""
+        return JobDescription(
+            raw_text="Senior Python Developer needed for backend services. "
+            "Experience with Django, FastAPI, PostgreSQL required. "
+            "AWS cloud experience preferred.",
+            title="Senior Python Developer",
+            skills=["Python", "Django", "FastAPI", "PostgreSQL", "AWS"],
+            keywords=["python", "django", "fastapi", "postgresql", "aws", "backend"],
+            experience_level=ExperienceLevel.SENIOR,
+        )
+
+    @pytest.mark.slow
+    def test_highlights_semantic_relevance_ordering(
+        self, real_embedder: EmbeddingService, python_jd: JobDescription
+    ) -> None:
+        """Semantically relevant highlights should rank higher than irrelevant ones."""
+        curator = ContentCurator(embedder=real_embedder)
+
+        # Mix of relevant and irrelevant highlights
+        highlights = [
+            "Led migration of legacy PHP services to Python microservices",  # Very relevant
+            "Built REST APIs with Django and FastAPI frameworks",  # Very relevant
+            "Managed marketing campaigns for consumer products",  # Irrelevant
+            "Organized team building events and company retreats",  # Irrelevant
+        ]
+
+        result = curator.curate_highlights(highlights, python_jd, max_count=2)
+
+        # Python/Django/FastAPI highlights should be selected over marketing/events
+        selected_text = " ".join(result.selected).lower()
+        assert "python" in selected_text or "django" in selected_text or "fastapi" in selected_text
+
+        # Marketing and events should be excluded
+        excluded_text = " ".join(result.excluded).lower()
+        assert "marketing" in excluded_text or "team building" in excluded_text
+
+    @pytest.mark.slow
+    def test_certifications_skill_matching_with_real_embeddings(
+        self, real_embedder: EmbeddingService, python_jd: JobDescription
+    ) -> None:
+        """Certifications matching JD skills should score higher with real embeddings."""
+        curator = ContentCurator(embedder=real_embedder)
+
+        certs = [
+            Certification(name="AWS Solutions Architect", issuer="Amazon"),  # Relevant
+            Certification(name="Python Professional", issuer="Python Institute"),  # Relevant
+            Certification(name="Scrum Master", issuer="Scrum Alliance"),  # Less relevant
+        ]
+
+        result = curator.curate_certifications(certs, python_jd)
+
+        # AWS and Python certs should score higher than Scrum
+        aws_score = result.scores.get("AWS Solutions Architect", 0)
+        python_score = result.scores.get("Python Professional", 0)
+        scrum_score = result.scores.get("Scrum Master", 0)
+
+        assert aws_score > scrum_score, "AWS cert should score higher than Scrum"
+        assert python_score > scrum_score, "Python cert should score higher than Scrum"
