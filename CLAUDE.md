@@ -205,6 +205,13 @@ CLI tool for git-native resume generation from structured Work Units.
 | `--tailored-notice` | Include footer notice that resume is tailored for role |
 | `--no-tailored-notice` | Exclude footer notice (overrides config) |
 
+**Config-based tailored notice options** (in `.resume.yaml`):
+```yaml
+tailored_notice: true  # Enable footer notice by default
+tailored_notice_text: "Custom message here"  # Optional custom text
+```
+Default text: "This resume highlights experience most relevant to this role. Full details available upon request."
+
 ### List Command Options
 
 | Flag | Description |

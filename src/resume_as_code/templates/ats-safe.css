@@ -124,6 +124,7 @@ a {
 
 .tailored-notice p {
     font-size: 9pt;
+    color: #333;
     font-style: italic;
     margin: 0;
 }
