@@ -107,6 +107,9 @@ class SkillCurator:
         """Deduplicate skills case-insensitively, keeping best casing.
 
         If registry is set, normalizes aliases to canonical names.
+        For unknown skills with O*NET configured, attempts discovery
+        via lookup_and_cache() (Story 7.17).
+
         Returns dict mapping lowercase -> display form.
         Prefers: Title Case > UPPERCASE > lowercase
         Filters out empty and whitespace-only strings.
@@ -120,7 +123,13 @@ class SkillCurator:
             # Apply registry normalization if available
             display = skill
             if self.registry:
-                display = self.registry.normalize(skill)
+                normalized_skill = self.registry.normalize(skill)
+                # If passthrough (unknown skill) and O*NET available, try lookup
+                if normalized_skill == skill and self.registry.has_onet_service:
+                    entry = self.registry.lookup_and_cache(skill)
+                    display = entry.canonical if entry is not None else skill
+                else:
+                    display = normalized_skill
 
             lower = display.lower()
             if lower not in normalized:

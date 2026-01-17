@@ -145,6 +145,7 @@ def build_command(
         skills_config=config.skills,  # Pass skills curation config
         jd_keywords=jd_keywords if jd_keywords else None,  # Pass JD keywords for prioritization
         positions_path=positions_path if positions_path.exists() else None,  # Position grouping
+        onet_config=config.onet,  # O*NET skill discovery (Story 7.17)
     )
     # Add config data to ResumeData (Story 6.2, 6.6, 6.13, 6.14, 6.15)
     resume = ResumeData(

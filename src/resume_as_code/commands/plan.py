@@ -397,6 +397,8 @@ def _curate_skills_from_work_units(
     Returns:
         CurationResult with curated skills.
     """
+    from resume_as_code.services.skill_registry import SkillRegistry
+
     # Extract all skills from work units
     all_skills: set[str] = set()
     for wu in work_units:
@@ -415,11 +417,15 @@ def _curate_skills_from_work_units(
                 if skill_str and skill_str.strip():
                     all_skills.add(skill_str)
 
-    # Create curator with config settings
+    # Load registry with O*NET support if configured (Story 7.17)
+    registry = SkillRegistry.load_with_onet(config.onet)
+
+    # Create curator with config settings and registry
     curator = SkillCurator(
         max_count=config.skills.max_display,
         exclude=config.skills.exclude,
         prioritize=config.skills.prioritize,
+        registry=registry,
     )
 
     return curator.curate(all_skills, jd_keywords_lower or set())

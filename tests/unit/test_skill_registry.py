@@ -163,6 +163,55 @@ class TestSkillRegistryLoadDefault:
         assert registry.normalize("aws") == "Amazon Web Services"
 
 
+class TestSkillRegistryLoadWithOnet:
+    """Test load_with_onet() factory method (Story 7.17)."""
+
+    def test_load_with_onet_returns_registry(self) -> None:
+        """load_with_onet() returns a SkillRegistry instance."""
+        registry = SkillRegistry.load_with_onet(None)
+        assert isinstance(registry, SkillRegistry)
+
+    def test_load_with_onet_no_config_has_no_onet_service(self) -> None:
+        """Registry without O*NET config has no onet_service (AC #3)."""
+        registry = SkillRegistry.load_with_onet(None)
+        assert registry._onet_service is None
+        assert registry._user_skills_path is None
+
+    def test_load_with_onet_unconfigured_has_no_onet_service(self) -> None:
+        """Registry with unconfigured O*NET has no onet_service (AC #3)."""
+        # enabled=True but no api_key
+        config = ONetConfig(enabled=True, api_key=None)
+        registry = SkillRegistry.load_with_onet(config)
+        assert registry._onet_service is None
+
+    def test_load_with_onet_disabled_has_no_onet_service(self) -> None:
+        """Registry with disabled O*NET has no onet_service (AC #3)."""
+        config = ONetConfig(enabled=False, api_key="test-key")
+        registry = SkillRegistry.load_with_onet(config)
+        assert registry._onet_service is None
+
+    def test_load_with_onet_configured_has_onet_service(self) -> None:
+        """Registry with configured O*NET has onet_service (AC #2)."""
+        config = ONetConfig(enabled=True, api_key="test-key")
+        registry = SkillRegistry.load_with_onet(config)
+        assert registry._onet_service is not None
+        assert registry._user_skills_path is not None
+
+    def test_load_with_onet_has_common_skills(self) -> None:
+        """load_with_onet() includes bundled skills."""
+        registry = SkillRegistry.load_with_onet(None)
+        # Same skills as load_default
+        assert registry.normalize("k8s") == "Kubernetes"
+        assert registry.normalize("ts") == "TypeScript"
+
+    def test_load_with_onet_user_skills_path_set(self) -> None:
+        """Configured registry has user skills path for persistence (AC #5)."""
+        config = ONetConfig(enabled=True, api_key="test-key")
+        registry = SkillRegistry.load_with_onet(config)
+        assert registry._user_skills_path is not None
+        assert "user-skills.yaml" in str(registry._user_skills_path)
+
+
 class TestSkillRegistryErrorHandling:
     """Test error handling in load_from_yaml()."""
 
@@ -432,3 +481,46 @@ class TestSkillRegistryPersistence:
         registry._add_entry(entry)
         # Entry still added to in-memory registry
         assert registry.normalize("TestSkill") == "TestSkill"
+
+    def test_persisted_skills_loaded_in_new_session(self, tmp_path: Path) -> None:
+        """Persisted skills should be available in new registry instance (AC #5)."""
+        skills_path = tmp_path / "user_skills.yaml"
+
+        # First session: create registry and persist a skill
+        registry1 = SkillRegistry([], user_skills_path=skills_path)
+        entry = SkillEntry(
+            canonical="CloudFormation",
+            aliases=["cfn", "cf"],
+            onet_code="2.A.3.c",
+        )
+        registry1._add_entry(entry)
+
+        # Verify persisted to file
+        assert skills_path.exists()
+
+        # Second session: load from persisted file
+        registry2 = SkillRegistry.load_from_yaml(skills_path)
+
+        # Verify skill is available in new registry
+        assert registry2.normalize("cfn") == "CloudFormation"
+        assert registry2.normalize("cf") == "CloudFormation"
+        assert registry2.get_onet_code("CloudFormation") == "2.A.3.c"
+
+
+class TestSkillRegistryHasOnetService:
+    """Test has_onet_service property (Story 7.17 Issue #3 fix)."""
+
+    def test_has_onet_service_false_when_none(self) -> None:
+        """has_onet_service returns False when no service configured."""
+        registry = SkillRegistry([])
+        assert registry.has_onet_service is False
+
+    def test_has_onet_service_true_when_configured(self, tmp_path: Path) -> None:
+        """has_onet_service returns True when service is configured."""
+        config = ONetConfig(enabled=True, api_key="test-key")
+        onet_service = ONetService(config)
+        onet_service._cache_dir = tmp_path / "onet_cache"
+        onet_service._cache_dir.mkdir(parents=True, exist_ok=True)
+
+        registry = SkillRegistry([], onet_service=onet_service)
+        assert registry.has_onet_service is True

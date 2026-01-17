@@ -911,8 +911,8 @@ class TestResumeDataSkillsRegistryIntegration:
         contact = ContactInfo(name="Test")
         skills_config = SkillsConfig()
 
-        # Verify load_default is called
-        with patch.object(SkillRegistry, "load_default") as mock_load:
+        # Verify load_with_onet is called (Story 7.17)
+        with patch.object(SkillRegistry, "load_with_onet") as mock_load:
             mock_load.return_value = SkillRegistry([])
             ResumeData.from_work_units(
                 work_units=work_units,

@@ -11,6 +11,7 @@ import yaml
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from resume_as_code.models.config import ONetConfig
     from resume_as_code.models.skill_entry import SkillEntry
     from resume_as_code.services.onet_service import ONetService
 
@@ -76,6 +77,15 @@ class SkillRegistry:
                             stacklevel=2,
                         )
                 self._by_alias[alias_lower] = entry
+
+    @property
+    def has_onet_service(self) -> bool:
+        """Check if O*NET service is configured for skill discovery.
+
+        Returns:
+            True if O*NET service is available, False otherwise.
+        """
+        return self._onet_service is not None
 
     def normalize(self, skill: str) -> str:
         """Normalize skill name to canonical form.
@@ -315,3 +325,56 @@ class SkillRegistry:
 
         entries = [SkillEntry(**entry) for entry in data.get("skills", [])]
         return cls(entries)
+
+    @classmethod
+    def load_with_onet(
+        cls,
+        onet_config: ONetConfig | None = None,
+    ) -> SkillRegistry:
+        """Load registry with optional O*NET service for skill discovery.
+
+        Factory method that creates a SkillRegistry with O*NET integration
+        when configured. Falls back to local-only registry when O*NET is
+        unavailable or not configured.
+
+        Args:
+            onet_config: O*NET configuration with API key. If None or not
+                configured, creates registry without O*NET support.
+
+        Returns:
+            SkillRegistry with O*NET service if configured, otherwise
+            local-only registry.
+
+        Example:
+            >>> from resume_as_code.config import get_config
+            >>> config = get_config()
+            >>> registry = SkillRegistry.load_with_onet(config.onet)
+            >>> registry.normalize("k8s")
+            'Kubernetes'
+
+        """
+        import importlib.resources
+        from pathlib import Path
+
+        from resume_as_code.models.skill_entry import SkillEntry
+        from resume_as_code.services.onet_service import ONetService
+
+        # Load bundled default skills
+        data_file = importlib.resources.files("resume_as_code") / "data" / "skills.yaml"
+        content = data_file.read_text()
+        data = yaml.safe_load(content)
+        entries = [SkillEntry(**entry) for entry in data.get("skills", [])]
+
+        # Create O*NET service if configured
+        onet_service: ONetService | None = None
+        user_skills_path: Path | None = None
+
+        if onet_config is not None and onet_config.is_configured:
+            onet_service = ONetService(onet_config)
+            # Set up user skills persistence path
+            user_skills_path = Path.home() / ".config" / "resume-as-code" / "user-skills.yaml"
+            logger.info("O*NET service enabled for skill discovery")
+        else:
+            logger.debug("O*NET not configured, using local registry only")
+
+        return cls(entries, onet_service=onet_service, user_skills_path=user_skills_path)

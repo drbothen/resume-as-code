@@ -14,7 +14,7 @@ from resume_as_code.models.education import Education
 from resume_as_code.models.publication import Publication
 
 if TYPE_CHECKING:
-    from resume_as_code.models.config import SkillsConfig
+    from resume_as_code.models.config import ONetConfig, SkillsConfig
     from resume_as_code.models.position import Position
 
 
@@ -128,6 +128,7 @@ class ResumeData(BaseModel):
         skills_config: SkillsConfig | None = None,
         jd_keywords: set[str] | None = None,
         positions_path: Path | None = None,
+        onet_config: ONetConfig | None = None,
     ) -> ResumeData:
         """Build ResumeData from selected Work Units.
 
@@ -142,6 +143,7 @@ class ResumeData(BaseModel):
             skills_config: Optional skills curation configuration.
             jd_keywords: Optional JD keywords for skill prioritization.
             positions_path: Optional path to positions.yaml file.
+            onet_config: Optional O*NET configuration for skill discovery.
 
         Returns:
             ResumeData instance ready for rendering.
@@ -169,8 +171,8 @@ class ResumeData(BaseModel):
             from resume_as_code.services.skill_curator import SkillCurator
             from resume_as_code.services.skill_registry import SkillRegistry
 
-            # Load default skill registry for alias normalization (Story 7.4)
-            registry = SkillRegistry.load_default()
+            # Load registry with O*NET support if configured (Story 7.17)
+            registry = SkillRegistry.load_with_onet(onet_config)
 
             curator = SkillCurator(
                 max_count=skills_config.max_display,
