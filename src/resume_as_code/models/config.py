@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-import warnings
 from pathlib import Path
 from typing import Literal
 
@@ -345,20 +344,21 @@ class ResumeConfig(BaseModel):
                 )
         return v
 
-    @model_validator(mode="after")
-    def warn_excess_highlights(self) -> ResumeConfig:
-        """Warn if more than 4 career highlights provided."""
-        if len(self.career_highlights) > 4:
-            warnings.warn(
-                f"Research suggests maximum 4 career highlights for optimal impact. "
-                f"You have {len(self.career_highlights)}.",
-                UserWarning,
-                stacklevel=2,
-            )
-            logger.warning(
-                "More than 4 career highlights configured. Research suggests 4 is optimal."
-            )
-        return self
+    # NOTE: Career highlights warning disabled - too noisy for CLI usage
+    # @model_validator(mode="after")
+    # def warn_excess_highlights(self) -> ResumeConfig:
+    #     """Warn if more than 4 career highlights provided."""
+    #     if len(self.career_highlights) > 4:
+    #         warnings.warn(
+    #             f"Research suggests maximum 4 career highlights for optimal impact. "
+    #             f"You have {len(self.career_highlights)}.",
+    #             UserWarning,
+    #             stacklevel=2,
+    #         )
+    #         logger.warning(
+    #             "More than 4 career highlights configured. Research suggests 4 is optimal."
+    #         )
+    #     return self
 
     @field_validator("output_dir", "work_units_dir", "positions_path", mode="before")
     @classmethod

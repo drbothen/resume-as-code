@@ -57,11 +57,20 @@ def generate_id(title: str, today: date) -> str:
 
 
 def get_work_units_dir(base_dir: Path | None = None) -> Path:
-    """Get the work units directory, creating if needed."""
+    """Get the work units directory, creating if needed.
+
+    Handles symlinks by resolving to the target and creating that directory.
+    """
     if base_dir is None:
         base_dir = Path.cwd() / "work-units"
 
-    if not base_dir.exists():
+    # Handle symlinks - resolve to actual target path
+    if base_dir.is_symlink():
+        # Get the symlink target (may be relative)
+        target = base_dir.resolve()
+        if not target.exists():
+            target.mkdir(parents=True)
+    elif not base_dir.exists():
         base_dir.mkdir(parents=True)
 
     return base_dir
