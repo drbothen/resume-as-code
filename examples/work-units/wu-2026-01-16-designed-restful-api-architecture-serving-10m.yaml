@@ -1,0 +1,23 @@
+id: wu-2026-01-16-designed-restful-api-architecture-serving-10m
+title: Designed RESTful API architecture serving 10M daily requests
+schema_version: 1.0.0
+position_id: pos-innosoft-corp-senior-software-engi
+problem:
+  statement: Legacy SOAP APIs were slow and difficult to integrate
+actions:
+- Designed RESTful API following OpenAPI specification
+- Implemented rate limiting and caching layers
+- Created comprehensive API documentation and SDK
+outcome:
+  result: Reduced API response time by 60% and integration time from weeks to 
+    days
+  quantified_impact: 10M requests/day, 60% faster responses
+skills_demonstrated:
+- name: REST APIs
+- name: Python
+- name: Redis
+- name: OpenAPI
+tags:
+- api
+- architecture
+- backend

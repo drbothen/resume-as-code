@@ -1,0 +1,23 @@
+id: wu-2026-01-16-built-platform-engineering-team-supporting-200
+title: Built platform engineering team supporting 200+ developers
+schema_version: 1.0.0
+position_id: pos-cloudfirst-technolog-director-of-platform
+problem:
+  statement: Developers spent 30% of time on infrastructure tasks instead of 
+    product features
+actions:
+- Created internal developer platform with self-service capabilities
+- Implemented golden paths for common development patterns
+- Built observability stack with Prometheus, Grafana, and distributed tracing
+outcome:
+  result: Reduced developer infrastructure overhead from 30% to 5%
+  quantified_impact: 25% productivity gain, 200+ devs supported
+skills_demonstrated:
+- name: Platform Engineering
+- name: Kubernetes
+- name: Prometheus
+- name: Grafana
+tags:
+- platform
+- developer-experience
+- internal-tools

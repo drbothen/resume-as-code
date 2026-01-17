@@ -1,0 +1,24 @@
+id: wu-2026-01-16-established-devops-practices-reducing-deployment
+title: Established DevOps practices reducing deployment time by 75%
+schema_version: 1.0.0
+position_id: pos-datascale-systems-vp-of-engineering
+problem:
+  statement: Manual deployments took 4 hours with frequent failures and 
+    rollbacks
+actions:
+- Implemented CI/CD pipeline with GitHub Actions
+- Adopted infrastructure as code with Terraform
+- Established automated testing gates with 90% coverage requirement
+outcome:
+  result: Reduced deployment time from 4 hours to 1 hour with zero-downtime 
+    releases
+  quantified_impact: 75% faster deployments, zero-downtime
+skills_demonstrated:
+- name: GitHub Actions
+- name: Terraform
+- name: Docker
+- name: CI/CD
+tags:
+- devops
+- automation
+- cicd

@@ -1,0 +1,22 @@
+id: wu-2026-01-16-mentored-5-junior-developers-into-senior-roles
+title: Mentored 5 junior developers into senior roles within 18 months
+schema_version: 1.0.0
+position_id: pos-innosoft-corp-senior-software-engi
+problem:
+  statement: Team lacked senior-level skills and career growth paths
+actions:
+- Established weekly code review sessions and pair programming
+- Created technical skills matrix and growth roadmaps
+- Led architecture decision workshops for hands-on learning
+outcome:
+  result: 5 junior developers promoted to senior roles, team velocity increased 
+    40%
+  quantified_impact: 5 promotions, 40% velocity increase
+skills_demonstrated:
+- name: Mentorship
+- name: Technical Leadership
+- name: Team Building
+tags:
+- leadership
+- mentorship
+- team-development

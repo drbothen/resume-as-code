@@ -1,0 +1,23 @@
+id: wu-2026-01-16-architected-cloud-native-platform-processing-2b
+title: Architected cloud-native platform processing 2B+ daily transactions
+schema_version: 1.0.0
+position_id: pos-techventures-global-chief-technology-off
+problem:
+  statement: Legacy monolith couldn't scale beyond 100M transactions, causing 
+    outages during peak
+actions:
+- Led migration to microservices on Kubernetes
+- Implemented event-driven architecture with Kafka
+- Established SRE practices with 99.99% uptime SLA
+outcome:
+  result: Achieved 20x scale improvement with 99.99% availability
+  quantified_impact: 2B+ daily transactions, 99.99% uptime
+skills_demonstrated:
+- name: k8s
+- name: Kafka
+- name: Microservices
+- name: AWS
+tags:
+- architecture
+- cloud-native
+- reliability

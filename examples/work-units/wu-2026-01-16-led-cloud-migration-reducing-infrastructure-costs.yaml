@@ -1,0 +1,23 @@
+id: wu-2026-01-16-led-cloud-migration-reducing-infrastructure-costs
+title: Led cloud migration reducing infrastructure costs by $12M annually
+schema_version: 1.0.0
+position_id: pos-datascale-systems-vp-of-engineering
+problem:
+  statement: On-premise infrastructure costs were unsustainable at $18M/year 
+    with limited scalability
+actions:
+- Developed multi-cloud strategy leveraging AWS and GCP
+- Built platform team to manage cloud infrastructure as code with Terraform
+- Implemented FinOps practices for cost optimization
+outcome:
+  result: Reduced annual infrastructure costs from $18M to $6M
+  quantified_impact: $12M annual savings, 67% cost reduction
+skills_demonstrated:
+- name: AWS
+- name: GCP
+- name: Terraform
+- name: FinOps
+tags:
+- cloud
+- cost-optimization
+- migration

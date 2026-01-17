@@ -1,0 +1,22 @@
+id: wu-2026-01-16-scaled-engineering-organization-from-80-to-250
+title: Scaled engineering organization from 80 to 250 engineers
+schema_version: 1.0.0
+position_id: pos-techventures-global-chief-technology-off
+problem:
+  statement: Engineering team couldn't keep pace with product demands, delivery 
+    velocity declining
+actions:
+- Redesigned org structure into platform and product verticals
+- Established engineering ladder and career framework
+- Implemented OKR-based planning and delivery metrics
+outcome:
+  result: Reduced time-to-market by 40% while tripling team size
+  quantified_impact: 3x team growth, 40% faster delivery
+skills_demonstrated:
+- name: Leadership
+- name: Organizational Design
+- name: Agile
+tags:
+- scaling
+- leadership
+- engineering-management

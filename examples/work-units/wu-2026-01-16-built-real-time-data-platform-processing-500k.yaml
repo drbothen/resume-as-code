@@ -1,0 +1,23 @@
+id: wu-2026-01-16-built-real-time-data-platform-processing-500k
+title: Built real-time data platform processing 500K events per second
+schema_version: 1.0.0
+position_id: pos-datascale-systems-vp-of-engineering
+problem:
+  statement: Batch processing jobs took 8 hours, business needed real-time 
+    insights for trading decisions
+actions:
+- Designed streaming architecture using Apache Kafka and Flink
+- Built data lake on AWS S3 with Delta Lake format
+- Implemented ML pipelines for real-time fraud detection
+outcome:
+  result: Reduced data latency from 8 hours to under 100ms
+  quantified_impact: 500K events/sec, <100ms latency
+skills_demonstrated:
+- name: Kafka
+- name: Apache Flink
+- name: Python
+- name: AWS
+tags:
+- data-platform
+- real-time
+- streaming

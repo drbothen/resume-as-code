@@ -1,0 +1,23 @@
+id: wu-2026-01-16-led-ai-ml-platform-initiative-driving-50m-revenue
+title: Led AI/ML platform initiative driving $50M revenue
+schema_version: 1.0.0
+position_id: pos-techventures-global-chief-technology-off
+problem:
+  statement: Company lacked AI capabilities to compete in market, losing deals 
+    to AI-enabled competitors
+actions:
+- Built AI/ML platform team of 25 engineers
+- Established partnerships with AWS and Google Cloud for ML infrastructure
+- Launched 3 AI-powered products in 18 months
+outcome:
+  result: Generated $50M incremental revenue in first year
+  quantified_impact: $50M revenue, 3 products launched
+skills_demonstrated:
+- name: AI/ML
+- name: Python
+- name: AWS
+- name: Leadership
+tags:
+- ai
+- strategy
+- revenue-growth
