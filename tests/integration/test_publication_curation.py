@@ -295,7 +295,10 @@ publications:
 
 curation:
   publications_max: 2
-  min_relevance_score: 0.3
+  # Threshold must be >0.50 to exclude irrelevant content; embeddings give
+  # surprisingly high base similarity (~0.50) even to unrelated topics due to
+  # shared "professional/technical" language patterns in the model.
+  min_relevance_score: 0.55
 """)
 
         # Create work-units directory with a simple work unit
@@ -329,6 +332,8 @@ Requirements:
         )
 
         assert result.exit_code == 0, f"Build failed: {result.output}"
-        # With high min_relevance_score, irrelevant publication should be excluded
-        # The curation message should indicate filtering occurred
-        assert "excluded" in result.output.lower() or "selected" in result.output.lower()
+        # With min_relevance_score=0.55, the irrelevant "Underwater Basket Weaving"
+        # publication (which scores ~0.50) should be excluded while "Python Best
+        # Practices" (scoring ~0.75) is selected.
+        assert "1 selected" in result.output, f"Expected 1 selected: {result.output}"
+        assert "1 excluded" in result.output, f"Expected 1 excluded: {result.output}"
