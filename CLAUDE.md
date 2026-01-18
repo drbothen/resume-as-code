@@ -199,7 +199,8 @@ CLI tool for git-native resume generation from structured Work Units.
 | `resume build --jd <file>` | Generate resume files |
 | `resume migrate --status` | Show schema version and migration status |
 | `resume migrate --dry-run` | Preview migration changes |
-| `resume migrate` | Apply schema migrations |
+| `resume migrate` | Apply schema migrations (prompts for confirmation) |
+| `resume migrate --yes` | Apply migrations without confirmation prompt |
 | `resume migrate --rollback <backup>` | Restore from backup directory |
 
 ### Validate Command Options
@@ -268,6 +269,7 @@ When enabled (default), multiple positions at the same employer are rendered und
 | `--status` | Show current schema version vs latest, migration availability |
 | `--dry-run` | Preview what changes would be made without modifying files |
 | `--rollback <backup>` | Restore project files from backup directory |
+| `-y, --yes` | Skip confirmation prompt (for non-interactive use) |
 
 The migrate command detects legacy configs (no `schema_version` field) as v1.0.0 and offers migration to the latest schema version. Migrations:
 - Create automatic backups before modifying files
