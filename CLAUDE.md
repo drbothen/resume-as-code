@@ -539,7 +539,7 @@ resume new board-role "CyberShield Ventures|Technical Advisor|advisory|2022-03||
 
 ## Publication Management
 
-Track publications, conference talks, and speaking engagements.
+Track publications, conference talks, and speaking engagements. Supports JD-relevant curation via topics and abstracts.
 
 ### Commands
 
@@ -547,9 +547,18 @@ Track publications, conference talks, and speaking engagements.
 |---------|-------------|
 | `resume new publication` | Create publication (interactive or pipe-separated) |
 | `resume new publication "Title\|Type\|Venue\|Date\|URL"` | Inline creation |
+| `resume new publication --topic python --topic aws` | Create with topic tags |
+| `resume new publication --abstract "..."` | Create with abstract for semantic matching |
 | `resume list publications` | List all publications and speaking engagements |
 | `resume show publication <title>` | Show publication details (partial match) |
 | `resume remove publication <title>` | Remove by title (partial match) |
+
+### Publication Creation Flags
+
+| Flag | Description |
+|------|-------------|
+| `--topic, -t` | Topic tag for JD matching (repeatable) |
+| `--abstract, -a` | Brief description for semantic matching (max 500 chars) |
 
 ### Publication Types
 
@@ -565,7 +574,28 @@ Track publications, conference talks, and speaking engagements.
 ### Pipe-Separated Format
 
 ```bash
+# Basic format
 resume new publication "Zero Trust Architecture|conference|RSA Conference|2022-06|"
+
+# Extended format with topics and abstract
+resume new publication "Zero Trust Architecture|conference|RSA Conference|2022-06||kubernetes,security|Deep dive into zero trust patterns."
+```
+
+Extended format: `"Title|Type|Venue|Date|URL|Topics|Abstract"` where Topics is comma-separated.
+
+### JD-Relevant Curation
+
+When building with `--jd`, publications are scored and filtered by relevance:
+
+- **40% semantic similarity** - Abstract + title + venue vs JD text
+- **40% topic overlap** - Topics matched against JD skills/keywords
+- **20% recency bonus** - Publications in last 3 years preferred
+
+Configure in `.resume.yaml`:
+```yaml
+curation:
+  publications_max: 3        # Max publications to include (default: 3)
+  min_relevance_score: 0.1   # Minimum score threshold (default: 0.1)
 ```
 
 ---
@@ -784,11 +814,13 @@ resume new certification "Name|Issuer|Date|Expires"
 resume new education "Degree|Institution|Year|Honors"
 resume new board-role "Org|Role|Type|Start|End|Focus"
 resume new publication "Title|Type|Venue|Date|URL"
+resume new publication "Title|Type|Venue|Date|URL|Topics|Abstract"  # Extended format
 # highlight uses --text flag instead:
 resume new highlight --text "Achievement text here"
 ```
 
 - Empty trailing fields can be omitted
 - Use empty string for optional middle fields: `"Name|Issuer||Expires"`
+- Publication topics are comma-separated: `"...|python,aws,kubernetes|..."`
 
 <!-- Keep CLAUDE.md in sync when adding new commands. Update Quick Reference table and add workflow examples. -->
