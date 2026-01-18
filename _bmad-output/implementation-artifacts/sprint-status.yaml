@@ -169,9 +169,9 @@ development_status:
   # Goal: Improve resume template rendering for better visual presentation and professional formatting
   # User Outcome: Professionally formatted resumes with grouped employer positions and curated publications
   # Total Points: 10 (2 stories)
-  epic-8: in-progress
+  epic-8: done
   8-1-employer-grouped-position-rendering: done  # P2, 5 pts - Nest positions under same employer
-  8-2-jd-relevant-publication-curation: in-progress  # P2, 5 pts - Limit publications to top N JD-relevant
+  8-2-jd-relevant-publication-curation: done  # P2, 5 pts - Limit publications to top N JD-relevant
 
   # Epic 9: Data Management & Migration
   # Goal: Robust data management with schema versioning, migration, and backward compatibility
