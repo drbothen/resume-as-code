@@ -1,6 +1,6 @@
 # Story 6.12: Education Management Commands
 
-Status: review
+Status: done
 
 ## Story
 

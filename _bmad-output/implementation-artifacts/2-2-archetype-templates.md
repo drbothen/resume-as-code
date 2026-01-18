@@ -1,6 +1,6 @@
 # Story 2.2: Archetype Templates
 
-Status: review
+Status: done
 
 ## Story
 

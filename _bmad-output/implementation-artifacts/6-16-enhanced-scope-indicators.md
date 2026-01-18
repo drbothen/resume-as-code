@@ -1,6 +1,6 @@
 # Story 6.16: Enhanced Scope Indicators (P&L, Revenue, Geography)
 
-Status: ready-for-review
+Status: done
 
 ## Story
 

@@ -1,6 +1,6 @@
 # Story 9.2: Separate Configuration from Resume Data
 
-Status: review
+Status: done
 
 ## Story
 

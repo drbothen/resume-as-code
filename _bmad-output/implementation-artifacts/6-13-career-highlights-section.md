@@ -1,6 +1,6 @@
 # Story 6.13: Career Highlights Section (CTO/Hybrid Format)
 
-Status: review
+Status: done
 
 ## Story
 
