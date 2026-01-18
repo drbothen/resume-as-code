@@ -42,16 +42,24 @@ def _is_valid_url(url: str) -> bool:
     return bool(URL_PATTERN.match(url))
 
 
+# Story 9.2: Config-only .resume.yaml (no embedded data)
 DEFAULT_CONFIG: dict[str, Any] = {
+    "schema_version": "3.0.0",
     "output_dir": "./dist",
     "default_format": "both",
     "default_template": "modern",
     "work_units_dir": "./work-units",
     "positions_path": "./positions.yaml",
-    "profile": {},
-    "certifications": [],
-    "education": [],
-    "career_highlights": [],
+}
+
+# Default file paths for separated data structure (Story 9.2)
+DATA_FILES: dict[str, str] = {
+    "profile": "profile.yaml",
+    "certifications": "certifications.yaml",
+    "education": "education.yaml",
+    "highlights": "highlights.yaml",
+    "publications": "publications.yaml",
+    "board_roles": "board-roles.yaml",
 }
 
 
@@ -107,11 +115,24 @@ def init_command(ctx: Context, non_interactive: bool, force: bool) -> None:
     # Collect profile data
     profile = _get_placeholder_profile() if non_interactive else _prompt_for_profile()
 
-    # Create config file
+    # Story 9.2: Create config-only .resume.yaml
     config = DEFAULT_CONFIG.copy()
-    config["profile"] = {k: v for k, v in profile.items() if v is not None}
     config_path.write_text(yaml.dump(config, default_flow_style=False, sort_keys=False))
     files_created.append(str(config_path))
+
+    # Story 9.2: Create separate profile.yaml
+    profile_data = {k: v for k, v in profile.items() if v is not None}
+    profile_path = Path(DATA_FILES["profile"])
+    profile_path.write_text(yaml.dump(profile_data, default_flow_style=False, sort_keys=False))
+    files_created.append(str(profile_path))
+
+    # Story 9.2: Create empty data files
+    for key, filename in DATA_FILES.items():
+        if key == "profile":
+            continue  # Already created above
+        data_path = Path(filename)
+        data_path.write_text("[]\n")
+        files_created.append(str(data_path))
 
     # Create work-units directory
     work_units_dir.mkdir(exist_ok=True)

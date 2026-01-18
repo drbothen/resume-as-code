@@ -155,9 +155,9 @@ class TestVersionConstants:
         assert len(parts) == 3
         assert all(p.isdigit() for p in parts)
 
-    def test_current_version_is_2_0_0(self) -> None:
-        """Test that current version is 2.0.0."""
-        assert CURRENT_SCHEMA_VERSION == "2.0.0"
+    def test_current_version_is_3_0_0(self) -> None:
+        """Test that current version is 3.0.0 (Story 9.2)."""
+        assert CURRENT_SCHEMA_VERSION == "3.0.0"
 
     def test_legacy_version_is_1_0_0(self) -> None:
         """Test that legacy version is 1.0.0."""
@@ -712,3 +712,388 @@ default_format: pdf
         assert len(path) == 1
         assert path[0].from_version == "1.0.0"
         assert path[0].to_version == "2.0.0"
+
+
+class TestMigrationV2ToV3:
+    """Tests for v2.0.0 to v3.0.0 migration (Story 9.2)."""
+
+    def test_v2_to_v3_check_applicable_no_file(self, tmp_path: Path) -> None:
+        """Test check_applicable returns False when no config file."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        assert migration.check_applicable(ctx) is False
+
+    def test_v2_to_v3_check_applicable_v2_with_embedded_data(self, tmp_path: Path) -> None:
+        """Test check_applicable returns True for v2 config with embedded data."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """schema_version: 2.0.0
+output_dir: ./dist
+profile:
+  name: Test User
+  email: test@example.com
+"""
+        )
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        assert migration.check_applicable(ctx) is True
+
+    def test_v2_to_v3_check_applicable_already_v3(self, tmp_path: Path) -> None:
+        """Test check_applicable returns False when already at v3."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text("schema_version: 3.0.0\noutput_dir: ./dist\n")
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        assert migration.check_applicable(ctx) is False
+
+    def test_v2_to_v3_preview_profile(self, tmp_path: Path) -> None:
+        """Test preview lists profile extraction."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """schema_version: 2.0.0
+profile:
+  name: Test User
+"""
+        )
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        changes = migration.preview(ctx)
+
+        assert any("profile" in c.lower() for c in changes)
+        assert any("profile.yaml" in c for c in changes)
+
+    def test_v2_to_v3_preview_certifications(self, tmp_path: Path) -> None:
+        """Test preview lists certifications extraction with count."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """schema_version: 2.0.0
+certifications:
+  - name: AWS SAP
+  - name: CISSP
+"""
+        )
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        changes = migration.preview(ctx)
+
+        assert any("certifications" in c.lower() and "2 items" in c for c in changes)
+
+    def test_v2_to_v3_apply_extracts_profile(self, tmp_path: Path) -> None:
+        """Test apply extracts profile to profile.yaml."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """schema_version: 2.0.0
+output_dir: ./dist
+profile:
+  name: Test User
+  email: test@example.com
+"""
+        )
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        result = migration.apply(ctx)
+
+        assert result.success is True
+        profile_path = tmp_path / "profile.yaml"
+        assert profile_path.exists()
+        content = profile_path.read_text()
+        assert "Test User" in content
+        assert "test@example.com" in content
+
+    def test_v2_to_v3_apply_extracts_certifications(self, tmp_path: Path) -> None:
+        """Test apply extracts certifications to certifications.yaml."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """schema_version: 2.0.0
+certifications:
+  - name: AWS SAP
+    issuer: Amazon
+  - name: CISSP
+    issuer: ISC2
+"""
+        )
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        result = migration.apply(ctx)
+
+        assert result.success is True
+        certs_path = tmp_path / "certifications.yaml"
+        assert certs_path.exists()
+        content = certs_path.read_text()
+        assert "AWS SAP" in content
+        assert "CISSP" in content
+
+    def test_v2_to_v3_apply_extracts_career_highlights_to_highlights(self, tmp_path: Path) -> None:
+        """Test apply extracts career_highlights to highlights.yaml."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """schema_version: 2.0.0
+career_highlights:
+  - text: Led major transformation
+  - text: Saved $1M annually
+"""
+        )
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        result = migration.apply(ctx)
+
+        assert result.success is True
+        highlights_path = tmp_path / "highlights.yaml"
+        assert highlights_path.exists()
+        content = highlights_path.read_text()
+        assert "Led major transformation" in content
+        assert "$1M" in content
+
+    def test_v2_to_v3_apply_removes_from_config(self, tmp_path: Path) -> None:
+        """Test apply removes extracted data from .resume.yaml."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """schema_version: 2.0.0
+output_dir: ./dist
+profile:
+  name: Test User
+certifications:
+  - name: AWS SAP
+"""
+        )
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        migration.apply(ctx)
+
+        content = config.read_text()
+        assert "output_dir: ./dist" in content
+        assert "profile:" not in content
+        assert "certifications:" not in content
+
+    def test_v2_to_v3_apply_updates_schema_version(self, tmp_path: Path) -> None:
+        """Test apply updates schema_version to 3.0.0."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """schema_version: 2.0.0
+output_dir: ./dist
+profile:
+  name: Test User
+"""
+        )
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        migration.apply(ctx)
+
+        content = config.read_text()
+        assert "schema_version: 3.0.0" in content
+        assert "schema_version: 2.0.0" not in content
+
+    def test_v2_to_v3_apply_idempotent(self, tmp_path: Path) -> None:
+        """Test apply is idempotent (safe to run multiple times)."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text("schema_version: 3.0.0\noutput_dir: ./dist\n")
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        result = migration.apply(ctx)
+
+        assert result.success is True
+        assert len(result.warnings) == 1
+        assert "v3.0.0" in result.warnings[0]
+
+    def test_v2_to_v3_dry_run(self, tmp_path: Path) -> None:
+        """Test apply in dry_run mode doesn't modify files."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        original_content = """schema_version: 2.0.0
+output_dir: ./dist
+profile:
+  name: Test User
+"""
+        config.write_text(original_content)
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path, dry_run=True)
+
+        result = migration.apply(ctx)
+
+        assert result.success is True
+        assert len(result.files_modified) == 0
+        # Config should not be modified
+        assert config.read_text() == original_content
+        # profile.yaml should not be created
+        assert not (tmp_path / "profile.yaml").exists()
+
+    def test_v2_to_v3_version_attributes(self) -> None:
+        """Test migration has correct version attributes."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        migration = MigrationV2ToV3()
+
+        assert migration.from_version == "2.0.0"
+        assert migration.to_version == "3.0.0"
+        assert "separate" in migration.description.lower()
+
+    def test_v2_to_v3_registered_in_registry(self) -> None:
+        """Test migration is registered in the registry."""
+        from resume_as_code.migrations.registry import get_migration_path
+
+        path = get_migration_path("2.0.0", "3.0.0")
+
+        assert len(path) == 1
+        assert path[0].from_version == "2.0.0"
+        assert path[0].to_version == "3.0.0"
+
+    def test_v2_to_v3_full_path_from_v1(self) -> None:
+        """Test migration path from v1 to v3 goes through v2."""
+        from resume_as_code.migrations.registry import get_migration_path
+
+        path = get_migration_path("1.0.0", "3.0.0")
+
+        assert len(path) == 2
+        assert path[0].from_version == "1.0.0"
+        assert path[0].to_version == "2.0.0"
+        assert path[1].from_version == "2.0.0"
+        assert path[1].to_version == "3.0.0"
+
+    def test_v2_to_v3_apply_preserves_comments(self, tmp_path: Path) -> None:
+        """Test apply preserves YAML comments in .resume.yaml."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """# My resume configuration
+schema_version: 2.0.0
+output_dir: ./dist  # Output directory
+profile:
+  name: Test User
+"""
+        )
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        migration.apply(ctx)
+
+        content = config.read_text()
+        assert "# My resume configuration" in content
+        assert "# Output directory" in content
+
+    def test_v2_to_v3_merges_with_existing_file(self, tmp_path: Path) -> None:
+        """Test apply merges with existing data files."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """schema_version: 2.0.0
+certifications:
+  - name: AWS SAP
+"""
+        )
+
+        # Pre-existing certifications file
+        existing_certs = tmp_path / "certifications.yaml"
+        existing_certs.write_text("- name: CISSP\n")
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        result = migration.apply(ctx)
+
+        assert result.success is True
+        assert any("existed" in w.lower() for w in result.warnings)
+
+        # Both certs should be present (merged)
+        content = existing_certs.read_text()
+        assert "CISSP" in content
+        assert "AWS SAP" in content
+
+    def test_v2_to_v3_all_data_files(self, tmp_path: Path) -> None:
+        """Test apply extracts all data types to correct files."""
+        from resume_as_code.migrations.v2_to_v3 import MigrationV2ToV3
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """schema_version: 2.0.0
+output_dir: ./dist
+profile:
+  name: Test User
+certifications:
+  - name: AWS SAP
+education:
+  - degree: BS Computer Science
+career_highlights:
+  - text: Major achievement
+publications:
+  - title: My Paper
+board_roles:
+  - organization: Tech Board
+"""
+        )
+
+        migration = MigrationV2ToV3()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        result = migration.apply(ctx)
+
+        assert result.success is True
+
+        # Check all files were created
+        assert (tmp_path / "profile.yaml").exists()
+        assert (tmp_path / "certifications.yaml").exists()
+        assert (tmp_path / "education.yaml").exists()
+        assert (tmp_path / "highlights.yaml").exists()
+        assert (tmp_path / "publications.yaml").exists()
+        assert (tmp_path / "board-roles.yaml").exists()
+
+        # Check config was cleaned
+        content = config.read_text()
+        assert "schema_version: 3.0.0" in content
+        assert "output_dir: ./dist" in content
+        for field in [
+            "profile",
+            "certifications",
+            "education",
+            "career_highlights",
+            "publications",
+            "board_roles",
+        ]:
+            assert f"{field}:" not in content

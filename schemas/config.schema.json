@@ -310,6 +310,91 @@
       "title": "CurationConfig",
       "type": "object"
     },
+    "DataPaths": {
+      "description": "Custom paths for separated data files (Story 9.2).\n\nAllows users to customize the location of data files instead of using\nthe default locations in the project root.",
+      "properties": {
+        "profile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to profile.yaml",
+          "title": "Profile"
+        },
+        "certifications": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to certifications.yaml",
+          "title": "Certifications"
+        },
+        "education": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to education.yaml",
+          "title": "Education"
+        },
+        "highlights": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to highlights.yaml",
+          "title": "Highlights"
+        },
+        "publications": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to publications.yaml",
+          "title": "Publications"
+        },
+        "board_roles": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to board-roles.yaml",
+          "title": "Board Roles"
+        }
+      },
+      "title": "DataPaths",
+      "type": "object"
+    },
     "Education": {
       "additionalProperties": false,
       "description": "Educational credential record.\n\nStores education information for resume rendering with support\nfor honors, GPA, and display control.",
@@ -879,45 +964,99 @@
       "title": "Editor"
     },
     "profile": {
-      "$ref": "#/$defs/ProfileConfig"
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProfileConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Profile data (use data_loader for access, supports external file)"
     },
     "certifications": {
-      "items": {
-        "$ref": "#/$defs/Certification"
-      },
-      "title": "Certifications",
-      "type": "array"
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Certification"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Certifications (use data_loader for access, supports external file)",
+      "title": "Certifications"
     },
     "education": {
-      "items": {
-        "$ref": "#/$defs/Education"
-      },
-      "title": "Education",
-      "type": "array"
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Education"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Education (use data_loader for access, supports external file)",
+      "title": "Education"
     },
     "skills": {
       "$ref": "#/$defs/SkillsConfig"
     },
     "career_highlights": {
-      "items": {
-        "type": "string"
-      },
-      "title": "Career Highlights",
-      "type": "array"
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Career highlights (use data_loader for access, supports external file)",
+      "title": "Career Highlights"
     },
     "board_roles": {
-      "items": {
-        "$ref": "#/$defs/BoardRole"
-      },
-      "title": "Board Roles",
-      "type": "array"
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/BoardRole"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Board roles (use data_loader for access, supports external file)",
+      "title": "Board Roles"
     },
     "publications": {
-      "items": {
-        "$ref": "#/$defs/Publication"
-      },
-      "title": "Publications",
-      "type": "array"
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Publication"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Publications (use data_loader for access, supports external file)",
+      "title": "Publications"
     },
     "tailored_notice": {
       "default": false,
@@ -964,6 +1103,18 @@
     },
     "template_options": {
       "$ref": "#/$defs/TemplateOptions"
+    },
+    "data_paths": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DataPaths"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Custom paths for separated data files"
     }
   },
   "title": "ResumeConfig",

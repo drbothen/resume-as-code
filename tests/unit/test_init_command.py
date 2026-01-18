@@ -123,13 +123,14 @@ class TestInitCommand:
     def test_init_non_interactive_uses_placeholders(
         self, cli_runner: CliRunner, tmp_path: Path
     ) -> None:
-        """--non-interactive creates config with TODO placeholders (AC #3)."""
+        """--non-interactive creates profile.yaml with TODO placeholders (Story 9.2)."""
         reset_config()
         with cli_runner.isolated_filesystem(temp_dir=tmp_path):
             result = cli_runner.invoke(main, ["init", "--non-interactive"])
 
             assert result.exit_code == 0
-            content = Path(".resume.yaml").read_text()
+            # Story 9.2: Profile data is now in profile.yaml
+            content = Path("profile.yaml").read_text()
             assert "TODO:" in content
 
     def test_init_displays_created_files(self, cli_runner: CliRunner, tmp_path: Path) -> None:
@@ -168,17 +169,18 @@ class TestInitInteractive:
     """Test interactive mode (Task 1.3)."""
 
     def test_init_prompts_for_name(self, cli_runner: CliRunner, tmp_path: Path) -> None:
-        """Interactive mode prompts for required name (AC #2)."""
+        """Interactive mode prompts for required name (AC #2, Story 9.2)."""
         reset_config()
         with cli_runner.isolated_filesystem(temp_dir=tmp_path):
             result = cli_runner.invoke(main, ["init"], input="John Doe\n\n\n\n\n\n\n")
 
             assert result.exit_code == 0
-            content = Path(".resume.yaml").read_text()
+            # Story 9.2: Profile data is now in profile.yaml
+            content = Path("profile.yaml").read_text()
             assert "John Doe" in content
 
     def test_init_validates_linkedin_url(self, cli_runner: CliRunner, tmp_path: Path) -> None:
-        """LinkedIn URL is validated (AC #2)."""
+        """LinkedIn URL is validated (AC #2, Story 9.2)."""
         reset_config()
         with cli_runner.isolated_filesystem(temp_dir=tmp_path):
             # Invalid URL first, then valid
@@ -190,11 +192,12 @@ class TestInitInteractive:
 
             assert result.exit_code == 0
             assert "Invalid URL" in result.output
-            content = Path(".resume.yaml").read_text()
+            # Story 9.2: Profile data is now in profile.yaml
+            content = Path("profile.yaml").read_text()
             assert "https://linkedin.com/in/john" in content
 
     def test_init_validates_github_url(self, cli_runner: CliRunner, tmp_path: Path) -> None:
-        """GitHub URL is validated (AC #2)."""
+        """GitHub URL is validated (AC #2, Story 9.2)."""
         reset_config()
         with cli_runner.isolated_filesystem(temp_dir=tmp_path):
             # Invalid URL first, then valid
@@ -206,11 +209,12 @@ class TestInitInteractive:
 
             assert result.exit_code == 0
             assert "Invalid URL" in result.output
-            content = Path(".resume.yaml").read_text()
+            # Story 9.2: Profile data is now in profile.yaml
+            content = Path("profile.yaml").read_text()
             assert "https://github.com/john" in content
 
     def test_init_validates_website_url(self, cli_runner: CliRunner, tmp_path: Path) -> None:
-        """Website URL is validated (AC #2)."""
+        """Website URL is validated (AC #2, Story 9.2)."""
         reset_config()
         with cli_runner.isolated_filesystem(temp_dir=tmp_path):
             # Invalid URL first, then valid
@@ -222,7 +226,8 @@ class TestInitInteractive:
 
             assert result.exit_code == 0
             assert "Invalid URL" in result.output
-            content = Path(".resume.yaml").read_text()
+            # Story 9.2: Profile data is now in profile.yaml
+            content = Path("profile.yaml").read_text()
             assert "https://john.dev" in content
 
     def test_init_allows_empty_url_fields(self, cli_runner: CliRunner, tmp_path: Path) -> None:
@@ -246,7 +251,7 @@ class TestInitInteractive:
             assert "required" in result.output.lower()
 
     def test_init_saves_all_profile_fields(self, cli_runner: CliRunner, tmp_path: Path) -> None:
-        """All profile fields are saved when provided (AC #2)."""
+        """All profile fields are saved to profile.yaml (Story 9.2)."""
         reset_config()
         with cli_runner.isolated_filesystem(temp_dir=tmp_path):
             result = cli_runner.invoke(
@@ -256,13 +261,14 @@ class TestInitInteractive:
             )
 
             assert result.exit_code == 0
-            with open(".resume.yaml") as f:
-                config = yaml.safe_load(f)
+            # Story 9.2: Profile data is now in profile.yaml
+            with open("profile.yaml") as f:
+                profile = yaml.safe_load(f)
 
-            assert config["profile"]["name"] == "John Doe"
-            assert config["profile"]["email"] == "john@example.com"
-            assert config["profile"]["phone"] == "555-1234"
-            assert config["profile"]["location"] == "SF, CA"
+            assert profile["name"] == "John Doe"
+            assert profile["email"] == "john@example.com"
+            assert profile["phone"] == "555-1234"
+            assert profile["location"] == "SF, CA"
 
 
 class TestInitJsonOutput:

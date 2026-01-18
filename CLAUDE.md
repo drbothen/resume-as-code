@@ -371,10 +371,16 @@ Use `--json` for structured output. Response format:
 
 | Path | Purpose |
 |------|---------|
-| `.resume.yaml` | Project config |
+| `.resume.yaml` | Project config (schema_version, output settings) |
 | `~/.config/resume-as-code/config.yaml` | User config |
 | `work-units/*.yaml` | Work Unit files |
 | `positions.yaml` | Employment positions (employers, titles, dates) |
+| `profile.yaml` | Contact info, title, summary |
+| `certifications.yaml` | Professional credentials |
+| `education.yaml` | Academic credentials |
+| `publications.yaml` | Articles and speaking |
+| `board-roles.yaml` | Advisory positions |
+| `highlights.yaml` | Career summary bullets |
 | `dist/` | Generated output |
 
 ---

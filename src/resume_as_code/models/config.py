@@ -310,6 +310,21 @@ class TemplateOptions(BaseModel):
     )
 
 
+class DataPaths(BaseModel):
+    """Custom paths for separated data files (Story 9.2).
+
+    Allows users to customize the location of data files instead of using
+    the default locations in the project root.
+    """
+
+    profile: str | None = Field(default=None, description="Path to profile.yaml")
+    certifications: str | None = Field(default=None, description="Path to certifications.yaml")
+    education: str | None = Field(default=None, description="Path to education.yaml")
+    highlights: str | None = Field(default=None, description="Path to highlights.yaml")
+    publications: str | None = Field(default=None, description="Path to publications.yaml")
+    board_roles: str | None = Field(default=None, description="Path to board-roles.yaml")
+
+
 class ResumeConfig(BaseModel):
     """Complete configuration for Resume as Code."""
 
@@ -337,26 +352,44 @@ class ResumeConfig(BaseModel):
     # Editor settings
     editor: str | None = Field(default=None)  # Falls back to $EDITOR
 
-    # Profile information
-    profile: ProfileConfig = Field(default_factory=ProfileConfig)
+    # Profile information (Story 9.2: Optional for config-only mode)
+    profile: ProfileConfig | None = Field(
+        default=None,
+        description="Profile data (use data_loader for access, supports external file)",
+    )
 
-    # Certifications
-    certifications: list[Certification] = Field(default_factory=list)
+    # Certifications (Story 9.2: Optional for config-only mode)
+    certifications: list[Certification] | None = Field(
+        default=None,
+        description="Certifications (use data_loader for access, supports external file)",
+    )
 
-    # Education
-    education: list[Education] = Field(default_factory=list)
+    # Education (Story 9.2: Optional for config-only mode)
+    education: list[Education] | None = Field(
+        default=None,
+        description="Education (use data_loader for access, supports external file)",
+    )
 
     # Skills curation
     skills: SkillsConfig = Field(default_factory=SkillsConfig)
 
-    # Career highlights (CTO/executive hybrid format)
-    career_highlights: list[str] = Field(default_factory=list)
+    # Career highlights (Story 9.2: Optional for config-only mode)
+    career_highlights: list[str] | None = Field(
+        default=None,
+        description="Career highlights (use data_loader for access, supports external file)",
+    )
 
-    # Board & Advisory Roles
-    board_roles: list[BoardRole] = Field(default_factory=list)
+    # Board & Advisory Roles (Story 9.2: Optional for config-only mode)
+    board_roles: list[BoardRole] | None = Field(
+        default=None,
+        description="Board roles (use data_loader for access, supports external file)",
+    )
 
-    # Publications & Speaking Engagements
-    publications: list[Publication] = Field(default_factory=list)
+    # Publications & Speaking Engagements (Story 9.2: Optional for config-only mode)
+    publications: list[Publication] | None = Field(
+        default=None,
+        description="Publications (use data_loader for access, supports external file)",
+    )
 
     # Tailored resume notice (Story 7.19)
     tailored_notice: bool = Field(
@@ -384,12 +417,18 @@ class ResumeConfig(BaseModel):
     # Template rendering options (Story 8.1)
     template_options: TemplateOptions = Field(default_factory=TemplateOptions)
 
+    # Custom data file paths (Story 9.2)
+    data_paths: DataPaths | None = Field(
+        default=None,
+        description="Custom paths for separated data files",
+    )
+
     @field_validator("career_highlights", mode="before")
     @classmethod
-    def validate_career_highlights(cls, v: list[str] | None) -> list[str]:
+    def validate_career_highlights(cls, v: list[str] | None) -> list[str] | None:
         """Validate career highlights list."""
         if v is None:
-            return []
+            return None
         if not isinstance(v, list):
             raise ValueError("career_highlights must be a list")
         for i, highlight in enumerate(v):

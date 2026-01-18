@@ -17,10 +17,13 @@ from resume_as_code.models.resume import ContactInfo, ResumeData
 class TestCareerHighlightsConfig:
     """Tests for career_highlights in ResumeConfig."""
 
-    def test_default_career_highlights_is_empty_list(self) -> None:
-        """Config defaults to empty list for career highlights."""
+    def test_default_career_highlights_is_none(self) -> None:
+        """Config defaults to None for career highlights (Story 9.2).
+
+        Note: Access career_highlights via data_loader for actual usage.
+        """
         config = ResumeConfig()
-        assert config.career_highlights == []
+        assert config.career_highlights is None
 
     def test_career_highlights_accepts_list_of_strings(self) -> None:
         """Config accepts a list of string highlights."""

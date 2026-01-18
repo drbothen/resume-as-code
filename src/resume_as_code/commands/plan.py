@@ -15,6 +15,14 @@ if TYPE_CHECKING:
 from rich.panel import Panel
 
 from resume_as_code.config import get_config
+from resume_as_code.data_loader import (
+    load_board_roles,
+    load_certifications,
+    load_education,
+    load_highlights,
+    load_profile,
+    load_publications,
+)
 from resume_as_code.models.exclusion import get_exclusion_reason
 from resume_as_code.models.output import JSONResponse
 from resume_as_code.models.plan import SavedPlan
@@ -558,7 +566,7 @@ def _get_certifications_analysis(
 
     Args:
         jd_text: Raw job description text.
-        config: Resume configuration with certifications.
+        config: Resume configuration (unused, data loaded via data_loader).
 
     Returns:
         CertificationMatchResult with matched, gaps, and additional certs.
@@ -568,8 +576,11 @@ def _get_certifications_analysis(
     # Extract JD certification requirements
     jd_certs = matcher.extract_jd_requirements(jd_text)
 
+    # Load certifications via data_loader (Story 9.2)
+    certifications = load_certifications(Path.cwd())
+
     # Match against user's certifications
-    return matcher.match_certifications(config.certifications, jd_certs)
+    return matcher.match_certifications(certifications, jd_certs)
 
 
 def _get_education_analysis(
@@ -580,7 +591,7 @@ def _get_education_analysis(
 
     Args:
         jd_text: Raw job description text.
-        config: Resume configuration with education.
+        config: Resume configuration (unused, data loaded via data_loader).
 
     Returns:
         EducationMatchResult with degree match and field relevance.
@@ -590,20 +601,24 @@ def _get_education_analysis(
     # Extract JD education requirements
     jd_req = matcher.extract_jd_requirements(jd_text)
 
+    # Load education via data_loader (Story 9.2)
+    education = load_education(Path.cwd())
+
     # Match against user's education
-    return matcher.match_education(config.education, jd_req)
+    return matcher.match_education(education, jd_req)
 
 
 def _get_profile_preview(config: ResumeConfig) -> ProfilePreview:
     """Generate profile preview with completeness check.
 
     Args:
-        config: Resume configuration with profile.
+        config: Resume configuration (unused, data loaded via data_loader).
 
     Returns:
         ProfilePreview with contact completeness and summary analysis.
     """
-    profile = config.profile
+    # Load profile via data_loader (Story 9.2)
+    profile = load_profile(Path.cwd())
     missing: list[str] = []
 
     # Check required contact fields
@@ -641,12 +656,13 @@ def _get_career_highlights_preview(config: ResumeConfig) -> CareerHighlightsPrev
     """Generate career highlights preview.
 
     Args:
-        config: Resume configuration with career highlights.
+        config: Resume configuration (unused, data loaded via data_loader).
 
     Returns:
         CareerHighlightsPreview with highlights data.
     """
-    highlights = config.career_highlights
+    # Load highlights via data_loader (Story 9.2)
+    highlights = load_highlights(Path.cwd())
     return CareerHighlightsPreview(
         highlights=highlights,
         count=len(highlights),
@@ -658,12 +674,13 @@ def _get_board_roles_preview(config: ResumeConfig) -> BoardRolesPreview:
     """Generate board roles preview.
 
     Args:
-        config: Resume configuration with board roles.
+        config: Resume configuration (unused, data loaded via data_loader).
 
     Returns:
         BoardRolesPreview with roles data.
     """
-    roles = config.board_roles
+    # Load board roles via data_loader (Story 9.2)
+    roles = load_board_roles(Path.cwd())
     display_roles = [r for r in roles if r.display]
 
     role_summaries = [
@@ -691,12 +708,13 @@ def _get_publications_preview(config: ResumeConfig) -> PublicationsPreview:
     """Generate publications preview.
 
     Args:
-        config: Resume configuration with publications.
+        config: Resume configuration (unused, data loaded via data_loader).
 
     Returns:
         PublicationsPreview with publications data.
     """
-    pubs = config.publications
+    # Load publications via data_loader (Story 9.2)
+    pubs = load_publications(Path.cwd())
     display_pubs = [p for p in pubs if p.display]
 
     pub_summaries = [
@@ -732,7 +750,7 @@ def _get_curation_preview(
     and board roles based on JD relevance with scores.
 
     Args:
-        config: Resume configuration with content to curate.
+        config: Resume configuration with curation settings.
         jd: Parsed job description.
 
     Returns:
@@ -740,8 +758,13 @@ def _get_curation_preview(
     """
     from resume_as_code.services.embedder import EmbeddingService
 
+    # Load data via data_loader (Story 9.2)
+    career_highlights = load_highlights(Path.cwd())
+    certifications = load_certifications(Path.cwd())
+    board_roles = load_board_roles(Path.cwd())
+
     # Check if there's any content to curate
-    has_content = config.career_highlights or config.certifications or config.board_roles
+    has_content = career_highlights or certifications or board_roles
     if not has_content:
         return None
 
@@ -758,25 +781,25 @@ def _get_curation_preview(
 
     # Curate highlights
     highlights_result = None
-    if config.career_highlights:
+    if career_highlights:
         highlights_result = curator.curate_highlights(
-            config.career_highlights,
+            career_highlights,
             jd,
         )
 
     # Curate certifications
     certs_result = None
-    if config.certifications:
+    if certifications:
         certs_result = curator.curate_certifications(
-            config.certifications,
+            certifications,
             jd,
         )
 
     # Curate board roles
     board_roles_result = None
-    if config.board_roles:
+    if board_roles:
         board_roles_result = curator.curate_board_roles(
-            config.board_roles,
+            board_roles,
             jd,
             is_executive_role=is_executive,
         )

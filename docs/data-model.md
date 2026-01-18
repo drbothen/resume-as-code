@@ -10,10 +10,14 @@ This document describes the entities that power Resume as Code. Each entity is s
 |--------|---------|---------|
 | [Work Unit](#work-unit) | `work-units/*.yaml` | Individual accomplishments |
 | [Position](#position) | `positions.yaml` | Employment history |
-| [Certification](#certification) | `.resume.yaml` | Professional credentials |
-| [Education](#education) | `.resume.yaml` | Academic credentials |
-| [Publication](#publication) | `.resume.yaml` | Articles and speaking |
-| [Board Role](#board-role) | `.resume.yaml` | Advisory positions |
+| [Profile](#profile) | `profile.yaml` | Contact and header info |
+| [Certification](#certification) | `certifications.yaml` | Professional credentials |
+| [Education](#education) | `education.yaml` | Academic credentials |
+| [Publication](#publication) | `publications.yaml` | Articles and speaking |
+| [Board Role](#board-role) | `board-roles.yaml` | Advisory positions |
+| [Career Highlight](#career-highlight) | `highlights.yaml` | Executive summary bullets |
+
+> **Note**: As of schema v3.0.0, resume data is stored in separate YAML files rather than embedded in `.resume.yaml`. Run `resume migrate` to upgrade existing projects.
 
 ![Data Model Diagram](./diagrams/data-model.svg)
 
@@ -176,19 +180,50 @@ Auto-generated as `pos-{employer-slug}-{title-slug}`:
 
 ---
 
-## Certification
+## Profile
 
-**Certifications** store professional credentials with expiration tracking.
+**Profile** stores your contact information and professional header.
 
-### Storage
+### File Location
 
-Stored in `.resume.yaml` under the `certifications` key.
+```
+profile.yaml
+```
 
 ### Schema
 
 ```yaml
-certifications:
-  - name: "CISSP"
+name: "Joshua Magady"
+email: "joshua@example.com"
+phone: "+1-555-123-4567"
+location: "Austin, TX"
+linkedin: https://linkedin.com/in/jmagady
+github: https://github.com/jmagady
+website: https://jmagady.dev
+title: "Chief Technology Officer"
+summary: "Technology executive with 15+ years..."
+```
+
+### Required Fields
+
+Only `name` is required. All other fields are optional.
+
+---
+
+## Certification
+
+**Certifications** store professional credentials with expiration tracking.
+
+### File Location
+
+```
+certifications.yaml
+```
+
+### Schema
+
+```yaml
+- name: "CISSP"
     issuer: "ISC2"
     date: "2023-06"           # YYYY-MM
     expires: "2026-06"        # YYYY-MM, optional
@@ -220,15 +255,16 @@ AWS Solutions Architect (Amazon, 2024)
 
 **Education** stores academic credentials.
 
-### Storage
+### File Location
 
-Stored in `.resume.yaml` under the `education` key.
+```
+education.yaml
+```
 
 ### Schema
 
 ```yaml
-education:
-  - degree: "BS Computer Science"
+- degree: "BS Computer Science"
     institution: "UT Austin"
     year: "2012"              # YYYY format
     honors: "Magna Cum Laude" # Optional
@@ -249,15 +285,16 @@ MBA, Harvard Business School, 2018
 
 **Publications** store articles, conference talks, and other thought leadership.
 
-### Storage
+### File Location
 
-Stored in `.resume.yaml` under the `publications` key.
+```
+publications.yaml
+```
 
 ### Schema
 
 ```yaml
-publications:
-  - title: "Building Resilient CI/CD Pipelines"
+- title: "Building Resilient CI/CD Pipelines"
     type: conference         # conference|article|whitepaper|book|podcast|webinar
     venue: "DevOpsDays Austin"
     date: "2024-03"          # YYYY-MM
@@ -282,15 +319,16 @@ publications:
 
 **Board Roles** store board and advisory positions for executive resumes.
 
-### Storage
+### File Location
 
-Stored in `.resume.yaml` under the `board_roles` key.
+```
+board-roles.yaml
+```
 
 ### Schema
 
 ```yaml
-board_roles:
-  - organization: "TechStars Austin"
+- organization: "TechStars Austin"
     role: "Technical Advisor"
     type: advisory           # director|advisory|committee
     start_date: "2023-01"    # YYYY-MM
@@ -309,24 +347,35 @@ board_roles:
 
 ---
 
+## Career Highlight
+
+**Career Highlights** store top-line achievements for executive summary sections.
+
+### File Location
+
+```
+highlights.yaml
+```
+
+### Schema
+
+```yaml
+- text: "Led $500M digital transformation across 3 business units"
+- text: "Built and scaled engineering org from 15 to 150 engineers"
+- text: "Achieved 99.99% platform availability for Fortune 100 clients"
+```
+
+---
+
 ## Configuration (.resume.yaml)
 
-The `.resume.yaml` file is the central configuration for Resume as Code.
+The `.resume.yaml` file contains project settings and preferences. As of v3.0.0, resume data (profile, certifications, etc.) is stored in separate files.
 
 ### Full Schema
 
 ```yaml
-# Profile information (resume header)
-profile:
-  name: "Joshua Magady"
-  email: "joshua@example.com"
-  phone: "+1-555-123-4567"
-  location: "Austin, TX"
-  linkedin: https://linkedin.com/in/jmagady
-  github: https://github.com/jmagady
-  website: https://jmagady.dev
-  title: "Chief Technology Officer"
-  summary: "Technology executive with 15+ years..."
+# Schema version (required for v3+)
+schema_version: "3.0.0"
 
 # Output settings
 output_dir: ./dist
@@ -362,52 +411,79 @@ skills:
     - "Kubernetes"
     - "AWS"
 
-# Career highlights (CTO hybrid format)
-career_highlights:
-  - "Led $500M digital transformation across 3 business units"
-  - "Built and scaled engineering org from 15 to 150 engineers"
-  - "Achieved 99.99% platform availability for Fortune 100 clients"
+# Publication curation
+curation:
+  publications_max: 3        # Max publications to include
+  min_relevance_score: 0.1   # Minimum score threshold
 
-# Professional credentials
-certifications:
-  - name: "CISSP"
-    issuer: "ISC2"
-    date: "2023-06"
-    expires: "2026-06"
+# Employment continuity mode
+employment_continuity: minimum_bullet  # minimum_bullet|allow_gaps
 
-# Academic credentials
-education:
-  - degree: "BS Computer Science"
-    institution: "UT Austin"
-    year: "2012"
+# Template options
+template_options:
+  group_employer_positions: true  # Group multiple positions at same employer
 
-# Publications & Speaking
-publications:
-  - title: "Building Resilient Systems"
-    type: conference
-    venue: "KubeCon"
-    date: "2024-10"
-
-# Board & Advisory
-board_roles:
-  - organization: "TechStars"
-    role: "Technical Advisor"
-    type: advisory
-    start_date: "2023-01"
+# Tailored resume notice
+tailored_notice: false
+tailored_notice_text: null   # Custom notice text
 ```
+
+### Data Files (v3.0.0+)
+
+Resume data is stored in these separate files:
+
+| File | Content |
+|------|---------|
+| `profile.yaml` | Contact info, title, summary |
+| `certifications.yaml` | Professional credentials |
+| `education.yaml` | Academic credentials |
+| `publications.yaml` | Articles and speaking |
+| `board-roles.yaml` | Advisory positions |
+| `highlights.yaml` | Career summary bullets |
+
+### Migration from v2
+
+Projects with embedded data in `.resume.yaml` should migrate:
+
+```bash
+# Check migration status
+resume migrate --status
+
+# Preview changes (dry run)
+resume migrate --dry-run
+
+# Apply migration
+resume migrate
+```
+
+The migration:
+1. Creates backup of existing files
+2. Extracts embedded data to separate files
+3. Updates schema_version to 3.0.0
+4. Removes data from .resume.yaml (keeps config only)
+
+### Backward Compatibility
+
+The data loader supports cascading lookup:
+1. Check dedicated file (e.g., `profile.yaml`)
+2. Fall back to embedded in `.resume.yaml` (v2 style)
+
+This allows gradual migration.
 
 ---
 
 ## Entity Relationships
 
 ```
-.resume.yaml
-├── profile (1)
-├── certifications (*)
-├── education (*)
-├── publications (*)
-├── board_roles (*)
-└── skills config
+.resume.yaml (config only)
+└── schema_version, output settings, scoring weights
+
+profile.yaml ─────────────── Resume header/contact
+certifications.yaml ─────── Professional credentials
+education.yaml ─────────────── Academic credentials
+publications.yaml ─────────── Articles and speaking
+board-roles.yaml ───────────── Advisory positions
+highlights.yaml ────────────── Career summary bullets
 
 positions.yaml
 └── positions (*) ←─── references ───┐
@@ -422,7 +498,7 @@ work-units/*.yaml                    │
 
 1. **Work Unit → Position**: Work Units reference positions via `position_id` for grouping
 2. **Position → Position**: Positions can reference `promoted_from` for career progression
-3. **Config → All**: `.resume.yaml` stores certifications, education, publications, board roles
+3. **Data Files**: Each data type has its own file, loaded by the data_loader module
 
 ---
 

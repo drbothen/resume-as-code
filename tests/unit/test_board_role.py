@@ -254,10 +254,13 @@ class TestBoardRoleConfigLoading:
         assert config.board_roles[1].is_current is False
 
     def test_load_empty_board_roles(self) -> None:
-        """Should default to empty list when no board_roles in config."""
+        """Should default to None when no board_roles in config (Story 9.2).
+
+        Note: Access board roles via data_loader for actual usage.
+        """
         config = ResumeConfig.model_validate({})
 
-        assert config.board_roles == []
+        assert config.board_roles is None
 
     def test_load_director_type_board_role(self) -> None:
         """Should load director type board roles."""

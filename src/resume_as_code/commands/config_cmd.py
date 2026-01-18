@@ -10,6 +10,7 @@ from rich.table import Table
 from ruamel.yaml import YAML
 
 from resume_as_code.config import get_config, get_config_sources, reset_config
+from resume_as_code.data_loader import load_certifications
 from resume_as_code.models.output import JSONResponse
 from resume_as_code.utils.console import console
 
@@ -236,9 +237,10 @@ def _show_certifications_table(ctx: click.Context, config: ResumeConfig) -> None
 
     Args:
         ctx: Click context with output options.
-        config: ResumeConfig containing certifications.
+        config: ResumeConfig (unused, data loaded via data_loader).
     """
-    certifications = config.certifications
+    # Load certifications via data_loader (Story 9.2)
+    certifications = load_certifications(Path.cwd())
 
     if ctx.obj.json_output:
         response = JSONResponse(

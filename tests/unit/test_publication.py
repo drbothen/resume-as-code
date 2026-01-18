@@ -227,11 +227,14 @@ class TestResumeConfigPublications:
     """Tests for publications in ResumeConfig."""
 
     def test_publications_default_empty(self) -> None:
-        """ResumeConfig should default to empty publications list."""
+        """ResumeConfig should default to None for publications (Story 9.2).
+
+        Note: Access publications via data_loader for actual usage.
+        """
         from resume_as_code.models.config import ResumeConfig
 
         config = ResumeConfig()
-        assert config.publications == []
+        assert config.publications is None
 
     def test_publications_list(self) -> None:
         """ResumeConfig should accept publications list."""
@@ -467,7 +470,9 @@ publications:
         monkeypatch.chdir(tmp_path)
         with patch.dict("os.environ", {}, clear=True):
             config = get_config()
-            assert config.publications == []
+            # Story 9.2: config.publications is None when not in config
+            # Use data_loader for actual access
+            assert config.publications is None
 
     def test_publications_with_display_false(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

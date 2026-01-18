@@ -181,11 +181,14 @@ class TestResumeConfigCertifications:
     """Tests for certifications in ResumeConfig."""
 
     def test_certifications_default_empty(self) -> None:
-        """ResumeConfig should default to empty certifications list."""
+        """ResumeConfig should default to None for certifications (Story 9.2).
+
+        Note: Access certifications via data_loader for actual usage.
+        """
         from resume_as_code.models.config import ResumeConfig
 
         config = ResumeConfig()
-        assert config.certifications == []
+        assert config.certifications is None
 
     def test_certifications_list(self) -> None:
         """ResumeConfig should accept certifications list."""
@@ -262,7 +265,9 @@ certifications:
         monkeypatch.chdir(tmp_path)
         with patch.dict("os.environ", {}, clear=True):
             config = get_config()
-            assert config.certifications == []
+            # Story 9.2: config.certifications is None when not in config
+            # Use data_loader for actual access
+            assert config.certifications is None
 
     def test_certifications_with_display_false(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

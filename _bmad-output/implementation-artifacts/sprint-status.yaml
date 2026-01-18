@@ -178,8 +178,8 @@ development_status:
   # User Outcome: Safe upgrades without data loss or manual file editing when schemas evolve
   # Total Points: 13 (2 stories)
   epic-9: in-progress
-  9-1-schema-evolution-migration-system: in-progress  # P2, 8 pts - Auto-detect and migrate outdated schemas
-  9-2-separate-config-from-data: backlog  # P1, 5 pts - Extract resume data from .resume.yaml to separate files
+  9-1-schema-evolution-migration-system: done  # P2, 8 pts - Auto-detect and migrate outdated schemas
+  9-2-separate-config-from-data: review  # P1, 5 pts - Extract resume data from .resume.yaml to separate files
 
 # RESEARCH / TECH DEBT BACKLOG:
 # =============================

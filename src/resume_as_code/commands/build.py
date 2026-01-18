@@ -10,6 +10,14 @@ from typing import TYPE_CHECKING, Any
 import click
 
 from resume_as_code.config import get_config
+from resume_as_code.data_loader import (
+    load_board_roles,
+    load_certifications,
+    load_education,
+    load_highlights,
+    load_profile,
+    load_publications,
+)
 from resume_as_code.models.config import DEFAULT_TAILORED_NOTICE
 from resume_as_code.models.plan import SavedPlan
 from resume_as_code.models.resume import ContactInfo, ResumeData
@@ -162,8 +170,17 @@ def build_command(
         )
 
     # Build ResumeData with skill curation (Story 6.3) and position grouping (Story 6.7)
-    contact = _load_contact_info(config)
+    contact = _load_contact_info()
     positions_path = config.positions_path
+
+    # Load data via data_loader (Story 9.2)
+    project_path = Path.cwd()
+    profile = load_profile(project_path)
+    publications = load_publications(project_path)
+    education = load_education(project_path)
+    certifications = load_certifications(project_path)
+    career_highlights = load_highlights(project_path)
+    board_roles = load_board_roles(project_path)
 
     # Get full JD for action-level scoring (Story 7.18)
     jd_for_scoring = _get_jd_for_scoring(plan_path, jd_path)
@@ -171,7 +188,7 @@ def build_command(
     resume = ResumeData.from_work_units(
         work_units=work_units,
         contact=contact,
-        summary=config.profile.summary,  # Load from profile config
+        summary=profile.summary,  # Load from profile via data_loader (Story 9.2)
         skills_config=config.skills,  # Pass skills curation config
         jd_keywords=jd_keywords if jd_keywords else None,  # Pass JD keywords for prioritization
         positions_path=positions_path if positions_path.exists() else None,  # Position grouping
@@ -191,8 +208,8 @@ def build_command(
         actual_tailored_notice_text = config.tailored_notice_text or DEFAULT_TAILORED_NOTICE
 
     # Curate publications for JD relevance (Story 8.2)
-    curated_publications = list(config.publications)  # Default: all publications
-    if jd_for_scoring and config.publications:
+    curated_publications = list(publications)  # Default: all publications
+    if jd_for_scoring and publications:
         from resume_as_code.services.content_curator import ContentCurator
         from resume_as_code.services.embedder import EmbeddingService
         from resume_as_code.services.skill_registry import SkillRegistry
@@ -202,7 +219,7 @@ def build_command(
         registry = SkillRegistry.load_default()
 
         pub_curation = curator.curate_publications(
-            publications=list(config.publications),
+            publications=list(publications),
             jd=jd_for_scoring,
             registry=registry,
         )
@@ -215,16 +232,16 @@ def build_command(
 
     # Add config data to ResumeData (Story 6.2, 6.6, 6.13, 6.14, 6.15, 7.19, 8.2)
     # Set publications_curated=True when JD was used for curation (Story 8.2 Task 6)
-    publications_were_curated = bool(jd_for_scoring and config.publications)
+    publications_were_curated = bool(jd_for_scoring and publications)
     resume = ResumeData(
         contact=resume.contact,
         summary=resume.summary,
         sections=resume.sections,
         skills=resume.skills,
-        education=list(config.education),
-        certifications=list(config.certifications),
-        career_highlights=list(config.career_highlights),
-        board_roles=list(config.board_roles),
+        education=list(education),
+        certifications=list(certifications),
+        career_highlights=list(career_highlights),
+        board_roles=list(board_roles),
         publications=curated_publications,
         publications_curated=publications_were_curated,
         tailored_notice_text=actual_tailored_notice_text,
@@ -454,16 +471,14 @@ def _load_work_units_from_plan(plan: SavedPlan, config: ResumeConfig) -> list[di
     return work_units
 
 
-def _load_contact_info(config: ResumeConfig) -> ContactInfo:
-    """Load contact info from config profile.
-
-    Args:
-        config: Application configuration.
+def _load_contact_info() -> ContactInfo:
+    """Load contact info from profile via data_loader.
 
     Returns:
         ContactInfo populated from profile, with warnings for missing data.
     """
-    profile = config.profile
+    # Load profile via data_loader (Story 9.2)
+    profile = load_profile(Path.cwd())
 
     # Warn if name not configured (AC: #3)
     if not profile.name:

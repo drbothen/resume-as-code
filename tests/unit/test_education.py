@@ -142,11 +142,14 @@ class TestResumeConfigEducation:
     """Tests for education in ResumeConfig."""
 
     def test_education_default_empty(self) -> None:
-        """ResumeConfig should default to empty education list."""
+        """ResumeConfig should default to None for education (Story 9.2).
+
+        Note: Access education via data_loader for actual usage.
+        """
         from resume_as_code.models.config import ResumeConfig
 
         config = ResumeConfig()
-        assert config.education == []
+        assert config.education is None
 
     def test_education_list(self) -> None:
         """ResumeConfig should accept education list."""
@@ -223,7 +226,9 @@ education:
         monkeypatch.chdir(tmp_path)
         with patch.dict("os.environ", {}, clear=True):
             config = get_config()
-            assert config.education == []
+            # Story 9.2: config.education is None when not in config
+            # Use data_loader for actual access
+            assert config.education is None
 
     def test_education_with_display_false(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -1108,7 +1108,9 @@ class TestBuildCommandCertifications:
         runner: CliRunner,
         tmp_path: Path,
     ) -> None:
-        """Certifications from config should be passed to ResumeData."""
+        """Certifications from data_loader should be passed to ResumeData (Story 9.2)."""
+        from resume_as_code.models.config import ProfileConfig
+
         plan_file = tmp_path / "plan.yaml"
         plan_file.write_text("""
 version: "1.0.0"
@@ -1129,10 +1131,24 @@ created_at: "2024-01-01T00:00:00"
             nonlocal captured_resume_data
             captured_resume_data = kwargs.get("resume")
 
+        # Define test data
+        test_certifications = [
+            Certification(name="AWS SAP", issuer="Amazon Web Services"),
+            Certification(name="CISSP", issuer="ISC2", date="2023-01"),
+        ]
+        test_profile = ProfileConfig(name="Test User")
+
         with (
             patch("resume_as_code.commands.build.get_config") as mock_config,
             patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
             patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            # Story 9.2: Mock data_loader functions
+            patch("resume_as_code.commands.build.load_profile") as mock_load_profile,
+            patch("resume_as_code.commands.build.load_certifications") as mock_load_certs,
+            patch("resume_as_code.commands.build.load_education") as mock_load_edu,
+            patch("resume_as_code.commands.build.load_highlights") as mock_load_highlights,
+            patch("resume_as_code.commands.build.load_publications") as mock_load_pubs,
+            patch("resume_as_code.commands.build.load_board_roles") as mock_load_roles,
         ):
             config = MagicMock()
             config.work_units_dir = work_units_dir
@@ -1142,26 +1158,17 @@ created_at: "2024-01-01T00:00:00"
             config.tailored_notice = False
             config.tailored_notice_text = None
             config.employment_continuity = "minimum_bullet"
-            # Profile with defaults
-            config.profile.name = "Test User"
-            config.profile.title = None
-            config.profile.email = None
-            config.profile.phone = None
-            config.profile.location = None
-            config.profile.linkedin = None
-            config.profile.github = None
-            config.profile.website = None
-            config.profile.summary = None
-            # Certifications from config
-            config.certifications = [
-                Certification(name="AWS SAP", issuer="Amazon Web Services"),
-                Certification(name="CISSP", issuer="ISC2", date="2023-01"),
-            ]
-            # Career highlights (required for config mock)
-            config.career_highlights = []
             mock_config.return_value = config
             mock_load_wus.return_value = []
             mock_gen.side_effect = capture_generate_outputs
+
+            # Mock data_loader functions (Story 9.2)
+            mock_load_profile.return_value = test_profile
+            mock_load_certs.return_value = test_certifications
+            mock_load_edu.return_value = []
+            mock_load_highlights.return_value = []
+            mock_load_pubs.return_value = []
+            mock_load_roles.return_value = []
 
             result = runner.invoke(
                 main,
@@ -1180,7 +1187,9 @@ created_at: "2024-01-01T00:00:00"
         runner: CliRunner,
         tmp_path: Path,
     ) -> None:
-        """Empty certifications list should not cause errors."""
+        """Empty certifications list should not cause errors (Story 9.2)."""
+        from resume_as_code.models.config import ProfileConfig
+
         plan_file = tmp_path / "plan.yaml"
         plan_file.write_text("""
 version: "1.0.0"
@@ -1201,10 +1210,20 @@ created_at: "2024-01-01T00:00:00"
             nonlocal captured_resume_data
             captured_resume_data = kwargs.get("resume")
 
+        # Define test data
+        test_profile = ProfileConfig(name="Test User")
+
         with (
             patch("resume_as_code.commands.build.get_config") as mock_config,
             patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
             patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            # Story 9.2: Mock data_loader functions
+            patch("resume_as_code.commands.build.load_profile") as mock_load_profile,
+            patch("resume_as_code.commands.build.load_certifications") as mock_load_certs,
+            patch("resume_as_code.commands.build.load_education") as mock_load_edu,
+            patch("resume_as_code.commands.build.load_highlights") as mock_load_highlights,
+            patch("resume_as_code.commands.build.load_publications") as mock_load_pubs,
+            patch("resume_as_code.commands.build.load_board_roles") as mock_load_roles,
         ):
             config = MagicMock()
             config.work_units_dir = work_units_dir
@@ -1214,21 +1233,17 @@ created_at: "2024-01-01T00:00:00"
             config.tailored_notice = False
             config.tailored_notice_text = None
             config.employment_continuity = "minimum_bullet"
-            # Profile with defaults
-            config.profile.name = "Test User"
-            config.profile.title = None
-            config.profile.email = None
-            config.profile.phone = None
-            config.profile.location = None
-            config.profile.linkedin = None
-            config.profile.github = None
-            config.profile.website = None
-            config.profile.summary = None
-            # Empty certifications
-            config.certifications = []
             mock_config.return_value = config
             mock_load_wus.return_value = []
             mock_gen.side_effect = capture_generate_outputs
+
+            # Mock data_loader functions with empty certifications (Story 9.2)
+            mock_load_profile.return_value = test_profile
+            mock_load_certs.return_value = []
+            mock_load_edu.return_value = []
+            mock_load_highlights.return_value = []
+            mock_load_pubs.return_value = []
+            mock_load_roles.return_value = []
 
             result = runner.invoke(
                 main,
@@ -1250,7 +1265,9 @@ class TestBuildCommandCareerHighlights:
         runner: CliRunner,
         tmp_path: Path,
     ) -> None:
-        """Career highlights from config should be passed to ResumeData."""
+        """Career highlights from data_loader should be passed to ResumeData (Story 9.2)."""
+        from resume_as_code.models.config import ProfileConfig
+
         plan_file = tmp_path / "plan.yaml"
         plan_file.write_text("""
 version: "1.0.0"
@@ -1274,40 +1291,44 @@ created_at: "2024-01-01T00:00:00"
 
             return PDFRenderResult(output_path=output_path, page_count=1)
 
+        # Define test data
+        test_profile = ProfileConfig(name="Test User")
+        test_highlights = [
+            "$50M revenue growth through digital transformation",
+            "Built engineering org from 12 to 150+ engineers",
+        ]
+
         with (
             patch("resume_as_code.commands.build.get_config") as mock_config,
             patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
             patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
             patch("resume_as_code.providers.docx.DOCXProvider") as mock_docx,
+            # Story 9.2: Mock data_loader functions
+            patch("resume_as_code.commands.build.load_profile") as mock_load_profile,
+            patch("resume_as_code.commands.build.load_certifications") as mock_load_certs,
+            patch("resume_as_code.commands.build.load_education") as mock_load_edu,
+            patch("resume_as_code.commands.build.load_highlights") as mock_load_highlights,
+            patch("resume_as_code.commands.build.load_publications") as mock_load_pubs,
+            patch("resume_as_code.commands.build.load_board_roles") as mock_load_roles,
         ):
             config = MagicMock()
             config.work_units_dir = work_units_dir
             config.output_dir = Path("dist")
             config.default_template = "modern"
             config.default_format = "both"
-            # Profile with defaults
-            config.profile.name = "Test User"
-            config.profile.title = None
-            config.profile.email = None
-            config.profile.phone = None
-            config.profile.location = None
-            config.profile.linkedin = None
-            config.profile.github = None
-            config.profile.website = None
-            config.profile.summary = None
-            # Certifications (required for config mock)
-            config.certifications = []
-            # Career highlights from config
-            config.career_highlights = [
-                "$50M revenue growth through digital transformation",
-                "Built engineering org from 12 to 150+ engineers",
-            ]
-            # Tailored notice settings
             config.tailored_notice = False
             config.tailored_notice_text = None
             config.employment_continuity = "minimum_bullet"
             mock_config.return_value = config
             mock_load_wus.return_value = []
+
+            # Mock data_loader functions (Story 9.2)
+            mock_load_profile.return_value = test_profile
+            mock_load_certs.return_value = []
+            mock_load_edu.return_value = []
+            mock_load_highlights.return_value = test_highlights
+            mock_load_pubs.return_value = []
+            mock_load_roles.return_value = []
 
             mock_pdf_instance = MagicMock()
             mock_pdf_instance.render.side_effect = capture_render
@@ -1338,7 +1359,9 @@ created_at: "2024-01-01T00:00:00"
         runner: CliRunner,
         tmp_path: Path,
     ) -> None:
-        """Empty career highlights list should not cause errors."""
+        """Empty career highlights list should not cause errors (Story 9.2)."""
+        from resume_as_code.models.config import ProfileConfig
+
         plan_file = tmp_path / "plan.yaml"
         plan_file.write_text("""
 version: "1.0.0"
@@ -1359,37 +1382,40 @@ created_at: "2024-01-01T00:00:00"
             nonlocal captured_resume_data
             captured_resume_data = kwargs.get("resume")
 
+        # Define test data
+        test_profile = ProfileConfig(name="Test User")
+
         with (
             patch("resume_as_code.commands.build.get_config") as mock_config,
             patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
             patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            # Story 9.2: Mock data_loader functions
+            patch("resume_as_code.commands.build.load_profile") as mock_load_profile,
+            patch("resume_as_code.commands.build.load_certifications") as mock_load_certs,
+            patch("resume_as_code.commands.build.load_education") as mock_load_edu,
+            patch("resume_as_code.commands.build.load_highlights") as mock_load_highlights,
+            patch("resume_as_code.commands.build.load_publications") as mock_load_pubs,
+            patch("resume_as_code.commands.build.load_board_roles") as mock_load_roles,
         ):
             config = MagicMock()
             config.work_units_dir = work_units_dir
             config.output_dir = Path("dist")
             config.default_template = "modern"
             config.default_format = "both"
-            # Profile with defaults
-            config.profile.name = "Test User"
-            config.profile.title = None
-            config.profile.email = None
-            config.profile.phone = None
-            config.profile.location = None
-            config.profile.linkedin = None
-            config.profile.github = None
-            config.profile.website = None
-            config.profile.summary = None
-            # Empty certifications
-            config.certifications = []
-            # Empty career highlights
-            config.career_highlights = []
-            # Tailored notice settings
             config.tailored_notice = False
             config.tailored_notice_text = None
             config.employment_continuity = "minimum_bullet"
             mock_config.return_value = config
             mock_load_wus.return_value = []
             mock_gen.side_effect = capture_generate_outputs
+
+            # Mock data_loader functions with empty highlights (Story 9.2)
+            mock_load_profile.return_value = test_profile
+            mock_load_certs.return_value = []
+            mock_load_edu.return_value = []
+            mock_load_highlights.return_value = []
+            mock_load_pubs.return_value = []
+            mock_load_roles.return_value = []
 
             result = runner.invoke(
                 main,
