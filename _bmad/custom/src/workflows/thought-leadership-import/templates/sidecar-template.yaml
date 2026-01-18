@@ -1,0 +1,67 @@
+# Thought Leadership Import Progress Tracking
+# This file tracks import progress for workflow continuation
+
+workflow: thought-leadership-import
+started: null
+last_updated: null
+current_step: 1
+steps_completed: []
+completed: false
+completed_date: null
+
+# Source information
+sources:
+  # - path: /path/to/source
+  #   type: directory|file|git
+  #   files_found: 0
+
+# Discovered items from source scan
+discovered:
+  publications:
+    # - title: "Article Title"
+    #   type: article|whitepaper|book
+    #   date: "YYYY-MM-DD"
+    #   venue: "Publication Venue"
+    #   url: "https://..."
+    #   source_file: "/path/to/file.md"
+    #   status: pending|created|skipped
+
+  speaking:
+    # - title: "Talk Title"
+    #   type: conference|webinar|podcast
+    #   date: "YYYY-MM-DD"
+    #   venue: "Event Name"
+    #   url: "https://..."
+    #   source_file: "/path/to/file"
+    #   status: pending|created|skipped
+
+  board_roles:
+    # - organization: "Org Name"
+    #   role: "Role Title"
+    #   type: director|advisory|committee
+    #   start_date: "YYYY-MM"
+    #   end_date: "YYYY-MM"  # null if current
+    #   focus: "Focus Area"
+    #   status: pending|created|skipped
+
+# Created items (populated during import)
+created:
+  publications: []
+    # - title: "Article Title"
+    #   type: article
+    #   created_at: "timestamp"
+
+  speaking: []
+    # - title: "Talk Title"
+    #   type: conference
+    #   created_at: "timestamp"
+
+  board_roles: []
+    # - organization: "Org Name"
+    #   role: "Role Title"
+    #   created_at: "timestamp"
+
+# Processing state (for continuation)
+processing:
+  current_category: null  # publications|speaking|board_roles
+  current_index: 0

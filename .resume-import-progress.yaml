@@ -1,0 +1,482 @@
+# Resume Import Workflow - Progress Sidecar
+# This file tracks workflow progress for continuation support
+
+workflow: resume-import
+started: "2026-01-17"
+last_updated: "2026-01-17"
+current_step: 6
+steps_completed: [1, 2, 3, 4, 5, 6]
+completed: true
+completed_date: "2026-01-17"
+target_repo: "/Users/jmagady/Dev/jmagady-resume"
+
+# Input file information
+input:
+  file_path: "/Users/jmagady/Downloads/Joshua Magady Resume.doc.docx"
+  file_type: docx
+  parse_date: "2026-01-17"
+
+# Extracted data from resume
+extracted:
+  positions:
+    - employer: "Burns & McDonnell"
+      title: "Section Manager & Technical Project Lead Manager & Sr. Cybersecurity & Integrations Engineer"
+      start_date: "2017-08"
+      end_date: null
+      position_id: null
+      processed: true
+      bullets:
+        - "Received award for Excellent demonstration of BTS Transformative Traits."
+        - "Developed ACE (Automated Compliance Engine) That Automates RMF by taking a component first approach to RMF. ACE automates control selection and tailoring, SSP generation, building the Security Requirements Traceability Matrix, as well as the self-assessment plan. It also facilities design by producing tailored spec sheets to be included in the design documentation."
+        - "Developed Burns & McDonnell Cybersecurity consulting service verticals as well as the methodologies to deliver those services."
+        - "Created the teams SOP to standardize our processes/procedures and to ensure reproducibility of the work that the team performs."
+        - "Wrote proposals in response to RFP's."
+        - "Developed a cybersecurity reference architecture to standardized design solutions."
+        - "Cybersecurity Tool Development and Deployment (APPA) - Developed an easy to deploy pre-packaged cybersecurity solution based on a single, all in one, rancher based kubernetes system."
+        - "Built custom containers and configurations for ELK stack, openvas, walk-off, and landing portal."
+        - "Developed custom walk-off python based plugins and playbooks, automating vulnerability scanning and basic analysis."
+        - "Pantex RAMS2 Deployment - Developed the Systems Integration Plan."
+        - "Worked with the contractor to procure parts for RAMS2."
+        - "Integrated RAMS2 into PUCNet and OTN networks."
+        - "Performed Security Assessments throughout the project lifecycle."
+        - "Reviewed the final system design and made modifications to account for the security requirements and applicable regulations."
+        - "Performed system hardening and implemented security controls."
+        - "Camp H.M. Smith SPIDERS Microgrid - Reviewed the Microgrid design and made modifications to account for security best practices as well as the RMF controls and overlays."
+        - "Developed the Microgrids System Security Plan."
+        - "Built and Delivered the A&A package and obtained an ATO."
+        - "Naval Submarine Base New London Microgrid - Reviewed the Microgrid design and made modifications to account for security best practices as well as the RMF controls and overlays."
+        - "Develop Specs to secure distributed mesh wireless communication across the base installation where traditional cabling would be cost prohibitive."
+        - "Instrumental in obtaining the post construction award to provide cybersecurity services to include building the A&A package and obtaining an ATO."
+        - "Tooele Army Depot Microgrid - Reviewed the Microgrid design and made modifications to account for security best practices as well as the RMF controls and overlays."
+        - "Worked with the AO and the SCA to create the Tooele Microgrid A&A package as part of the ATO process."
+        - "Guided the Tooele ISSM to identify common control inheritance across all the energy projects at Tooele."
+        - "Develop an Automated hardening strategy to reduce the number of hours required to be onsite at Tooele reducing project costs by 20%."
+        - "Developed and deployed a continuous monitoring strategy using DSC."
+        - "Guided the SCA-V (IV&V Team) during the Assessment processes."
+        - "FICS (Naval Station Newport) - Reviewed the DDC Network retrofit design and made modifications to account for DoD cybersecurity requirements."
+        - "Ensure the DDC system met type accreditation requirements so that it could be attached to NAVFAC Platform Services Enclave."
+        - "Worked with the AO and the SCA to create the FICS A&A package as part of the Type ATO process."
+        - "Provide RMF training to EMC contractors that where performing the retrofit of the DDC network."
+        - "Develop a hardening strategy in conjunction with NAVFAC CIO to streamline the IV&V process."
+        - "Pantex RAMS2 Prototype - Develop the Security Requirements Traceability Matrix. This included DoE and DoD requirements and Cybersecurity best practices."
+        - "Reviewed the System design and made modifications to account for the security requirements and applicable regulations."
+        - "Performed system hardening and implemented security controls."
+        - "Programed PLC Ladder Logic."
+        - "Performed secure code reviews on the viewpoint software developed for RAMS2."
+        - "APPA Vulnerability Assessments - Correlated and anonymized the data so that it could be used in the final overarching report for APPA."
+        - "Developed recommendation based on assessment findings on how substations that do not fall under NER CIP could improve their security posture within budgetary constraints."
+        - "Develop the white paper that APPA distributed to its members for cybersecurity recommendations and guidance."
+        - "Conducted Network Vulnerability (NVA) Assessments on APPA members."
+
+    - employer: "Centurum"
+      title: "Marine Corps Validator"
+      start_date: "2015-01"
+      end_date: "2017-08"
+      position_id: null
+      processed: true
+      bullets:
+        - "Developed the Marine Corps Validator Handbook with C4CY that defines how all Marine Corps Validators are to conduct IV&V."
+        - "Developed parts of the Validator course required to become an appointed Validator."
+        - "Developed the Risk Assessment Template and methodology that the datacenter and C4CY have adopted to perform all risk assessments."
+        - "Designed, Deployed, and maintain the IV&V teams Code repository and chat services to improve communication and code manageability."
+        - "Developed tool called PSIASTAND that processes STIG/SRG/Controls xlsx Trackers and converts them back into .CKL files compatible with Stig Viewer as well as MCCAST v2."
+        - "PSIASTAND builds the Risk elements (POAM) by processing the Nessus files, CKL's, and controls."
+        - "PSIASTAND computes the Compliancy score for each STIG/SRG, Nessus, and the controls for use in the Risk Assessment Report."
+        - "PSIASTAND computes the overall risk of the Systems by assisting in assigning CVSS Scores, as well as performing Vulnerability lookup against a database for previous Base score assignments."
+        - "Developed a Network Device Audit Tool (NDAT) that pulls data from vSphere, DNS, AD, and NMAP to build out a complete inventory of every device that is currently on the network across each enclave."
+        - "Developed an AD Group Monitoring Tool (ADGMT) that monitors the MCEITS OU and generates a report when New Groups are added or Group Membership Changes."
+        - "Developed an AD Users Monitoring Tool (ADUMT) that monitors all the Users under the MCEITS OU (100K+), applying logic to determine if an account is a service account, Privileged user account or a standard account."
+        - "Developed a Local Users Monitoring Tool (LUMT) that pulls all the windows servers from AD and scans each server for local accounts, performing a series of checks to determine if the accounts follow DOD regulations."
+        - "Performed as the Lead Marine Corps Validator, performing penetration testing, assessing STIGS/SRGs and Controls (DIACAP, RMF), assessing the risk level of an application (MCCAST Package), and submitting ATO recommendations to the DAA."
+        - "Developed a suite of automation tools to streamline the validation process, reduce the time required to perform IV&V's, as well as increase accuracy while performing STIG/SRG check on a system."
+        - "Performed as the SME for all technologies and assisted the team with increasing their proficiencies with the technologies deployed in the datacenter."
+        - "Responsible for performing validations of new MCEITS technologies as they are acquired through acquisition and deployed in the environment utilizing DIACAP/RMF."
+        - "Assisted the team as well as the System Administrators supporting the Datacenter and hosted applications with understanding the intent of the STIG/SRG and controls."
+
+    - employer: "CouponCloud"
+      title: "Freelance System/Automation/Cyber Architect"
+      start_date: "2014-08"
+      end_date: "2014-09"
+      position_id: null
+      processed: true
+      bullets:
+        - "Developed, tested, and proposed a three phase plan on transitioning CouponCloud to Amazon's Cloud solution following the Lean Startup methodology and facilitating the Build-Measure-Learn Feedback loop."
+        - "Developed a Docker container to house CouponClouds Application that would utilize Amazons Multi deployment Elastic Beanstalk instances combined with Elastic Volumes, S3 storage, cloudfront, multiple availability zones as well as a multi-region deployment for redundancy."
+        - "Developed and deployed a Dashboard that utilizes AWS API's to get status information in real time on CouponClouds deployed services as well as perform automated administrative tasks such as handling the automatic spin up of new machines during peak traffic times."
+        - "Developed a Developer Process flow utilizing vagrant to standardized and automate developer build systems, streamlining the Build phase of the lean startup feedback loop."
+        - "Developed a Custom Security solution using machine learning that automated Application Security testing, monitor network traffic at the packet layer for suspicious activity, as well as monitored application logs for suspicious activity such as XSS, SQLi, etc."
+        - "Performed penetration testing across the development lifecycle of CouponCloud application to include the web application, external defenses, and SQL database."
+
+    - employer: "SAIC (Science Applications International Corporation)"
+      title: "Sr. IA Analyst"
+      start_date: "2012-11"
+      end_date: "2015-01"
+      position_id: null
+      processed: true
+      bullets:
+        - "Developed the Penetration Testing methodology and SOP for the datacenter to augment vulnerability scanning with an active approach to reduce the risk level of the datacenter (MCEITS)."
+        - "Developed a tool that uses the ACAS API to automate scan retrieval and parses the vulnerabilities to determine responsibility Datacenter (MCEITS) vs Hosted Application as well as sort vulnerabilities by technical domain for technician assignment for remediation."
+        - "Developed a tool that utilizes a database backend to track POAM items as well as map Retina (upgraded to use ACAS after ACAS deployment) to STIG findings."
+        - "Developed SAICs Get Well Plan designed to significantly lower the risk level of the datacenter."
+        - "Developed and implemented SOP's for opening incident tickets and tracking POAM items for the datacenter."
+        - "Performed IA Validation and IV&V prep of New equipment/software as it was deployed in the datacenter. Insured the system was ready for inspection by the IV&V team."
+        - "Maintained the datacenter (MCEITS) documentation insure that it stayed current and met the requirements of the STIG/SRG and the controls."
+        - "Maintained the Data Centers (MCEITS) ATO POAM and the VMT POAM (IAVA POAM). Tracked the vulnerability to the technical domain that it belongs to and captured and verified mitigation strategies for each vulnerability on the POAM(s)."
+        - "Performed as the SME for the STIG/SRG, industry best practice, software/equipment deployed in the datacenter (MCEITS)."
+        - "Responsible for maintaining and tracking the security baseline for the Datacenter."
+        - "Responsible for maintaining the security posture across all 3 enclaves in the datacenter (MCEITS)."
+        - "Designed and developed the data centers IPAM solution, and developed the reconciliation program to track down all currently in use IP across all of our address ranges and compare it against our documentation as well as our DNS records to track down potentially rogue devices."
+        - "Assisted the AIP (Application Inclusion Process) team ensuring that the appropriate IA controls are met during the creation of the SLA as well as assigning responsibility for the IA controls (MCEITS vs Customer) as applications migrate into the datacenter."
+
+    - employer: "Booz Allen Hamilton"
+      title: "Team Lead"
+      start_date: "2010-11"
+      end_date: "2012-11"
+      position_id: null
+      processed: true
+      bullets:
+        - "Received a Performance and Team appreciation award for my Leadership and service dedication to the MCEITS program and associated surge support from day one."
+        - "Designed, developed, and deployed AVAE (Advance Vulnerability Assessment Engine) an automation tool that significantly decreased time spent on validating STIG/SRGs, increasing efficiency 85% and reduced overall project time by 30%."
+        - "Created a White paper detailing cost benefits and time savings associated with the creation of the AVAE Automation tool."
+        - "Performed as the SME for all technologies and assisted the team with increasing their proficiencies with the technologies deployed in the datacenter and in use by the applications hosted at the datacenter."
+        - "Responsible for performing validation of MCEITS Certification and Accreditation package utilizing DIACAP process and DISA STIGs to prepare the Marine Corp data center for ATO."
+        - "Responsible for performing validations of new MCEITS technologies as they are acquired through acquisition and deployed in the environment utilizing DIACAP."
+        - "Assisted the team as well the System Administrators supporting the Datacenter and hosted applications with understanding the intent of the STIG/SRG and controls."
+        - "Performed security document reviews and vulnerability analysis by through manual techniques and use of automated vulnerability assessment tools such as DISA Gold Disk, Unix and database SRRs, and Retina."
+        - "Performed Penetration Tests to identify weaknesses and vulnerabilities that would otherwise be undetected through automated tools."
+
+    - employer: "Technology Solutions"
+      title: "Senior Engineer"
+      start_date: "2009-04"
+      end_date: "2010-11"
+      position_id: null
+      processed: true
+      bullets:
+        - "Provided Cyber Security Services to clients to include penetration testing, vulnerability management, and training."
+        - "Provided IT Support and customer services to Clients."
+        - "Maintained network size of 1000+ Servers and 50,000+ workstations."
+        - "Wrote security policies and acceptable use policies for Technology Solutions and its clients."
+        - "Developed Storage/Retention policy."
+        - "Provided Network Design and Administration."
+        - "Oversaw all projects and insured projects completed on schedule."
+        - "Maintained client to employee relations."
+        - "Insured tier 1-3 Techs stayed on task and completed assignments on time."
+        - "Provided tier 1-3 techs with mentoring and technical training."
+        - "Provided Network Infrastructure support, Design and Planning."
+        - "Provided Penetration testing and reporting on issues found to security Clients."
+        - "Performed Social Engineering and informed clients on ways to prevent it."
+        - "Designed and implemented Virtual Infrastructure for Key Clients."
+        - "Provided Network continuity for remote offices using Site to Site VPN."
+        - "Monitored, maintained and supported network Infrastructure to include active directory and domain services."
+        - "Performed troubleshooting and documented solutions."
+        - "Provided a Disaster Recovery solution that fits the needs of the client."
+        - "Performed Server migrations and upgrades."
+        - "Designed and developed Technology Solutions Virtualization offerings."
+
+    - employer: "10-D Security"
+      title: "Senior Engineer"
+      start_date: "2007-04"
+      end_date: "2009-04"
+      position_id: null
+      processed: true
+      bullets:
+        - "Provided Cyber Security Services to clients to include penetration testing, vulnerability management, and training."
+        - "Provided IT Support and maintained employee relations for all Clients."
+        - "Wrote Security policies and acceptable use policies for 10-D and its clients."
+        - "Developed Storage/Retention policy."
+        - "Provided Network Design and Administration."
+        - "Oversaw all projects and ensuring projects completed on schedule."
+        - "Insuring tier 1-3 Techs stayed on task and completed assignments on time."
+        - "Provided tier 1-3 techs with mentoring and technical training."
+        - "Provided Network Infrastructure support, Design and Planning."
+        - "Provided Desktop Support and Risk management."
+        - "Provided Penetration testing and reporting on issues found to security Clients."
+        - "Performed Social Engineering and informed clients on ways to prevent it."
+        - "Designed and implemented Virtual Infrastructure for Key Clients."
+        - "Provided Network continuity for remote offices using Site to Site VPN."
+        - "Monitored, Maintained and supported network Infrastructure to include active directory and domain services."
+        - "Performed troubleshooting and documented solutions."
+        - "Provided a Disaster Recovery solution that fits the needs of the client."
+        - "Performed Server migrations and upgrades."
+        - "Developed, designed, and implement 10-D security's virtualization offerings."
+
+    - employer: "United States Army National Guard"
+      title: "94E/25B"
+      start_date: "2006-03"
+      end_date: "2014-03"
+      position_id: null
+      processed: true
+      bullets:
+        - "Maintained network continuity for the state of Missouri (Government sites)."
+        - "Provided hardware and software support."
+        - "Setup secure communication using triple VPN encryption in combination with a TACLANE."
+        - "Setup VOIP using Cisco Call Manager and Call Manager Express."
+        - "Provided technical training and mentoring to junior associates."
+        - "Maintained Web and Desktop proprietary software."
+        - "Maintained mission critical systems."
+        - "Provided Network mapping/sharing and security configuration using ACL's."
+        - "Conducting WLAN Surveys."
+        - "Performed active directory maintenance including adding new users and performed audits to insure compliance with governmental standards."
+        - "Created and maintained disaster recovery plans."
+        - "Monitored, maintained, and supported network infrastructure."
+
+    - employer: "REC IT Solutions"
+      title: "Owner/Systems Engineer"
+      start_date: "2005-11"
+      end_date: "2014-04"
+      position_id: pos-rec-it-solutions-ownersystems-enginee
+      processed: true
+      bullets:
+        - "Provided On/Off-site support for home Office, executives, and small to medium businesses."
+        - "Maintained WSUS and WDS on client sites."
+        - "Provided hardware and software support."
+        - "Developed terminal server solutions for clients."
+        - "Administrated Novell Netware 6.5."
+        - "Installed and maintained Barracuda SPAM filter and Barracuda Network Firewall."
+        - "Maintained Cisco PIX firewalls."
+        - "Maintained remote office VPN through the Cisco concentrator."
+        - "Provided support for Cisco VPN client and global VPN client."
+        - "Installed Exchange Server 2003 and configuring for best performance."
+        - "Provided data cabling services for clients."
+        - "Developed IT strategies for clients to meet and complement their business goals and strategies."
+        - "Developed, designed, and implemented REC IT Solutions public cloud services built on CloudStack using Citrix Xenserver with Freenas filers for secondary and primary storage."
+        - "Evaluated Openstack during the development cycle of our public cloud offerings and wrote a white paper contrasting the pros and cons between the two stacks."
+        - "Developed, designed, and implemented REC IT Solutions public lab offerings to include how to training videos to further clients understanding of current technologies."
+        - "Developed REC IT Solutions HA and failover solution using open source tools CARP and HAST combined with built in functionality of CloudStack."
+
+    - employer: "Computer NERDZ!"
+      title: "Tier 1 Technician"
+      start_date: "2004-11"
+      end_date: "2005-11"
+      position_id: pos-computer-nerdz-tier-1-technician
+      processed: true
+      bullets:
+        - "Maintained client/business relationships."
+        - "Maintained client hardware such as backups, desktop, laptops."
+        - "Performed technical support for hardware, software and documented solutions."
+        - "Designed and developed company solution database using mediawiki software."
+        - "Installed networking devices on client sites such as secure wireless, routers, cable modems."
+        - "Performed client training on security awareness."
+        - "Performed client training on user applications."
+
+    - employer: "Lee's Summit United Methodist Church"
+      title: "Voluntary IT Support"
+      start_date: "2000-01"
+      end_date: "2005-11"
+      position_id: pos-lees-summit-united-m-voluntary-it-support
+      processed: true
+      bullets:
+        - "Developed, designed, and implemented the Churches Network."
+        - "Deployed Two Server 2000 systems configured for Active Directory, file Sharing, and Exchange."
+        - "Upgraded and configured workstations for AD."
+        - "Maintained System Patch levels as well as monitoring system backups."
+        - "Provided onsite technical assistance to end users."
+        - "Facilitated the migration to Server 2003 and Windows XP."
+        - "Provided onsite training for using email, as well as office products."
+        - "Helped developed Acceptable Use policies for the Network."
+        - "Helped implement ZIONs website for youth ministries."
+
+  certifications:
+    - name: "OSCP"
+      full_name: "Offensive Security Certified Professional"
+      issuer: "Offensive Security"
+      date: null
+      expires: null
+      created: false
+    - name: "CISSP"
+      full_name: "Certified Information Systems Security Professional"
+      issuer: "(ISC)2"
+      date: null
+      expires: null
+      created: false
+    - name: "Security+ CE"
+      full_name: "CompTIA Security+ CE"
+      issuer: "CompTIA"
+      date: null
+      expires: null
+      created: false
+    - name: "eCPPT"
+      full_name: "Certified Professional Penetration Tester"
+      issuer: "eLearnSecurity"
+      date: null
+      expires: null
+      created: false
+    - name: "eJPT"
+      full_name: "Junior Penetration Tester"
+      issuer: "eLearnSecurity"
+      date: null
+      expires: null
+      created: false
+    - name: "GRID"
+      full_name: "GIAC Response and Industrial Defense"
+      issuer: "GIAC"
+      date: null
+      expires: null
+      created: false
+    - name: "GICSP"
+      full_name: "Global Industrial Cyber Security Professional"
+      issuer: "GIAC"
+      date: null
+      expires: null
+      created: false
+    - name: "GCIP"
+      full_name: "GIAC Critical Infrastructure Protection"
+      issuer: "GIAC"
+      date: null
+      expires: null
+      created: false
+    - name: "ITILv3 Foundation"
+      full_name: "Information Technology Infrastructure Library v3 Foundation"
+      issuer: "AXELOS"
+      date: null
+      expires: null
+      created: false
+    - name: "VCA-DCV"
+      full_name: "VMware Certified Associate - Data Center Virtualization"
+      issuer: "VMware"
+      date: null
+      expires: null
+      created: false
+    - name: "CCNA"
+      full_name: "Cisco Certified Network Associate"
+      issuer: "Cisco"
+      date: null
+      expires: null
+      status: "Inactive"
+      created: false
+
+  education:
+    - degree: "Associates in General Studies"
+      institution: "University of Phoenix"
+      year: null
+      honors: null
+      created: false
+
+# Created resources tracking
+created:
+  positions:
+    - pos-burns-mcdonnell-sr-cybersecurity-int
+    - pos-burns-mcdonnell-technical-project-le
+    - pos-burns-mcdonnell-section-manager
+    - pos-centurum-marine-corps-validat
+    - pos-couponcloud-freelance-systemauto
+    - pos-saic-science-applica-sr-ia-analyst
+    - pos-booz-allen-hamilton-team-lead
+    - pos-technology-solutions-senior-engineer
+    - pos-10-d-security-senior-engineer
+    - pos-united-states-army-n-94e25b
+    - pos-rec-it-solutions-ownersystems-enginee
+    - pos-computer-nerdz-tier-1-technician
+    - pos-lees-summit-united-m-voluntary-it-support
+  work_units:
+    # Burns & McDonnell - Sr. Cybersecurity Engineer (4)
+    - wu-2026-01-17-rams2-prototype-security-architecture
+    - wu-2026-01-17-appa-vulnerability-assessment-program
+    - wu-2026-01-17-appa-cybersecurity-toolkit
+    - wu-2026-01-17-custom-container-security-automation
+    # Burns & McDonnell - Technical Project Lead (6)
+    - wu-2026-01-17-ace-automated-compliance-engine
+    - wu-2026-01-17-new-london-microgrid-ato
+    - wu-2026-01-17-fics-type-accreditation
+    - wu-2026-01-17-rams2-production-deployment
+    - wu-2026-01-17-tooele-microgrid-security-automation
+    - wu-2026-01-17-camp-hm-smith-spiders-microgrid
+    # Burns & McDonnell - Section Manager (3)
+    - wu-2026-01-17-cybersecurity-service-verticals
+    - wu-2026-01-17-business-development-proposal-leadership
+    - wu-2026-01-17-appa-cybersecurity-white-paper
+    # Centurum - Marine Corps Validator (5)
+    - wu-2026-01-17-marine-corps-validator-standards-training-program
+    - wu-2026-01-17-psiastand-compliance-automation-tool
+    - wu-2026-01-17-enterprise-network-monitoring-suite
+    - wu-2026-01-17-iv-v-team-devops-infrastructure
+    - wu-2026-01-17-lead-marine-corps-validator-iv-v-excellence
+    # CouponCloud - Freelance Architect (2)
+    - wu-2026-01-17-aws-cloud-migration-architecture-operations
+    - wu-2026-01-17-security-first-devops-pipeline-with-ml-threat
+    # SAIC - Sr. IA Analyst (4)
+    - wu-2026-01-17-mceits-penetration-testing-program-methodology
+    - wu-2026-01-17-vulnerability-management-automation-suite
+    - wu-2026-01-17-saic-get-well-plan-enterprise-risk-reduction
+    - wu-2026-01-17-iv-v-preparation-system-validation-program
+    # Booz Allen Hamilton - Team Lead (3)
+    - wu-2026-01-17-avae-advanced-vulnerability-assessment-engine
+    - wu-2026-01-17-mceits-datacenter-ato-achievement-team-leadership
+    - wu-2026-01-17-security-assessment-critical-vulnerability
+    # Technology Solutions - Senior Engineer (4)
+    - wu-2026-01-17-cybersecurity-services-practice-development
+    - wu-2026-01-17-enterprise-infrastructure-management-at-scale
+    - wu-2026-01-17-virtualization-network-in-a-box-product
+    - wu-2026-01-17-technical-team-leadership-policy-development
+    # 10-D Security - Senior Engineer (3)
+    - wu-2026-01-17-penetration-testing-skills-development-security
+    - wu-2026-01-17-virtualization-proof-of-concept-mark-one-migration
+    - wu-2026-01-17-msp-infrastructure-operations-service-delivery
+    # US Army National Guard - 94E/25B (2)
+    - wu-2026-01-17-secure-military-communications-infrastructure
+    - wu-2026-01-17-state-wide-network-operations-diacap-compliance
+    # REC IT Solutions - Owner/Systems Engineer (3)
+    - wu-2026-01-17-public-cloud-platform-technical-product
+    - wu-2026-01-17-it-training-content-library-development
+    - wu-2026-01-17-it-consulting-business-ownership-operations
+    # Computer NERDZ! - Tier 1 Technician (2)
+    - wu-2026-01-17-technical-knowledge-base-development-operational
+    - wu-2026-01-17-client-security-awareness-training-initiative
+    # Lee's Summit UMC - Voluntary IT Support (2)
+    - wu-2026-01-17-enterprise-network-infrastructure-build-volunteer
+    - wu-2026-01-17-server-platform-migration-it-governance
+  certifications:
+    - OSCP
+    - CISSP
+    - Security+ CE
+    - eCPPT
+    - eJPT
+    - GRID
+    - GICSP
+    - GCIP
+    - ITILv3 Foundation
+    - VCA-DCV
+    - CCNA
+  education:
+    - Associates in General Studies (University of Phoenix)
+  highlights:
+    - "Led fastest IV&V team in Marine Corps history"
+    - "Developed ACE (Automated Compliance Engine)"
+    - "Achieved ATO for MCEITS datacenter"
+    - "Reduced vulnerabilities from 13K to <4K"
+    - "Built first enterprise network at age 14"
+
+# Current processing state (for step 4 iteration)
+processing:
+  current_position_index: 11
+  current_bullet_index: 0
+  position_work_units: []
+  positions_processed:
+    - "Burns & McDonnell (3 roles, 13 work units)"
+    - "Centurum (5 work units)"
+    - "CouponCloud (2 work units)"
+    - "SAIC (4 work units)"
+    - "Booz Allen Hamilton (3 work units)"
+    - "Technology Solutions (4 work units)"
+    - "10-D Security (3 work units)"
+    - "US Army National Guard (2 work units)"
+    - "REC IT Solutions (3 work units)"
+    - "Computer NERDZ! (2 work units)"
+    - "Lee's Summit UMC (2 work units)"
+
+# Research context (from Perplexity)
+research_context:
+  industry: "Cybersecurity / Defense Contracting"
+  role_expectations: null
+  metric_benchmarks: null
+  terminology:
+    - "RMF"
+    - "ATO"
+    - "STIG"
+    - "SRG"
+    - "DIACAP"
+    - "IV&V"
+    - "POAM"
+    - "ICS/SCADA"
+    - "MCEITS"
+    - "ACAS"

@@ -1,0 +1,62 @@
+# Resume Import Workflow - Progress Sidecar
+# This file tracks workflow progress for continuation support
+
+workflow: resume-import
+started: null  # ISO date when workflow started
+last_updated: null  # ISO date of last update
+current_step: 1
+steps_completed: []
+
+# Input file information
+input:
+  file_path: null
+  file_type: null  # docx, pdf, txt, md, linkedin
+  parse_date: null
+
+# Extracted data from resume
+extracted:
+  positions: []
+  # Each position:
+  # - employer: string
+  #   title: string
+  #   start_date: string (YYYY-MM)
+  #   end_date: string or null
+  #   bullets: []
+  #   position_id: null (set after creation)
+  #   processed: false
+
+  certifications: []
+  # Each certification:
+  # - name: string
+  #   issuer: string
+  #   date: string
+  #   expires: string or null
+  #   created: false
+
+  education: []
+  # Each education:
+  # - degree: string
+  #   institution: string
+  #   year: string
+  #   honors: string or null
+  #   created: false
+
+# Created resources tracking
+created:
+  positions: []  # List of position IDs created
+  work_units: []  # List of work unit IDs created
+  certifications: []  # List of certification names created
+  education: []  # List of education entries created
+
+# Current processing state (for step 4 iteration)
+processing:
+  current_position_index: 0
+  current_bullet_index: 0
+  position_work_units: []  # Work units pending creation for current position
+
+# Research context (from Perplexity)
+research_context:
+  industry: null
+  role_expectations: null
+  metric_benchmarks: null
+  terminology: []
