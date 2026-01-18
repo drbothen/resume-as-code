@@ -810,6 +810,19 @@
   },
   "description": "Complete configuration for Resume as Code.",
   "properties": {
+    "schema_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Schema version for tracking migrations (e.g., '2.0.0')",
+      "title": "Schema Version"
+    },
     "output_dir": {
       "default": "dist",
       "format": "path",

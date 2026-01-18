@@ -70,6 +70,7 @@ def _register_commands() -> None:
     from resume_as_code.commands.config_cmd import config_command
     from resume_as_code.commands.init import init_command
     from resume_as_code.commands.list_cmd import list_command
+    from resume_as_code.commands.migrate import migrate_command
     from resume_as_code.commands.new import new_group
     from resume_as_code.commands.plan import plan_command
     from resume_as_code.commands.remove import remove_group
@@ -83,6 +84,7 @@ def _register_commands() -> None:
     main.add_command(config_command)
     main.add_command(init_command)
     main.add_command(list_command)
+    main.add_command(migrate_command)
     main.add_command(new_group)
     main.add_command(plan_command)
     main.add_command(remove_group)

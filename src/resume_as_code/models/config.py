@@ -313,6 +313,12 @@ class TemplateOptions(BaseModel):
 class ResumeConfig(BaseModel):
     """Complete configuration for Resume as Code."""
 
+    # Schema version for migration tracking (Story 9.1)
+    schema_version: str | None = Field(
+        default=None,
+        description="Schema version for tracking migrations (e.g., '2.0.0')",
+    )
+
     # Output settings
     output_dir: Path = Field(default=Path("./dist"))
     default_format: Literal["pdf", "docx", "both"] = Field(default="both")

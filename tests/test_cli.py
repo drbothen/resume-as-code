@@ -365,3 +365,215 @@ class TestServiceConfigPropagation:
             call_kwargs = mock_class.call_args.kwargs
             assert "config_path" in call_kwargs
             assert call_kwargs["config_path"].is_absolute()
+
+
+class TestMigrateCommand:
+    """Integration tests for the migrate command (Story 9.1)."""
+
+    def test_migrate_help_shows_output(self, cli_runner: CliRunner) -> None:
+        """Test that migrate --help shows help output."""
+        result = cli_runner.invoke(main, ["migrate", "--help"])
+        assert result.exit_code == 0
+        assert "migrate" in result.output.lower()
+        assert "--status" in result.output
+        assert "--dry-run" in result.output
+        assert "--rollback" in result.output
+
+    def test_migrate_status_up_to_date(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that migrate --status shows up-to-date when schema is current."""
+        # Create config with current schema version
+        config = tmp_path / ".resume.yaml"
+        config.write_text("schema_version: 2.0.0\noutput_dir: ./dist\n")
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["migrate", "--status"])
+
+        assert result.exit_code == 0
+        assert "2.0.0" in result.output
+        assert "Up to date" in result.output or "up to date" in result.output.lower()
+
+    def test_migrate_status_needs_migration(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that migrate --status shows migration available for legacy config."""
+        # Create legacy config (no schema_version)
+        config = tmp_path / ".resume.yaml"
+        config.write_text("output_dir: ./dist\n")
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["migrate", "--status"])
+
+        assert result.exit_code == 0
+        assert "1.0.0" in result.output  # Detected as legacy
+        assert "2.0.0" in result.output  # Target version
+        assert "migration" in result.output.lower()
+
+    def test_migrate_dry_run_shows_preview(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that migrate --dry-run previews changes without modifying files."""
+        # Create legacy config
+        config = tmp_path / ".resume.yaml"
+        original_content = "output_dir: ./dist\n"
+        config.write_text(original_content)
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["migrate", "--dry-run"])
+
+        assert result.exit_code == 0
+        assert "schema_version" in result.output.lower()
+        assert "Would apply" in result.output or "would" in result.output.lower()
+        # File should NOT be modified
+        assert config.read_text() == original_content
+
+    def test_migrate_already_current(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that migrate on current schema shows success."""
+        # Create config with current schema version
+        config = tmp_path / ".resume.yaml"
+        config.write_text("schema_version: 2.0.0\noutput_dir: ./dist\n")
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["migrate"])
+
+        assert result.exit_code == 0
+        assert "current" in result.output.lower() or "2.0.0" in result.output
+
+    def test_migrate_applies_migration(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that migrate applies migration when confirmed."""
+        # Create legacy config
+        config = tmp_path / ".resume.yaml"
+        config.write_text("output_dir: ./dist\n")
+        monkeypatch.chdir(tmp_path)
+
+        # Confirm the migration
+        result = cli_runner.invoke(main, ["migrate"], input="y\n")
+
+        assert result.exit_code == 0
+        # Check that migration was applied
+        content = config.read_text()
+        assert "schema_version: 2.0.0" in content
+        assert "output_dir" in content
+
+    def test_migrate_creates_backup(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that migrate creates backup before applying."""
+        import re
+
+        # Create legacy config
+        config = tmp_path / ".resume.yaml"
+        config.write_text("output_dir: ./dist\n")
+        monkeypatch.chdir(tmp_path)
+
+        # Confirm the migration
+        result = cli_runner.invoke(main, ["migrate"], input="y\n")
+
+        assert result.exit_code == 0
+        # Check for backup directory
+        backup_dirs = [d for d in tmp_path.iterdir() if re.match(r"\.resume-backup-\d{4}", d.name)]
+        assert len(backup_dirs) == 1
+        backup_dir = backup_dirs[0]
+        assert (backup_dir / ".resume.yaml").exists()
+
+    def test_migrate_cancelled_when_declined(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that migrate is cancelled when user declines."""
+        # Create legacy config
+        config = tmp_path / ".resume.yaml"
+        original_content = "output_dir: ./dist\n"
+        config.write_text(original_content)
+        monkeypatch.chdir(tmp_path)
+
+        # Decline the migration
+        result = cli_runner.invoke(main, ["migrate"], input="n\n")
+
+        assert result.exit_code == 0
+        assert "cancelled" in result.output.lower()
+        # File should NOT be modified
+        assert config.read_text() == original_content
+
+    def test_migrate_quiet_mode_skips_confirmation(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that migrate with --quiet applies without confirmation."""
+        # Create legacy config
+        config = tmp_path / ".resume.yaml"
+        config.write_text("output_dir: ./dist\n")
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["--quiet", "migrate"])
+
+        assert result.exit_code == 0
+        # Migration should be applied
+        content = config.read_text()
+        assert "schema_version: 2.0.0" in content
+
+    def test_migrate_rollback_restores_files(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that migrate --rollback restores from backup."""
+        import re
+
+        # Create legacy config and apply migration
+        config = tmp_path / ".resume.yaml"
+        original_content = "output_dir: ./original\n"
+        config.write_text(original_content)
+        monkeypatch.chdir(tmp_path)
+
+        # First, apply migration (creates backup)
+        cli_runner.invoke(main, ["--quiet", "migrate"])
+
+        # Find backup directory
+        backup_dirs = [d for d in tmp_path.iterdir() if re.match(r"\.resume-backup-\d{4}", d.name)]
+        assert len(backup_dirs) == 1
+        backup_dir = backup_dirs[0]
+
+        # Now rollback
+        result = cli_runner.invoke(main, ["migrate", "--rollback", str(backup_dir)], input="y\n")
+
+        assert result.exit_code == 0
+        assert "Rollback complete" in result.output or "Restored" in result.output
+        # Original content should be restored
+        assert config.read_text() == original_content
+
+    def test_migrate_no_config_file(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test migrate in directory with no config file."""
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["migrate", "--status"])
+
+        assert result.exit_code == 0
+        # Should detect as legacy version
+        assert "1.0.0" in result.output
+
+    def test_migrate_preserves_comments(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that migrate preserves YAML comments."""
+        # Create legacy config with comments
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """# My resume configuration
+output_dir: ./dist  # Output directory
+default_format: pdf
+"""
+        )
+        monkeypatch.chdir(tmp_path)
+
+        # Apply migration
+        cli_runner.invoke(main, ["--quiet", "migrate"])
+
+        content = config.read_text()
+        # Comments should be preserved
+        assert "# My resume configuration" in content
+        assert "# Output directory" in content
+        assert "schema_version: 2.0.0" in content
