@@ -210,6 +210,35 @@ Migrations automatically detect legacy configs (no `schema_version` field) and o
 | `-q, --quiet` | Suppress output, exit code only |
 | `-y, --yes` | Skip confirmation prompts (remove commands) |
 
+## Work Unit Archetypes
+
+Archetypes are pre-filled templates that provide structure and guidance for common achievement types. Each archetype includes PAR (Problem-Action-Result) prompts, example text, and relevant fields.
+
+| Archetype | Use Case | Best For |
+|-----------|----------|----------|
+| `greenfield` | New system/feature built from scratch | Launching products, building platforms, creating new capabilities |
+| `incident` | Production incident response | Outages, security events, escalations, on-call heroics |
+| `optimization` | Performance or cost improvements | Reducing latency, cutting costs, improving efficiency |
+| `migration` | System/data migration projects | Cloud migrations, platform upgrades, technology transitions |
+| `leadership` | Team building and mentorship | Hiring, growing teams, developing talent, culture initiatives |
+| `transformation` | Large-scale organizational change | Digital transformation, process overhauls, major initiatives |
+| `strategic` | Strategic initiatives and planning | Roadmap definition, architecture decisions, cross-org alignment |
+| `cultural` | Culture and values initiatives | DEI programs, engagement improvements, organizational health |
+| `minimal` | Quick capture with basic structure | Fast notes when you'll fill in details later |
+
+### Using Archetypes
+
+```bash
+# Interactive mode (opens editor with template)
+resume new work-unit --archetype greenfield
+
+# Non-interactive with title (for LLM/scripting)
+resume new work-unit --archetype incident \
+  --title "Resolved P1 database outage" \
+  --position-id pos-techcorp-engineer \
+  --no-edit
+```
+
 ## Examples
 
 ### Creating Work Units for Different Scenarios
@@ -226,6 +255,14 @@ resume new work-unit --archetype incident \
 # Leadership/team building
 resume new work-unit --archetype leadership \
   --title "Scaled engineering team from 5 to 25 engineers"
+
+# Cost optimization
+resume new work-unit --archetype optimization \
+  --title "Reduced cloud spend by 40% through right-sizing"
+
+# Platform migration
+resume new work-unit --archetype migration \
+  --title "Led zero-downtime migration to Kubernetes"
 ```
 
 ### Creating Position History

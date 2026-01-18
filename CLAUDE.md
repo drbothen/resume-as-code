@@ -528,6 +528,55 @@ Example: `wu-2024-01-30-ics-assessment`
 | `--from-memory` | Quick capture mode with minimal template |
 | `--no-edit` | Don't open editor after creation |
 
+### Work Unit Archetypes
+
+Archetypes are pre-filled templates for common achievement types. Each provides PAR (Problem-Action-Result) structure with guidance and examples.
+
+| Archetype | Use Case | Best For |
+|-----------|----------|----------|
+| `greenfield` | New system/feature built from scratch | Launching products, building platforms, creating new capabilities |
+| `incident` | Production incident response | Outages, security events, escalations, on-call heroics |
+| `optimization` | Performance or cost improvements | Reducing latency, cutting costs, improving efficiency |
+| `migration` | System/data migration projects | Cloud migrations, platform upgrades, technology transitions |
+| `leadership` | Team building and mentorship | Hiring, growing teams, developing talent, culture initiatives |
+| `transformation` | Large-scale organizational change | Digital transformation, process overhauls, major initiatives |
+| `strategic` | Strategic initiatives and planning | Roadmap definition, architecture decisions, cross-org alignment |
+| `cultural` | Culture and values initiatives | DEI programs, engagement improvements, organizational health |
+| `minimal` | Quick capture with basic structure | Fast notes when you'll fill in details later |
+
+### Archetype Usage
+
+```bash
+# Interactive mode (opens editor with template)
+resume new work-unit --archetype greenfield
+
+# Non-interactive (LLM-optimized) - requires title and position
+resume new work-unit --archetype incident \
+  --title "Resolved P1 database outage" \
+  --position-id pos-techcorp-engineer \
+  --no-edit
+
+# With inline position creation
+resume new work-unit --archetype optimization \
+  --title "Reduced API latency by 60%" \
+  --position "TechCorp|Senior Engineer|2022-01|" \
+  --no-edit
+```
+
+### When to Use Each Archetype
+
+| User Describes... | Recommended Archetype |
+|-------------------|----------------------|
+| "I built a new system/feature" | `greenfield` |
+| "I fixed a production issue" | `incident` |
+| "I improved performance/reduced costs" | `optimization` |
+| "I migrated to a new platform" | `migration` |
+| "I grew/led a team" | `leadership` |
+| "I led a major company initiative" | `transformation` |
+| "I defined strategy/architecture" | `strategic` |
+| "I improved team culture/DEI" | `cultural` |
+| "Quick note, will add details later" | `minimal` |
+
 ---
 
 ## Board Role Management

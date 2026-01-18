@@ -86,6 +86,10 @@ Archetypes provide pre-filled templates for common achievement types:
 | `optimization` | Performance or cost optimization |
 | `migration` | System/data migration projects |
 | `leadership` | Team building and mentorship |
+| `transformation` | Large-scale organizational change |
+| `strategic` | Strategic initiatives and planning |
+| `cultural` | Culture and values initiatives |
+| `minimal` | Quick capture with basic structure |
 
 ### Output
 
