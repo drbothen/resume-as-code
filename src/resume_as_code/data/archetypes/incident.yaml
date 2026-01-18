@@ -1,0 +1,93 @@
+# Incident Response Work Unit Template
+# =====================================
+# Use this archetype for: production incidents, outages, security events, escalations
+#
+# PAR Framework Focus:
+# - Problem: What was the incident? What was the impact?
+# - Action: How did you detect, respond, and resolve?
+# - Result: What was the outcome? What prevention measures were implemented?
+
+schema_version: "1.0.0"
+
+# ID Format: wu-YYYY-MM-DD-slug (replace with actual date and description)
+id: "wu-YYYY-MM-DD-incident-slug"
+
+# Title: Lead with strong action verb and quantify impact
+# Examples:
+# - "Resolved P1 database incident affecting 10K users"
+# - "Contained security breach in payment processing system"
+title: "Resolved [SEVERITY] [SYSTEM] incident affecting [SCOPE]"
+
+# Problem Section - What challenge or incident occurred?
+problem:
+  # Statement: Describe the incident clearly with specific impact
+  # Example: "Production database cluster failed causing 2-hour outage for all EU customers"
+  statement: |
+    [SYSTEM/SERVICE] experienced [ISSUE TYPE] causing [IMPACT].
+    Detected at [TIME] with initial symptoms of [SYMPTOMS].
+
+  # Constraints: What made this challenging?
+  constraints:
+    - "Time pressure: [X hours/minutes] to resolve"
+    - "Limited visibility: [What was unclear initially]"
+    - "Scope uncertainty: [Unknown blast radius at detection]"
+
+  # Context: Why did this matter? Business context?
+  # Example: "Peak shopping season with 3x normal traffic"
+  context: |
+    [Business context explaining why this incident mattered]
+
+# Actions: What did YOU specifically do? Use strong action verbs.
+# Strong verbs: orchestrated, spearheaded, mobilized, executed, diagnosed
+actions:
+  - "Detected [HOW]: [Detection method and initial signal]"
+  - "Triaged [WHAT]: [How you assessed severity and impact]"
+  - "Mitigated [HOW]: [Immediate actions to reduce impact]"
+  - "Resolved [HOW]: [Root cause fix or workaround]"
+  - "Communicated [TO WHOM]: [Stakeholder updates provided]"
+
+# Outcome Section - What was achieved?
+outcome:
+  # Result: Quantify the resolution
+  # Example: "Restored service in 45 minutes, preventing estimated $200K in lost revenue"
+  result: |
+    [QUANTIFIED RESOLUTION]: Restored service in [TIME],
+    preventing [QUANTIFIED AVOIDED IMPACT].
+
+  # Quantified Impact: Measurable improvement
+  quantified_impact: "[X% reduction in MTTR / prevented $Y impact / Z users affected]"
+
+  # Business Value: Strategic value to the organization
+  business_value: |
+    [What did this mean for the business? SLA impact? Customer trust?]
+
+# Time Tracking (optional but valuable)
+time_started: "YYYY-MM-DD"  # When incident began
+time_ended: "YYYY-MM-DD"    # When fully resolved
+
+# Skills Demonstrated: What capabilities did you show?
+skills_demonstrated:
+  - name: "Incident Command"
+    # onet_element_id: "2.B.1.a"  # Optional O*NET mapping
+  - name: "Root Cause Analysis"
+  - name: "[Relevant Technology]"
+
+# Confidence: How certain are you about these details?
+# Values: high | medium | low
+confidence: high
+
+# Tags: Keywords for categorization and search
+tags:
+  - incident-response
+  - "[system-name]"
+  - "[technology]"
+
+# Evidence: Links to supporting documentation (optional but valuable)
+evidence:
+  - type: metrics
+    url: "https://[monitoring-dashboard-url]"
+    dashboard_name: "Incident Timeline"
+    description: "Timeline and impact metrics"
+  # - type: git_repo
+  #   url: "https://github.com/org/repo"
+  #   description: "Fix PR or postmortem document"

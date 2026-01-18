@@ -2419,8 +2419,7 @@ wheels = [
 ]
 
 [[package]]
-name = "resume-as-code"
-version = "0.1.0"
+name = "resume-as-code-ng"
 source = { editable = "." }
 dependencies = [
     { name = "click" },

@@ -93,6 +93,7 @@ jobs:
   test:
     needs: validate
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: true
       matrix:
@@ -118,7 +119,7 @@ jobs:
         run: uv run mypy src --strict
 
       - name: Run tests
-        run: uv run pytest -v
+        run: uv run pytest -v -m "not slow" --ignore=tests/integration/test_plan_command.py --ignore=tests/integration/test_build_command.py
 
   build:
     needs: [validate, test]

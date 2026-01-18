@@ -1,0 +1,89 @@
+# System Migration Work Unit Template
+# ====================================
+# Use this archetype for: platform migrations, cloud migrations, database migrations,
+# technology upgrades, legacy system replacements
+#
+# PAR Framework Focus:
+# - Problem: What system needed migration and why?
+# - Action: How did you plan and execute the migration?
+# - Result: What was the outcome and business benefit?
+
+schema_version: "1.0.0"
+
+# ID Format: wu-YYYY-MM-DD-slug
+id: "wu-YYYY-MM-DD-migration-slug"
+
+# Title: Emphasize what was migrated and the benefit
+# Examples:
+# - "Migrated 500TB data warehouse to cloud with zero downtime"
+# - "Led database migration reducing latency by 60%"
+title: "Migrated [SYSTEM/DATA] achieving [KEY BENEFIT]"
+
+# Problem Section - Why migration was needed
+problem:
+  # Statement: What drove the migration need?
+  statement: |
+    [SYSTEM] required migration due to [DRIVER: end-of-life, scaling limits, cost, etc.].
+    Current state: [SPECIFIC LIMITATIONS].
+
+  # Constraints: Migration-specific challenges
+  constraints:
+    - "Downtime tolerance: [Zero/minimal/scheduled maintenance window]"
+    - "Data integrity: [Must maintain 100% data accuracy]"
+    - "Timeline: [Hard deadline due to license expiry, etc.]"
+    - "Rollback requirements: [Ability to revert if issues]"
+
+  # Context: Business driver for migration
+  context: |
+    [Business context: cost savings, scalability needs, compliance requirements]
+
+# Actions: Migration execution
+# Strong verbs: migrated, orchestrated, validated, coordinated, executed
+actions:
+  - "Assessed [CURRENT STATE]: [Discovery and inventory of what needed migration]"
+  - "Designed [MIGRATION PLAN]: [Approach, phases, rollback strategy]"
+  - "Built [TOOLING]: [Automation, validation, monitoring tools]"
+  - "Executed [MIGRATION]: [Actual migration execution approach]"
+  - "Validated [RESULTS]: [How you verified successful migration]"
+
+# Outcome Section - Migration results
+outcome:
+  # Result: Quantify migration success
+  result: |
+    Successfully migrated [SCOPE] achieving [PRIMARY METRIC].
+
+  # Quantified Impact: Measurable improvements
+  quantified_impact: "[X% cost reduction / Y% performance improvement / Z downtime hours]"
+
+  # Business Value: Long-term benefits
+  business_value: |
+    [New capabilities enabled, future scalability, cost structure improvements]
+
+# Time Tracking
+time_started: "YYYY-MM-DD"
+time_ended: "YYYY-MM-DD"
+
+# Skills Demonstrated
+skills_demonstrated:
+  - name: "System Migration"
+  - name: "[Source Technology]"
+  - name: "[Target Technology]"
+  - name: "Project Management"
+
+# Confidence
+confidence: high
+
+# Tags
+tags:
+  - migration
+  - "[source-platform]"
+  - "[target-platform]"
+
+# Evidence
+evidence:
+  - type: git_repo
+    url: "https://github.com/org/repo"
+    description: "Migration tooling and documentation"
+  # - type: metrics
+  #   url: "https://dashboard-url"
+  #   description: "Before/after performance comparison"

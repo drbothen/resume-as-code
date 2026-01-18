@@ -1,0 +1,86 @@
+# Greenfield Project Work Unit Template
+# ======================================
+# Use this archetype for: new features, new systems, new products, ground-up builds
+#
+# PAR Framework Focus:
+# - Problem: What need or opportunity did you identify?
+# - Action: How did you design and build the solution?
+# - Result: What was delivered and what impact did it have?
+
+schema_version: "1.0.0"
+
+# ID Format: wu-YYYY-MM-DD-slug (replace with actual date and description)
+id: "wu-YYYY-MM-DD-project-slug"
+
+# Title: Lead with action verb and business outcome
+# Examples:
+# - "Built real-time analytics pipeline enabling sub-second insights"
+# - "Designed microservices architecture supporting 10x scale"
+title: "Built [WHAT] enabling [OUTCOME]"
+
+# Problem Section - What gap or opportunity existed?
+problem:
+  # Statement: Be specific about the need and who had it
+  statement: |
+    [WHO] needed [CAPABILITY] to [ACHIEVE GOAL].
+    Existing approaches were [LIMITATION].
+
+  # Constraints: What made this challenging?
+  constraints:
+    - "Timeline: [X weeks/months] to deliver"
+    - "Budget: [Constraints if relevant]"
+    - "Technical: [Existing system constraints or requirements]"
+
+  # Context: Why was this project prioritized?
+  context: |
+    [Strategic context: Why now? What business priority drove this?]
+
+# Actions: What did YOU specifically do? Use strong action verbs.
+# Strong verbs: architected, engineered, pioneered, launched, designed
+actions:
+  - "Designed [ARCHITECTURE/APPROACH]: [Key design decisions and rationale]"
+  - "Built [COMPONENT]: [Technical implementation details]"
+  - "Integrated [WITH WHAT]: [How it connected to existing systems]"
+  - "Tested [HOW]: [Quality assurance approach taken]"
+  - "Deployed [WHERE/HOW]: [Release strategy and execution]"
+
+# Outcome Section - What was delivered and what value was created?
+outcome:
+  # Result: Quantify what was delivered
+  result: |
+    Delivered [WHAT] achieving [QUANTIFIED OUTCOME].
+
+  # Quantified Impact: Measurable business improvement
+  quantified_impact: "[X% improvement / $Y value / Z users enabled]"
+
+  # Business Value: Strategic value created
+  business_value: |
+    [Long-term value: What new capabilities were unlocked?]
+
+# Time Tracking
+time_started: "YYYY-MM-DD"  # Project start date
+time_ended: "YYYY-MM-DD"    # Delivery/launch date
+
+# Skills Demonstrated
+skills_demonstrated:
+  - name: "System Design"
+  - name: "[Primary Technology]"
+  - name: "[Secondary Technology]"
+
+# Confidence in details
+confidence: high
+
+# Tags for categorization
+tags:
+  - greenfield
+  - "[technology-stack]"
+  - "[domain]"
+
+# Evidence linking
+evidence:
+  - type: git_repo
+    url: "https://github.com/org/repo"
+    description: "Project repository"
+  # - type: metrics
+  #   url: "https://dashboard-url"
+  #   description: "Performance metrics"

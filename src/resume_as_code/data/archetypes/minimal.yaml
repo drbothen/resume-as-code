@@ -1,0 +1,54 @@
+# Minimal Quick Capture Template
+# ================================
+# Use this archetype for: fast capture when details are fresh (--from-memory mode)
+#
+# Captures the essentials quickly - fill in details later
+# Perfect for jotting down accomplishments right after they happen
+
+schema_version: "1.0.0"
+
+# ID Format: wu-YYYY-MM-DD-slug
+id: "wu-YYYY-MM-DD-quick-slug"
+
+# Title: One-line summary of what you accomplished
+title: "[What you accomplished in one line]"
+
+# Problem: Brief description of the challenge
+problem:
+  statement: "[The challenge or opportunity - 1-2 sentences]"
+
+# Actions: Key action(s) you took
+actions:
+  - "[Key action you took]"
+
+# Outcome: What you achieved
+outcome:
+  result: "[What you achieved - be specific if possible]"
+
+# Quick capture defaults to medium confidence (fill in details later)
+confidence: medium
+
+# Tags: Add relevant keywords for later search
+tags: []
+
+# ============================================
+# Fill in these details later for full story:
+# ============================================
+
+# time_started: "YYYY-MM-DD"
+# time_ended: "YYYY-MM-DD"
+
+# skills_demonstrated:
+#   - name: "[Skill name]"
+
+# evidence:
+#   - type: git_repo
+#     url: "https://..."
+#     description: "..."
+
+# For more complete capture, consider using one of:
+# - incident.yaml     (for production incidents)
+# - greenfield.yaml   (for new projects/features)
+# - leadership.yaml   (for influence/mentoring)
+# - optimization.yaml (for performance/cost improvements)
+# - migration.yaml    (for system migrations)

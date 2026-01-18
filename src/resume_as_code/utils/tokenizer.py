@@ -156,7 +156,7 @@ class ResumeTokenizer:
         """Check if spaCy is available."""
         if self._spacy_available is None:
             try:
-                import spacy  # type: ignore[import-not-found]  # noqa: F401
+                import spacy  # noqa: F401
 
                 self._spacy_available = True
             except ImportError:

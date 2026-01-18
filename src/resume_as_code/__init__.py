@@ -1,3 +1,5 @@
 """Resume as Code - CLI tool for git-native resume generation."""
 
-__version__ = "0.1.0"
+from resume_as_code.__version__ import __version__
+
+__all__ = ["__version__"]

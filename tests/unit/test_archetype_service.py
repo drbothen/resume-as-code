@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from resume_as_code.services.archetype_service import (
-    get_archetype_path,
     list_archetypes,
     load_archetype,
     load_archetype_data,
@@ -59,22 +58,6 @@ class TestLoadArchetype:
         """Should raise FileNotFoundError for invalid archetype."""
         with pytest.raises(FileNotFoundError, match="Archetype 'nonexistent' not found"):
             load_archetype("nonexistent")
-
-
-class TestGetArchetypePath:
-    """Tests for get_archetype_path function."""
-
-    def test_returns_valid_path(self) -> None:
-        """Should return path to archetype file."""
-        path = get_archetype_path("incident")
-        assert path.exists()
-        assert path.suffix == ".yaml"
-        assert path.stem == "incident"
-
-    def test_invalid_archetype_raises(self) -> None:
-        """Should raise FileNotFoundError for invalid archetype."""
-        with pytest.raises(FileNotFoundError):
-            get_archetype_path("nonexistent")
 
 
 class TestLoadArchetypeData:

@@ -1,0 +1,110 @@
+# Executive Transformation Work Unit Template
+# =============================================
+# Use for: Digital transformation, organizational restructuring, major strategic initiatives
+#
+# RAS Framework (Results-Action-Situation) - Lead with impact for executive-level work
+# This template is designed for C-suite and VP-level accomplishments
+
+schema_version: "1.0.0"
+
+# ID Format: wu-YYYY-MM-DD-slug
+id: "wu-YYYY-MM-DD-transformation-slug"
+
+# Title: Lead with the business result for executive-level work
+# Examples:
+# - "Drove digital transformation delivering $50M annual savings"
+# - "Led cloud migration reducing infrastructure costs by 40%"
+title: "Drove [TRANSFORMATION TYPE] delivering [PRIMARY METRIC]"
+
+# Problem Section - Strategic challenge requiring transformation
+problem:
+  # Statement: Frame at the organizational/strategic level
+  statement: |
+    [ORGANIZATION] required [TRANSFORMATION] to [STRATEGIC OBJECTIVE].
+    Market/competitive pressures demanded [CHANGE TYPE].
+
+  # Constraints: Executive-level complexity
+  constraints:
+    - "Scale: [Size of organization/initiative]"
+    - "Complexity: [Cross-functional dependencies]"
+    - "Timeline: [Executive timeline pressures]"
+    - "Investment: [Budget/resource requirements]"
+
+  # Context: Strategic imperatives
+  context: |
+    [Board-level priorities driving this transformation.
+     Competitive landscape and market pressures.]
+
+# Actions: Executive leadership actions
+# Strong verbs: transformed, revolutionized, spearheaded, orchestrated, governed
+actions:
+  - "Defined [STRATEGY]: [Strategic vision and roadmap development]"
+  - "Secured [RESOURCES]: [Budget, headcount, executive sponsorship obtained]"
+  - "Orchestrated [EXECUTION]: [Cross-functional coordination approach]"
+  - "Governed [PROGRESS]: [Executive oversight and course correction]"
+  - "Communicated [CHANGE]: [Board and stakeholder engagement]"
+
+# Outcome Section - Quantified business outcomes
+outcome:
+  # Result: Lead with the business impact
+  result: |
+    Delivered [TRANSFORMATION] achieving [QUANTIFIED BUSINESS OUTCOME].
+
+  # Quantified Impact: Use financial or strategic metrics
+  quantified_impact: "$[X]M impact / [Y]% improvement / [Z] metric achieved"
+
+  # Business Value: Strategic value to organization
+  business_value: |
+    [Long-term strategic positioning and competitive advantage created]
+
+# Time Tracking
+time_started: "YYYY-MM-DD"
+time_ended: "YYYY-MM-DD"
+
+# Skills Demonstrated - Executive competencies
+skills_demonstrated:
+  - name: "Strategic Planning"
+  - name: "Organizational Leadership"
+  - name: "Change Management"
+  - name: "[Domain Expertise]"
+
+# Confidence
+confidence: high
+
+# Tags
+tags:
+  - executive
+  - transformation
+  - "[initiative-type]"
+
+# Executive Scope: Critical for senior roles - quantify your leadership reach
+scope:
+  budget_managed: "$XM"           # Budget you controlled
+  team_size: 0                    # Direct + indirect reports
+  revenue_influenced: "$XM"       # Revenue you impacted
+  geographic_reach: "Global"      # Global/Regional/National
+
+# Impact Category: Multiple categories for transformations
+# Values: financial | operational | talent | customer | organizational
+impact_category:
+  - financial
+  - organizational
+  - operational
+
+# Metrics: Before/after comparison with quantified change
+metrics:
+  baseline: "[Before state with numbers]"
+  outcome: "[After state with numbers]"
+  percentage_change: 0  # Improvement percentage
+
+# Framing: Executive narrative elements
+framing:
+  action_verb: "Transformed"      # Use strongest applicable verb
+  strategic_context: "[Why this mattered to the business at a strategic level]"
+
+# Evidence
+evidence:
+  - type: document
+    url: "https://[board-presentation-url]"
+    title: "Transformation Results"
+    description: "Board presentation or annual report reference"

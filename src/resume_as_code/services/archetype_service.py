@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+import importlib.resources
+from importlib.abc import Traversable
 from typing import Any
 
 import yaml
 
-# Archetypes directory at project root level
-# __file__ -> services/archetype_service.py
-# parent -> services/
-# parent.parent -> resume_as_code/
-# parent.parent.parent -> src/
-# parent.parent.parent.parent -> project root
-ARCHETYPES_DIR = Path(__file__).parent.parent.parent.parent / "archetypes"
+# Package data location for archetypes
+_ARCHETYPES_PACKAGE = "resume_as_code.data.archetypes"
+
+
+def _get_archetypes_traversable() -> Traversable:
+    """Get traversable for archetypes package data."""
+    return importlib.resources.files(_ARCHETYPES_PACKAGE)
 
 
 def list_archetypes() -> list[str]:
@@ -22,28 +23,17 @@ def list_archetypes() -> list[str]:
     Returns:
         List of archetype names (without .yaml extension).
     """
-    if not ARCHETYPES_DIR.exists():
+    try:
+        archetypes_dir = _get_archetypes_traversable()
+        return sorted(
+            [
+                f.name.removesuffix(".yaml")
+                for f in archetypes_dir.iterdir()
+                if f.name.endswith(".yaml")
+            ]
+        )
+    except (ModuleNotFoundError, FileNotFoundError):
         return []
-    return sorted([p.stem for p in ARCHETYPES_DIR.glob("*.yaml")])
-
-
-def get_archetype_path(name: str) -> Path:
-    """Get the path to an archetype file.
-
-    Args:
-        name: The archetype name (without .yaml extension).
-
-    Returns:
-        Path to the archetype file.
-
-    Raises:
-        FileNotFoundError: If the archetype does not exist.
-    """
-    path = ARCHETYPES_DIR / f"{name}.yaml"
-    if not path.exists():
-        msg = f"Archetype '{name}' not found"
-        raise FileNotFoundError(msg)
-    return path
 
 
 def load_archetype(name: str) -> str:
@@ -58,8 +48,14 @@ def load_archetype(name: str) -> str:
     Raises:
         FileNotFoundError: If the archetype does not exist.
     """
-    path = get_archetype_path(name)
-    return path.read_text()
+    try:
+        archetypes_dir = _get_archetypes_traversable()
+        archetype_file = archetypes_dir / f"{name}.yaml"
+        content: str = archetype_file.read_text()
+        return content
+    except (ModuleNotFoundError, FileNotFoundError) as e:
+        msg = f"Archetype '{name}' not found"
+        raise FileNotFoundError(msg) from e
 
 
 def load_archetype_data(name: str) -> dict[str, Any]:
@@ -74,7 +70,6 @@ def load_archetype_data(name: str) -> dict[str, Any]:
     Raises:
         FileNotFoundError: If the archetype does not exist.
     """
-    path = get_archetype_path(name)
-    with path.open() as f:
-        data: dict[str, Any] = yaml.safe_load(f)
-        return data
+    content = load_archetype(name)
+    data: dict[str, Any] = yaml.safe_load(content)
+    return data
