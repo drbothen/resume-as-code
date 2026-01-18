@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import os
 from pathlib import Path
 from typing import Any
@@ -10,8 +9,7 @@ from typing import Any
 import yaml
 
 from resume_as_code.models.config import ConfigSource, ResumeConfig
-
-logger = logging.getLogger(__name__)
+from resume_as_code.utils.console import warning
 
 
 class ConfigError(Exception):
@@ -165,10 +163,9 @@ def get_config(
 
     # Warn about legacy config without schema_version (Story 9.1)
     if config.schema_version is None and project_path is not None:
-        logger.warning(
-            "Config file %s has no schema_version. "
-            "Run 'resume migrate' to update to the latest schema.",
-            project_path,
+        warning(
+            f"Config file {project_path} has no schema_version. "
+            "Run 'resume migrate' to update to the latest schema."
         )
 
     return config

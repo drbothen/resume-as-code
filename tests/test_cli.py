@@ -577,3 +577,53 @@ default_format: pdf
         assert "# My resume configuration" in content
         assert "# Output directory" in content
         assert "schema_version: 2.0.0" in content
+
+    def test_migrate_failure_preserves_backup(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that migration failure preserves backup for manual rollback.
+
+        AC #5: When a migration step fails, the backup is preserved and
+        the user is informed how to rollback using --rollback flag.
+
+        Note: Rollback is MANUAL (not automatic) by design - this allows
+        users to inspect changes before deciding to rollback.
+        """
+        from unittest.mock import patch
+
+        from resume_as_code.migrations.base import MigrationResult
+
+        # Create legacy config
+        config = tmp_path / ".resume.yaml"
+        original_content = "output_dir: ./dist\n"
+        config.write_text(original_content)
+        monkeypatch.chdir(tmp_path)
+
+        # Mock the migration's apply method to return failure
+        def mock_apply(self, ctx):  # noqa: ARG001
+            return MigrationResult(success=False, errors=["Simulated migration failure"])
+
+        with patch(
+            "resume_as_code.migrations.v1_to_v2.MigrationV1ToV2.apply",
+            mock_apply,
+        ):
+            result = cli_runner.invoke(main, ["--quiet", "migrate"])
+
+        # Should exit with error
+        assert result.exit_code == 1
+
+        # Backup should be created
+        backup_dirs = list(tmp_path.glob(".resume-backup-*"))
+        assert len(backup_dirs) == 1
+        backup_dir = backup_dirs[0]
+
+        # Backup should contain the original config
+        backup_config = backup_dir / ".resume.yaml"
+        assert backup_config.exists()
+        assert backup_config.read_text() == original_content
+
+        # User can manually rollback using the backup
+        result = cli_runner.invoke(main, ["--quiet", "migrate", "--rollback", str(backup_dir)])
+        assert result.exit_code == 0
+        # Original content should be restored
+        assert config.read_text() == original_content

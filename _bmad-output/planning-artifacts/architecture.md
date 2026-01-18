@@ -576,6 +576,7 @@ resume plan --jd FILE             # Preview resume selection
 resume build [--format FORMAT]    # Generate resume artifacts
 resume config [KEY] [VALUE]       # Manage configuration
 resume cache clear                # Clear stale embedding cache
+resume migrate [--status|--dry-run|--rollback]  # Schema migrations
 ```
 
 ### 3.4 Provider Architecture
@@ -661,7 +662,77 @@ uv sync --all-extras
 | User | `~/.config/resume-as-code/config.yaml` | Low |
 | Defaults | Built-in | Lowest |
 
-### 3.8 Track Workflow Hooks (Deferred)
+### 3.8 Schema Migration System (Story 9.1)
+
+The schema migration system provides automatic detection and migration of outdated schemas, allowing users to upgrade without manually editing YAML files or losing data.
+
+**Migration Framework Architecture:**
+
+| Component | Location | Responsibility |
+|-----------|----------|----------------|
+| Version Constants | `migrations/__init__.py` | `CURRENT_SCHEMA_VERSION`, `LEGACY_VERSION` |
+| Base Classes | `migrations/base.py` | `Migration` ABC, `MigrationResult`, `MigrationContext` |
+| Registry | `migrations/registry.py` | `@register_migration` decorator, path resolution |
+| Backup System | `migrations/backup.py` | Pre-migration backup, restore functionality |
+| YAML Handler | `migrations/yaml_handler.py` | Comment-preserving YAML operations (ruamel.yaml) |
+| CLI Command | `commands/migrate.py` | `resume migrate` with --status, --dry-run, --rollback |
+
+**Migration Design Principles:**
+
+| Principle | Implementation |
+|-----------|----------------|
+| **Idempotency** | All migrations must be safe to run multiple times |
+| **Atomicity** | Migrations either fully complete or fail with backup preserved |
+| **Comment Preservation** | ruamel.yaml preserves all YAML comments |
+| **Manual Rollback** | Backups preserved for user-initiated `--rollback` |
+| **Post-validation** | Config validated after migration to catch errors |
+
+**Version Detection:**
+```python
+# Projects without schema_version field are detected as v1.0.0 (legacy)
+def detect_schema_version(project_path: Path) -> str:
+    config = project_path / ".resume.yaml"
+    if not config.exists():
+        return LEGACY_VERSION
+    data = load_yaml(config)
+    return data.get("schema_version", LEGACY_VERSION)
+```
+
+**Migration Path Resolution:**
+```python
+# Registry chains migrations automatically
+# v1.0.0 → v2.0.0 → v3.0.0 applied in sequence
+migrations = get_migration_path("1.0.0", "3.0.0")
+# Returns [MigrationV1ToV2, MigrationV2ToV3]
+```
+
+**Backup Scope:**
+
+The backup includes all core resume data files:
+- `.resume.yaml` (config, profile, certifications, education, etc.)
+- `positions.yaml` (employment history)
+- `work-units/` (individual achievements)
+
+Files NOT included (by design): `templates/`, `dist/`, `.git/`, docs
+
+**CLI Command Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--status` | Show current vs latest version, migration availability |
+| `--dry-run` | Preview changes without modifying files |
+| `--rollback <backup>` | Restore from backup directory |
+| `--json` | Machine-readable JSON output |
+
+**Adding New Migrations:**
+
+1. Create `migrations/v{N}_to_v{N+1}.py`
+2. Implement `Migration` subclass with `check_applicable()`, `preview()`, `apply()`
+3. Use `@register_migration` decorator
+4. Update `CURRENT_SCHEMA_VERSION` in `migrations/__init__.py`
+5. Import new migration in `migrations/__init__.py`
+
+### 3.9 Track Workflow Hooks (Deferred)
 
 Architecture supports future submission tracking:
 
@@ -987,6 +1058,14 @@ resume-as-code/
 │       │   ├── planner.py            # Plan generation logic
 │       │   ├── embedder.py           # Embedding generation & caching
 │       │   └── llm.py                # LLMService abstract + NoOp
+│       │
+│       ├── migrations/               # Schema migration system (Story 9.1)
+│       │   ├── __init__.py           # Version constants
+│       │   ├── base.py               # Migration ABC, MigrationResult, MigrationContext
+│       │   ├── registry.py           # Migration registry, version detection
+│       │   ├── backup.py             # Backup and restore functions
+│       │   ├── yaml_handler.py       # Comment-preserving YAML (ruamel.yaml)
+│       │   └── v1_to_v2.py           # First migration implementation
 │       │
 │       ├── providers/
 │       │   ├── __init__.py

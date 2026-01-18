@@ -2,6 +2,18 @@
 
 This module provides functions for creating and restoring backups
 of resume project files during migrations.
+
+Backup Scope:
+    The backup includes all core resume data files:
+    - .resume.yaml (config, profile, certifications, education, etc.)
+    - positions.yaml (employment history)
+    - work-units/ (individual achievements)
+
+    Files NOT included in backup (by design):
+    - templates/ (user templates are not modified by migrations)
+    - dist/ (generated output, can be regenerated)
+    - .git/ (version control has its own history)
+    - Other project files (README, docs, etc.)
 """
 
 from __future__ import annotations
