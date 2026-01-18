@@ -36,8 +36,8 @@ def test_cli_no_args_shows_help(cli_runner: CliRunner) -> None:
 
 
 def test_version_matches_expected() -> None:
-    """Test that version is 0.1.0 as specified."""
-    assert __version__ == "0.1.0"
+    """Test that version is 1.0.0 as specified."""
+    assert __version__ == "1.0.0"
 
 
 class TestTestOutputCommand:
@@ -385,13 +385,13 @@ class TestMigrateCommand:
         """Test that migrate --status shows up-to-date when schema is current."""
         # Create config with current schema version
         config = tmp_path / ".resume.yaml"
-        config.write_text("schema_version: 2.0.0\noutput_dir: ./dist\n")
+        config.write_text("schema_version: 3.0.0\noutput_dir: ./dist\n")
         monkeypatch.chdir(tmp_path)
 
         result = cli_runner.invoke(main, ["migrate", "--status"])
 
         assert result.exit_code == 0
-        assert "2.0.0" in result.output
+        assert "3.0.0" in result.output
         assert "Up to date" in result.output or "up to date" in result.output.lower()
 
     def test_migrate_status_needs_migration(
@@ -407,7 +407,7 @@ class TestMigrateCommand:
 
         assert result.exit_code == 0
         assert "1.0.0" in result.output  # Detected as legacy
-        assert "2.0.0" in result.output  # Target version
+        assert "3.0.0" in result.output  # Target version (latest)
         assert "migration" in result.output.lower()
 
     def test_migrate_dry_run_shows_preview(
@@ -434,13 +434,13 @@ class TestMigrateCommand:
         """Test that migrate on current schema shows success."""
         # Create config with current schema version
         config = tmp_path / ".resume.yaml"
-        config.write_text("schema_version: 2.0.0\noutput_dir: ./dist\n")
+        config.write_text("schema_version: 3.0.0\noutput_dir: ./dist\n")
         monkeypatch.chdir(tmp_path)
 
         result = cli_runner.invoke(main, ["migrate"])
 
         assert result.exit_code == 0
-        assert "current" in result.output.lower() or "2.0.0" in result.output
+        assert "current" in result.output.lower() or "3.0.0" in result.output
 
     def test_migrate_applies_migration(
         self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -455,9 +455,9 @@ class TestMigrateCommand:
         result = cli_runner.invoke(main, ["migrate"], input="y\n")
 
         assert result.exit_code == 0
-        # Check that migration was applied
+        # Check that migration was applied (v1->v2->v3)
         content = config.read_text()
-        assert "schema_version: 2.0.0" in content
+        assert "schema_version: 3.0.0" in content
         assert "output_dir" in content
 
     def test_migrate_creates_backup(
@@ -511,9 +511,9 @@ class TestMigrateCommand:
         result = cli_runner.invoke(main, ["--quiet", "migrate"])
 
         assert result.exit_code == 0
-        # Migration should be applied
+        # Migration should be applied (v1->v2->v3)
         content = config.read_text()
-        assert "schema_version: 2.0.0" in content
+        assert "schema_version: 3.0.0" in content
 
     def test_migrate_rollback_restores_files(
         self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -576,7 +576,7 @@ default_format: pdf
         # Comments should be preserved
         assert "# My resume configuration" in content
         assert "# Output directory" in content
-        assert "schema_version: 2.0.0" in content
+        assert "schema_version: 3.0.0" in content
 
     def test_migrate_failure_preserves_backup(
         self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

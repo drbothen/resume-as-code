@@ -24,7 +24,7 @@ def test_version_exported_from_package() -> None:
     """Version should be accessible from main package."""
     from resume_as_code import __version__
 
-    assert __version__ == "0.1.0"
+    assert __version__ == "1.0.0"
 
 
 def test_version_source_is_single_location() -> None:
