@@ -1,0 +1,100 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_override:
+        description: 'Version override (leave empty for auto from commits)'
+        required: false
+        type: string
+      dry_run:
+        description: 'Dry run (show what would happen without creating PR)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for commit analysis
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Analyze commits and determine version
+        id: version
+        run: |
+          python scripts/release/bump_version.py \
+            --output-format github \
+            ${{ inputs.version_override && format('--version {0}', inputs.version_override) || '' }}
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          python scripts/release/generate_changelog.py \
+            --version ${{ steps.version.outputs.new_version }} \
+            --output-format github
+
+      - name: Update version file
+        if: ${{ !inputs.dry_run }}
+        run: |
+          echo '__version__ = "${{ steps.version.outputs.new_version }}"' > src/resume_as_code/__version__.py
+
+      - name: Update CHANGELOG.md
+        if: ${{ !inputs.dry_run }}
+        run: |
+          python scripts/release/generate_changelog.py \
+            --version ${{ steps.version.outputs.new_version }} \
+            --update-file
+
+      - name: Create release PR
+        if: ${{ !inputs.dry_run }}
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(release): prepare v${{ steps.version.outputs.new_version }}"
+          title: "Release v${{ steps.version.outputs.new_version }}"
+          body: |
+            ## Release v${{ steps.version.outputs.new_version }}
+
+            ### Version Bump
+            - Previous: `${{ steps.version.outputs.old_version }}`
+            - New: `${{ steps.version.outputs.new_version }}`
+            - Bump type: `${{ steps.version.outputs.bump_type }}`
+
+            ### Changes
+            ${{ steps.changelog.outputs.changelog }}
+
+            ---
+
+            **To release:** Merge this PR, then create and push a tag:
+            ```bash
+            git checkout main && git pull
+            git tag v${{ steps.version.outputs.new_version }}
+            git push origin v${{ steps.version.outputs.new_version }}
+            ```
+
+            Or use the manual release workflow dispatch.
+          branch: release/v${{ steps.version.outputs.new_version }}
+          delete-branch: true
+          labels: release
+
+      - name: Dry run summary
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo "## Dry Run Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version bump:** ${{ steps.version.outputs.old_version }} → ${{ steps.version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Bump type:** ${{ steps.version.outputs.bump_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Changelog" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.changelog.outputs.changelog }}" >> $GITHUB_STEP_SUMMARY

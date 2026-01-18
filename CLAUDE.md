@@ -109,6 +109,30 @@ Create a PR to merge into `develop` (not `main`).
 
 ---
 
+## Releasing
+
+See [RELEASING.md](RELEASING.md) for the full release process.
+
+### Quick Reference
+
+| Method | When to Use |
+|--------|-------------|
+| **Prepare-Release workflow** | Standard releases (auto-version from commits) |
+| **Release workflow dispatch** | Quick release when `__version__.py` is updated |
+| **Git tag push** | Local control with `git tag v0.2.0 && git push --tags` |
+
+### Version Script
+
+```bash
+# Check what version bump would be applied
+python scripts/release/bump_version.py
+
+# Preview changelog
+python scripts/release/generate_changelog.py --version 0.2.0
+```
+
+---
+
 ## Package Management (uv)
 
 This project uses **uv** for dependency management. Always prefix Python commands with `uv run`:
