@@ -43,7 +43,80 @@ for cert in candidates:
 
 ## Architecture
 
-*(No items currently)*
+### TD-005: Directory-Based Sharding for Data Files
+**Identified:** 2026-01-18
+**Story:** Post-9.2 Enhancement
+**Severity:** LOW
+**Location:** `src/resume_as_code/data_loader.py`, `src/resume_as_code/commands/new.py`
+
+**Problem:**
+Currently, data files (certifications, education, publications, board-roles, highlights) are stored as single YAML files containing all items. For users with large collections (20+ items) or those who prefer per-item version control, this can be limiting compared to the work unit sharding pattern.
+
+**Current Behavior:**
+```
+certifications.yaml      # Contains all certifications as a list
+education.yaml           # Contains all education entries as a list
+publications.yaml        # Contains all publications as a list
+board-roles.yaml         # Contains all board roles as a list
+highlights.yaml          # Contains all highlights as a list
+```
+
+**Proposed Enhancement:**
+Support optional directory-based storage (similar to `work-units/`):
+
+```
+certifications/
+├── cert-2023-06-aws-solutions-architect.yaml
+├── cert-2022-11-cissp.yaml
+└── cert-2021-03-cka.yaml
+
+publications/
+├── pub-2023-10-scaling-engineering-teams.yaml
+├── pub-2022-06-zero-trust-architecture.yaml
+└── pub-2021-03-devops-practices.yaml
+
+education/
+├── edu-2016-stanford-mba.yaml
+└── edu-2012-utaustin-bs-cs.yaml
+
+board-roles/
+├── board-2022-03-cybershield-ventures.yaml
+└── board-2020-01-techstars-austin.yaml
+
+highlights/
+├── hl-001-digital-transformation.yaml
+└── hl-002-engineering-org-scaling.yaml
+```
+
+**Implementation Requirements:**
+1. Add `*_dir` config options: `certifications_dir`, `publications_dir`, `education_dir`, `board_roles_dir`, `highlights_dir`
+2. Create generic `DataTypeLoader` class following `WorkUnitLoader` pattern
+3. Update `data_loader.py` with three-tier fallback: directory → single file → embedded
+4. Update CLI commands (`new`, `list`, `show`, `remove`) to support both modes
+5. Add migration support (single file → sharded directory)
+6. Define ID patterns per type:
+   - Certifications: `cert-YYYY-MM-{slug}.yaml`
+   - Publications: `pub-YYYY-MM-{slug}.yaml`
+   - Education: `edu-YYYY-{institution-slug}.yaml`
+   - Board Roles: `board-YYYY-MM-{org-slug}.yaml`
+   - Highlights: `hl-NNN-{slug}.yaml`
+
+**Benefits:**
+- Fine-grained version control per item
+- Parallel editing friendly (no merge conflicts)
+- Natural caching at item level
+- Consistent with work unit pattern
+- Per-item metadata possible (created_date, modified_date)
+
+**Considerations:**
+- Most users have 3-15 items per category (sharding may be overkill)
+- Adds complexity to data loading
+- Should remain optional, not replace single-file mode
+
+**Impact:**
+- Not blocking any features
+- Enhancement for power users with large collections
+- Aligns data management patterns across all entity types
 
 ---
 
