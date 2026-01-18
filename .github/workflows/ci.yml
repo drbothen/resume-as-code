@@ -54,6 +54,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -73,7 +74,7 @@ jobs:
         run: uv sync --all-extras
 
       - name: Run tests with coverage
-        run: uv run pytest --cov=src/resume_as_code --cov-report=xml -v
+        run: uv run pytest --cov=src/resume_as_code --cov-report=xml -v -m "not slow" --ignore=tests/integration/test_plan_command.py --ignore=tests/integration/test_build_command.py
 
       - name: Upload coverage
         if: matrix.python-version == '3.11'

@@ -175,7 +175,7 @@ jobs:
 
   publish-testpypi:
     needs: [validate, build, create-tag]
-    if: always() && needs.build.result == 'success' && (needs.create-tag.result == 'success' || needs.create-tag.result == 'skipped') && !inputs.skip_testpypi
+    if: always() && needs.build.result == 'success' && (needs.create-tag.result == 'success' || needs.create-tag.result == 'skipped')
     runs-on: ubuntu-latest
     environment: testpypi
     steps:
@@ -183,24 +183,6 @@ jobs:
         with:
           name: dist
           path: dist/
-
-      - name: Rename package for TestPyPI
-        run: |
-          # TestPyPI uses resume-as-code-ng-test to avoid name collision
-          cd dist
-          for f in *resume_as_code_ng*; do
-            mv "$f" "${f//resume_as_code_ng/resume_as_code_ng_test}"
-          done
-          # Update metadata in wheel
-          for whl in *.whl; do
-            python -m zipfile -e "$whl" tmp/
-            sed -i 's/resume-as-code-ng/resume-as-code-ng-test/g' tmp/*.dist-info/METADATA
-            sed -i 's/resume_as_code_ng/resume_as_code_ng_test/g' tmp/*.dist-info/RECORD
-            rm "$whl"
-            cd tmp && python -m zipfile -c "../$whl" . && cd ..
-            rm -rf tmp/
-          done
-          ls -la
 
       - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -224,7 +206,7 @@ jobs:
         run: |
           pip install --index-url https://test.pypi.org/simple/ \
             --extra-index-url https://pypi.org/simple/ \
-            resume-as-code-ng-test==${{ needs.validate.outputs.version }}
+            resume-as-code-ng==${{ needs.validate.outputs.version }}
 
       - name: Smoke test
         run: |
@@ -248,6 +230,7 @@ jobs:
 
   github-release:
     needs: [validate, publish-pypi]
+    if: always() && needs.publish-pypi.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

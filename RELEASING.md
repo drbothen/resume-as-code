@@ -81,7 +81,7 @@ Configure these in GitHub repository settings:
 1. Go to **Settings** → **Environments** → **New environment**
 2. Name: `testpypi`
 3. Add trusted publisher on [TestPyPI](https://test.pypi.org/manage/account/publishing/):
-   - **PyPI Project Name:** `resume-as-code-ng-test` (different from prod)
+   - **PyPI Project Name:** `resume-as-code-ng`
    - Owner: `drbothen`
    - Repository: `resume-as-code`
    - Workflow: `release.yml`
