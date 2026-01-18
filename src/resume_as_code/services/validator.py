@@ -62,9 +62,7 @@ def load_schema() -> dict[str, object]:
     """
     global _schema
     if _schema is None:
-        schema_path = (
-            Path(__file__).parent.parent.parent.parent / "schemas" / "work-unit.schema.json"
-        )
+        schema_path = Path(__file__).parent.parent / "schemas" / "work-unit.schema.json"
         with schema_path.open() as f:
             _schema = json.load(f)
     return _schema

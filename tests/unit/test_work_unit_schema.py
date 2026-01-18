@@ -55,7 +55,13 @@ class TestWorkUnitSchemaFile:
     @pytest.fixture
     def schema_path(self) -> Path:
         """Return path to work-unit.schema.json."""
-        return Path(__file__).parent.parent.parent / "schemas" / "work-unit.schema.json"
+        return (
+            Path(__file__).parent.parent.parent
+            / "src"
+            / "resume_as_code"
+            / "schemas"
+            / "work-unit.schema.json"
+        )
 
     @pytest.fixture
     def schema(self, schema_path: Path) -> dict[str, Any]:
@@ -265,7 +271,13 @@ class TestSchemaAndPydanticConsistency:
     @pytest.fixture
     def schema_path(self) -> Path:
         """Return path to work-unit.schema.json."""
-        return Path(__file__).parent.parent.parent / "schemas" / "work-unit.schema.json"
+        return (
+            Path(__file__).parent.parent.parent
+            / "src"
+            / "resume_as_code"
+            / "schemas"
+            / "work-unit.schema.json"
+        )
 
     @pytest.fixture
     def schema(self, schema_path: Path) -> dict:

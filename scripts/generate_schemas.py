@@ -33,8 +33,8 @@ from resume_as_code.models.work_unit import WorkUnit
 
 console = Console()
 
-# Default schema directory (relative to project root)
-DEFAULT_SCHEMA_DIR = Path(__file__).parent.parent / "schemas"
+# Default schema directory (inside package for proper bundling)
+DEFAULT_SCHEMA_DIR = Path(__file__).parent.parent / "src" / "resume_as_code" / "schemas"
 
 # Base URL for schema $id fields
 BASE_URL = "https://resume-as-code.dev/schemas"

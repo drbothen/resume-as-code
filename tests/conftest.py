@@ -69,6 +69,12 @@ def cli_runner() -> CliRunner:
 @pytest.fixture
 def work_unit_schema() -> dict[str, Any]:
     """Load the Work Unit JSON schema."""
-    schema_path = Path(__file__).parent.parent / "schemas" / "work-unit.schema.json"
+    schema_path = (
+        Path(__file__).parent.parent
+        / "src"
+        / "resume_as_code"
+        / "schemas"
+        / "work-unit.schema.json"
+    )
     with schema_path.open() as f:
         return json.load(f)
