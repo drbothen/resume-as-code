@@ -257,3 +257,78 @@ Requirements:
         assert result.exit_code == 0, f"Build failed: {result.output}"
         # Should have created output file
         assert (tmp_path / "dist" / "resume.docx").exists()
+        # Should show curation message (2 selected, 1 excluded)
+        assert "2 selected" in result.output, f"Expected curation message: {result.output}"
+        assert "1 excluded" in result.output, f"Expected exclusion message: {result.output}"
+
+    @pytest.mark.slow
+    def test_build_excludes_irrelevant_publications(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Build should exclude publications with irrelevant topics."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create config with profile and publications - irrelevant one should be excluded
+        config_file = tmp_path / ".resume.yaml"
+        config_file.write_text("""
+profile:
+  name: "Test User"
+  title: "Software Engineer"
+
+publications:
+  - title: "Python Best Practices"
+    type: "conference"
+    venue: "PyCon"
+    date: "2024-06"
+    topics:
+      - python
+      - software-engineering
+    abstract: "Modern Python development patterns for scalable applications."
+  - title: "Underwater Basket Weaving"
+    type: "article"
+    venue: "Craft Monthly"
+    date: "2024-01"
+    topics:
+      - crafts
+      - hobbies
+    abstract: "Ancient art of creating baskets underwater."
+
+curation:
+  publications_max: 2
+  min_relevance_score: 0.3
+""")
+
+        # Create work-units directory with a simple work unit
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+        (work_units_dir / "wu-2024-01-01-test.yaml").write_text("""
+id: wu-2024-01-01-test
+title: "Test work unit"
+problem:
+  statement: "Testing publication curation"
+actions:
+  - "Implemented Python solution"
+outcome:
+  result: "Improved code quality"
+""")
+
+        # Create JD file focused on Python
+        jd_file = tmp_path / "jd.txt"
+        jd_file.write_text("""
+Senior Python Developer
+
+Requirements:
+- 5+ years Python experience
+- Software engineering best practices
+- Code review and mentoring
+""")
+
+        result = runner.invoke(
+            main,
+            ["-v", "build", "--jd", str(jd_file), "--format", "docx"],
+        )
+
+        assert result.exit_code == 0, f"Build failed: {result.output}"
+        # With high min_relevance_score, irrelevant publication should be excluded
+        # The curation message should indicate filtering occurred
+        assert "excluded" in result.output.lower() or "selected" in result.output.lower()

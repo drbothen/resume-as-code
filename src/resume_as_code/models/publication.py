@@ -35,7 +35,8 @@ class Publication(BaseModel):
     )
     abstract: str | None = Field(
         default=None,
-        description="Brief description for semantic matching",
+        max_length=500,
+        description="Brief description for semantic matching (max 500 chars)",
     )
 
     @property

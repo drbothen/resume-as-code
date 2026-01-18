@@ -606,6 +606,7 @@
         "abstract": {
           "anyOf": [
             {
+              "maxLength": 500,
               "type": "string"
             },
             {
@@ -613,7 +614,7 @@
             }
           ],
           "default": null,
-          "description": "Brief description for semantic matching",
+          "description": "Brief description for semantic matching (max 500 chars)",
           "title": "Abstract"
         }
       },

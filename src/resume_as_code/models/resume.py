@@ -197,6 +197,11 @@ class ResumeData(BaseModel):
     career_highlights: list[str] = Field(default_factory=list)
     board_roles: list[BoardRole] = Field(default_factory=list)
     publications: list[Publication] = Field(default_factory=list)
+    # Flag indicating publications are pre-sorted by JD relevance (Story 8.2 Task 6)
+    publications_curated: bool = Field(
+        default=False,
+        description="True when publications are pre-sorted by relevance score",
+    )
     # Footer notice for tailored resumes (Story 7.19)
     tailored_notice_text: str | None = None
 
@@ -237,13 +242,24 @@ class ResumeData(BaseModel):
     def get_sorted_publications(self) -> list[Publication]:
         """Get publications sorted for display.
 
-        Sorting: Date descending (most recent first).
+        When publications_curated is True (JD provided), preserves current order
+        which is already sorted by relevance score descending. (Story 8.2 AC #5)
+
+        When publications_curated is False (no JD), sorts by date descending
+        (most recent first) as fallback behavior. (Story 8.2 AC #6)
+
         Only returns publications where display=True.
 
         Returns:
-            List of displayable publications sorted by date.
+            List of displayable publications in appropriate order.
         """
         displayable = [pub for pub in self.publications if pub.display]
+
+        if self.publications_curated:
+            # Preserve relevance-sorted order from curation
+            return displayable
+
+        # Default: sort by date descending (most recent first)
         return sorted(displayable, key=lambda pub: pub.date, reverse=True)
 
     @classmethod

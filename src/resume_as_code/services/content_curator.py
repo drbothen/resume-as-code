@@ -358,8 +358,14 @@ class ContentCurator:
 
         max_count = max_count or self.limits["publications"]
 
-        # Pre-compute JD data
-        jd_embedding = self.embedder.embed_passage(jd.text_for_ranking)
+        # Pre-compute JD embedding with error handling
+        jd_embedding = None
+        embeddings_available = True
+        try:
+            jd_embedding = self.embedder.embed_passage(jd.text_for_ranking)
+        except Exception as e:
+            logger.warning("Failed to embed JD, falling back to non-semantic scoring: %s", e)
+            embeddings_available = False
 
         # Normalize JD skills and keywords for matching
         jd_skills_normalized: set[str] = set()
@@ -373,31 +379,75 @@ class ContentCurator:
         scores: dict[str, float] = {}
 
         for pub in publications:
-            # Semantic similarity (40% weight) - use abstract + title + venue
-            pub_text = pub.get_text_for_matching()
-            pub_emb = self.embedder.embed_query(pub_text)
-            semantic_score = self._cosine_similarity(pub_emb, jd_embedding)
+            # Semantic similarity - use abstract + title + venue
+            semantic_score = 0.0
+            if embeddings_available and jd_embedding is not None:
+                try:
+                    pub_text = pub.get_text_for_matching()
+                    pub_emb = self.embedder.embed_query(pub_text)
+                    semantic_score = self._cosine_similarity(pub_emb, jd_embedding)
+                except Exception as e:
+                    logger.debug("Failed to embed publication '%s': %s", pub.title, e)
+                    # Continue with semantic_score = 0.0
 
-            # Topic overlap (40% weight) - normalized via SkillRegistry
+            # Topic overlap - normalized via SkillRegistry
             normalized_topics = pub.get_normalized_topics(registry)
-            topic_matches = sum(1 for topic in normalized_topics if topic.lower() in jd_match_terms)
-            # Normalize: 2+ matches = 1.0
-            topic_score = min(1.0, topic_matches / 2) if normalized_topics else 0.0
+            has_topics = bool(normalized_topics)
 
-            # Recency bonus (20% weight) - publications in last 3 years preferred
-            pub_year = int(pub.date[:4])
+            if has_topics:
+                topic_matches = sum(
+                    1 for topic in normalized_topics if topic.lower() in jd_match_terms
+                )
+                # Normalize: 2+ matches = 1.0
+                topic_score = min(1.0, topic_matches / 2)
+            else:
+                topic_score = 0.0
+
+            # Recency bonus - publications in last 3 years preferred
+            # Defensive date parsing (Issue 7)
+            try:
+                pub_year = int(pub.date[:4]) if len(pub.date) >= 4 else today.year
+            except (ValueError, TypeError):
+                logger.debug("Invalid date format for publication '%s': %s", pub.title, pub.date)
+                pub_year = today.year  # Assume current year if parse fails
+
             years_ago = today.year - pub_year
             # Decay: 0.1 per year beyond 3 years, minimum 0.5
             recency_score = 1.0 if years_ago <= 3 else max(0.5, 1.0 - (years_ago - 3) * 0.1)
 
-            scores[pub.title] = (0.4 * semantic_score) + (0.4 * topic_score) + (0.2 * recency_score)
+            # Scoring weights (Story 8.2 AC #3):
+            # With topics: 40% semantic + 40% topic + 20% recency
+            # Without topics: 80% semantic + 20% recency (redistribute topic weight)
+            # When embeddings unavailable: 80% topic + 20% recency (or just recency if no topics)
+            if embeddings_available:
+                if has_topics:
+                    final_score = (
+                        (0.4 * semantic_score) + (0.4 * topic_score) + (0.2 * recency_score)
+                    )
+                else:
+                    final_score = (0.8 * semantic_score) + (0.2 * recency_score)
+            else:
+                # Fallback when embeddings unavailable
+                if has_topics:
+                    final_score = (0.8 * topic_score) + (0.2 * recency_score)
+                else:
+                    # Only recency available
+                    final_score = recency_score
+
+            scores[self._publication_key(pub)] = final_score
 
         # Rank by score descending
-        ranked = sorted(publications, key=lambda p: scores.get(p.title, 0), reverse=True)
+        ranked = sorted(
+            publications, key=lambda p: scores.get(self._publication_key(p), 0), reverse=True
+        )
 
         # Filter by minimum relevance score (AC #4)
-        qualified = [p for p in ranked if scores.get(p.title, 0) >= self.min_relevance_score]
-        below_threshold = [p for p in ranked if scores.get(p.title, 0) < self.min_relevance_score]
+        qualified = [
+            p for p in ranked if scores.get(self._publication_key(p), 0) >= self.min_relevance_score
+        ]
+        below_threshold = [
+            p for p in ranked if scores.get(self._publication_key(p), 0) < self.min_relevance_score
+        ]
 
         selected = qualified[:max_count]
         excluded = qualified[max_count:] + below_threshold
@@ -640,6 +690,23 @@ class ContentCurator:
         """
         digest = hashlib.md5(highlight.encode(), usedforsecurity=False).hexdigest()[:8]
         return f"hl_{digest}"
+
+    @staticmethod
+    def _publication_key(pub: Publication) -> str:
+        """Generate a unique key for a publication.
+
+        Uses title + venue + date to ensure uniqueness even for duplicate titles.
+        Falls back to hash if needed.
+
+        Args:
+            pub: The Publication object.
+
+        Returns:
+            A stable key string like 'pub_a1b2c3d4'.
+        """
+        content = f"{pub.title}|{pub.venue}|{pub.date}"
+        digest = hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()[:8]
+        return f"pub_{digest}"
 
     def _position_age_years(self, position: Position) -> float:
         """Calculate position age in years from end date."""

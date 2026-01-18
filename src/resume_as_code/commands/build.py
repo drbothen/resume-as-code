@@ -213,7 +213,9 @@ def build_command(
                 f"{len(pub_curation.excluded)} excluded by JD relevance[/dim]"
             )
 
-    # Add config data to ResumeData (Story 6.2, 6.6, 6.13, 6.14, 6.15, 7.19)
+    # Add config data to ResumeData (Story 6.2, 6.6, 6.13, 6.14, 6.15, 7.19, 8.2)
+    # Set publications_curated=True when JD was used for curation (Story 8.2 Task 6)
+    publications_were_curated = bool(jd_for_scoring and config.publications)
     resume = ResumeData(
         contact=resume.contact,
         summary=resume.summary,
@@ -224,6 +226,7 @@ def build_command(
         career_highlights=list(config.career_highlights),
         board_roles=list(config.board_roles),
         publications=curated_publications,
+        publications_curated=publications_were_curated,
         tailored_notice_text=actual_tailored_notice_text,
     )
 
