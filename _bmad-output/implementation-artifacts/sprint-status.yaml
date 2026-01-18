@@ -106,7 +106,7 @@ development_status:
   # FR51: Publications & Speaking section
   # FR52: Enhanced scope indicators (P&L, revenue, geography)
   # FR53: CTO resume template variant
-  epic-6: in-progress
+  epic-6: done
   6-1-profile-configuration-contact-info: done
   6-2-certifications-model-storage: done
   6-3-skills-curation-service: done
@@ -134,7 +134,7 @@ development_status:
   # Goal: Eliminate technical debt in schema/model layer, establish single source of truth, enable O*NET skill standardization
   # Technical Debt Analysis (2026-01-14): Schema drift, incompatible Scope models, date handling, skill normalization
   # Total Points: 68 (16 stories)
-  epic-7: in-progress
+  epic-7: done
   7-1-json-schema-auto-generation: done  # P1, 3 pts - Auto-generate JSON schemas from Pydantic models
   7-2-unified-scope-model: done  # P1, 5 pts - Single Scope model for positions and work units
   7-3-standardized-date-types: done  # P2, 3 pts - YearMonth and Year annotated types
@@ -153,8 +153,8 @@ development_status:
   7-16-cli-config-file-override: done  # P1, 2 pts - --config flag for custom config paths
   7-17-onet-registry-workflow-wiring: done  # P2, 5 pts - Wire O*NET & Registry into plan/build workflow
   7-18-score-actions-against-jd: done  # P2, 5 pts - Score action bullets against JD relevance
-  7-19-tailored-resume-notice: review  # P3, 2 pts - Optional footer notice for tailored resumes
-  7-20-employment-continuity-gap-detection: in-progress  # P2, 3 pts - Maintain timeline continuity
+  7-19-tailored-resume-notice: done  # P3, 2 pts - Optional footer notice for tailored resumes
+  7-20-employment-continuity-gap-detection: done  # P2, 3 pts - Maintain timeline continuity
   7-21-resume-init-command: done  # P2, 3 pts - Initialize project with resume init command
   epic-7-retrospective: optional
 
@@ -162,8 +162,8 @@ development_status:
   # Goal: Make resume-as-code installable via pip from PyPI
   # User Outcome: Simple installation with `pip install resume-as-code`
   # Total Points: 5 (1 story)
-  epic-10: backlog
-  10-1-pypi-package-distribution: in-progress  # P1, 5 pts - PyPI publishing and GitHub Actions release workflow
+  epic-10: done
+  10-1-pypi-package-distribution: done  # P1, 5 pts - PyPI publishing and GitHub Actions release workflow
 
   # Epic 8: Resume Template Enhancements
   # Goal: Improve resume template rendering for better visual presentation and professional formatting
@@ -177,9 +177,9 @@ development_status:
   # Goal: Robust data management with schema versioning, migration, and backward compatibility
   # User Outcome: Safe upgrades without data loss or manual file editing when schemas evolve
   # Total Points: 13 (2 stories)
-  epic-9: in-progress
+  epic-9: done
   9-1-schema-evolution-migration-system: done  # P2, 8 pts - Auto-detect and migrate outdated schemas
-  9-2-separate-config-from-data: review  # P1, 5 pts - Extract resume data from .resume.yaml to separate files
+  9-2-separate-config-from-data: done  # P1, 5 pts - Extract resume data from .resume.yaml to separate files
 
 # RESEARCH / TECH DEBT BACKLOG:
 # =============================
