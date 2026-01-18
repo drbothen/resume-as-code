@@ -81,7 +81,7 @@ Configure these in GitHub repository settings:
 1. Go to **Settings** → **Environments** → **New environment**
 2. Name: `testpypi`
 3. Add trusted publisher on [TestPyPI](https://test.pypi.org/manage/account/publishing/):
-   - **PyPI Project Name:** `resume-as-code-test` (different from prod to avoid collision)
+   - **PyPI Project Name:** `resume-as-code-ng-test` (different from prod)
    - Owner: `drbothen`
    - Repository: `resume-as-code`
    - Workflow: `release.yml`
@@ -93,6 +93,7 @@ Configure these in GitHub repository settings:
 2. Name: `pypi`
 3. Consider adding required reviewers for production releases
 4. Add trusted publisher on [PyPI](https://pypi.org/manage/account/publishing/):
+   - **PyPI Project Name:** `resume-as-code-ng`
    - Owner: `drbothen`
    - Repository: `resume-as-code`
    - Workflow: `release.yml`

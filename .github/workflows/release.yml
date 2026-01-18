@@ -84,7 +84,7 @@ jobs:
       - name: Check PyPI for existing version
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/resume-as-code/${VERSION}/json")
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/resume-as-code-ng/${VERSION}/json")
           if [ "$HTTP_CODE" = "200" ]; then
             echo "::error::Version $VERSION already exists on PyPI!"
             exit 1
@@ -185,16 +185,16 @@ jobs:
 
       - name: Rename package for TestPyPI
         run: |
-          # TestPyPI uses resume-as-code-test to avoid name collision
+          # TestPyPI uses resume-as-code-ng-test to avoid name collision
           cd dist
-          for f in *resume_as_code*; do
-            mv "$f" "${f//resume_as_code/resume_as_code_test}"
+          for f in *resume_as_code_ng*; do
+            mv "$f" "${f//resume_as_code_ng/resume_as_code_ng_test}"
           done
           # Update metadata in wheel
           for whl in *.whl; do
             python -m zipfile -e "$whl" tmp/
-            sed -i 's/resume-as-code/resume-as-code-test/g' tmp/*.dist-info/METADATA
-            sed -i 's/resume_as_code/resume_as_code_test/g' tmp/*.dist-info/RECORD
+            sed -i 's/resume-as-code-ng/resume-as-code-ng-test/g' tmp/*.dist-info/METADATA
+            sed -i 's/resume_as_code_ng/resume_as_code_ng_test/g' tmp/*.dist-info/RECORD
             rm "$whl"
             cd tmp && python -m zipfile -c "../$whl" . && cd ..
             rm -rf tmp/
@@ -223,7 +223,7 @@ jobs:
         run: |
           pip install --index-url https://test.pypi.org/simple/ \
             --extra-index-url https://pypi.org/simple/ \
-            resume-as-code-test==${{ needs.validate.outputs.version }}
+            resume-as-code-ng-test==${{ needs.validate.outputs.version }}
 
       - name: Smoke test
         run: |
