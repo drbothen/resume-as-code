@@ -163,7 +163,7 @@ development_status:
   # User Outcome: Simple installation with `pip install resume-as-code`
   # Total Points: 5 (1 story)
   epic-10: backlog
-  10-1-pypi-package-distribution: ready-for-dev  # P1, 5 pts - PyPI publishing and GitHub Actions release workflow
+  10-1-pypi-package-distribution: in-progress  # P1, 5 pts - PyPI publishing and GitHub Actions release workflow
 
   # Epic 8: Resume Template Enhancements
   # Goal: Improve resume template rendering for better visual presentation and professional formatting
@@ -171,7 +171,7 @@ development_status:
   # Total Points: 10 (2 stories)
   epic-8: in-progress
   8-1-employer-grouped-position-rendering: done  # P2, 5 pts - Nest positions under same employer
-  8-2-jd-relevant-publication-curation: ready-for-dev  # P2, 5 pts - Limit publications to top N JD-relevant
+  8-2-jd-relevant-publication-curation: in-progress  # P2, 5 pts - Limit publications to top N JD-relevant
 
   # Epic 9: Data Management & Migration
   # Goal: Robust data management with schema versioning, migration, and backward compatibility

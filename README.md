@@ -2,6 +2,12 @@
   <img src="assets/brand/lockup-horizontal.svg" alt="rac.me" width="280">
 </p>
 
+<p align="center">
+  <a href="https://pypi.org/project/resume-as-code/"><img alt="PyPI - Version" src="https://img.shields.io/pypi/v/resume-as-code?color=blue"></a>
+  <a href="https://pypi.org/project/resume-as-code/"><img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/resume-as-code"></a>
+  <a href="https://github.com/drbothen/resume-as-code/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/drbothen/resume-as-code"></a>
+</p>
+
 # Resume as Code
 
 > Treat your career data as structured, queryable truth.
@@ -32,8 +38,28 @@ Resume as Code inverts the traditional model: instead of editing documents, you 
 
 ### Installation
 
+**From PyPI (recommended):**
+
 ```bash
-# Clone and install
+pip install resume-as-code
+```
+
+**With optional features:**
+
+```bash
+# LLM-powered features (anthropic, openai)
+pip install resume-as-code[llm]
+
+# NLP features (spacy)
+pip install resume-as-code[nlp]
+
+# All optional dependencies
+pip install resume-as-code[llm,nlp]
+```
+
+**From source (development):**
+
+```bash
 git clone https://github.com/drbothen/resume-as-code
 cd resume-as-code
 uv sync --all-extras
@@ -46,27 +72,37 @@ brew install pango cairo
 export DYLD_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_LIBRARY_PATH"
 ```
 
+### Initialize Your Resume Project
+
+```bash
+# Initialize with placeholders (non-interactive)
+resume init --non-interactive
+
+# Or interactive mode for guided setup
+resume init
+```
+
 ### Create Your First Work Unit
 
 ```bash
 # Interactive mode with archetype template
-uv run resume new work-unit --archetype greenfield
+resume new work-unit --archetype greenfield
 ```
 
 ### Validate Your Data
 
 ```bash
-uv run resume validate
+resume validate
 ```
 
 ### Generate a Resume
 
 ```bash
 # Preview what will be selected
-uv run resume plan --jd job-description.txt
+resume plan --jd job-description.txt
 
 # Generate PDF and DOCX
-uv run resume build --jd job-description.txt
+resume build --jd job-description.txt
 ```
 
 Check `dist/` for your generated resume files.
@@ -169,15 +205,15 @@ resume list --filter tag:aws --filter confidence:high
 
 ```bash
 # Project from scratch
-uv run resume new work-unit --archetype greenfield \
+resume new work-unit --archetype greenfield \
   --title "Built multi-region deployment platform"
 
 # Incident response
-uv run resume new work-unit --archetype incident \
+resume new work-unit --archetype incident \
   --title "Resolved P1 outage affecting 50K users"
 
 # Leadership/team building
-uv run resume new work-unit --archetype leadership \
+resume new work-unit --archetype leadership \
   --title "Scaled engineering team from 5 to 25 engineers"
 ```
 
@@ -185,10 +221,10 @@ uv run resume new work-unit --archetype leadership \
 
 ```bash
 # Pipe-separated format (LLM-friendly)
-uv run resume new position "TechCorp|Senior Platform Engineer|2022-01|"
+resume new position "TechCorp|Senior Platform Engineer|2022-01|"
 
 # With executive scope indicators
-uv run resume new position \
+resume new position \
   --employer "Acme Corp" \
   --title "CTO" \
   --start-date 2020-01 \
@@ -201,15 +237,15 @@ uv run resume new position \
 
 ```bash
 # Check position IDs
-uv run resume --json list positions | jq '.[].id'
+resume --json list positions | jq '.[].id'
 
 # Create work unit linked to position
-uv run resume new work-unit \
+resume new work-unit \
   --position-id pos-techcorp-senior-platform-engineer \
   --title "Reduced deployment time by 80%"
 
 # Or create both together
-uv run resume new work-unit \
+resume new work-unit \
   --position "StartupXYZ|Lead Engineer|2023-01|" \
   --title "Led cloud migration saving \$2M annually"
 ```
@@ -218,24 +254,24 @@ uv run resume new work-unit \
 
 ```bash
 # Get work units as JSON
-uv run resume --json list | jq '.data[] | .id'
+resume --json list | jq '.data[] | .id'
 
 # Validate and check for errors
-uv run resume --json validate
+resume --json validate
 if [ $? -ne 0 ]; then echo "Validation failed"; fi
 
 # Plan and extract selected work units
-uv run resume --json plan --jd job.txt | jq '.selected_work_units[].id'
+resume --json plan --jd job.txt | jq '.selected_work_units[].id'
 ```
 
 ### Adding Certifications and Education
 
 ```bash
 # Certification with expiration
-uv run resume new certification "CISSP|ISC2|2023-06|2026-06"
+resume new certification "CISSP|ISC2|2023-06|2026-06"
 
 # Education
-uv run resume new education "BS Computer Science|UT Austin|2012|Magna Cum Laude"
+resume new education "BS Computer Science|UT Austin|2012|Magna Cum Laude"
 ```
 
 ## Configuration
