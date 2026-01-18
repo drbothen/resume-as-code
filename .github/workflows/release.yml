@@ -183,6 +183,24 @@ jobs:
           name: dist
           path: dist/
 
+      - name: Rename package for TestPyPI
+        run: |
+          # TestPyPI uses resume-as-code-test to avoid name collision
+          cd dist
+          for f in *resume_as_code*; do
+            mv "$f" "${f//resume_as_code/resume_as_code_test}"
+          done
+          # Update metadata in wheel
+          for whl in *.whl; do
+            python -m zipfile -e "$whl" tmp/
+            sed -i 's/resume-as-code/resume-as-code-test/g' tmp/*.dist-info/METADATA
+            sed -i 's/resume_as_code/resume_as_code_test/g' tmp/*.dist-info/RECORD
+            rm "$whl"
+            cd tmp && python -m zipfile -c "../$whl" . && cd ..
+            rm -rf tmp/
+          done
+          ls -la
+
       - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
@@ -205,7 +223,7 @@ jobs:
         run: |
           pip install --index-url https://test.pypi.org/simple/ \
             --extra-index-url https://pypi.org/simple/ \
-            resume-as-code==${{ needs.validate.outputs.version }}
+            resume-as-code-test==${{ needs.validate.outputs.version }}
 
       - name: Smoke test
         run: |
