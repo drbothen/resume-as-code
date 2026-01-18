@@ -190,6 +190,17 @@ resume list --filter tag:aws --filter confidence:high
 | `resume cache stats` | Show embedding cache statistics |
 | `resume cache clear` | Clear stale cache entries |
 
+### Schema Migration
+
+| Command | Description |
+|---------|-------------|
+| `resume migrate --status` | Show current schema version and migration status |
+| `resume migrate --dry-run` | Preview changes without modifying files |
+| `resume migrate` | Apply schema migrations (with confirmation) |
+| `resume migrate --rollback <backup>` | Restore from backup directory |
+
+Migrations automatically detect legacy configs (no `schema_version` field) and offer to upgrade them. Backups are created before any changes.
+
 ### Global Flags
 
 | Flag | Description |
