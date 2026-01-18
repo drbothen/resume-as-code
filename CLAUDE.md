@@ -226,6 +226,13 @@ employment_continuity: minimum_bullet  # Default: ensure 1 bullet per position
 ```
 When using `allow_gaps`, the CLI will detect and warn about employment gaps >3 months.
 
+**Config-based template options** (in `.resume.yaml`):
+```yaml
+template_options:
+  group_employer_positions: true  # Default: group multiple positions at same employer
+```
+When enabled (default), multiple positions at the same employer are rendered under a single employer heading with nested roles showing career progression. Set to `false` for traditional separate position rendering.
+
 ### List Command Options
 
 | Flag | Description |
