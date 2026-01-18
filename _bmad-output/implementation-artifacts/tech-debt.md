@@ -37,7 +37,92 @@ for cert in candidates:
 
 ## Code Quality
 
-*(No items currently)*
+### TD-008: Comprehensive Resource Validation
+**Identified:** 2026-01-18
+**Story:** Feature Enhancement
+**Severity:** MEDIUM
+**Location:** `src/resume_as_code/commands/validate.py`, `src/resume_as_code/services/validator.py`
+
+**Problem:**
+The `resume validate` command only validates Work Units against their JSON schema. Other resources (positions, certifications, education, publications, board-roles, highlights) are only validated by Pydantic at load time, meaning users must run other commands to discover validation errors.
+
+**Current Behavior:**
+```bash
+resume validate                    # Only validates work-units/
+resume validate --check-positions  # Validates work unit position_id references, not positions.yaml itself
+```
+
+Other resources fail silently until a command tries to load them:
+```bash
+resume list certifications         # Fails here if certifications.yaml is malformed
+```
+
+**Proposed Enhancement:**
+
+1. **Default behavior** - `resume validate` checks ALL resources:
+   - Work Units (existing JSON schema validation)
+   - Positions (schema + date logic)
+   - Certifications (schema + expiration dates)
+   - Education (schema)
+   - Publications (schema + date format)
+   - Board Roles (schema + date logic)
+   - Highlights (schema)
+   - `.resume.yaml` config (schema version, paths exist)
+
+2. **Subcommands for individual validation:**
+   ```bash
+   resume validate                      # Validate everything
+   resume validate work-units           # Just work units (current behavior)
+   resume validate positions            # Just positions.yaml
+   resume validate certifications       # Just certifications
+   resume validate education            # Just education
+   resume validate publications         # Just publications
+   resume validate board-roles          # Just board roles
+   resume validate highlights           # Just highlights
+   resume validate config               # Just .resume.yaml
+   ```
+
+3. **Cross-resource validation:**
+   - Work unit `position_id` references valid position (existing `--check-positions`)
+   - Certification dates are logical (date <= expires)
+   - Position dates are logical (start_date <= end_date)
+   - Board role dates are logical
+   - Publication dates are valid format
+
+4. **Output format:**
+   ```
+   Validating all resources...
+
+   Work Units:     ✓ 44/44 valid
+   Positions:      ✓ 12/12 valid
+   Certifications: ✓ 11/11 valid
+   Education:      ✓ 1/1 valid
+   Publications:   ⚠ 43/45 valid (2 warnings)
+   Board Roles:    ✓ 1/1 valid
+   Highlights:     ✓ 5/5 valid
+   Config:         ✓ Valid
+
+   ────────────────────────────────
+   Overall: ✓ All resources valid (2 warnings)
+   ```
+
+**Implementation Approach:**
+1. Create `ResourceValidator` base class with common validation logic
+2. Create specific validators: `PositionValidator`, `CertificationValidator`, etc.
+3. Add JSON schemas for other resource types (optional, Pydantic may suffice)
+4. Update CLI to support subcommands via Click group
+5. Aggregate results for summary output
+
+**Benefits:**
+- Single command to validate entire resume project
+- Catch all errors before `build` or `plan` commands
+- Useful for CI/CD pipelines
+- Consistent validation experience across resource types
+
+**Impact:**
+- Improves user experience significantly
+- Catches errors earlier in workflow
+- Medium effort - requires new validators and CLI changes
 
 ---
 
