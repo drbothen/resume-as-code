@@ -1,6 +1,7 @@
 """Board role service for managing board and advisory roles.
 
-Handles loading, saving, and querying board roles from .resume.yaml config.
+Handles loading, saving, and querying board roles.
+Story 9.2: Uses data_loader for cascading lookup (separate file or embedded).
 """
 
 from __future__ import annotations
@@ -9,7 +10,11 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
+from resume_as_code.data_loader import load_board_roles as dl_load_board_roles
 from resume_as_code.models.board_role import BoardRole
+
+# Default filename for separated data structure (Story 9.2)
+DEFAULT_BOARD_ROLES_FILE = "board-roles.yaml"
 
 
 class BoardRoleService:
@@ -20,41 +25,26 @@ class BoardRoleService:
 
         Args:
             config_path: Path to .resume.yaml config file. Defaults to .resume.yaml
-                        in current directory.
+                        in current directory. Used to determine project root.
         """
         self.config_path = config_path or Path(".resume.yaml")
+        self.project_path = self.config_path.parent
         self._board_roles: list[BoardRole] | None = None
 
     def load_board_roles(self) -> list[BoardRole]:
-        """Load board roles from config file.
+        """Load board roles using data_loader cascading lookup.
+
+        Story 9.2: Supports both separated files and embedded data.
 
         Returns:
             List of BoardRole objects.
-            Returns empty list if file doesn't exist or has no board_roles.
+            Returns empty list if no board roles found.
         """
         if self._board_roles is not None:
             return self._board_roles
 
-        if not self.config_path.exists():
-            self._board_roles = []
-            return self._board_roles
-
-        yaml = YAML()
-        with open(self.config_path) as f:
-            data = yaml.load(f)
-
-        if not data:
-            self._board_roles = []
-            return self._board_roles
-
-        roles_data = data.get("board_roles", [])
-        self._board_roles = []
-
-        for role_data in roles_data:
-            # Convert to dict if needed (ruamel returns CommentedMap)
-            role_dict = dict(role_data) if hasattr(role_data, "items") else role_data
-            self._board_roles.append(BoardRole.model_validate(role_dict))
-
+        # Use data_loader for cascading lookup (Story 9.2)
+        self._board_roles = dl_load_board_roles(self.project_path)
         return self._board_roles
 
     def find_board_role(self, organization: str, role: str | None = None) -> BoardRole | None:
@@ -81,10 +71,19 @@ class BoardRoleService:
 
         return None
 
-    def save_board_role(self, board_role: BoardRole) -> None:
-        """Save a board role to the config file.
+    def _uses_separated_format(self) -> bool:
+        """Check if project uses separated data files (v3 format).
 
-        Creates the file if it doesn't exist, or adds to existing file.
+        Returns:
+            True if board-roles.yaml exists, False otherwise.
+        """
+        return (self.project_path / DEFAULT_BOARD_ROLES_FILE).exists()
+
+    def save_board_role(self, board_role: BoardRole) -> None:
+        """Save a board role to the appropriate file.
+
+        Story 9.2: Writes to board-roles.yaml if it exists (v3 format),
+        otherwise writes to .resume.yaml (v2 format).
 
         Args:
             board_role: The BoardRole to save.
@@ -92,32 +91,49 @@ class BoardRoleService:
         yaml = YAML()
         yaml.default_flow_style = False
 
-        # Load existing data
-        if self.config_path.exists():
-            with open(self.config_path) as f:
-                data = yaml.load(f) or {}
-        else:
-            data = {}
-
-        if "board_roles" not in data:
-            data["board_roles"] = []
-
-        # Add board role (exclude None values and default display)
+        # Prepare board role data
         role_data = board_role.model_dump(exclude_none=True)
         # Remove 'display' if it's True (default)
         if role_data.get("display") is True:
             del role_data["display"]
-        data["board_roles"].append(role_data)
 
-        # Save
-        with open(self.config_path, "w") as f:
-            yaml.dump(data, f)
+        if self._uses_separated_format():
+            # v3 format: write to board-roles.yaml (list format)
+            data_path = self.project_path / DEFAULT_BOARD_ROLES_FILE
+            if data_path.exists():
+                with open(data_path) as f:
+                    roles_list = yaml.load(f) or []
+            else:
+                roles_list = []
+
+            roles_list.append(role_data)
+
+            with open(data_path, "w") as f:
+                yaml.dump(roles_list, f)
+        else:
+            # v2 format: write to .resume.yaml (embedded)
+            if self.config_path.exists():
+                with open(self.config_path) as f:
+                    data = yaml.load(f) or {}
+            else:
+                data = {}
+
+            if "board_roles" not in data:
+                data["board_roles"] = []
+
+            data["board_roles"].append(role_data)
+
+            with open(self.config_path, "w") as f:
+                yaml.dump(data, f)
 
         # Clear cache
         self._board_roles = None
 
     def remove_board_role(self, organization: str) -> bool:
         """Remove a board role by organization (case-insensitive partial match).
+
+        Story 9.2: Removes from board-roles.yaml if it exists (v3 format),
+        otherwise removes from .resume.yaml (v2 format).
 
         Args:
             organization: Full or partial organization name to match.
@@ -132,34 +148,61 @@ class BoardRoleService:
         yaml = YAML()
         yaml.default_flow_style = False
 
-        # Load existing data
-        if not self.config_path.exists():
-            return False
-
-        with open(self.config_path) as f:
-            data = yaml.load(f) or {}
-
-        if "board_roles" not in data or not data["board_roles"]:
-            return False
-
-        # Find matching board role index
         org_lower = organization.lower().strip()
-        remove_idx = None
-        for idx, role_data in enumerate(data["board_roles"]):
-            role_org = role_data.get("organization", "")
-            if org_lower in role_org.lower():
-                remove_idx = idx
-                break
 
-        if remove_idx is None:
-            return False
+        if self._uses_separated_format():
+            # v3 format: remove from board-roles.yaml
+            data_path = self.project_path / DEFAULT_BOARD_ROLES_FILE
+            if not data_path.exists():
+                return False
 
-        # Remove the board role
-        del data["board_roles"][remove_idx]
+            with open(data_path) as f:
+                roles_list = yaml.load(f) or []
 
-        # Save
-        with open(self.config_path, "w") as f:
-            yaml.dump(data, f)
+            if not roles_list:
+                return False
+
+            # Find matching board role index
+            remove_idx = None
+            for idx, role_data in enumerate(roles_list):
+                role_org = role_data.get("organization", "")
+                if org_lower in role_org.lower():
+                    remove_idx = idx
+                    break
+
+            if remove_idx is None:
+                return False
+
+            del roles_list[remove_idx]
+
+            with open(data_path, "w") as f:
+                yaml.dump(roles_list, f)
+        else:
+            # v2 format: remove from .resume.yaml
+            if not self.config_path.exists():
+                return False
+
+            with open(self.config_path) as f:
+                data = yaml.load(f) or {}
+
+            if "board_roles" not in data or not data["board_roles"]:
+                return False
+
+            # Find matching board role index
+            remove_idx = None
+            for idx, role_data in enumerate(data["board_roles"]):
+                role_org = role_data.get("organization", "")
+                if org_lower in role_org.lower():
+                    remove_idx = idx
+                    break
+
+            if remove_idx is None:
+                return False
+
+            del data["board_roles"][remove_idx]
+
+            with open(self.config_path, "w") as f:
+                yaml.dump(data, f)
 
         # Clear cache
         self._board_roles = None

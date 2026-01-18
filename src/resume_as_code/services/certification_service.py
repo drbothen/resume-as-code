@@ -1,6 +1,7 @@
 """Certification service for managing professional certifications.
 
-Handles loading, saving, and querying certifications from .resume.yaml config.
+Handles loading, saving, and querying certifications.
+Story 9.2: Uses data_loader for cascading lookup (separate file or embedded).
 """
 
 from __future__ import annotations
@@ -9,7 +10,11 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
+from resume_as_code.data_loader import load_certifications as dl_load_certifications
 from resume_as_code.models.certification import Certification
+
+# Default filename for separated data structure (Story 9.2)
+DEFAULT_CERTIFICATIONS_FILE = "certifications.yaml"
 
 
 class CertificationService:
@@ -20,41 +25,26 @@ class CertificationService:
 
         Args:
             config_path: Path to .resume.yaml config file. Defaults to .resume.yaml
-                        in current directory.
+                        in current directory. Used to determine project root.
         """
         self.config_path = config_path or Path(".resume.yaml")
+        self.project_path = self.config_path.parent
         self._certifications: list[Certification] | None = None
 
     def load_certifications(self) -> list[Certification]:
-        """Load certifications from config file.
+        """Load certifications using data_loader cascading lookup.
+
+        Story 9.2: Supports both separated files and embedded data.
 
         Returns:
             List of Certification objects.
-            Returns empty list if file doesn't exist or has no certifications.
+            Returns empty list if no certifications found.
         """
         if self._certifications is not None:
             return self._certifications
 
-        if not self.config_path.exists():
-            self._certifications = []
-            return self._certifications
-
-        yaml = YAML()
-        with open(self.config_path) as f:
-            data = yaml.load(f)
-
-        if not data:
-            self._certifications = []
-            return self._certifications
-
-        certs_data = data.get("certifications", [])
-        self._certifications = []
-
-        for cert_data in certs_data:
-            # Convert to dict if needed (ruamel returns CommentedMap)
-            cert_dict = dict(cert_data) if hasattr(cert_data, "items") else cert_data
-            self._certifications.append(Certification.model_validate(cert_dict))
-
+        # Use data_loader for cascading lookup (Story 9.2)
+        self._certifications = dl_load_certifications(self.project_path)
         return self._certifications
 
     def find_certification(self, name: str, issuer: str | None = None) -> Certification | None:
@@ -82,10 +72,32 @@ class CertificationService:
 
         return None
 
-    def save_certification(self, certification: Certification) -> None:
-        """Save a certification to the config file.
+    def _get_data_file_path(self) -> Path:
+        """Get the path to the certifications data file.
 
-        Creates the file if it doesn't exist, or adds to existing file.
+        Story 9.2: Prefers separated file, falls back to .resume.yaml.
+
+        Returns:
+            Path to certifications.yaml if it exists, otherwise .resume.yaml.
+        """
+        separated_path = self.project_path / DEFAULT_CERTIFICATIONS_FILE
+        if separated_path.exists():
+            return separated_path
+        return self.config_path
+
+    def _uses_separated_format(self) -> bool:
+        """Check if project uses separated data files (v3 format).
+
+        Returns:
+            True if certifications.yaml exists, False otherwise.
+        """
+        return (self.project_path / DEFAULT_CERTIFICATIONS_FILE).exists()
+
+    def save_certification(self, certification: Certification) -> None:
+        """Save a certification to the appropriate file.
+
+        Story 9.2: Writes to certifications.yaml if it exists (v3 format),
+        otherwise writes to .resume.yaml (v2 format).
 
         Args:
             certification: The Certification to save.
@@ -93,17 +105,7 @@ class CertificationService:
         yaml = YAML()
         yaml.default_flow_style = False
 
-        # Load existing data
-        if self.config_path.exists():
-            with open(self.config_path) as f:
-                data = yaml.load(f) or {}
-        else:
-            data = {}
-
-        if "certifications" not in data:
-            data["certifications"] = []
-
-        # Add certification (exclude None values)
+        # Prepare certification data
         cert_data = certification.model_dump(exclude_none=True)
         # Remove 'display' if it's True (default)
         if cert_data.get("display") is True:
@@ -111,17 +113,44 @@ class CertificationService:
         # Convert HttpUrl to string for YAML serialization
         if "url" in cert_data and cert_data["url"] is not None:
             cert_data["url"] = str(cert_data["url"])
-        data["certifications"].append(cert_data)
 
-        # Save
-        with open(self.config_path, "w") as f:
-            yaml.dump(data, f)
+        if self._uses_separated_format():
+            # v3 format: write to certifications.yaml (list format)
+            data_path = self.project_path / DEFAULT_CERTIFICATIONS_FILE
+            if data_path.exists():
+                with open(data_path) as f:
+                    certs_list = yaml.load(f) or []
+            else:
+                certs_list = []
+
+            certs_list.append(cert_data)
+
+            with open(data_path, "w") as f:
+                yaml.dump(certs_list, f)
+        else:
+            # v2 format: write to .resume.yaml (embedded)
+            if self.config_path.exists():
+                with open(self.config_path) as f:
+                    data = yaml.load(f) or {}
+            else:
+                data = {}
+
+            if "certifications" not in data:
+                data["certifications"] = []
+
+            data["certifications"].append(cert_data)
+
+            with open(self.config_path, "w") as f:
+                yaml.dump(data, f)
 
         # Clear cache
         self._certifications = None
 
     def remove_certification(self, name: str) -> bool:
         """Remove a certification by name (case-insensitive partial match).
+
+        Story 9.2: Removes from certifications.yaml if it exists (v3 format),
+        otherwise removes from .resume.yaml (v2 format).
 
         Args:
             name: Full or partial certification name to match.
@@ -136,34 +165,61 @@ class CertificationService:
         yaml = YAML()
         yaml.default_flow_style = False
 
-        # Load existing data
-        if not self.config_path.exists():
-            return False
-
-        with open(self.config_path) as f:
-            data = yaml.load(f) or {}
-
-        if "certifications" not in data or not data["certifications"]:
-            return False
-
-        # Find matching certification index
         name_lower = name.lower().strip()
-        remove_idx = None
-        for idx, cert_data in enumerate(data["certifications"]):
-            cert_name = cert_data.get("name", "")
-            if name_lower in cert_name.lower():
-                remove_idx = idx
-                break
 
-        if remove_idx is None:
-            return False
+        if self._uses_separated_format():
+            # v3 format: remove from certifications.yaml
+            data_path = self.project_path / DEFAULT_CERTIFICATIONS_FILE
+            if not data_path.exists():
+                return False
 
-        # Remove the certification
-        del data["certifications"][remove_idx]
+            with open(data_path) as f:
+                certs_list = yaml.load(f) or []
 
-        # Save
-        with open(self.config_path, "w") as f:
-            yaml.dump(data, f)
+            if not certs_list:
+                return False
+
+            # Find matching certification index
+            remove_idx = None
+            for idx, cert_data in enumerate(certs_list):
+                cert_name = cert_data.get("name", "")
+                if name_lower in cert_name.lower():
+                    remove_idx = idx
+                    break
+
+            if remove_idx is None:
+                return False
+
+            del certs_list[remove_idx]
+
+            with open(data_path, "w") as f:
+                yaml.dump(certs_list, f)
+        else:
+            # v2 format: remove from .resume.yaml
+            if not self.config_path.exists():
+                return False
+
+            with open(self.config_path) as f:
+                data = yaml.load(f) or {}
+
+            if "certifications" not in data or not data["certifications"]:
+                return False
+
+            # Find matching certification index
+            remove_idx = None
+            for idx, cert_data in enumerate(data["certifications"]):
+                cert_name = cert_data.get("name", "")
+                if name_lower in cert_name.lower():
+                    remove_idx = idx
+                    break
+
+            if remove_idx is None:
+                return False
+
+            del data["certifications"][remove_idx]
+
+            with open(self.config_path, "w") as f:
+                yaml.dump(data, f)
 
         # Clear cache
         self._certifications = None

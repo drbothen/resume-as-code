@@ -1,6 +1,7 @@
 """Education service for managing academic credentials.
 
-Handles loading, saving, and querying education records from .resume.yaml config.
+Handles loading, saving, and querying education records.
+Story 9.2: Uses data_loader for cascading lookup (separate file or embedded).
 """
 
 from __future__ import annotations
@@ -9,7 +10,11 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
+from resume_as_code.data_loader import load_education as dl_load_education
 from resume_as_code.models.education import Education
+
+# Default filename for separated data structure (Story 9.2)
+DEFAULT_EDUCATION_FILE = "education.yaml"
 
 
 class EducationService:
@@ -20,41 +25,26 @@ class EducationService:
 
         Args:
             config_path: Path to .resume.yaml config file. Defaults to .resume.yaml
-                        in current directory.
+                        in current directory. Used to determine project root.
         """
         self.config_path = config_path or Path(".resume.yaml")
+        self.project_path = self.config_path.parent
         self._education: list[Education] | None = None
 
     def load_education(self) -> list[Education]:
-        """Load education records from config file.
+        """Load education records using data_loader cascading lookup.
+
+        Story 9.2: Supports both separated files and embedded data.
 
         Returns:
             List of Education objects.
-            Returns empty list if file doesn't exist or has no education records.
+            Returns empty list if no education records found.
         """
         if self._education is not None:
             return self._education
 
-        if not self.config_path.exists():
-            self._education = []
-            return self._education
-
-        yaml = YAML()
-        with open(self.config_path) as f:
-            data = yaml.load(f)
-
-        if not data:
-            self._education = []
-            return self._education
-
-        edu_data = data.get("education", [])
-        self._education = []
-
-        for edu_item in edu_data:
-            # Convert to dict if needed (ruamel returns CommentedMap)
-            edu_dict = dict(edu_item) if hasattr(edu_item, "items") else edu_item
-            self._education.append(Education.model_validate(edu_dict))
-
+        # Use data_loader for cascading lookup (Story 9.2)
+        self._education = dl_load_education(self.project_path)
         return self._education
 
     def find_education(self, degree: str, institution: str) -> Education | None:
@@ -82,10 +72,19 @@ class EducationService:
 
         return None
 
-    def save_education(self, education: Education) -> None:
-        """Save an education record to the config file.
+    def _uses_separated_format(self) -> bool:
+        """Check if project uses separated data files (v3 format).
 
-        Creates the file if it doesn't exist, or adds to existing file.
+        Returns:
+            True if education.yaml exists, False otherwise.
+        """
+        return (self.project_path / DEFAULT_EDUCATION_FILE).exists()
+
+    def save_education(self, education: Education) -> None:
+        """Save an education record to the appropriate file.
+
+        Story 9.2: Writes to education.yaml if it exists (v3 format),
+        otherwise writes to .resume.yaml (v2 format).
 
         Args:
             education: The Education record to save.
@@ -93,26 +92,40 @@ class EducationService:
         yaml = YAML()
         yaml.default_flow_style = False
 
-        # Load existing data
-        if self.config_path.exists():
-            with open(self.config_path) as f:
-                data = yaml.load(f) or {}
-        else:
-            data = {}
-
-        if "education" not in data:
-            data["education"] = []
-
-        # Add education (exclude None values)
+        # Prepare education data
         edu_data = education.model_dump(exclude_none=True)
         # Remove 'display' if it's True (default)
         if edu_data.get("display") is True:
             del edu_data["display"]
-        data["education"].append(edu_data)
 
-        # Save
-        with open(self.config_path, "w") as f:
-            yaml.dump(data, f)
+        if self._uses_separated_format():
+            # v3 format: write to education.yaml (list format)
+            data_path = self.project_path / DEFAULT_EDUCATION_FILE
+            if data_path.exists():
+                with open(data_path) as f:
+                    edu_list = yaml.load(f) or []
+            else:
+                edu_list = []
+
+            edu_list.append(edu_data)
+
+            with open(data_path, "w") as f:
+                yaml.dump(edu_list, f)
+        else:
+            # v2 format: write to .resume.yaml (embedded)
+            if self.config_path.exists():
+                with open(self.config_path) as f:
+                    data = yaml.load(f) or {}
+            else:
+                data = {}
+
+            if "education" not in data:
+                data["education"] = []
+
+            data["education"].append(edu_data)
+
+            with open(self.config_path, "w") as f:
+                yaml.dump(data, f)
 
         # Clear cache
         self._education = None
@@ -136,7 +149,8 @@ class EducationService:
     def remove_education(self, degree: str) -> bool:
         """Remove an education record by degree name.
 
-        Performs exact match (case-insensitive) on degree name.
+        Story 9.2: Removes from education.yaml if it exists (v3 format),
+        otherwise removes from .resume.yaml (v2 format).
 
         Args:
             degree: The exact degree name to remove.
@@ -147,28 +161,49 @@ class EducationService:
         yaml = YAML()
         yaml.default_flow_style = False
 
-        if not self.config_path.exists():
-            return False
-
-        with open(self.config_path) as f:
-            data = yaml.load(f) or {}
-
-        if "education" not in data or not data["education"]:
-            return False
-
-        original_count = len(data["education"])
         degree_lower = degree.lower().strip()
 
-        data["education"] = [
-            e for e in data["education"] if e.get("degree", "").lower().strip() != degree_lower
-        ]
+        if self._uses_separated_format():
+            # v3 format: remove from education.yaml
+            data_path = self.project_path / DEFAULT_EDUCATION_FILE
+            if not data_path.exists():
+                return False
 
-        if len(data["education"]) == original_count:
-            return False
+            with open(data_path) as f:
+                edu_list = yaml.load(f) or []
 
-        # Save
-        with open(self.config_path, "w") as f:
-            yaml.dump(data, f)
+            if not edu_list:
+                return False
+
+            original_count = len(edu_list)
+            edu_list = [e for e in edu_list if e.get("degree", "").lower().strip() != degree_lower]
+
+            if len(edu_list) == original_count:
+                return False
+
+            with open(data_path, "w") as f:
+                yaml.dump(edu_list, f)
+        else:
+            # v2 format: remove from .resume.yaml
+            if not self.config_path.exists():
+                return False
+
+            with open(self.config_path) as f:
+                data = yaml.load(f) or {}
+
+            if "education" not in data or not data["education"]:
+                return False
+
+            original_count = len(data["education"])
+            data["education"] = [
+                e for e in data["education"] if e.get("degree", "").lower().strip() != degree_lower
+            ]
+
+            if len(data["education"]) == original_count:
+                return False
+
+            with open(self.config_path, "w") as f:
+                yaml.dump(data, f)
 
         # Clear cache
         self._education = None

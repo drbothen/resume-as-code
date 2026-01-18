@@ -272,6 +272,8 @@ N/A - No debug issues encountered
 
 7. **Documentation**: Updated `docs/data-model.md` with new file structure and migration guide. Updated `CLAUDE.md` File Locations table.
 
+8. **Code Review Remediation**: Updated all 5 service files (CertificationService, EducationService, PublicationService, BoardRoleService, HighlightService) to use `data_loader` for cascading lookup. This fixes AC #8 (CLI Transparency) - services now properly support both v2 embedded and v3 separated data formats for load/save/remove operations.
+
 ### File List
 
 **New Files:**
@@ -283,6 +285,11 @@ N/A - No debug issues encountered
 - `src/resume_as_code/commands/init.py` - Separated file structure creation
 - `src/resume_as_code/commands/build.py` - Use data_loader
 - `src/resume_as_code/migrations/__init__.py` - CURRENT_SCHEMA_VERSION = "3.0.0"
+- `src/resume_as_code/services/certification_service.py` - Use data_loader for cascading lookup
+- `src/resume_as_code/services/education_service.py` - Use data_loader for cascading lookup
+- `src/resume_as_code/services/publication_service.py` - Use data_loader for cascading lookup
+- `src/resume_as_code/services/board_role_service.py` - Use data_loader for cascading lookup
+- `src/resume_as_code/services/highlight_service.py` - Use data_loader for cascading lookup
 - `tests/unit/test_migrations.py` - v2_to_v3 migration tests
 - `tests/unit/test_init_command.py` - Updated for profile.yaml
 - `tests/unit/test_profile_config.py` - Updated for data_loader

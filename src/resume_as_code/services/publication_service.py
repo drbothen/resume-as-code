@@ -1,6 +1,7 @@
 """Publication service for managing publications and speaking engagements.
 
-Handles loading, saving, and querying publications from .resume.yaml config.
+Handles loading, saving, and querying publications.
+Story 9.2: Uses data_loader for cascading lookup (separate file or embedded).
 """
 
 from __future__ import annotations
@@ -9,7 +10,11 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
+from resume_as_code.data_loader import load_publications as dl_load_publications
 from resume_as_code.models.publication import Publication
+
+# Default filename for separated data structure (Story 9.2)
+DEFAULT_PUBLICATIONS_FILE = "publications.yaml"
 
 
 class PublicationService:
@@ -20,41 +25,26 @@ class PublicationService:
 
         Args:
             config_path: Path to .resume.yaml config file. Defaults to .resume.yaml
-                        in current directory.
+                        in current directory. Used to determine project root.
         """
         self.config_path = config_path or Path(".resume.yaml")
+        self.project_path = self.config_path.parent
         self._publications: list[Publication] | None = None
 
     def load_publications(self) -> list[Publication]:
-        """Load publications from config file.
+        """Load publications using data_loader cascading lookup.
+
+        Story 9.2: Supports both separated files and embedded data.
 
         Returns:
             List of Publication objects.
-            Returns empty list if file doesn't exist or has no publications.
+            Returns empty list if no publications found.
         """
         if self._publications is not None:
             return self._publications
 
-        if not self.config_path.exists():
-            self._publications = []
-            return self._publications
-
-        yaml = YAML()
-        with open(self.config_path) as f:
-            data = yaml.load(f)
-
-        if not data:
-            self._publications = []
-            return self._publications
-
-        pubs_data = data.get("publications", [])
-        self._publications = []
-
-        for pub_data in pubs_data:
-            # Convert to dict if needed (ruamel returns CommentedMap)
-            pub_dict = dict(pub_data) if hasattr(pub_data, "items") else pub_data
-            self._publications.append(Publication.model_validate(pub_dict))
-
+        # Use data_loader for cascading lookup (Story 9.2)
+        self._publications = dl_load_publications(self.project_path)
         return self._publications
 
     def find_publication(self, title: str) -> Publication | None:
@@ -77,10 +67,19 @@ class PublicationService:
 
         return None
 
-    def save_publication(self, publication: Publication) -> None:
-        """Save a publication to the config file.
+    def _uses_separated_format(self) -> bool:
+        """Check if project uses separated data files (v3 format).
 
-        Creates the file if it doesn't exist, or adds to existing file.
+        Returns:
+            True if publications.yaml exists, False otherwise.
+        """
+        return (self.project_path / DEFAULT_PUBLICATIONS_FILE).exists()
+
+    def save_publication(self, publication: Publication) -> None:
+        """Save a publication to the appropriate file.
+
+        Story 9.2: Writes to publications.yaml if it exists (v3 format),
+        otherwise writes to .resume.yaml (v2 format).
 
         Args:
             publication: The Publication to save.
@@ -88,17 +87,7 @@ class PublicationService:
         yaml = YAML()
         yaml.default_flow_style = False
 
-        # Load existing data
-        if self.config_path.exists():
-            with open(self.config_path) as f:
-                data = yaml.load(f) or {}
-        else:
-            data = {}
-
-        if "publications" not in data:
-            data["publications"] = []
-
-        # Add publication (exclude None values)
+        # Prepare publication data
         pub_data = publication.model_dump(exclude_none=True)
         # Remove 'display' if it's True (default)
         if pub_data.get("display") is True:
@@ -109,17 +98,44 @@ class PublicationService:
         # Convert HttpUrl to string for YAML serialization
         if "url" in pub_data and pub_data["url"] is not None:
             pub_data["url"] = str(pub_data["url"])
-        data["publications"].append(pub_data)
 
-        # Save
-        with open(self.config_path, "w") as f:
-            yaml.dump(data, f)
+        if self._uses_separated_format():
+            # v3 format: write to publications.yaml (list format)
+            data_path = self.project_path / DEFAULT_PUBLICATIONS_FILE
+            if data_path.exists():
+                with open(data_path) as f:
+                    pubs_list = yaml.load(f) or []
+            else:
+                pubs_list = []
+
+            pubs_list.append(pub_data)
+
+            with open(data_path, "w") as f:
+                yaml.dump(pubs_list, f)
+        else:
+            # v2 format: write to .resume.yaml (embedded)
+            if self.config_path.exists():
+                with open(self.config_path) as f:
+                    data = yaml.load(f) or {}
+            else:
+                data = {}
+
+            if "publications" not in data:
+                data["publications"] = []
+
+            data["publications"].append(pub_data)
+
+            with open(self.config_path, "w") as f:
+                yaml.dump(data, f)
 
         # Clear cache
         self._publications = None
 
     def remove_publication(self, title: str) -> bool:
         """Remove a publication by title (case-insensitive partial match).
+
+        Story 9.2: Removes from publications.yaml if it exists (v3 format),
+        otherwise removes from .resume.yaml (v2 format).
 
         Args:
             title: Full or partial publication title to match.
@@ -134,34 +150,61 @@ class PublicationService:
         yaml = YAML()
         yaml.default_flow_style = False
 
-        # Load existing data
-        if not self.config_path.exists():
-            return False
-
-        with open(self.config_path) as f:
-            data = yaml.load(f) or {}
-
-        if "publications" not in data or not data["publications"]:
-            return False
-
-        # Find matching publication index
         title_lower = title.lower().strip()
-        remove_idx = None
-        for idx, pub_data in enumerate(data["publications"]):
-            pub_title = pub_data.get("title", "")
-            if title_lower in pub_title.lower():
-                remove_idx = idx
-                break
 
-        if remove_idx is None:
-            return False
+        if self._uses_separated_format():
+            # v3 format: remove from publications.yaml
+            data_path = self.project_path / DEFAULT_PUBLICATIONS_FILE
+            if not data_path.exists():
+                return False
 
-        # Remove the publication
-        del data["publications"][remove_idx]
+            with open(data_path) as f:
+                pubs_list = yaml.load(f) or []
 
-        # Save
-        with open(self.config_path, "w") as f:
-            yaml.dump(data, f)
+            if not pubs_list:
+                return False
+
+            # Find matching publication index
+            remove_idx = None
+            for idx, pub_data in enumerate(pubs_list):
+                pub_title = pub_data.get("title", "")
+                if title_lower in pub_title.lower():
+                    remove_idx = idx
+                    break
+
+            if remove_idx is None:
+                return False
+
+            del pubs_list[remove_idx]
+
+            with open(data_path, "w") as f:
+                yaml.dump(pubs_list, f)
+        else:
+            # v2 format: remove from .resume.yaml
+            if not self.config_path.exists():
+                return False
+
+            with open(self.config_path) as f:
+                data = yaml.load(f) or {}
+
+            if "publications" not in data or not data["publications"]:
+                return False
+
+            # Find matching publication index
+            remove_idx = None
+            for idx, pub_data in enumerate(data["publications"]):
+                pub_title = pub_data.get("title", "")
+                if title_lower in pub_title.lower():
+                    remove_idx = idx
+                    break
+
+            if remove_idx is None:
+                return False
+
+            del data["publications"][remove_idx]
+
+            with open(self.config_path, "w") as f:
+                yaml.dump(data, f)
 
         # Clear cache
         self._publications = None
