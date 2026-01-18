@@ -48,6 +48,18 @@ def _configure_weasyprint_library_path() -> None:
 _configure_weasyprint_library_path()
 
 
+@pytest.fixture(autouse=True)
+def clear_onet_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Clear ONET_API_KEY env var for test isolation.
+
+    Many tests assume O*NET is not configured. Without this fixture,
+    tests can fail if ONET_API_KEY is set in the user's environment.
+
+    Tests that need ONET_API_KEY can use monkeypatch.setenv() to set it.
+    """
+    monkeypatch.delenv("ONET_API_KEY", raising=False)
+
+
 @pytest.fixture
 def cli_runner() -> CliRunner:
     """Provide a Click CLI test runner."""

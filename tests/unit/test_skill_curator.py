@@ -433,13 +433,13 @@ class TestSkillCuratorONetLookup:
 
     def test_curator_lookup_and_cache_for_unknown_skill(self) -> None:
         """Unknown skills trigger O*NET lookup_and_cache (AC #4)."""
-        from unittest.mock import MagicMock, PropertyMock
+        from unittest.mock import MagicMock
 
         # Create registry with mock that tracks calls
         registry = SkillRegistry([])
         registry.lookup_and_cache = MagicMock(return_value=None)
-        # Mock has_onet_service to return True so lookup is attempted
-        type(registry).has_onet_service = PropertyMock(return_value=True)
+        # Set _onet_service to non-None so has_onet_service returns True
+        registry._onet_service = MagicMock()
 
         curator = SkillCurator(registry=registry)
         curator.curate({"NewUnknownSkill"})
@@ -449,14 +449,14 @@ class TestSkillCuratorONetLookup:
 
     def test_curator_uses_discovered_canonical(self) -> None:
         """Discovered skill uses O*NET canonical name (AC #4)."""
-        from unittest.mock import MagicMock, PropertyMock
+        from unittest.mock import MagicMock
 
         # Create registry with mock that returns discovered entry
         registry = SkillRegistry([])
         discovered_entry = SkillEntry(canonical="Computer Programming", aliases=["programming"])
         registry.lookup_and_cache = MagicMock(return_value=discovered_entry)
-        # Mock has_onet_service to return True so lookup is attempted
-        type(registry).has_onet_service = PropertyMock(return_value=True)
+        # Set _onet_service to non-None so has_onet_service returns True
+        registry._onet_service = MagicMock()
 
         curator = SkillCurator(registry=registry)
         result = curator.curate({"programming"})
@@ -481,12 +481,12 @@ class TestSkillCuratorONetLookup:
 
     def test_curator_passthrough_when_lookup_returns_none(self) -> None:
         """Unknown skill passes through when O*NET returns nothing."""
-        from unittest.mock import MagicMock, PropertyMock
+        from unittest.mock import MagicMock
 
         registry = SkillRegistry([])
         registry.lookup_and_cache = MagicMock(return_value=None)
-        # Mock has_onet_service to return True so lookup is attempted
-        type(registry).has_onet_service = PropertyMock(return_value=True)
+        # Set _onet_service to non-None so has_onet_service returns True
+        registry._onet_service = MagicMock()
 
         curator = SkillCurator(registry=registry)
         result = curator.curate({"ObscureSkillXYZ"})

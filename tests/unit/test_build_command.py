@@ -90,7 +90,8 @@ created_at: "2024-01-01T00:00:00"
 
             runner.invoke(main, ["build", "--plan", str(plan_file)])
 
-            mock_load.assert_called_once()
+            # Plan may be loaded multiple times (initial load + _get_full_jd)
+            assert mock_load.called
 
     def test_uses_work_units_from_plan(
         self,
@@ -340,6 +341,9 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = Path("./resumes")  # Config sets custom output_dir
             config.default_template = "modern"
             config.default_format = "both"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
             # Profile with defaults (needed for _load_contact_info)
             config.profile.name = None
             config.profile.title = None
@@ -353,9 +357,10 @@ created_at: "2024-01-01T00:00:00"
             (tmp_path / "work-units").mkdir()
             mock_config.return_value = config
 
-            runner.invoke(main, ["build", "--plan", str(plan_file)])
+            result = runner.invoke(main, ["build", "--plan", str(plan_file)])
 
             # Should use config output_dir, not hardcoded "dist"
+            assert result.exit_code == 0, f"Build failed: {result.output}"
             assert mock_gen.called
             call_args = mock_gen.call_args
             assert call_args.kwargs["output_dir"] == Path("./resumes")
@@ -391,6 +396,9 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = Path("dist")
             config.default_template = "ats-safe"  # Config sets custom template
             config.default_format = "both"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
             # Profile with defaults (needed for _load_contact_info)
             config.profile.name = None
             config.profile.title = None
@@ -444,6 +452,9 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = Path("./resumes")  # Config sets output_dir
             config.default_template = "modern"
             config.default_format = "both"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
             # Profile with defaults (needed for _load_contact_info)
             config.profile.name = None
             config.profile.title = None
@@ -497,6 +508,9 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = Path("dist")
             config.default_template = "ats-safe"  # Config sets template
             config.default_format = "both"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
             # Profile with defaults (needed for _load_contact_info)
             config.profile.name = None
             config.profile.title = None
@@ -548,6 +562,9 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = Path("dist")
             config.default_template = "modern"
             config.default_format = "pdf"  # Config sets pdf only
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
             # Profile with defaults (needed for _load_contact_info)
             config.profile.name = None
             config.profile.title = None
@@ -991,7 +1008,7 @@ created_at: "2024-01-01T00:00:00"
             # Verify skills were extracted and deduplicated (Story 6.3)
             # "Python" from skills_demonstrated and "python" from tags are merged
             assert "Python" in captured_resume_data.skills
-            assert "testing" in captured_resume_data.skills  # From tags
+            assert "Testing" in captured_resume_data.skills  # From tags (title-cased)
             # With deduplication, "python" merges with "Python" (title case preferred)
             assert captured_resume_data.skills.count("Python") == 1  # No duplicates
 
@@ -1106,26 +1123,25 @@ created_at: "2024-01-01T00:00:00"
         work_units_dir = tmp_path / "work-units"
         work_units_dir.mkdir()
 
-        from resume_as_code.providers.pdf import PDFRenderResult
-
         captured_resume_data = None
 
-        def capture_render(resume: Any, output_path: Path) -> PDFRenderResult:
+        def capture_generate_outputs(**kwargs: Any) -> None:
             nonlocal captured_resume_data
-            captured_resume_data = resume
-            return PDFRenderResult(output_path=output_path, page_count=1)
+            captured_resume_data = kwargs.get("resume")
 
         with (
             patch("resume_as_code.commands.build.get_config") as mock_config,
             patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
-            patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
-            patch("resume_as_code.providers.docx.DOCXProvider") as mock_docx,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
         ):
             config = MagicMock()
             config.work_units_dir = work_units_dir
             config.output_dir = Path("dist")
             config.default_template = "modern"
             config.default_format = "both"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
             # Profile with defaults
             config.profile.name = "Test User"
             config.profile.title = None
@@ -1141,22 +1157,19 @@ created_at: "2024-01-01T00:00:00"
                 Certification(name="AWS SAP", issuer="Amazon Web Services"),
                 Certification(name="CISSP", issuer="ISC2", date="2023-01"),
             ]
+            # Career highlights (required for config mock)
+            config.career_highlights = []
             mock_config.return_value = config
             mock_load_wus.return_value = []
+            mock_gen.side_effect = capture_generate_outputs
 
-            mock_pdf_instance = MagicMock()
-            mock_pdf_instance.render.side_effect = capture_render
-            mock_pdf.return_value = mock_pdf_instance
-
-            mock_docx_instance = MagicMock()
-            mock_docx.return_value = mock_docx_instance
-
-            runner.invoke(
+            result = runner.invoke(
                 main,
                 ["build", "--plan", str(plan_file), "--output-dir", str(tmp_path / "dist")],
             )
 
             # Verify certifications were passed to ResumeData
+            assert result.exit_code == 0, f"Build failed: {result.output}"
             assert captured_resume_data is not None
             assert len(captured_resume_data.certifications) == 2
             assert captured_resume_data.certifications[0].name == "AWS SAP"
@@ -1198,6 +1211,9 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = Path("dist")
             config.default_template = "modern"
             config.default_format = "both"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
             # Profile with defaults
             config.profile.name = "Test User"
             config.profile.title = None
@@ -1220,7 +1236,7 @@ created_at: "2024-01-01T00:00:00"
             )
 
             # Should succeed
-            assert result.exit_code == 0
+            assert result.exit_code == 0, f"Build failed: {result.output}"
             # Certifications should be empty list
             assert captured_resume_data is not None
             assert captured_resume_data.certifications == []
@@ -1286,6 +1302,10 @@ created_at: "2024-01-01T00:00:00"
                 "$50M revenue growth through digital transformation",
                 "Built engineering org from 12 to 150+ engineers",
             ]
+            # Tailored notice settings
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
             mock_config.return_value = config
             mock_load_wus.return_value = []
 
@@ -1363,6 +1383,10 @@ created_at: "2024-01-01T00:00:00"
             config.certifications = []
             # Empty career highlights
             config.career_highlights = []
+            # Tailored notice settings
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
             mock_config.return_value = config
             mock_load_wus.return_value = []
             mock_gen.side_effect = capture_generate_outputs
@@ -1493,6 +1517,9 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = output_dir
             config.default_template = "cto"  # CTO template
             config.default_format = "pdf"  # PDF only to avoid DOCX errors
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
             # Profile attributes (needed for _load_contact_info)
             config.profile.name = "Test User"
             config.profile.title = "CTO"
@@ -1564,6 +1591,9 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = output_dir
             config.default_template = "cto"
             config.default_format = "pdf"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
             config.profile.name = "Test User"
             config.profile.title = "CTO"
             config.profile.email = "test@test.com"
@@ -1633,6 +1663,9 @@ created_at: "2024-01-01T00:00:00"
             config.output_dir = output_dir
             config.default_template = "executive"  # NOT CTO
             config.default_format = "pdf"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
             config.profile.name = "Test User"
             config.profile.title = "VP Engineering"
             config.profile.email = "test@test.com"
