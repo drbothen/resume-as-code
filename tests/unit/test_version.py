@@ -24,7 +24,9 @@ def test_version_exported_from_package() -> None:
     """Version should be accessible from main package."""
     from resume_as_code import __version__
 
-    assert __version__ == "1.0.0"
+    # Verify version is exported and non-empty (format validated by test_version_follows_semver)
+    assert __version__
+    assert isinstance(__version__, str)
 
 
 def test_version_source_is_single_location() -> None:

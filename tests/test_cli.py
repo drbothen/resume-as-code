@@ -35,11 +35,6 @@ def test_cli_no_args_shows_help(cli_runner: CliRunner) -> None:
     assert "Options:" in result.output
 
 
-def test_version_matches_expected() -> None:
-    """Test that version is 1.0.0 as specified."""
-    assert __version__ == "1.0.0"
-
-
 class TestTestOutputCommand:
     """Tests for the test-output command."""
 
