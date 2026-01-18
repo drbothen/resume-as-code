@@ -190,6 +190,29 @@ def build_command(
         # Use custom text from config, or fall back to default
         actual_tailored_notice_text = config.tailored_notice_text or DEFAULT_TAILORED_NOTICE
 
+    # Curate publications for JD relevance (Story 8.2)
+    curated_publications = list(config.publications)  # Default: all publications
+    if jd_for_scoring and config.publications:
+        from resume_as_code.services.content_curator import ContentCurator
+        from resume_as_code.services.embedder import EmbeddingService
+        from resume_as_code.services.skill_registry import SkillRegistry
+
+        embedder = EmbeddingService()
+        curator = ContentCurator(embedder=embedder, config=config.curation)
+        registry = SkillRegistry.load_default()
+
+        pub_curation = curator.curate_publications(
+            publications=list(config.publications),
+            jd=jd_for_scoring,
+            registry=registry,
+        )
+        curated_publications = pub_curation.selected
+        if not ctx.obj.quiet and pub_curation.excluded:
+            console.print(
+                f"[dim]Publications: {len(pub_curation.selected)} selected, "
+                f"{len(pub_curation.excluded)} excluded by JD relevance[/dim]"
+            )
+
     # Add config data to ResumeData (Story 6.2, 6.6, 6.13, 6.14, 6.15, 7.19)
     resume = ResumeData(
         contact=resume.contact,
@@ -200,7 +223,7 @@ def build_command(
         certifications=list(config.certifications),
         career_highlights=list(config.career_highlights),
         board_roles=list(config.board_roles),
-        publications=list(config.publications),
+        publications=curated_publications,
         tailored_notice_text=actual_tailored_notice_text,
     )
 

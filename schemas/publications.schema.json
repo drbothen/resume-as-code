@@ -1,5 +1,5 @@
 {
-  "description": "Publication or speaking engagement record.\n\nStores publication and speaking engagement information for resume\nrendering with support for type classification and display control.",
+  "description": "Publication or speaking engagement record.\n\nStores publication and speaking engagement information for resume\nrendering with support for type classification and display control.\nSupports JD-relevant curation via topics and abstract fields.",
   "properties": {
     "title": {
       "title": "Title",
@@ -46,6 +46,27 @@
       "default": true,
       "title": "Display",
       "type": "boolean"
+    },
+    "topics": {
+      "description": "Topic tags for matching (normalized via SkillRegistry)",
+      "items": {
+        "type": "string"
+      },
+      "title": "Topics",
+      "type": "array"
+    },
+    "abstract": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Brief description for semantic matching",
+      "title": "Abstract"
     }
   },
   "required": [

@@ -644,17 +644,23 @@ def show_publication(ctx: click.Context, title: str) -> None:
 
 def _output_publication_json(publication: Any) -> None:
     """Output publication details as JSON."""
+    data: dict[str, Any] = {
+        "title": publication.title,
+        "type": publication.type,
+        "venue": publication.venue,
+        "date": publication.date,
+        "url": str(publication.url) if publication.url else None,
+        "display": publication.display,
+    }
+    # Add new fields if they exist (Story 8.2)
+    if hasattr(publication, "topics") and publication.topics:
+        data["topics"] = publication.topics
+    if hasattr(publication, "abstract") and publication.abstract:
+        data["abstract"] = publication.abstract
     response = JSONResponse(
         status="success",
         command="show publication",
-        data={
-            "title": publication.title,
-            "type": publication.type,
-            "venue": publication.venue,
-            "date": publication.date,
-            "url": str(publication.url) if publication.url else None,
-            "display": publication.display,
-        },
+        data=data,
     )
     click.echo(response.to_json())
 
@@ -670,6 +676,14 @@ def _output_publication_details(publication: Any) -> None:
 
     if publication.url:
         console.print(f"[bold]URL:[/bold] {publication.url}")
+
+    # Show topics if present (Story 8.2)
+    if hasattr(publication, "topics") and publication.topics:
+        console.print(f"[bold]Topics:[/bold] {', '.join(publication.topics)}")
+
+    # Show abstract if present (Story 8.2)
+    if hasattr(publication, "abstract") and publication.abstract:
+        console.print(f"[bold]Abstract:[/bold] {publication.abstract}")
 
     # Display setting
     if not publication.display:

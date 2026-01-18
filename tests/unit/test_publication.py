@@ -498,3 +498,163 @@ publications:
             assert len(config.publications) == 2
             assert config.publications[0].display is False
             assert config.publications[1].display is True
+
+
+class TestPublicationTopicsAndAbstract:
+    """Tests for topics and abstract fields added for JD curation (Story 8.2)."""
+
+    def test_topics_default_empty(self) -> None:
+        """Topics should default to empty list."""
+        pub = Publication(title="Test", type="conference", venue="Conf", date="2024-01")
+        assert pub.topics == []
+
+    def test_topics_can_be_set(self) -> None:
+        """Topics should accept a list of strings."""
+        pub = Publication(
+            title="Python Talk",
+            type="conference",
+            venue="PyCon",
+            date="2024-01",
+            topics=["python", "aws", "kubernetes"],
+        )
+        assert pub.topics == ["python", "aws", "kubernetes"]
+
+    def test_abstract_default_none(self) -> None:
+        """Abstract should default to None."""
+        pub = Publication(title="Test", type="conference", venue="Conf", date="2024-01")
+        assert pub.abstract is None
+
+    def test_abstract_can_be_set(self) -> None:
+        """Abstract should accept a string."""
+        pub = Publication(
+            title="Python Talk",
+            type="conference",
+            venue="PyCon",
+            date="2024-01",
+            abstract="A deep dive into Python best practices.",
+        )
+        assert pub.abstract == "A deep dive into Python best practices."
+
+
+class TestPublicationGetNormalizedTopics:
+    """Tests for get_normalized_topics method (Story 8.2)."""
+
+    def test_returns_topics_without_registry(self) -> None:
+        """Should return topics as-is when no registry provided."""
+        pub = Publication(
+            title="Test",
+            type="conference",
+            venue="Conf",
+            date="2024-01",
+            topics=["python", "K8s"],
+        )
+        assert pub.get_normalized_topics() == ["python", "K8s"]
+
+    def test_normalizes_topics_with_registry(self) -> None:
+        """Should normalize topics via SkillRegistry when provided."""
+        from unittest.mock import MagicMock
+
+        pub = Publication(
+            title="Test",
+            type="conference",
+            venue="Conf",
+            date="2024-01",
+            topics=["k8s", "py", "AWS"],
+        )
+
+        mock_registry = MagicMock()
+        mock_registry.normalize.side_effect = lambda x: {
+            "k8s": "kubernetes",
+            "py": "python",
+            "AWS": "aws",
+        }.get(x, x)
+
+        normalized = pub.get_normalized_topics(mock_registry)
+        assert normalized == ["kubernetes", "python", "aws"]
+
+    def test_returns_empty_list_when_no_topics(self) -> None:
+        """Should return empty list when no topics defined."""
+        pub = Publication(title="Test", type="conference", venue="Conf", date="2024-01")
+        assert pub.get_normalized_topics() == []
+
+
+class TestPublicationGetTextForMatching:
+    """Tests for get_text_for_matching method (Story 8.2)."""
+
+    def test_combines_title_and_venue(self) -> None:
+        """Should combine title and venue for matching."""
+        pub = Publication(
+            title="Kubernetes Best Practices",
+            type="conference",
+            venue="KubeCon 2024",
+            date="2024-03",
+        )
+        text = pub.get_text_for_matching()
+        assert "Kubernetes Best Practices" in text
+        assert "KubeCon 2024" in text
+
+    def test_includes_abstract_when_present(self) -> None:
+        """Should include abstract in matching text."""
+        pub = Publication(
+            title="Python Talk",
+            type="conference",
+            venue="PyCon",
+            date="2024-01",
+            abstract="Deep dive into async Python and AWS Lambda patterns.",
+        )
+        text = pub.get_text_for_matching()
+        assert "Python Talk" in text
+        assert "PyCon" in text
+        assert "async Python" in text
+        assert "AWS Lambda" in text
+
+    def test_excludes_abstract_when_none(self) -> None:
+        """Should work without abstract."""
+        pub = Publication(
+            title="Security Talk",
+            type="conference",
+            venue="DEF CON",
+            date="2024-08",
+        )
+        text = pub.get_text_for_matching()
+        assert text == "Security Talk DEF CON"
+
+
+class TestPublicationFormatDisplayWithAbstract:
+    """Tests for format_display with abstract (Story 8.2)."""
+
+    def test_format_display_without_abstract_by_default(self) -> None:
+        """Should not include abstract by default."""
+        pub = Publication(
+            title="Python Talk",
+            type="conference",
+            venue="PyCon",
+            date="2024-01",
+            abstract="A deep dive into Python patterns.",
+        )
+        display = pub.format_display()
+        assert "deep dive" not in display.lower()
+
+    def test_format_display_with_abstract_when_requested(self) -> None:
+        """Should include abstract when include_abstract=True."""
+        pub = Publication(
+            title="Python Talk",
+            type="conference",
+            venue="PyCon",
+            date="2024-01",
+            abstract="A deep dive into Python patterns.",
+        )
+        display = pub.format_display(include_abstract=True)
+        assert "A deep dive into Python patterns." in display
+
+    def test_format_display_with_abstract_no_abstract_set(self) -> None:
+        """Should work when include_abstract=True but no abstract."""
+        pub = Publication(
+            title="Security Talk",
+            type="conference",
+            venue="DEF CON",
+            date="2024-08",
+        )
+        display = pub.format_display(include_abstract=True)
+        # Should just show normal display, no error
+        assert display == "DEF CON (2024) - Security Talk"

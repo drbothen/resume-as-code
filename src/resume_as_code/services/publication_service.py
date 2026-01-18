@@ -103,6 +103,9 @@ class PublicationService:
         # Remove 'display' if it's True (default)
         if pub_data.get("display") is True:
             del pub_data["display"]
+        # Remove 'topics' if it's an empty list (default)
+        if not pub_data.get("topics"):
+            pub_data.pop("topics", None)
         # Convert HttpUrl to string for YAML serialization
         if "url" in pub_data and pub_data["url"] is not None:
             pub_data["url"] = str(pub_data["url"])

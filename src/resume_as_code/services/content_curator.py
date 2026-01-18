@@ -28,8 +28,10 @@ if TYPE_CHECKING:
     from resume_as_code.models.config import BulletsPerPositionConfig, CurationConfig
     from resume_as_code.models.job_description import ExperienceLevel, JobDescription
     from resume_as_code.models.position import Position
+    from resume_as_code.models.publication import Publication
     from resume_as_code.models.work_unit import WorkUnit
     from resume_as_code.services.embedder import EmbeddingService
+    from resume_as_code.services.skill_registry import SkillRegistry
 
 
 T = TypeVar("T")
@@ -326,6 +328,85 @@ class ContentCurator:
             excluded=excluded,
             scores=scores,
             reason=f"Selected {len(selected)} board roles for {context} role",
+        )
+
+    def curate_publications(
+        self,
+        publications: list[Publication],
+        jd: JobDescription,
+        registry: SkillRegistry | None = None,
+        max_count: int | None = None,
+    ) -> CurationResult[Publication]:
+        """Select most JD-relevant publications and speaking engagements.
+
+        Scoring formula (Story 8.2 AC #3):
+        - 40% semantic similarity (abstract + title + venue vs JD)
+        - 40% topic overlap with JD skills/keywords (normalized via SkillRegistry)
+        - 20% recency bonus (publications in last 3 years preferred)
+
+        Args:
+            publications: All publications to consider.
+            jd: Job description for matching.
+            registry: SkillRegistry for topic normalization.
+            max_count: Override default limit.
+
+        Returns:
+            CurationResult with selected/excluded publications and scores.
+        """
+        if not publications:
+            return CurationResult(selected=[], excluded=[], reason="No publications configured")
+
+        max_count = max_count or self.limits["publications"]
+
+        # Pre-compute JD data
+        jd_embedding = self.embedder.embed_passage(jd.text_for_ranking)
+
+        # Normalize JD skills and keywords for matching
+        jd_skills_normalized: set[str] = set()
+        for skill in jd.skills:
+            normalized = registry.normalize(skill) if registry else skill
+            jd_skills_normalized.add(normalized.lower())
+        jd_keywords = {kw.lower() for kw in jd.keywords}
+        jd_match_terms = jd_skills_normalized | jd_keywords
+
+        today = date.today()
+        scores: dict[str, float] = {}
+
+        for pub in publications:
+            # Semantic similarity (40% weight) - use abstract + title + venue
+            pub_text = pub.get_text_for_matching()
+            pub_emb = self.embedder.embed_query(pub_text)
+            semantic_score = self._cosine_similarity(pub_emb, jd_embedding)
+
+            # Topic overlap (40% weight) - normalized via SkillRegistry
+            normalized_topics = pub.get_normalized_topics(registry)
+            topic_matches = sum(1 for topic in normalized_topics if topic.lower() in jd_match_terms)
+            # Normalize: 2+ matches = 1.0
+            topic_score = min(1.0, topic_matches / 2) if normalized_topics else 0.0
+
+            # Recency bonus (20% weight) - publications in last 3 years preferred
+            pub_year = int(pub.date[:4])
+            years_ago = today.year - pub_year
+            # Decay: 0.1 per year beyond 3 years, minimum 0.5
+            recency_score = 1.0 if years_ago <= 3 else max(0.5, 1.0 - (years_ago - 3) * 0.1)
+
+            scores[pub.title] = (0.4 * semantic_score) + (0.4 * topic_score) + (0.2 * recency_score)
+
+        # Rank by score descending
+        ranked = sorted(publications, key=lambda p: scores.get(p.title, 0), reverse=True)
+
+        # Filter by minimum relevance score (AC #4)
+        qualified = [p for p in ranked if scores.get(p.title, 0) >= self.min_relevance_score]
+        below_threshold = [p for p in ranked if scores.get(p.title, 0) < self.min_relevance_score]
+
+        selected = qualified[:max_count]
+        excluded = qualified[max_count:] + below_threshold
+
+        return CurationResult(
+            selected=selected,
+            excluded=excluded,
+            scores=scores,
+            reason=f"Selected top {len(selected)} of {len(publications)} publications by relevance",
         )
 
     def curate_position_bullets(

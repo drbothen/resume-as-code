@@ -226,25 +226,27 @@ def parse_board_role_flag(value: str) -> dict[str, str | None]:
     }
 
 
-def parse_publication_flag(value: str) -> dict[str, str | None]:
+def parse_publication_flag(value: str) -> dict[str, str | list[str] | None]:
     """Parse pipe-separated publication value.
 
-    Format: "Title|Type|Venue|Date|URL"
-    URL is optional.
+    Format: "Title|Type|Venue|Date|URL|Topics|Abstract"
+    URL, Topics, and Abstract are optional.
+    Topics should be comma-separated: "kubernetes,security,devops"
 
     Args:
         value: The publication flag value in pipe-separated format.
 
     Returns:
-        Dictionary with title, type, venue, date, url keys.
+        Dictionary with title, type, venue, date, url, topics, abstract keys.
 
     Raises:
         click.BadParameter: If format is invalid.
     """
     parts = value.split("|")
-    if len(parts) < 4 or len(parts) > 5:
+    if len(parts) < 4 or len(parts) > 7:
         raise click.BadParameter(
-            "Publication must be in format: 'Title|Type|Venue|Date|URL' (URL optional)"
+            "Publication must be in format: 'Title|Type|Venue|Date|URL|Topics|Abstract' "
+            "(URL, Topics, Abstract optional)"
         )
 
     title = parts[0].strip()
@@ -252,6 +254,8 @@ def parse_publication_flag(value: str) -> dict[str, str | None]:
     venue = parts[2].strip()
     pub_date = parts[3].strip()
     url = parts[4].strip() if len(parts) > 4 else None
+    topics_str = parts[5].strip() if len(parts) > 5 else None
+    abstract = parts[6].strip() if len(parts) > 6 else None
 
     if not title:
         raise click.BadParameter("Title cannot be empty")
@@ -264,12 +268,19 @@ def parse_publication_flag(value: str) -> dict[str, str | None]:
     if not pub_date:
         raise click.BadParameter("Date cannot be empty")
 
+    # Parse comma-separated topics
+    topics: list[str] = []
+    if topics_str:
+        topics = [t.strip() for t in topics_str.split(",") if t.strip()]
+
     return {
         "title": title,
         "type": pub_type,
         "venue": venue,
         "date": pub_date,
         "url": url or None,
+        "topics": topics,
+        "abstract": abstract or None,
     }
 
 
@@ -1629,6 +1640,14 @@ def new_board_role(
 @click.option("--venue", help="Venue/publisher name")
 @click.option("--date", "pub_date", help="Publication date (YYYY-MM)")
 @click.option("--url", help="Publication URL")
+@click.option(
+    "--topic",
+    "-t",
+    "topics",
+    multiple=True,
+    help="Topic tag for JD matching (repeatable)",
+)
+@click.option("--abstract", "-a", help="Brief description for semantic matching")
 @click.pass_context
 @handle_errors
 def new_publication(
@@ -1639,28 +1658,40 @@ def new_publication(
     venue: str | None,
     pub_date: str | None,
     url: str | None,
+    topics: tuple[str, ...],
+    abstract: str | None,
 ) -> None:
     """Create a new publication or speaking engagement record.
 
     Can be used in three ways:
-    1. Pipe-separated: resume new publication "Title|Type|Venue|Date|URL"
-    2. Flags: resume new publication --title "Title" --type conference --venue "DEF CON"
+    1. Pipe-separated: resume new publication "Title|Type|Venue|Date|URL|Topics|Abstract"
+    2. Flags: resume new publication --title "Title" --type conference --venue "Conf"
+       --topic "kubernetes" --topic "security"
     3. Interactive: resume new publication
 
     Types: conference, article, whitepaper, book, podcast, webinar
+    Topics: Used for JD-relevance matching (comma-separated in pipe format)
     """
     # Use Path.cwd() for config location (publications stored in .resume.yaml)
     service = PublicationService(config_path=ctx.obj.effective_config_path)
+
+    # Convert topics tuple to list for merging with parsed topics
+    topics_list: list[str] = list(topics)
 
     # Parse pipe-separated format if provided
     if publication_spec:
         try:
             parsed = parse_publication_flag(publication_spec)
-            title = title or parsed["title"]
-            pub_type = pub_type or parsed["type"]
-            venue = venue or parsed["venue"]
-            pub_date = pub_date or parsed["date"]
-            url = url or parsed["url"]
+            title = title or str(parsed["title"]) if parsed["title"] else title
+            pub_type = pub_type or str(parsed["type"]) if parsed["type"] else pub_type
+            venue = venue or str(parsed["venue"]) if parsed["venue"] else venue
+            pub_date = pub_date or str(parsed["date"]) if parsed["date"] else pub_date
+            url = url or (str(parsed["url"]) if parsed["url"] else None)
+            # Merge topics from pipe with topics from flags
+            parsed_topics = parsed.get("topics", [])
+            if isinstance(parsed_topics, list) and not topics_list:
+                topics_list = parsed_topics
+            abstract = abstract or (str(parsed["abstract"]) if parsed["abstract"] else None)
         except click.BadParameter as e:
             raise click.UsageError(str(e)) from e
 
@@ -1702,13 +1733,15 @@ def new_publication(
                 info(f"Publication '{title}' already exists")
             return
 
-        # Create publication
+        # Create publication with new fields
         publication = Publication(
             title=title,
             type=cast(PublicationType, pub_type),
             venue=venue,
             date=pub_date,
             url=HttpUrl(url) if url else None,
+            topics=topics_list,
+            abstract=abstract,
         )
 
     else:
@@ -1744,32 +1777,50 @@ def new_publication(
         url_input: str = click.prompt("URL (optional)", default="")
         url = url_input if url_input else None
 
-        # Create publication
+        # New fields for JD-relevant curation (Story 8.2)
+        topics_input: str = click.prompt("Topics (comma-separated, for JD matching)", default="")
+        topics_list = (
+            [t.strip() for t in topics_input.split(",") if t.strip()] if topics_input else []
+        )
+
+        abstract_input: str = click.prompt("Abstract (for semantic matching)", default="")
+        abstract = abstract_input if abstract_input else None
+
+        # Create publication with new fields
         publication = Publication(
             title=title,
             type=pub_type,
             venue=venue,
             date=pub_date,
             url=HttpUrl(url) if url else None,
+            topics=topics_list,
+            abstract=abstract,
         )
 
     service.save_publication(publication)
 
     # Output result
     if ctx.obj.json_output:
+        data: dict[str, Any] = {
+            "publication_created": True,
+            "title": publication.title,
+            "type": publication.type,
+            "venue": publication.venue,
+            "file": str(service.config_path),
+        }
+        if publication.topics:
+            data["topics"] = publication.topics
+        if publication.abstract:
+            data["abstract"] = publication.abstract
         response = JSONResponse(
             status="success",
             command="new publication",
-            data={
-                "publication_created": True,
-                "title": publication.title,
-                "type": publication.type,
-                "venue": publication.venue,
-                "file": str(service.config_path),
-            },
+            data=data,
         )
         click.echo(response.to_json())
     else:
         success(f"Publication created: {publication.title}")
         info(f"Type: {publication.type}")
         info(f"Venue: {publication.venue}")
+        if publication.topics:
+            info(f"Topics: {', '.join(publication.topics)}")

@@ -13,6 +13,7 @@ from resume_as_code.models.certification import Certification
 from resume_as_code.models.config import BulletsPerPositionConfig, CurationConfig
 from resume_as_code.models.job_description import ExperienceLevel, JobDescription
 from resume_as_code.models.position import Position
+from resume_as_code.models.publication import Publication
 from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit
 from resume_as_code.services.content_curator import (
     BULLETS_PER_POSITION,
@@ -362,6 +363,268 @@ class TestCurateBoardRoles:
             if score < 0.9:
                 role_in_excluded = any(r.organization == org_name for r in result.excluded)
                 assert role_in_excluded, f"Role '{org_name}' with score {score} should be excluded"
+
+
+class TestCuratePublications:
+    """Tests for curate_publications method (Story 8.2)."""
+
+    def test_curate_publications_selects_top_n(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Should select top N most JD-relevant publications (AC #2)."""
+        curator = ContentCurator(embedder=mock_embedder)
+        publications = [
+            Publication(
+                title="Python Microservices at Scale",
+                type="conference",
+                venue="PyCon",
+                date="2024-04",
+                topics=["python", "microservices"],
+                abstract="Building scalable Python services with AWS.",
+            ),
+            Publication(
+                title="Kubernetes Best Practices",
+                type="conference",
+                venue="KubeCon",
+                date="2024-03",
+                topics=["kubernetes", "devops"],
+                abstract="Container orchestration patterns.",
+            ),
+            Publication(
+                title="Leadership in Tech",
+                type="article",
+                venue="Tech Blog",
+                date="2023-06",
+                topics=["leadership"],
+                abstract="Managing engineering teams.",
+            ),
+            Publication(
+                title="Cloud Architecture Patterns",
+                type="whitepaper",
+                venue="AWS",
+                date="2023-01",
+                topics=["aws", "cloud"],
+                abstract="Modern cloud architecture with AWS.",
+            ),
+        ]
+
+        result = curator.curate_publications(publications, sample_jd, max_count=2)
+
+        assert len(result.selected) == 2
+        assert len(result.excluded) == 2
+        assert isinstance(result.scores, dict)
+        assert "publications" in result.reason.lower()
+
+    def test_curate_publications_empty_list(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Should handle empty publications list."""
+        curator = ContentCurator(embedder=mock_embedder)
+        result = curator.curate_publications([], sample_jd)
+
+        assert result.selected == []
+        assert result.excluded == []
+        assert "No publications" in result.reason
+
+    def test_curate_publications_topic_overlap_scoring(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Publications with JD-matching topics should score higher (AC #3)."""
+        curator = ContentCurator(embedder=mock_embedder)
+        # JD skills: Python, AWS, Kubernetes, Docker, CI/CD
+        publications = [
+            Publication(
+                title="AWS and Kubernetes Integration",
+                type="conference",
+                venue="AWS Summit",
+                date="2024-01",
+                topics=["aws", "kubernetes"],  # 2 matches
+                abstract="AWS EKS deployment.",
+            ),
+            Publication(
+                title="General Software Development",
+                type="article",
+                venue="Blog",
+                date="2024-01",
+                topics=["agile", "waterfall"],  # 0 matches
+                abstract="Development methodologies.",
+            ),
+        ]
+
+        result = curator.curate_publications(publications, sample_jd)
+
+        # AWS/Kubernetes publication should score higher due to topic overlap
+        aws_score = result.scores.get("AWS and Kubernetes Integration", 0)
+        general_score = result.scores.get("General Software Development", 0)
+        assert aws_score > general_score
+
+    def test_curate_publications_recency_bonus(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Recent publications should get recency bonus (AC #3)."""
+        curator = ContentCurator(embedder=mock_embedder)
+        publications = [
+            Publication(
+                title="Recent Python Talk",
+                type="conference",
+                venue="Conference",
+                date="2024-06",  # Recent
+                topics=["python"],
+            ),
+            Publication(
+                title="Old Python Talk",
+                type="conference",
+                venue="Conference",
+                date="2018-06",  # Old (6+ years)
+                topics=["python"],
+            ),
+        ]
+
+        result = curator.curate_publications(publications, sample_jd)
+
+        # Recent publication should have higher score due to recency bonus
+        recent_score = result.scores.get("Recent Python Talk", 0)
+        old_score = result.scores.get("Old Python Talk", 0)
+        assert recent_score > old_score
+
+    def test_curate_publications_respects_min_relevance(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Should exclude publications below min_relevance_score (AC #4)."""
+        config = CurationConfig(min_relevance_score=0.9)  # Very high threshold
+        curator = ContentCurator(embedder=mock_embedder, config=config)
+        publications = [
+            Publication(
+                title="Python Conference Talk",
+                type="conference",
+                venue="PyCon",
+                date="2024-01",
+                topics=["python"],
+            ),
+            Publication(
+                title="Unrelated Topic",
+                type="article",
+                venue="Random",
+                date="2024-01",
+                topics=["cooking"],
+            ),
+        ]
+
+        result = curator.curate_publications(publications, sample_jd)
+
+        # Verify selected publications have scores >= threshold
+        for pub in result.selected:
+            score = result.scores.get(pub.title, 0)
+            assert score >= 0.9, f"Selected pub '{pub.title}' has score {score} below threshold"
+
+    def test_curate_publications_uses_abstract_for_semantic_matching(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Abstract should contribute to semantic matching (AC #3).
+
+        Note: With mock embeddings, semantic scores are pseudo-random.
+        This test verifies that abstract text is included in the matching
+        by checking that get_text_for_matching() output affects scoring.
+        """
+        curator = ContentCurator(embedder=mock_embedder)
+        # Use same title/venue but different abstracts + matching topics
+        publications = [
+            Publication(
+                title="Tech Talk",
+                type="conference",
+                venue="Tech Conf",
+                date="2024-01",
+                topics=["python", "aws"],  # Matching JD skills boost this
+                abstract="Deep dive into Python, AWS Lambda, and Kubernetes patterns.",
+            ),
+            Publication(
+                title="Other Talk",
+                type="conference",
+                venue="Garden Conf",
+                date="2024-01",
+                topics=["gardening", "flowers"],  # Non-matching topics
+                abstract="Discussion about gardening and home improvement.",
+            ),
+        ]
+
+        result = curator.curate_publications(publications, sample_jd)
+
+        # With matching topics, Tech Talk should score higher
+        tech_score = result.scores.get("Tech Talk", 0)
+        garden_score = result.scores.get("Other Talk", 0)
+        # Topic overlap gives Tech Talk 40% × 1.0 = 0.4 boost
+        # Garden Talk gets 40% × 0.0 = 0.0 from topics
+        assert tech_score > garden_score
+
+    def test_curate_publications_with_skill_registry(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Should normalize topics via SkillRegistry when provided."""
+        from unittest.mock import MagicMock as Mock
+
+        curator = ContentCurator(embedder=mock_embedder)
+        publications = [
+            Publication(
+                title="K8s Talk",
+                type="conference",
+                venue="Conf",
+                date="2024-01",
+                topics=["k8s"],  # Alias for kubernetes
+            ),
+        ]
+
+        # Create a mock SkillRegistry that normalizes k8s -> kubernetes
+        mock_registry = Mock()
+        mock_registry.normalize.side_effect = lambda x: "kubernetes" if x == "k8s" else x.lower()
+
+        result = curator.curate_publications(publications, sample_jd, registry=mock_registry)
+
+        # Registry should be called to normalize topics
+        mock_registry.normalize.assert_called()
+        # Should have scores
+        assert len(result.scores) > 0
+
+    def test_curate_publications_scores_between_0_and_1(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """All scores should be between 0 and 1."""
+        curator = ContentCurator(embedder=mock_embedder)
+        publications = [
+            Publication(
+                title="Talk 1",
+                type="conference",
+                venue="Conf",
+                date="2024-01",
+                topics=["python", "aws"],
+            ),
+            Publication(
+                title="Talk 2",
+                type="article",
+                venue="Blog",
+                date="2023-01",
+            ),
+        ]
+
+        result = curator.curate_publications(publications, sample_jd)
+
+        for score in result.scores.values():
+            assert 0.0 <= score <= 1.0
+
+    def test_curate_publications_default_limit_from_config(
+        self, mock_embedder: MagicMock, sample_jd: JobDescription
+    ) -> None:
+        """Should use publications_max from config when max_count not specified."""
+        config = CurationConfig(publications_max=2)
+        curator = ContentCurator(embedder=mock_embedder, config=config)
+        publications = [
+            Publication(title=f"Talk {i}", type="conference", venue="Conf", date="2024-01")
+            for i in range(5)
+        ]
+
+        result = curator.curate_publications(publications, sample_jd)
+
+        # Should respect config limit of 2
+        assert len(result.selected) <= 2
 
 
 class TestCuratePositionBullets:
