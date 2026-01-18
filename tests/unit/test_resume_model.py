@@ -11,10 +11,13 @@ from resume_as_code.models.config import SkillsConfig
 from resume_as_code.models.education import Education
 from resume_as_code.models.resume import (
     ContactInfo,
+    EmployerGroup,
     ResumeBullet,
     ResumeData,
     ResumeItem,
     ResumeSection,
+    group_positions_by_employer,
+    normalize_employer,
 )
 from resume_as_code.models.skill_entry import SkillEntry
 from resume_as_code.services.skill_registry import SkillRegistry
@@ -1110,3 +1113,417 @@ positions:
         # Standalone work units don't use action scoring
         item = resume.sections[0].items[0]
         assert len(item.bullets) == 3  # 1 outcome + 2 actions
+
+
+class TestNormalizeEmployer:
+    """Tests for normalize_employer() function (Story 8.1 AC #2)."""
+
+    def test_normalize_employer_lowercase(self) -> None:
+        """Employer names should be normalized to lowercase."""
+        assert normalize_employer("TechCorp") == "techcorp"
+        assert normalize_employer("ACME INC") == "acme"
+
+    def test_normalize_employer_strips_whitespace(self) -> None:
+        """Leading and trailing whitespace should be stripped."""
+        assert normalize_employer("  TechCorp  ") == "techcorp"
+        assert normalize_employer("\tAcme\n") == "acme"
+
+    def test_normalize_employer_ampersand_to_and(self) -> None:
+        """Ampersand should be normalized to 'and'."""
+        assert normalize_employer("Burns & McDonnell") == "burns and mcdonnell"
+        assert normalize_employer("Burns&McDonnell") == "burns and mcdonnell"
+
+    def test_normalize_employer_removes_inc_suffix(self) -> None:
+        """Common corporate suffixes should be removed."""
+        assert normalize_employer("TechCorp, Inc.") == "techcorp"
+        assert normalize_employer("TechCorp Inc") == "techcorp"
+        assert normalize_employer("TechCorp Inc.") == "techcorp"
+
+    def test_normalize_employer_removes_llc_suffix(self) -> None:
+        """LLC suffix should be removed."""
+        assert normalize_employer("TechCorp, LLC") == "techcorp"
+        assert normalize_employer("TechCorp LLC") == "techcorp"
+
+    def test_normalize_employer_removes_corp_suffix(self) -> None:
+        """Corp suffix should be removed."""
+        assert normalize_employer("TechCorp, Corp") == "techcorp"
+        assert normalize_employer("TechCorp Corp") == "techcorp"
+
+    def test_normalize_employer_case_insensitive_matching(self) -> None:
+        """Same employer with different cases should normalize to same value."""
+        assert normalize_employer("Burns & McDonnell") == normalize_employer("BURNS & MCDONNELL")
+        assert normalize_employer("TechCorp Industries") == normalize_employer(
+            "techcorp industries"
+        )
+
+    def test_normalize_employer_preserves_core_name(self) -> None:
+        """Core employer name should be preserved after normalization."""
+        assert normalize_employer("Acme Corporation") == "acme corporation"
+        assert normalize_employer("Big Tech Company") == "big tech company"
+
+
+class TestEmployerGroup:
+    """Tests for EmployerGroup dataclass (Story 8.1 AC #1, #3)."""
+
+    def test_employer_group_basic_properties(self) -> None:
+        """EmployerGroup should store basic employer info."""
+        group = EmployerGroup(
+            employer="TechCorp Industries",
+            location="Austin, TX",
+            total_start_date="2020-01",
+            total_end_date="2024-06",
+            positions=[],
+        )
+        assert group.employer == "TechCorp Industries"
+        assert group.location == "Austin, TX"
+        assert group.total_start_date == "2020-01"
+        assert group.total_end_date == "2024-06"
+
+    def test_employer_group_is_multi_position_single(self) -> None:
+        """is_multi_position should be False for single position."""
+        group = EmployerGroup(
+            employer="TechCorp",
+            location=None,
+            total_start_date="2022-01",
+            total_end_date=None,
+            positions=[
+                ResumeItem(title="Engineer", organization="TechCorp"),
+            ],
+        )
+        assert group.is_multi_position is False
+
+    def test_employer_group_is_multi_position_multiple(self) -> None:
+        """is_multi_position should be True for multiple positions."""
+        group = EmployerGroup(
+            employer="TechCorp",
+            location=None,
+            total_start_date="2020-01",
+            total_end_date=None,
+            positions=[
+                ResumeItem(title="Senior Engineer", organization="TechCorp"),
+                ResumeItem(title="Engineer", organization="TechCorp"),
+            ],
+        )
+        assert group.is_multi_position is True
+
+    def test_employer_group_tenure_display_with_end_date(self) -> None:
+        """tenure_display should format date range with end date."""
+        group = EmployerGroup(
+            employer="TechCorp",
+            location=None,
+            total_start_date="2020",
+            total_end_date="2024",
+            positions=[],
+        )
+        assert group.tenure_display == "2020 - 2024"
+
+    def test_employer_group_tenure_display_current(self) -> None:
+        """tenure_display should show 'Present' for current positions."""
+        group = EmployerGroup(
+            employer="TechCorp",
+            location=None,
+            total_start_date="2020",
+            total_end_date=None,
+            positions=[],
+        )
+        assert group.tenure_display == "2020 - Present"
+
+
+class TestGroupPositionsByEmployer:
+    """Tests for group_positions_by_employer() function (Story 8.1 AC #1, #2, #3, #5)."""
+
+    def test_group_single_position_employer(self) -> None:
+        """Single position per employer should create single-position group."""
+        items = [
+            ResumeItem(
+                title="Engineer",
+                organization="TechCorp",
+                location="Austin, TX",
+                start_date="2022",
+                end_date=None,
+                bullets=[ResumeBullet(text="Built features")],
+            ),
+        ]
+
+        groups = group_positions_by_employer(items)
+
+        assert len(groups) == 1
+        assert groups[0].employer == "TechCorp"
+        assert groups[0].is_multi_position is False
+        assert len(groups[0].positions) == 1
+
+    def test_group_multi_position_employer(self) -> None:
+        """Multiple positions at same employer should be grouped."""
+        items = [
+            ResumeItem(
+                title="Senior Engineer",
+                organization="TechCorp",
+                location="Austin, TX",
+                start_date="2023",
+                end_date=None,
+            ),
+            ResumeItem(
+                title="Engineer",
+                organization="TechCorp",
+                location="Austin, TX",
+                start_date="2020",
+                end_date="2023",
+            ),
+        ]
+
+        groups = group_positions_by_employer(items)
+
+        assert len(groups) == 1
+        assert groups[0].employer == "TechCorp"
+        assert groups[0].is_multi_position is True
+        assert len(groups[0].positions) == 2
+
+    def test_group_employer_name_normalization(self) -> None:
+        """Employer name variations should be grouped together."""
+        items = [
+            ResumeItem(
+                title="Senior Engineer",
+                organization="Burns & McDonnell",
+                start_date="2023",
+            ),
+            ResumeItem(
+                title="Engineer",
+                organization="Burns and McDonnell",
+                start_date="2020",
+                end_date="2023",
+            ),
+        ]
+
+        groups = group_positions_by_employer(items)
+
+        # Should be grouped together despite "&" vs "and"
+        assert len(groups) == 1
+        assert groups[0].is_multi_position is True
+
+    def test_group_preserves_original_employer_name(self) -> None:
+        """Group should use the employer name from most recent position."""
+        items = [
+            ResumeItem(
+                title="Senior Engineer",
+                organization="Burns & McDonnell",  # Most recent
+                start_date="2023",
+            ),
+            ResumeItem(
+                title="Engineer",
+                organization="Burns and McDonnell",  # Older
+                start_date="2020",
+                end_date="2023",
+            ),
+        ]
+
+        groups = group_positions_by_employer(items)
+
+        # Should use name from most recent position
+        assert groups[0].employer == "Burns & McDonnell"
+
+    def test_group_calculates_total_tenure(self) -> None:
+        """Group should calculate tenure from earliest start to latest end."""
+        items = [
+            ResumeItem(
+                title="Senior Engineer",
+                organization="TechCorp",
+                start_date="2023",
+                end_date=None,  # Current
+            ),
+            ResumeItem(
+                title="Engineer",
+                organization="TechCorp",
+                start_date="2020",
+                end_date="2023",
+            ),
+        ]
+
+        groups = group_positions_by_employer(items)
+
+        assert groups[0].total_start_date == "2020"
+        assert groups[0].total_end_date is None  # Still current
+
+    def test_group_positions_reverse_chronological(self) -> None:
+        """Positions within group should be sorted most recent first."""
+        items = [
+            ResumeItem(
+                title="Engineer",
+                organization="TechCorp",
+                start_date="2020",
+                end_date="2022",
+            ),
+            ResumeItem(
+                title="Senior Engineer",
+                organization="TechCorp",
+                start_date="2022",
+                end_date=None,
+            ),
+        ]
+
+        groups = group_positions_by_employer(items)
+
+        # Most recent first within group
+        assert groups[0].positions[0].title == "Senior Engineer"
+        assert groups[0].positions[1].title == "Engineer"
+
+    def test_group_mixed_employers(self) -> None:
+        """Mix of single and multi-position employers should work correctly."""
+        items = [
+            ResumeItem(
+                title="Senior Engineer",
+                organization="TechCorp",
+                start_date="2023",
+            ),
+            ResumeItem(
+                title="Engineer",
+                organization="TechCorp",
+                start_date="2020",
+                end_date="2023",
+            ),
+            ResumeItem(
+                title="Developer",
+                organization="StartupCo",
+                start_date="2018",
+                end_date="2020",
+            ),
+        ]
+
+        groups = group_positions_by_employer(items)
+
+        assert len(groups) == 2
+        # TechCorp should be multi-position
+        techcorp = next(g for g in groups if g.employer == "TechCorp")
+        assert techcorp.is_multi_position is True
+        # StartupCo should be single-position
+        startup = next(g for g in groups if g.employer == "StartupCo")
+        assert startup.is_multi_position is False
+
+    def test_group_empty_items(self) -> None:
+        """Empty items list should return empty groups list."""
+        groups = group_positions_by_employer([])
+        assert groups == []
+
+    def test_group_uses_location_from_most_recent(self) -> None:
+        """Group should use location from most recent position."""
+        items = [
+            ResumeItem(
+                title="Senior Engineer",
+                organization="TechCorp",
+                location="New York, NY",  # Most recent
+                start_date="2023",
+            ),
+            ResumeItem(
+                title="Engineer",
+                organization="TechCorp",
+                location="Austin, TX",  # Older
+                start_date="2020",
+                end_date="2023",
+            ),
+        ]
+
+        groups = group_positions_by_employer(items)
+
+        # Should use location from most recent position
+        assert groups[0].location == "New York, NY"
+
+    def test_group_handles_none_organization(self) -> None:
+        """Items without organization should each be their own group."""
+        items = [
+            ResumeItem(
+                title="Freelance Project",
+                organization=None,
+                start_date="2022",
+            ),
+            ResumeItem(
+                title="Open Source",
+                organization=None,
+                start_date="2021",
+            ),
+        ]
+
+        groups = group_positions_by_employer(items)
+
+        # Each item without org is its own group
+        assert len(groups) == 2
+
+    def test_group_orders_by_most_recent_position(self) -> None:
+        """Groups should be ordered by most recent position date."""
+        items = [
+            ResumeItem(
+                title="Developer",
+                organization="OldCorp",
+                start_date="2015",
+                end_date="2018",
+            ),
+            ResumeItem(
+                title="Senior Engineer",
+                organization="NewCorp",
+                start_date="2022",
+            ),
+            ResumeItem(
+                title="Engineer",
+                organization="MidCorp",
+                start_date="2018",
+                end_date="2022",
+            ),
+        ]
+
+        groups = group_positions_by_employer(items)
+
+        # Groups should be ordered most recent first
+        assert groups[0].employer == "NewCorp"
+        assert groups[1].employer == "MidCorp"
+        assert groups[2].employer == "OldCorp"
+
+    def test_group_handles_none_start_dates(self) -> None:
+        """Positions with None start_date should be handled gracefully (Issue #3 fix)."""
+        items = [
+            ResumeItem(
+                title="Project Alpha",
+                organization="TechCorp",
+                start_date=None,  # No start date
+            ),
+            ResumeItem(
+                title="Project Beta",
+                organization="TechCorp",
+                start_date=None,  # No start date
+            ),
+            ResumeItem(
+                title="Regular Role",
+                organization="TechCorp",
+                start_date="2022",
+            ),
+        ]
+
+        groups = group_positions_by_employer(items)
+
+        # Should still group correctly
+        assert len(groups) == 1
+        assert groups[0].employer == "TechCorp"
+        assert len(groups[0].positions) == 3
+        # Regular Role with date should be first (most recent)
+        assert groups[0].positions[0].title == "Regular Role"
+
+    def test_group_all_positions_none_start_dates(self) -> None:
+        """All positions with None start_date should still group."""
+        items = [
+            ResumeItem(
+                title="Alpha",
+                organization="TechCorp",
+                start_date=None,
+            ),
+            ResumeItem(
+                title="Beta",
+                organization="TechCorp",
+                start_date=None,
+            ),
+        ]
+
+        groups = group_positions_by_employer(items)
+
+        # Should group together
+        assert len(groups) == 1
+        assert groups[0].employer == "TechCorp"
+        assert len(groups[0].positions) == 2
+        # Total tenure should use empty string as fallback
+        assert groups[0].total_start_date == ""

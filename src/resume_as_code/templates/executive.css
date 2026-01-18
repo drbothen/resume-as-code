@@ -194,6 +194,61 @@ h2 {
     font-style: italic;
 }
 
+/* Employer-grouped positions (Story 8.1) */
+.employer-group {
+    margin-bottom: 1.5em;
+    page-break-inside: avoid;
+}
+
+.employer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.25em;
+}
+
+.employer-header .company {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #1a1a1a;
+}
+
+.total-tenure {
+    font-size: 10pt;
+    color: #555;
+}
+
+.employer-location {
+    font-size: 10pt;
+    color: #555;
+    margin: 0 0 0.5em 0;
+}
+
+.position.nested {
+    margin-left: 0.75em;
+    margin-bottom: 1em;
+    padding-left: 0.75em;
+    border-left: 2px solid #e0e0e0;
+}
+
+.nested-position-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.25em;
+}
+
+.role-title {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.nested-position-header .dates {
+    font-size: 9.5pt;
+    color: #666;
+}
+
 /* Achievement bullets */
 .achievements {
     margin: 0.5em 0;

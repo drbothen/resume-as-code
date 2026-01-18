@@ -179,6 +179,79 @@ h2 {
     font-weight: 500;
 }
 
+/* Employer-grouped positions (Story 8.1) */
+.employer-group {
+    margin-bottom: 1em;
+}
+
+.employer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.4em;
+    padding-bottom: 0.2em;
+    border-bottom: 1px dotted #ddd;
+}
+
+.employer-name-location {
+    flex: 1;
+}
+
+.employer-name {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+    display: inline;
+}
+
+.employer-header .location {
+    font-size: 9.5pt;
+    color: #7f8c8d;
+    margin-left: 0.5em;
+}
+
+.tenure {
+    font-size: 9.5pt;
+    font-style: italic;
+    color: #7f8c8d;
+    text-align: right;
+}
+
+.position-entry.nested {
+    margin-left: 1em;
+    margin-bottom: 0.6em;
+    padding-left: 0.5em;
+    border-left: 2px solid #ecf0f1;
+}
+
+.position-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.2em;
+}
+
+.position-title {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: #34495e;
+    margin: 0;
+}
+
+.position-header .dates {
+    font-size: 9pt;
+    font-style: italic;
+    color: #95a5a6;
+}
+
+.scope-line {
+    font-size: 9.5pt;
+    color: #7f8c8d;
+    font-style: italic;
+    margin-bottom: 0.3em;
+}
+
 /* Education section */
 .education {
     margin-top: 1.5em;

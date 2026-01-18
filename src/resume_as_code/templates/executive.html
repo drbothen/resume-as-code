@@ -69,6 +69,85 @@
     {% for section in resume.sections %}
     <section class="experience">
         <h2>{{ section.title }}</h2>
+        {# Story 8.1: Employer-grouped rendering for Experience section #}
+        {% if section.title == "Experience" and employer_groups %}
+        {% for group in employer_groups %}
+        {% if group.is_multi_position %}
+        {# Multi-position employer: company header + nested role entries #}
+        <div class="employer-group">
+            <div class="employer-header">
+                <h3 class="company">{{ group.employer }}</h3>
+                <span class="total-tenure">{{ group.tenure_display }}</span>
+            </div>
+            {% if group.location %}
+            <p class="employer-location">{{ group.location }}</p>
+            {% endif %}
+            {% for item in group.positions %}
+            <article class="position nested">
+                <div class="nested-position-header">
+                    <span class="role-title">{{ item.title }}</span>
+                    <span class="dates">{{ item.start_date or '' }}{% if item.start_date %} - {% endif %}{{ item.end_date or 'Present' }}</span>
+                </div>
+
+                {# Scope indicators at role level (AC #4) #}
+                {% if item.scope_line %}
+                <p class="scope-line">{{ item.scope_line }}</p>
+                {% elif item.scope_budget or item.scope_team_size or item.scope_revenue %}
+                <p class="scope-line">
+                    {% set scope_parts = [] %}
+                    {% if item.scope_team_size %}{% set _ = scope_parts.append('Led team of ' ~ item.scope_team_size) %}{% endif %}
+                    {% if item.scope_budget %}{% set _ = scope_parts.append(item.scope_budget ~ ' budget') %}{% endif %}
+                    {% if item.scope_revenue %}{% set _ = scope_parts.append(item.scope_revenue ~ ' revenue impact') %}{% endif %}
+                    {{ scope_parts | join(' | ') }}
+                </p>
+                {% endif %}
+
+                {% block achievements scoped %}
+                {% if item.bullets %}
+                <ul class="achievements">
+                    {% for bullet in item.bullets %}
+                    <li>{{ bullet.text }}{% if bullet.metrics %} — <em class="metrics">{{ bullet.metrics }}</em>{% endif %}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                {% endblock %}
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        {# Single-position employer: standard layout #}
+        {% set item = group.positions[0] %}
+        <article class="position">
+            <div class="position-header">
+                <h3 class="company">{{ item.organization or item.title }}</h3>
+                <span class="dates">{{ item.start_date or '' }}{% if item.start_date %} - {% endif %}{{ item.end_date or 'Present' }}</span>
+            </div>
+            <p class="role">{{ item.title }}{% if item.organization and item.location %}, {{ item.location }}{% elif item.location %} | {{ item.location }}{% endif %}</p>
+
+            {% if item.scope_line %}
+            <p class="scope-line">{{ item.scope_line }}</p>
+            {% elif item.scope_budget or item.scope_team_size or item.scope_revenue %}
+            <p class="scope-line">
+                {% set scope_parts = [] %}
+                {% if item.scope_team_size %}{% set _ = scope_parts.append('Led team of ' ~ item.scope_team_size) %}{% endif %}
+                {% if item.scope_budget %}{% set _ = scope_parts.append(item.scope_budget ~ ' budget') %}{% endif %}
+                {% if item.scope_revenue %}{% set _ = scope_parts.append(item.scope_revenue ~ ' revenue impact') %}{% endif %}
+                {{ scope_parts | join(' | ') }}
+            </p>
+            {% endif %}
+
+            {% if item.bullets %}
+            <ul class="achievements">
+                {% for bullet in item.bullets %}
+                <li>{{ bullet.text }}{% if bullet.metrics %} — <em class="metrics">{{ bullet.metrics }}</em>{% endif %}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </article>
+        {% endif %}
+        {% endfor %}
+        {% else %}
+        {# Fallback: original rendering when employer_groups not available #}
         {% for item in section.items %}
         <article class="position">
             <div class="position-header">
@@ -91,7 +170,6 @@
             </p>
             {% endif %}
 
-            {% block achievements scoped %}
             {% if item.bullets %}
             <ul class="achievements">
                 {% for bullet in item.bullets %}
@@ -99,9 +177,9 @@
                 {% endfor %}
             </ul>
             {% endif %}
-            {% endblock %}
         </article>
         {% endfor %}
+        {% endif %}
     </section>
     {% endfor %}
 

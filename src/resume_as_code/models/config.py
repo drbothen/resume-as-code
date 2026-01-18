@@ -298,6 +298,18 @@ class ONetConfig(BaseModel):
         return self.enabled and self.api_key is not None
 
 
+class TemplateOptions(BaseModel):
+    """Template rendering options (Story 8.1).
+
+    Controls how resume templates render experience sections.
+    """
+
+    group_employer_positions: bool = Field(
+        default=True,
+        description="Group multiple positions at the same employer under one heading",
+    )
+
+
 class ResumeConfig(BaseModel):
     """Complete configuration for Resume as Code."""
 
@@ -362,6 +374,9 @@ class ResumeConfig(BaseModel):
 
     # Content curation configuration
     curation: CurationConfig = Field(default_factory=CurationConfig)
+
+    # Template rendering options (Story 8.1)
+    template_options: TemplateOptions = Field(default_factory=TemplateOptions)
 
     @field_validator("career_highlights", mode="before")
     @classmethod

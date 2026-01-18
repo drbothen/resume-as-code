@@ -25,6 +25,7 @@ For installation and CLI commands, see the [main README](../README.md).
 | [Philosophy](./philosophy.md) | The "Resume as Code" mental model |
 | [Data Model](./data-model.md) | Work Units, Positions, Certifications, Education, Publications, Board Roles |
 | [Workflow](./workflow.md) | The four-stage pipeline: Capture → Validate → Plan → Build |
+| [Import Workflows](./import-workflows.md) | Migrate existing resumes and thought leadership content |
 
 ---
 

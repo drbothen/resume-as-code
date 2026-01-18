@@ -540,3 +540,50 @@ class TestResumeConfigTailoredNotice:
         assert DEFAULT_TAILORED_NOTICE is not None
         assert "relevant" in DEFAULT_TAILORED_NOTICE.lower()
         assert "request" in DEFAULT_TAILORED_NOTICE.lower()
+
+
+class TestTemplateOptions:
+    """Test TemplateOptions model for template rendering configuration (Story 8.1)."""
+
+    def test_default_group_employer_positions_is_true(self) -> None:
+        """Default group_employer_positions should be True."""
+        from resume_as_code.models.config import TemplateOptions
+
+        options = TemplateOptions()
+        assert options.group_employer_positions is True
+
+    def test_group_employer_positions_can_be_disabled(self) -> None:
+        """TemplateOptions should accept group_employer_positions=False."""
+        from resume_as_code.models.config import TemplateOptions
+
+        options = TemplateOptions(group_employer_positions=False)
+        assert options.group_employer_positions is False
+
+    def test_group_employer_positions_explicit_true(self) -> None:
+        """TemplateOptions should accept explicit group_employer_positions=True."""
+        from resume_as_code.models.config import TemplateOptions
+
+        options = TemplateOptions(group_employer_positions=True)
+        assert options.group_employer_positions is True
+
+
+class TestResumeConfigTemplateOptions:
+    """Test template_options field in ResumeConfig (Story 8.1)."""
+
+    def test_default_template_options(self) -> None:
+        """ResumeConfig should have default TemplateOptions."""
+        config = ResumeConfig()
+        assert config.template_options is not None
+        assert config.template_options.group_employer_positions is True
+
+    def test_custom_template_options(self) -> None:
+        """ResumeConfig should accept custom template_options configuration."""
+        from resume_as_code.models.config import TemplateOptions
+
+        config = ResumeConfig(template_options=TemplateOptions(group_employer_positions=False))
+        assert config.template_options.group_employer_positions is False
+
+    def test_template_options_from_dict(self) -> None:
+        """ResumeConfig should accept template_options as dict (YAML parsing)."""
+        config = ResumeConfig(template_options={"group_employer_positions": False})
+        assert config.template_options.group_employer_positions is False

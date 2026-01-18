@@ -267,6 +267,11 @@ resume build --jd job-description.txt
 
 # Build with custom filename and output directory
 resume build --jd job.txt --name john-doe-cto --output-dir ./applications/acme/
+
+# Generate test resume from jmagady-resume data (requires pango for PDF)
+cd /Users/jmagady/Dev/jmagady-resume && \
+  DYLD_LIBRARY_PATH=/opt/homebrew/lib \
+  uv run --project /Users/jmagady/Dev/resume resume build --jd test-jd.txt --format pdf -o dist
 ```
 
 ### JSON Mode

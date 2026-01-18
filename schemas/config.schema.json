@@ -771,6 +771,19 @@
       },
       "title": "SkillsConfig",
       "type": "object"
+    },
+    "TemplateOptions": {
+      "description": "Template rendering options (Story 8.1).\n\nControls how resume templates render experience sections.",
+      "properties": {
+        "group_employer_positions": {
+          "default": true,
+          "description": "Group multiple positions at the same employer under one heading",
+          "title": "Group Employer Positions",
+          "type": "boolean"
+        }
+      },
+      "title": "TemplateOptions",
+      "type": "object"
     }
   },
   "description": "Complete configuration for Resume as Code.",
@@ -913,6 +926,9 @@
     },
     "curation": {
       "$ref": "#/$defs/CurationConfig"
+    },
+    "template_options": {
+      "$ref": "#/$defs/TemplateOptions"
     }
   },
   "title": "ResumeConfig",

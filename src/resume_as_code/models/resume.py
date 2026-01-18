@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -17,6 +18,29 @@ if TYPE_CHECKING:
     from resume_as_code.models.config import CurationConfig, ONetConfig, SkillsConfig
     from resume_as_code.models.job_description import JobDescription
     from resume_as_code.models.position import Position
+
+
+def normalize_employer(name: str) -> str:
+    """Normalize employer name for grouping comparison.
+
+    Handles case-insensitivity, ampersand variations, and common suffixes
+    to ensure consistent grouping of employer positions.
+
+    Args:
+        name: Employer name to normalize.
+
+    Returns:
+        Normalized employer name for comparison.
+    """
+    normalized = name.lower().strip()
+    # Normalize ampersand variations
+    normalized = normalized.replace(" & ", " and ")
+    normalized = normalized.replace("&", " and ")
+    # Remove common corporate suffixes
+    for suffix in [", inc.", ", inc", " inc.", " inc", ", llc", " llc", ", corp", " corp"]:
+        if normalized.endswith(suffix):
+            normalized = normalized[: -len(suffix)]
+    return normalized.strip()
 
 
 class ContactInfo(BaseModel):
@@ -52,6 +76,106 @@ class ResumeItem(BaseModel):
     # Executive scope - formatted line derived from Position.scope
     # Individual scope_* fields removed in Story 7.2 - use scope_line only
     scope_line: str | None = None
+
+
+@dataclass
+class EmployerGroup:
+    """Group of positions at the same employer (Story 8.1).
+
+    Used to render multiple positions at the same employer under
+    a single employer heading with grouped tenure display.
+    """
+
+    employer: str
+    location: str | None
+    total_start_date: str
+    total_end_date: str | None  # None = current position
+    positions: list[ResumeItem] = field(default_factory=list)
+
+    @property
+    def is_multi_position(self) -> bool:
+        """Check if this group has multiple positions."""
+        return len(self.positions) > 1
+
+    @property
+    def tenure_display(self) -> str:
+        """Format total tenure as 'start - end' or 'start - Present'."""
+        end = self.total_end_date or "Present"
+        return f"{self.total_start_date} - {end}"
+
+
+def group_positions_by_employer(items: list[ResumeItem]) -> list[EmployerGroup]:
+    """Group resume items by normalized employer name.
+
+    Groups positions at the same employer (handling name variations)
+    and calculates total tenure for each employer group.
+
+    Args:
+        items: List of ResumeItem objects to group.
+
+    Returns:
+        List of EmployerGroup objects, ordered by most recent position date.
+    """
+    if not items:
+        return []
+
+    # Group items by normalized employer name
+    groups_by_key: dict[str, list[ResumeItem]] = {}
+    for item in items:
+        # Items without organization get unique keys
+        if item.organization is None:
+            key = f"__none__{id(item)}"
+        else:
+            key = normalize_employer(item.organization)
+
+        if key not in groups_by_key:
+            groups_by_key[key] = []
+        groups_by_key[key].append(item)
+
+    # Build EmployerGroup objects
+    employer_groups: list[EmployerGroup] = []
+    for group_items in groups_by_key.values():
+        # Sort positions within group by start_date descending (most recent first)
+        sorted_positions = sorted(
+            group_items,
+            key=lambda x: x.start_date or "",
+            reverse=True,
+        )
+
+        # Use most recent position for employer name and location
+        most_recent = sorted_positions[0]
+        employer = most_recent.organization or most_recent.title
+        location = most_recent.location
+
+        # Calculate total tenure (earliest start to latest end)
+        start_dates = [p.start_date for p in sorted_positions if p.start_date]
+        end_dates = [p.end_date for p in sorted_positions]
+
+        total_start = min(start_dates) if start_dates else ""
+        # If any position has no end_date (current), total_end is None
+        if None in end_dates:
+            total_end = None
+        else:
+            non_none_dates = [d for d in end_dates if d]
+            total_end = max(non_none_dates) if non_none_dates else None
+
+        employer_groups.append(
+            EmployerGroup(
+                employer=employer,
+                location=location,
+                total_start_date=total_start,
+                total_end_date=total_end,
+                positions=sorted_positions,
+            )
+        )
+
+    # Sort groups by most recent position date (descending)
+    employer_groups.sort(
+        key=lambda g: g.positions[0].start_date or "" if g.positions else "",
+        reverse=True,
+    )
+
+    return employer_groups
 
 
 class ResumeSection(BaseModel):

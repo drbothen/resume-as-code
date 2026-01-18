@@ -169,16 +169,16 @@ development_status:
   # Goal: Improve resume template rendering for better visual presentation and professional formatting
   # User Outcome: Professionally formatted resumes with grouped employer positions and curated publications
   # Total Points: 10 (2 stories)
-  epic-8: backlog
-  8-1-employer-grouped-position-rendering: backlog  # P2, 5 pts - Nest positions under same employer
-  8-2-jd-relevant-publication-curation: backlog  # P2, 5 pts - Limit publications to top N JD-relevant
+  epic-8: in-progress
+  8-1-employer-grouped-position-rendering: done  # P2, 5 pts - Nest positions under same employer
+  8-2-jd-relevant-publication-curation: ready-for-dev  # P2, 5 pts - Limit publications to top N JD-relevant
 
   # Epic 9: Data Management & Migration
   # Goal: Robust data management with schema versioning, migration, and backward compatibility
   # User Outcome: Safe upgrades without data loss or manual file editing when schemas evolve
   # Total Points: 13 (2 stories)
-  epic-9: backlog
-  9-1-schema-evolution-migration-system: backlog  # P2, 8 pts - Auto-detect and migrate outdated schemas
+  epic-9: in-progress
+  9-1-schema-evolution-migration-system: ready-for-dev  # P2, 8 pts - Auto-detect and migrate outdated schemas
   9-2-separate-config-from-data: backlog  # P1, 5 pts - Extract resume data from .resume.yaml to separate files
 
 # RESEARCH / TECH DEBT BACKLOG:

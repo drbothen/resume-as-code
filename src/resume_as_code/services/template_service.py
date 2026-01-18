@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from resume_as_code.models.resume import ResumeData
+from resume_as_code.models.resume import ResumeData, group_positions_by_employer
+
+if TYPE_CHECKING:
+    from resume_as_code.models.config import ResumeConfig
 
 
 class TemplateService:
@@ -50,12 +54,14 @@ class TemplateService:
         self,
         resume: ResumeData,
         template_name: str = "modern",
+        config: ResumeConfig | None = None,
     ) -> str:
         """Render resume to HTML.
 
         Args:
             resume: ResumeData instance to render.
             template_name: Name of template (without .html extension).
+            config: Optional ResumeConfig to control rendering options.
 
         Returns:
             Rendered HTML string.
@@ -65,7 +71,16 @@ class TemplateService:
         """
         template = self.env.get_template(f"{template_name}.html")
         css = self.get_css(template_name)
-        return template.render(resume=resume, css=css)
+
+        # Compute employer groups if enabled (Story 8.1)
+        employer_groups = None
+        group_enabled = config is None or config.template_options.group_employer_positions
+        if group_enabled:
+            experience_section = next((s for s in resume.sections if s.title == "Experience"), None)
+            if experience_section:
+                employer_groups = group_positions_by_employer(experience_section.items)
+
+        return template.render(resume=resume, css=css, employer_groups=employer_groups)
 
     # Template inheritance map for CSS loading (Story 6.17: CTO template)
     # Child templates that extend a parent should inherit parent CSS

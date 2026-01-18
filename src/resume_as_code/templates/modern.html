@@ -45,6 +45,87 @@
     {% for section in resume.sections %}
     <section class="experience">
         <h2>{{ section.title }}</h2>
+        {# Story 8.1: Employer-grouped rendering for Experience section #}
+        {% if section.title == "Experience" and employer_groups %}
+        {% for group in employer_groups %}
+        {% if group.is_multi_position %}
+        {# Multi-position employer: nested layout with employer header #}
+        <div class="employer-group">
+            <div class="employer-header">
+                <div class="employer-name-location">
+                    <h3 class="employer-name">{{ group.employer }}</h3>
+                    {% if group.location %}
+                    <span class="location">{{ group.location }}</span>
+                    {% endif %}
+                </div>
+                <span class="tenure">{{ group.tenure_display }}</span>
+            </div>
+            {% for item in group.positions %}
+            <article class="position-entry nested">
+                <div class="position-header">
+                    <h4 class="position-title">{{ item.title }}</h4>
+                    {% if item.start_date %}
+                    <span class="dates">{{ item.start_date }} - {{ item.end_date or 'Present' }}</span>
+                    {% endif %}
+                </div>
+                {% if item.scope_line %}
+                <div class="scope-line">{{ item.scope_line }}</div>
+                {% endif %}
+                {% if item.bullets %}
+                <ul class="achievements">
+                    {% for bullet in item.bullets %}
+                    <li>
+                        {{ bullet.text }}
+                        {% if bullet.metrics %}
+                        <span class="metrics">({{ bullet.metrics }})</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        {# Single-position employer: standard layout #}
+        {% set item = group.positions[0] %}
+        <article class="job">
+            <div class="job-header">
+                <div class="job-title-company">
+                    <h3>{{ item.title }}</h3>
+                    {% if item.organization %}
+                    <span class="company">{{ item.organization }}</span>
+                    {% endif %}
+                </div>
+                <div class="job-meta">
+                    {% if item.location %}
+                    <span class="location">{{ item.location }}</span>
+                    {% endif %}
+                    {% if item.start_date %}
+                    <span class="dates">{{ item.start_date }} - {{ item.end_date or 'Present' }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if item.scope_line %}
+            <div class="scope-line">{{ item.scope_line }}</div>
+            {% endif %}
+            {% if item.bullets %}
+            <ul class="achievements">
+                {% for bullet in item.bullets %}
+                <li>
+                    {{ bullet.text }}
+                    {% if bullet.metrics %}
+                    <span class="metrics">({{ bullet.metrics }})</span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </article>
+        {% endif %}
+        {% endfor %}
+        {% else %}
+        {# Fallback: original rendering when employer_groups not available #}
         {% for item in section.items %}
         <article class="job">
             <div class="job-header">
@@ -63,6 +144,9 @@
                     {% endif %}
                 </div>
             </div>
+            {% if item.scope_line %}
+            <div class="scope-line">{{ item.scope_line }}</div>
+            {% endif %}
             {% if item.bullets %}
             <ul class="achievements">
                 {% for bullet in item.bullets %}
@@ -77,6 +161,7 @@
             {% endif %}
         </article>
         {% endfor %}
+        {% endif %}
     </section>
     {% endfor %}
 

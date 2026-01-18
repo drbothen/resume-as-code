@@ -256,3 +256,155 @@ class TestAutoescaping:
         # Script tag should be escaped, not executable
         assert "<script>" not in html
         assert "&lt;script&gt;" in html or "script" not in html.lower()
+
+
+class TestEmployerGrouping:
+    """Tests for employer grouping in template rendering (Story 8.1)."""
+
+    @pytest.fixture
+    def template_with_groups(self, tmp_path: Path) -> Path:
+        """Create a template that shows employer_groups variable."""
+        templates_dir = tmp_path / "templates"
+        templates_dir.mkdir()
+
+        template = templates_dir / "test.html"
+        template.write_text("""<!DOCTYPE html>
+<html>
+<head><title>Test</title></head>
+<body>
+{% if employer_groups %}
+<div class="employer-groups">
+{% for group in employer_groups %}
+<div class="employer-group" data-employer="{{ group.employer }}">
+  <div class="tenure">{{ group.tenure_display }}</div>
+  <div class="multi-position">{{ group.is_multi_position }}</div>
+  {% for pos in group.positions %}
+  <div class="position">{{ pos.title }}</div>
+  {% endfor %}
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="no-groups">Grouping disabled</div>
+{% endif %}
+</body>
+</html>""")
+
+        return templates_dir
+
+    def test_render_computes_employer_groups_by_default(self, template_with_groups: Path) -> None:
+        """render should compute employer_groups when no config provided."""
+        from resume_as_code.models.resume import ResumeBullet, ResumeItem
+
+        service = TemplateService(templates_dir=template_with_groups)
+
+        items = [
+            ResumeItem(
+                title="Senior Engineer",
+                organization="TechCorp",
+                location="Austin, TX",
+                start_date="2023",
+                end_date=None,
+                bullets=[ResumeBullet(text="Led team")],
+            ),
+            ResumeItem(
+                title="Engineer",
+                organization="TechCorp",
+                location="Austin, TX",
+                start_date="2020",
+                end_date="2023",
+                bullets=[ResumeBullet(text="Built features")],
+            ),
+        ]
+
+        contact = ContactInfo(name="Test User")
+        resume = ResumeData(
+            contact=contact,
+            sections=[ResumeSection(title="Experience", items=items)],
+        )
+
+        html = service.render(resume, "test")
+
+        assert "employer-groups" in html
+        assert 'data-employer="TechCorp"' in html
+        assert "2020 - Present" in html
+        assert "True" in html  # is_multi_position
+
+    def test_render_respects_group_employer_positions_false(
+        self, template_with_groups: Path
+    ) -> None:
+        """render should not compute employer_groups when config disables it."""
+        from resume_as_code.models.config import ResumeConfig, TemplateOptions
+        from resume_as_code.models.resume import ResumeBullet, ResumeItem
+
+        service = TemplateService(templates_dir=template_with_groups)
+
+        items = [
+            ResumeItem(
+                title="Senior Engineer",
+                organization="TechCorp",
+                start_date="2023",
+                bullets=[ResumeBullet(text="Led team")],
+            ),
+        ]
+
+        contact = ContactInfo(name="Test User")
+        resume = ResumeData(
+            contact=contact,
+            sections=[ResumeSection(title="Experience", items=items)],
+        )
+
+        config = ResumeConfig(template_options=TemplateOptions(group_employer_positions=False))
+
+        html = service.render(resume, "test", config=config)
+
+        assert "no-groups" in html
+        assert "Grouping disabled" in html
+        assert "employer-groups" not in html
+
+    def test_render_groups_with_config_enabled(self, template_with_groups: Path) -> None:
+        """render should compute employer_groups when config explicitly enables it."""
+        from resume_as_code.models.config import ResumeConfig, TemplateOptions
+        from resume_as_code.models.resume import ResumeBullet, ResumeItem
+
+        service = TemplateService(templates_dir=template_with_groups)
+
+        items = [
+            ResumeItem(
+                title="Engineer",
+                organization="TechCorp",
+                start_date="2020",
+                end_date="2023",
+                bullets=[ResumeBullet(text="Built features")],
+            ),
+        ]
+
+        contact = ContactInfo(name="Test User")
+        resume = ResumeData(
+            contact=contact,
+            sections=[ResumeSection(title="Experience", items=items)],
+        )
+
+        config = ResumeConfig(template_options=TemplateOptions(group_employer_positions=True))
+
+        html = service.render(resume, "test", config=config)
+
+        assert "employer-groups" in html
+        assert 'data-employer="TechCorp"' in html
+
+    def test_render_no_experience_section_returns_none_groups(
+        self, template_with_groups: Path
+    ) -> None:
+        """render should not fail when no Experience section exists."""
+        service = TemplateService(templates_dir=template_with_groups)
+
+        contact = ContactInfo(name="Test User")
+        resume = ResumeData(
+            contact=contact,
+            sections=[ResumeSection(title="Education", items=[])],
+        )
+
+        html = service.render(resume, "test")
+
+        # Should render without crashing, no employer groups
+        assert "no-groups" in html

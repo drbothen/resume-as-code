@@ -5,7 +5,7 @@
 **User Outcome:** Users get professionally formatted resumes that follow industry best practices for grouping related content, particularly for candidates with multiple roles at the same employer
 
 **Priority:** P2
-**Total Points:** 5 (initial)
+**Total Points:** 10 (2 stories)
 
 ---
 
@@ -314,5 +314,155 @@ template_options:
 - [ ] CSS styling for nested positions
 - [ ] Unit tests for employer grouping logic
 - [ ] Integration tests for grouped rendering
+
+---
+
+## Story 8.2: JD-Relevant Publication Curation
+
+As a **job seeker with many publications**,
+I want **the resume to show only the most JD-relevant publications**,
+So that **my resume stays concise while highlighting thought leadership directly applicable to the role**.
+
+**Story Points:** 5
+**Priority:** P2
+
+**Problem Statement:**
+When a candidate has many publications (e.g., 45 LinkedIn articles), including all of them creates an excessively long resume (6+ pages). This:
+- Dilutes the impact of truly relevant publications
+- Makes the resume too long for ATS systems and recruiters
+- Buries the most relevant thought leadership among less relevant articles
+- Fails to tailor the publications section to the target role
+
+**Current Behavior:**
+All 45 publications are rendered, creating 2 full pages of publication listings.
+
+**Desired Behavior:**
+The plan/build workflow scores publications against the JD and selects the top N (configurable, default 5) most relevant publications to include.
+
+**Acceptance Criteria:**
+
+**Given** a resume with publications and a job description
+**When** running `resume plan --jd <file>`
+**Then** publications are scored for JD relevance using the same ranking algorithm as work units
+**And** the plan output shows which publications will be included
+
+**Given** a resume build with JD
+**When** rendering publications
+**Then** only the top N most relevant publications are included (default: 5)
+**And** publications are sorted by relevance score, not date
+
+**Given** the configuration
+**When** `max_publications: 0` is set
+**Then** all publications are included (no limit)
+
+**Given** the configuration
+**When** `max_publications: N` is set
+**Then** at most N publications are included
+
+**Given** no JD is provided
+**When** building a resume
+**Then** publications are sorted by date (newest first)
+**And** the top N by date are included
+
+**Given** a publication with a URL
+**When** rendering
+**Then** the title is a clickable hyperlink to the URL
+
+**Technical Notes:**
+
+```python
+# src/resume_as_code/services/publication_ranker.py
+
+from dataclasses import dataclass
+
+@dataclass
+class ScoredPublication:
+    """Publication with relevance score."""
+    title: str
+    pub_type: str
+    venue: str
+    date: str
+    url: str | None
+    score: float  # 0.0 to 1.0 relevance score
+
+def rank_publications(
+    publications: list[Publication],
+    jd_text: str,
+    top_k: int = 5,
+) -> list[ScoredPublication]:
+    """Rank publications by JD relevance.
+
+    Uses the same hybrid BM25 + semantic ranking as work units,
+    but scores against publication title and venue.
+
+    Args:
+        publications: All candidate publications
+        jd_text: Job description text
+        top_k: Maximum publications to return (0 = unlimited)
+
+    Returns:
+        Top K publications sorted by relevance score
+    """
+    # Score each publication title against JD
+    scored = []
+    for pub in publications:
+        # Use title as the primary scoring text
+        score = compute_relevance_score(pub.title, jd_text)
+        scored.append(ScoredPublication(
+            title=pub.title,
+            pub_type=pub.type,
+            venue=pub.venue,
+            date=pub.date,
+            url=pub.url,
+            score=score,
+        ))
+
+    # Sort by score descending
+    scored.sort(key=lambda p: p.score, reverse=True)
+
+    # Return top K (or all if top_k == 0)
+    if top_k > 0:
+        return scored[:top_k]
+    return scored
+```
+
+**Config Extension:**
+```yaml
+# .resume.yaml
+publications:
+  max_count: 5  # Maximum publications to include (0 = unlimited)
+  sort_by: relevance  # 'relevance' (default with JD) or 'date'
+```
+
+**Plan Output Enhancement:**
+```
+📚 Publications (5 of 45 selected)
+
+  ✓ Agents Are Software. The Stakes Are Human. (0.89)
+  ✓ Learn Once, Defend in Context: AI's Role in OT Security (0.85)
+  ✓ The IT/OT Split Is a Ghost Story (0.82)
+  ✓ Three Ways AI Can Actually Change the Game for Industrial MSSPs (0.78)
+  ✓ Beyond Code Completion: Why the BMAD Method Matters (0.71)
+
+  ⊘ 40 publications excluded (below relevance threshold)
+```
+
+**Files to Create/Modify:**
+- Create: `src/resume_as_code/services/publication_ranker.py`
+- Modify: `src/resume_as_code/services/plan_service.py` (add publication ranking)
+- Modify: `src/resume_as_code/services/build_service.py` (use ranked publications)
+- Modify: `src/resume_as_code/models/config.py` (add publications config)
+- Modify: `src/resume_as_code/commands/plan.py` (show publication selection)
+
+**Definition of Done:**
+- [ ] Publication ranking service using hybrid BM25 + semantic scoring
+- [ ] Publications scored against JD text
+- [ ] Config option `publications.max_count` (default: 5)
+- [ ] Config option `publications.sort_by` ('relevance' or 'date')
+- [ ] Plan command shows selected/excluded publications
+- [ ] Build uses ranked publications from plan
+- [ ] Fallback to date sorting when no JD provided
+- [ ] Unit tests for publication ranking
+- [ ] Integration test showing 5 publications in output
 
 ---
