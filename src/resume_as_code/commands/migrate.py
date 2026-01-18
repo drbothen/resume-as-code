@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     type=click.Path(exists=True, file_okay=False, path_type=Path),
     help="Restore from backup directory",
 )
+@click.option("-y", "--yes", is_flag=True, help="Skip confirmation prompt")
 @pass_context
 @handle_errors
 def migrate_command(
@@ -46,6 +47,7 @@ def migrate_command(
     status: bool,
     dry_run: bool,
     rollback: Path | None,
+    yes: bool,
 ) -> None:
     """Migrate schema to latest version.
 
@@ -63,7 +65,7 @@ def migrate_command(
 
     # Handle rollback
     if rollback:
-        _handle_rollback(rollback, project_path, ctx)
+        _handle_rollback(rollback, project_path, ctx, yes)
         return
 
     # Detect current version
@@ -104,10 +106,11 @@ def migrate_command(
         _show_dry_run(migrations, project_path, ctx)
         return
 
-    # Confirm before proceeding (skip in quiet mode or JSON mode)
+    # Confirm before proceeding (skip in quiet mode, JSON mode, or with --yes)
     if (
         not ctx.quiet
         and not ctx.json_output
+        and not yes
         and not Confirm.ask(
             f"Apply {len(migrations)} migration(s) from v{current_version} "
             f"to v{CURRENT_SCHEMA_VERSION}?"
@@ -289,10 +292,16 @@ def _handle_rollback(
     backup_path: Path,
     project_path: Path,
     ctx: Context,
+    yes: bool = False,
 ) -> None:
     """Handle rollback from backup."""
-    # Skip confirmation in quiet mode or JSON mode
-    if not ctx.quiet and not ctx.json_output and not Confirm.ask(f"Restore from {backup_path}?"):
+    # Skip confirmation in quiet mode, JSON mode, or with --yes
+    if (
+        not ctx.quiet
+        and not ctx.json_output
+        and not yes
+        and not Confirm.ask(f"Restore from {backup_path}?")
+    ):
         info("Rollback cancelled")
         return
 
