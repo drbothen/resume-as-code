@@ -37,11 +37,12 @@ for cert in candidates:
 
 ## Code Quality
 
-### TD-008: Comprehensive Resource Validation
+### TD-008: Comprehensive Resource Validation ✅ RESOLVED
 **Identified:** 2026-01-18
-**Story:** Feature Enhancement
+**Resolved:** 2026-01-19
+**Story:** 11-5-comprehensive-resource-validation
 **Severity:** MEDIUM
-**Location:** `src/resume_as_code/commands/validate.py`, `src/resume_as_code/services/validator.py`
+**Location:** `src/resume_as_code/commands/validate.py`, `src/resume_as_code/services/validators/`
 
 **Problem:**
 The `resume validate` command only validates Work Units against their JSON schema. Other resources (positions, certifications, education, publications, board-roles, highlights) are only validated by Pydantic at load time, meaning users must run other commands to discover validation errors.
@@ -128,9 +129,10 @@ resume list certifications         # Fails here if certifications.yaml is malfor
 
 ## Architecture
 
-### TD-005: Directory-Based Sharding for Data Files
+### TD-005: Directory-Based Sharding for Data Files ✅ RESOLVED
 **Identified:** 2026-01-18
-**Story:** Post-9.2 Enhancement
+**Resolved:** 2026-01-19
+**Story:** 11-2-directory-based-sharding
 **Severity:** LOW
 **Location:** `src/resume_as_code/data_loader.py`, `src/resume_as_code/commands/new.py`
 
@@ -205,9 +207,10 @@ highlights/
 
 ---
 
-### TD-006: Custom Templates Directory Support
+### TD-006: Custom Templates Directory Support ✅ RESOLVED
 **Identified:** 2026-01-18
-**Story:** Feature Request
+**Resolved:** 2026-01-19
+**Story:** 11-3-custom-templates-directory
 **Severity:** LOW
 **Location:** `src/resume_as_code/services/template_service.py`, `src/resume_as_code/models/config.py`
 
@@ -282,11 +285,12 @@ Templates must be one of the built-in options: `modern`, `executive`, `executive
 
 ---
 
-### TD-007: Template Authoring Documentation
+### TD-007: Template Authoring Documentation ✅ RESOLVED
 **Identified:** 2026-01-18
-**Story:** Documentation
+**Resolved:** 2026-01-19
+**Story:** 11-4-template-authoring-docs
 **Severity:** LOW
-**Location:** `docs/template-authoring.md` (to be created)
+**Location:** `docs/template-authoring.md`
 
 **Problem:**
 No documentation exists for users who want to create custom resume templates. Template authors need to understand available variables, data structures, CSS patterns, and best practices.
@@ -746,9 +750,10 @@ Release workflow publishes to PyPI successfully but TestPyPI step fails, causing
 
 ---
 
-### TD-004: PyPI Logo Not Displaying
+### TD-004: PyPI Logo Not Displaying ✅ RESOLVED
 **Identified:** 2026-01-18
-**Story:** 10-1 (PyPI Package Distribution)
+**Resolved:** 2026-01-19
+**Story:** 11-1-pypi-logo-display-fix
 **Severity:** LOW
 **Location:** `README.md`, `pyproject.toml`
 
