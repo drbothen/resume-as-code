@@ -199,7 +199,9 @@ class TestValidateCommandSummary:
         result = cli_runner.invoke(main, ["validate"])
 
         assert result.exit_code == 3
-        assert "wu-invalid.yaml" in result.output
+        # Rich may wrap long paths with newlines, so normalize before checking
+        normalized_output = result.output.replace("\n", "")
+        assert "wu-invalid.yaml" in normalized_output
 
     def test_rich_output_color_coded(
         self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
