@@ -1,6 +1,6 @@
 # Story 11.5: Comprehensive Resource Validation
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -24,74 +24,74 @@ So that **I can catch all errors before running build or plan commands**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create validators package structure
-  - [ ] 1.1 Create `src/resume_as_code/services/validators/__init__.py`
-  - [ ] 1.2 Create `src/resume_as_code/services/validators/base.py` with `ResourceValidator` ABC
-  - [ ] 1.3 Define `ResourceValidationResult` dataclass
+- [x] Task 1: Create validators package structure
+  - [x] 1.1 Create `src/resume_as_code/services/validators/__init__.py`
+  - [x] 1.2 Create `src/resume_as_code/services/validators/base.py` with `ResourceValidator` ABC
+  - [x] 1.3 Define `ResourceValidationResult` dataclass
 
-- [ ] Task 2: Implement position validator (AC: 1, 4)
-  - [ ] 2.1 Create `validators/position_validator.py`
-  - [ ] 2.2 Validate Pydantic schema (via Position model)
-  - [ ] 2.3 Validate cross-field: `start_date <= end_date`
-  - [ ] 2.4 Validate date formats (YYYY-MM)
+- [x] Task 2: Implement position validator (AC: 1, 4)
+  - [x] 2.1 Create `validators/position_validator.py`
+  - [x] 2.2 Validate Pydantic schema (via Position model)
+  - [x] 2.3 Validate cross-field: `start_date <= end_date`
+  - [x] 2.4 Validate date formats (YYYY-MM)
 
-- [ ] Task 3: Implement certification validator (AC: 1, 4)
-  - [ ] 3.1 Create `validators/certification_validator.py`
-  - [ ] 3.2 Validate Pydantic schema (via Certification model)
-  - [ ] 3.3 Validate cross-field: `date <= expires` (if both present)
-  - [ ] 3.4 Warn on expired certifications
+- [x] Task 3: Implement certification validator (AC: 1, 4)
+  - [x] 3.1 Create `validators/certification_validator.py`
+  - [x] 3.2 Validate Pydantic schema (via Certification model)
+  - [x] 3.3 Validate cross-field: `date <= expires` (if both present)
+  - [x] 3.4 Warn on expired certifications
 
-- [ ] Task 4: Implement education validator (AC: 1)
-  - [ ] 4.1 Create `validators/education_validator.py`
-  - [ ] 4.2 Validate Pydantic schema (via Education model)
+- [x] Task 4: Implement education validator (AC: 1)
+  - [x] 4.1 Create `validators/education_validator.py`
+  - [x] 4.2 Validate Pydantic schema (via Education model)
 
-- [ ] Task 5: Implement publication validator (AC: 1, 4)
-  - [ ] 5.1 Create `validators/publication_validator.py`
-  - [ ] 5.2 Validate Pydantic schema (via Publication model)
-  - [ ] 5.3 Validate date format (YYYY-MM-DD or YYYY-MM)
+- [x] Task 5: Implement publication validator (AC: 1, 4)
+  - [x] 5.1 Create `validators/publication_validator.py`
+  - [x] 5.2 Validate Pydantic schema (via Publication model)
+  - [x] 5.3 Validate date format (YYYY-MM-DD or YYYY-MM)
 
-- [ ] Task 6: Implement board role validator (AC: 1, 4)
-  - [ ] 6.1 Create `validators/board_role_validator.py`
-  - [ ] 6.2 Validate Pydantic schema (via BoardRole model)
-  - [ ] 6.3 Validate cross-field: `start_date <= end_date` (if end_date present)
+- [x] Task 6: Implement board role validator (AC: 1, 4)
+  - [x] 6.1 Create `validators/board_role_validator.py`
+  - [x] 6.2 Validate Pydantic schema (via BoardRole model)
+  - [x] 6.3 Validate cross-field: `start_date <= end_date` (if end_date present)
 
-- [ ] Task 7: Implement highlight validator (AC: 1)
-  - [ ] 7.1 Create `validators/highlight_validator.py`
-  - [ ] 7.2 Validate each highlight is non-empty string
-  - [ ] 7.3 Warn on highlights > 150 characters
+- [x] Task 7: Implement highlight validator (AC: 1)
+  - [x] 7.1 Create `validators/highlight_validator.py`
+  - [x] 7.2 Validate each highlight is non-empty string
+  - [x] 7.3 Warn on highlights > 150 characters
 
-- [ ] Task 8: Implement config validator (AC: 1)
-  - [ ] 8.1 Create `validators/config_validator.py`
-  - [ ] 8.2 Validate .resume.yaml against Pydantic ResumeConfig model
-  - [ ] 8.3 Validate schema_version format
-  - [ ] 8.4 Validate referenced paths exist (work_units_dir, positions_path, etc.)
+- [x] Task 8: Implement config validator (AC: 1)
+  - [x] 8.1 Create `validators/config_validator.py`
+  - [x] 8.2 Validate .resume.yaml against Pydantic ResumeConfig model
+  - [x] 8.3 Validate schema_version format
+  - [x] 8.4 Validate referenced paths exist (work_units_dir, positions_path, etc.)
 
-- [ ] Task 9: Create validation orchestrator
-  - [ ] 9.1 Create `validators/orchestrator.py` to run all validators
-  - [ ] 9.2 Aggregate results from all validators
-  - [ ] 9.3 Generate combined summary with per-resource counts
+- [x] Task 9: Create validation orchestrator
+  - [x] 9.1 Create `validators/orchestrator.py` to run all validators
+  - [x] 9.2 Aggregate results from all validators
+  - [x] 9.3 Generate combined summary with per-resource counts
 
-- [ ] Task 10: Update validate command for subcommands (AC: 2, 3, 5, 6)
-  - [ ] 10.1 Convert validate to Click group with subcommands
-  - [ ] 10.2 Add subcommands: work-units, positions, certifications, education, publications, board-roles, highlights, config
-  - [ ] 10.3 Make default (no subcommand) run all validators
-  - [ ] 10.4 Update JSON output format to include all resource types
-  - [ ] 10.5 Preserve backward compatibility for existing flags
+- [x] Task 10: Update validate command for subcommands (AC: 2, 3, 5, 6)
+  - [x] 10.1 Convert validate to Click group with subcommands
+  - [x] 10.2 Add subcommands: work-units, positions, certifications, education, publications, board-roles, highlights, config
+  - [x] 10.3 Make default (no subcommand) run all validators
+  - [x] 10.4 Update JSON output format to include all resource types
+  - [x] 10.5 Preserve backward compatibility for existing flags
 
-- [ ] Task 11: Create summary output formatting (AC: 2)
-  - [ ] 11.1 Create Rich table or panel for summary display
-  - [ ] 11.2 Show per-resource type counts
-  - [ ] 11.3 Show overall status with total errors/warnings
+- [x] Task 11: Create summary output formatting (AC: 2)
+  - [x] 11.1 Create Rich table or panel for summary display
+  - [x] 11.2 Show per-resource type counts
+  - [x] 11.3 Show overall status with total errors/warnings
 
-- [ ] Task 12: Write tests
-  - [ ] 12.1 Unit tests for each validator
-  - [ ] 12.2 Integration tests for validate command
-  - [ ] 12.3 Test JSON output format
-  - [ ] 12.4 Test exit codes
+- [x] Task 12: Write tests
+  - [x] 12.1 Unit tests for each validator
+  - [x] 12.2 Integration tests for validate command
+  - [x] 12.3 Test JSON output format
+  - [x] 12.4 Test exit codes
 
-- [ ] Task 13: Update documentation
-  - [ ] 13.1 Update CLAUDE.md with new validate subcommands
-  - [ ] 13.2 Add validation examples to documentation
+- [x] Task 13: Update documentation
+  - [x] 13.1 Update CLAUDE.md with new validate subcommands
+  - [x] 13.2 Add validation examples to documentation
 
 ## Dev Notes
 
@@ -500,26 +500,38 @@ else:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A - Clean implementation
+
 ### Completion Notes List
+
+- All 6 ACs verified and passing
+- 66 tests (26 unit + 40 integration) all passing
+- Lint (ruff) clean
+- Type check (mypy --strict) clean
+- Backward compatibility preserved for `--content-quality`, `--content-density`, `--check-positions` flags
 
 ### Change Log
 - 2026-01-18: Story created with comprehensive implementation architecture
+- 2026-01-19: Implementation complete (commit fa6e891)
+- 2026-01-19: Code review completed, all issues remediated
 
 ### File List
-- `src/resume_as_code/services/validators/__init__.py` - Package init
-- `src/resume_as_code/services/validators/base.py` - ABC and result dataclass
-- `src/resume_as_code/services/validators/orchestrator.py` - Run all validators
+- `src/resume_as_code/services/validators/__init__.py` - Package init with exports
+- `src/resume_as_code/services/validators/base.py` - ResourceValidator ABC and ResourceValidationResult dataclass
+- `src/resume_as_code/services/validators/orchestrator.py` - ValidationOrchestrator and AggregatedValidationResult
+- `src/resume_as_code/services/validators/work_unit_validator.py` - Work unit validation wrapper
 - `src/resume_as_code/services/validators/position_validator.py` - Position validation
-- `src/resume_as_code/services/validators/certification_validator.py` - Certification validation
+- `src/resume_as_code/services/validators/certification_validator.py` - Certification validation with expiry warnings
 - `src/resume_as_code/services/validators/education_validator.py` - Education validation
 - `src/resume_as_code/services/validators/publication_validator.py` - Publication validation
-- `src/resume_as_code/services/validators/board_role_validator.py` - Board role validation
-- `src/resume_as_code/services/validators/highlight_validator.py` - Highlight validation
-- `src/resume_as_code/services/validators/config_validator.py` - Config validation
-- `src/resume_as_code/commands/validate.py` - Modify for subcommands
-- `CLAUDE.md` - Document new subcommands
-- `tests/unit/services/validators/` - Unit tests
+- `src/resume_as_code/services/validators/board_role_validator.py` - Board role validation with date range checks
+- `src/resume_as_code/services/validators/highlight_validator.py` - Highlight validation with length warnings
+- `src/resume_as_code/services/validators/config_validator.py` - Config validation with path checks
+- `src/resume_as_code/commands/validate.py` - Click group with 8 subcommands
+- `CLAUDE.md` - Updated with validate subcommands documentation
+- `tests/unit/test_resource_validators.py` - 26 unit tests for validators
+- `tests/integration/test_validate_command.py` - 40 integration tests for CLI

@@ -218,4 +218,4 @@ development_status:
   11-2-directory-based-sharding: done  # P3, 8 pts - Optional per-item YAML files (TD-005)
   11-3-custom-templates-directory: done  # P2, 3 pts - Expose templates_dir config (TD-006)
   11-4-template-authoring-docs: done  # P3, 3 pts - Template authoring documentation (TD-007)
-  11-5-comprehensive-resource-validation: ready-for-dev  # P2, 6 pts - Validate all resources (TD-008)
+  11-5-comprehensive-resource-validation: review  # P2, 6 pts - Validate all resources (TD-008)

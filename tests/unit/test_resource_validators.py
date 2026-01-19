@@ -208,6 +208,56 @@ class TestCertificationValidator:
         assert result.invalid_count == 1
         assert any("INVALID_DATE_RANGE" in e.code for e in result.errors)
 
+    def test_expired_certification_warning(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should warn on expired certifications (Task 3.4)."""
+        expired_cert = """\
+- name: "Expired Cert"
+  issuer: "Test Issuer"
+  date: "2020-01"
+  expires: "2022-01"
+"""
+        (tmp_path / "certifications.yaml").write_text(expired_cert)
+        monkeypatch.chdir(tmp_path)
+
+        validator = CertificationValidator()
+        result = validator.validate(tmp_path)
+
+        # Expired cert is valid but generates warning
+        assert result.is_valid
+        assert result.valid_count == 1
+        assert result.warning_count == 1
+        assert any("CERTIFICATION_EXPIRED" in w.code for w in result.warnings)
+
+    def test_expires_soon_certification_warning(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should warn on certifications expiring within 90 days (Task 3.4)."""
+        from datetime import date, timedelta
+
+        # Calculate date 30 days from now
+        soon_date = date.today() + timedelta(days=30)
+        soon_str = soon_date.strftime("%Y-%m")
+
+        expires_soon_cert = f"""\
+- name: "Expiring Soon Cert"
+  issuer: "Test Issuer"
+  date: "2020-01"
+  expires: "{soon_str}"
+"""
+        (tmp_path / "certifications.yaml").write_text(expires_soon_cert)
+        monkeypatch.chdir(tmp_path)
+
+        validator = CertificationValidator()
+        result = validator.validate(tmp_path)
+
+        # Cert expiring soon is valid but generates warning
+        assert result.is_valid
+        assert result.valid_count == 1
+        assert result.warning_count == 1
+        assert any("CERTIFICATION_EXPIRES_SOON" in w.code for w in result.warnings)
+
 
 # =============================================================================
 # Education Validator Tests
@@ -328,6 +378,43 @@ class TestHighlightValidator:
         assert result.valid_count == 2
         assert result.invalid_count == 0
 
+    def test_highlight_too_long_warning(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should warn when highlight exceeds 150 characters (Task 7.3)."""
+        long_highlight = "x" * 200  # Over 150 chars
+        highlights_yaml = f"""\
+- "{long_highlight}"
+- "Short highlight"
+"""
+        (tmp_path / "highlights.yaml").write_text(highlights_yaml)
+        monkeypatch.chdir(tmp_path)
+
+        validator = HighlightValidator()
+        result = validator.validate(tmp_path)
+
+        # Long highlight is valid but generates warning
+        assert result.is_valid
+        assert result.valid_count == 2
+        assert result.warning_count == 1
+        assert any("HIGHLIGHT_TOO_LONG" in w.code for w in result.warnings)
+
+    def test_empty_highlight_error(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Should error on empty highlight string."""
+        highlights_yaml = """\
+- ""
+- "Valid highlight"
+"""
+        (tmp_path / "highlights.yaml").write_text(highlights_yaml)
+        monkeypatch.chdir(tmp_path)
+
+        validator = HighlightValidator()
+        result = validator.validate(tmp_path)
+
+        assert not result.is_valid
+        assert result.invalid_count == 1
+        assert any("EMPTY_HIGHLIGHT" in e.code for e in result.errors)
+
 
 # =============================================================================
 # Config Validator Tests
@@ -366,6 +453,42 @@ class TestConfigValidator:
         assert not result.is_valid
         assert result.invalid_count == 1
         assert any("INVALID_SCHEMA_VERSION" in e.code for e in result.errors)
+
+    def test_missing_work_units_dir_warning(self, tmp_path: Path) -> None:
+        """Should warn when work_units_dir does not exist (Task 8.4)."""
+        config_yaml = """\
+schema_version: "2.0.0"
+work_units_dir: "nonexistent-work-units"
+"""
+        (tmp_path / ".resume.yaml").write_text(config_yaml)
+        # Note: not creating the work-units directory
+
+        validator = ConfigValidator()
+        result = validator.validate(tmp_path)
+
+        # Missing path is a warning, not an error
+        assert result.is_valid
+        assert result.warning_count >= 1
+        assert any("PATH_NOT_FOUND" in w.code for w in result.warnings)
+
+    def test_missing_templates_dir_warning(self, tmp_path: Path) -> None:
+        """Should warn when templates_dir does not exist (Task 8.4)."""
+        config_yaml = """\
+schema_version: "2.0.0"
+work_units_dir: "work-units"
+templates_dir: "nonexistent-templates"
+"""
+        (tmp_path / ".resume.yaml").write_text(config_yaml)
+        (tmp_path / "work-units").mkdir()
+        # Note: not creating the templates directory
+
+        validator = ConfigValidator()
+        result = validator.validate(tmp_path)
+
+        # Missing path is a warning, not an error
+        assert result.is_valid
+        assert result.warning_count >= 1
+        assert any("PATH_NOT_FOUND" in w.code for w in result.warnings)
 
 
 # =============================================================================
