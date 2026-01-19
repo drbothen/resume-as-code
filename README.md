@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/brand/lockup-horizontal.svg" alt="rac.me" width="280">
+  <img src="https://raw.githubusercontent.com/drbothen/resume-as-code/main/assets/brand/lockup-horizontal.png" alt="Resume as Code" width="280">
 </p>
 
 <p align="center">
