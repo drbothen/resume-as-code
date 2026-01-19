@@ -311,10 +311,13 @@ class TemplateOptions(BaseModel):
 
 
 class DataPaths(BaseModel):
-    """Custom paths for separated data files (Story 9.2).
+    """Custom paths for separated data files (Story 9.2 + 11.2).
 
     Allows users to customize the location of data files instead of using
     the default locations in the project root.
+
+    Story 11.2 adds directory mode options (*_dir fields) for sharded storage
+    where each item is stored as a separate YAML file in a directory.
     """
 
     profile: str | None = Field(default=None, description="Path to profile.yaml")
@@ -323,6 +326,38 @@ class DataPaths(BaseModel):
     highlights: str | None = Field(default=None, description="Path to highlights.yaml")
     publications: str | None = Field(default=None, description="Path to publications.yaml")
     board_roles: str | None = Field(default=None, description="Path to board-roles.yaml")
+
+    # Directory mode options (Story 11.2 / TD-005)
+    certifications_dir: str | None = Field(
+        default=None, description="Path to certifications directory (sharded mode)"
+    )
+    education_dir: str | None = Field(
+        default=None, description="Path to education directory (sharded mode)"
+    )
+    highlights_dir: str | None = Field(
+        default=None, description="Path to highlights directory (sharded mode)"
+    )
+    publications_dir: str | None = Field(
+        default=None, description="Path to publications directory (sharded mode)"
+    )
+    board_roles_dir: str | None = Field(
+        default=None, description="Path to board-roles directory (sharded mode)"
+    )
+
+    @model_validator(mode="after")
+    def validate_no_dual_config(self) -> DataPaths:
+        """Ensure both file and dir aren't specified for same resource."""
+        pairs = [
+            ("certifications", "certifications_dir"),
+            ("education", "education_dir"),
+            ("highlights", "highlights_dir"),
+            ("publications", "publications_dir"),
+            ("board_roles", "board_roles_dir"),
+        ]
+        for file_key, dir_key in pairs:
+            if getattr(self, file_key) and getattr(self, dir_key):
+                raise ValueError(f"Cannot specify both {file_key} and {dir_key}")
+        return self
 
 
 class ResumeConfig(BaseModel):

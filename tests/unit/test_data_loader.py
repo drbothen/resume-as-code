@@ -330,6 +330,170 @@ board_roles:
         assert roles[0].organization == "Nonprofit"
 
 
+class TestDirectoryMode:
+    """Tests for directory mode (Story 11.2)."""
+
+    def test_load_certifications_from_directory(self, tmp_path: Path) -> None:
+        """Load certifications from directory when it exists."""
+        certs_dir = tmp_path / "certifications"
+        certs_dir.mkdir()
+
+        (certs_dir / "cert-2023-01-cissp.yaml").write_text(
+            "name: CISSP\nissuer: ISC2\ndate: '2023-01'\n"
+        )
+        (certs_dir / "cert-2022-06-oscp.yaml").write_text(
+            "name: OSCP\nissuer: OffSec\ndate: '2022-06'\n"
+        )
+
+        config_file = tmp_path / ".resume.yaml"
+        config_file.write_text("schema_version: '3.0.0'\n")
+
+        certs = load_certifications(tmp_path)
+
+        assert len(certs) == 2
+        # Sorted alphabetically by filename: cert-2022 comes before cert-2023
+        assert certs[0].name == "OSCP"  # 2022 < 2023
+        assert certs[1].name == "CISSP"
+        assert all(isinstance(c, Certification) for c in certs)
+
+    def test_directory_takes_precedence_over_file(self, tmp_path: Path, caplog: object) -> None:
+        """Directory mode takes precedence when both exist."""
+        import logging
+
+        # Create both directory and file
+        certs_dir = tmp_path / "certifications"
+        certs_dir.mkdir()
+        (certs_dir / "cert-dir.yaml").write_text("name: Dir Cert\n")
+
+        cert_file = tmp_path / "certifications.yaml"
+        cert_file.write_text("- name: File Cert\n")
+
+        config_file = tmp_path / ".resume.yaml"
+        config_file.write_text("schema_version: '3.0.0'\n")
+
+        with caplog.at_level(logging.WARNING):  # type: ignore[attr-defined]
+            certs = load_certifications(tmp_path)
+
+        # Directory wins
+        assert len(certs) == 1
+        assert certs[0].name == "Dir Cert"
+        # Warning logged
+        assert "using directory mode" in caplog.text
+
+    def test_configured_dir_overrides_default(self, tmp_path: Path) -> None:
+        """Configured *_dir path takes highest priority."""
+        # Create default directory
+        default_dir = tmp_path / "certifications"
+        default_dir.mkdir()
+        (default_dir / "cert.yaml").write_text("name: Default Dir Cert\n")
+
+        # Create custom directory
+        custom_dir = tmp_path / "custom-certs"
+        custom_dir.mkdir()
+        (custom_dir / "cert.yaml").write_text("name: Custom Dir Cert\n")
+
+        config_file = tmp_path / ".resume.yaml"
+        config_file.write_text(
+            """
+schema_version: '3.0.0'
+data_paths:
+  certifications_dir: custom-certs
+"""
+        )
+
+        certs = load_certifications(tmp_path)
+
+        assert len(certs) == 1
+        assert certs[0].name == "Custom Dir Cert"
+
+    def test_load_education_from_directory(self, tmp_path: Path) -> None:
+        """Load education from directory."""
+        edu_dir = tmp_path / "education"
+        edu_dir.mkdir()
+
+        (edu_dir / "edu-mit.yaml").write_text(
+            "degree: BS Computer Science\ninstitution: MIT\ngraduation_year: '2015'\n"
+        )
+
+        config_file = tmp_path / ".resume.yaml"
+        config_file.write_text("schema_version: '3.0.0'\n")
+
+        education = load_education(tmp_path)
+
+        assert len(education) == 1
+        assert education[0].institution == "MIT"
+        assert isinstance(education[0], Education)
+
+    def test_load_publications_from_directory(self, tmp_path: Path) -> None:
+        """Load publications from directory."""
+        pub_dir = tmp_path / "publications"
+        pub_dir.mkdir()
+
+        (pub_dir / "pub-2023-06-talk.yaml").write_text(
+            "title: My Talk\ntype: conference\nvenue: RSA\ndate: '2023-06'\n"
+        )
+
+        config_file = tmp_path / ".resume.yaml"
+        config_file.write_text("schema_version: '3.0.0'\n")
+
+        pubs = load_publications(tmp_path)
+
+        assert len(pubs) == 1
+        assert pubs[0].title == "My Talk"
+        assert isinstance(pubs[0], Publication)
+
+    def test_load_board_roles_from_directory(self, tmp_path: Path) -> None:
+        """Load board roles from directory."""
+        roles_dir = tmp_path / "board-roles"
+        roles_dir.mkdir()
+
+        (roles_dir / "board-acme.yaml").write_text(
+            "organization: Acme Corp\nrole: Advisor\ntype: advisory\nstart_date: '2023-01'\n"
+        )
+
+        config_file = tmp_path / ".resume.yaml"
+        config_file.write_text("schema_version: '3.0.0'\n")
+
+        roles = load_board_roles(tmp_path)
+
+        assert len(roles) == 1
+        assert roles[0].organization == "Acme Corp"
+        assert isinstance(roles[0], BoardRole)
+
+    def test_load_highlights_from_directory(self, tmp_path: Path) -> None:
+        """Load highlights from directory with text field."""
+        highlights_dir = tmp_path / "highlights"
+        highlights_dir.mkdir()
+
+        (highlights_dir / "hl-001.yaml").write_text("text: First highlight\n")
+        (highlights_dir / "hl-002.yaml").write_text("text: Second highlight\n")
+
+        config_file = tmp_path / ".resume.yaml"
+        config_file.write_text("schema_version: '3.0.0'\n")
+
+        highlights = load_highlights(tmp_path)
+
+        assert len(highlights) == 2
+        assert "First highlight" in highlights[0]
+        assert "Second highlight" in highlights[1]
+
+    def test_skip_hidden_files_in_directory(self, tmp_path: Path) -> None:
+        """Directory mode should skip hidden files."""
+        certs_dir = tmp_path / "certifications"
+        certs_dir.mkdir()
+
+        (certs_dir / "cert-visible.yaml").write_text("name: Visible\n")
+        (certs_dir / ".hidden.yaml").write_text("name: Hidden\n")
+
+        config_file = tmp_path / ".resume.yaml"
+        config_file.write_text("schema_version: '3.0.0'\n")
+
+        certs = load_certifications(tmp_path)
+
+        assert len(certs) == 1
+        assert certs[0].name == "Visible"
+
+
 class TestDataPathsConfig:
     """Tests for data_paths configuration support."""
 

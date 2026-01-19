@@ -2,6 +2,7 @@
 
 Handles loading, saving, and querying education records.
 Story 9.2: Uses data_loader for cascading lookup (separate file or embedded).
+Story 11.2: Added directory mode support via ShardedLoader.
 """
 
 from __future__ import annotations
@@ -10,11 +11,14 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
+from resume_as_code.data_loader import get_storage_mode
 from resume_as_code.data_loader import load_education as dl_load_education
 from resume_as_code.models.education import Education
+from resume_as_code.services.sharded_loader import ShardedLoader
 
 # Default filename for separated data structure (Story 9.2)
 DEFAULT_EDUCATION_FILE = "education.yaml"
+DEFAULT_EDUCATION_DIR = "education"
 
 
 class EducationService:
@@ -80,15 +84,31 @@ class EducationService:
         """
         return (self.project_path / DEFAULT_EDUCATION_FILE).exists()
 
-    def save_education(self, education: Education) -> None:
-        """Save an education record to the appropriate file.
+    def save_education(self, education: Education) -> Path | None:
+        """Save an education record to the appropriate location.
 
         Story 9.2: Writes to education.yaml if it exists (v3 format),
         otherwise writes to .resume.yaml (v2 format).
+        Story 11.2: Supports directory mode with per-item files.
 
         Args:
             education: The Education record to save.
+
+        Returns:
+            Path to the saved file (directory mode), or None (file/embedded mode).
         """
+        mode, path = get_storage_mode(self.project_path, "education")
+
+        if mode == "dir":
+            # Story 11.2: Directory mode - save to individual file
+            dir_path = path or (self.project_path / DEFAULT_EDUCATION_DIR)
+            loader = ShardedLoader(dir_path, Education)
+            item_id = loader.generate_id(education)
+            saved_path = loader.save(education, item_id)
+            self._education = None
+            return saved_path
+
+        # File or embedded mode - use existing logic
         yaml = YAML()
         yaml.default_flow_style = False
 
@@ -98,9 +118,9 @@ class EducationService:
         if edu_data.get("display") is True:
             del edu_data["display"]
 
-        if self._uses_separated_format():
+        if mode == "file":
             # v3 format: write to education.yaml (list format)
-            data_path = self.project_path / DEFAULT_EDUCATION_FILE
+            data_path = path or (self.project_path / DEFAULT_EDUCATION_FILE)
             if data_path.exists():
                 with open(data_path) as f:
                     edu_list = yaml.load(f) or []
@@ -112,7 +132,7 @@ class EducationService:
             with open(data_path, "w") as f:
                 yaml.dump(edu_list, f)
         else:
-            # v2 format: write to .resume.yaml (embedded)
+            # Embedded mode: write to .resume.yaml
             if self.config_path.exists():
                 with open(self.config_path) as f:
                     data = yaml.load(f) or {}
@@ -129,6 +149,7 @@ class EducationService:
 
         # Clear cache
         self._education = None
+        return None
 
     def find_educations_by_degree(self, query: str) -> list[Education]:
         """Find education records matching degree name.
@@ -151,6 +172,7 @@ class EducationService:
 
         Story 9.2: Removes from education.yaml if it exists (v3 format),
         otherwise removes from .resume.yaml (v2 format).
+        Story 11.2: Supports directory mode with per-item files.
 
         Args:
             degree: The exact degree name to remove.
@@ -158,14 +180,33 @@ class EducationService:
         Returns:
             True if education was removed, False if not found.
         """
+        mode, path = get_storage_mode(self.project_path, "education")
+        degree_lower = degree.lower().strip()
+
+        if mode == "dir":
+            # Story 11.2: Directory mode - find and remove file
+            dir_path = path or (self.project_path / DEFAULT_EDUCATION_DIR)
+            loader = ShardedLoader(dir_path, Education)
+            edu_records = loader.load_all()
+
+            # Find matching education with its source file (exact match on degree)
+            for edu in edu_records:
+                if edu.degree.lower().strip() == degree_lower:
+                    source_file = getattr(edu, "_source_file", None)
+                    if source_file:
+                        item_id = source_file.stem
+                        if loader.remove(item_id):
+                            self._education = None
+                            return True
+                    return False
+            return False
+
         yaml = YAML()
         yaml.default_flow_style = False
 
-        degree_lower = degree.lower().strip()
-
-        if self._uses_separated_format():
+        if mode == "file":
             # v3 format: remove from education.yaml
-            data_path = self.project_path / DEFAULT_EDUCATION_FILE
+            data_path = path or (self.project_path / DEFAULT_EDUCATION_FILE)
             if not data_path.exists():
                 return False
 
@@ -184,7 +225,7 @@ class EducationService:
             with open(data_path, "w") as f:
                 yaml.dump(edu_list, f)
         else:
-            # v2 format: remove from .resume.yaml
+            # Embedded mode: remove from .resume.yaml
             if not self.config_path.exists():
                 return False
 

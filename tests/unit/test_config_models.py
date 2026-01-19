@@ -542,6 +542,119 @@ class TestResumeConfigTailoredNotice:
         assert "request" in DEFAULT_TAILORED_NOTICE.lower()
 
 
+class TestDataPaths:
+    """Test DataPaths model for custom data file paths (Story 9.2 + 11.2)."""
+
+    def test_default_all_none(self) -> None:
+        """DataPaths should have all fields as None by default."""
+        from resume_as_code.models.config import DataPaths
+
+        paths = DataPaths()
+        assert paths.profile is None
+        assert paths.certifications is None
+        assert paths.education is None
+        assert paths.highlights is None
+        assert paths.publications is None
+        assert paths.board_roles is None
+
+    def test_custom_file_paths(self) -> None:
+        """DataPaths should accept custom file paths."""
+        from resume_as_code.models.config import DataPaths
+
+        paths = DataPaths(
+            certifications="./data/certs.yaml",
+            education="./data/edu.yaml",
+        )
+        assert paths.certifications == "./data/certs.yaml"
+        assert paths.education == "./data/edu.yaml"
+
+    # Story 11.2: Directory mode fields
+    def test_directory_mode_fields_exist(self) -> None:
+        """DataPaths should have *_dir fields for directory mode (TD-005)."""
+        from resume_as_code.models.config import DataPaths
+
+        paths = DataPaths()
+        assert paths.certifications_dir is None
+        assert paths.education_dir is None
+        assert paths.highlights_dir is None
+        assert paths.publications_dir is None
+        assert paths.board_roles_dir is None
+
+    def test_custom_directory_paths(self) -> None:
+        """DataPaths should accept custom directory paths."""
+        from resume_as_code.models.config import DataPaths
+
+        paths = DataPaths(
+            certifications_dir="./certifications/",
+            publications_dir="./publications/",
+        )
+        assert paths.certifications_dir == "./certifications/"
+        assert paths.publications_dir == "./publications/"
+
+    def test_dual_config_validation_certifications(self) -> None:
+        """DataPaths should reject both certifications and certifications_dir."""
+        from resume_as_code.models.config import DataPaths
+
+        with pytest.raises(ValueError, match="Cannot specify both"):
+            DataPaths(
+                certifications="./certifications.yaml",
+                certifications_dir="./certifications/",
+            )
+
+    def test_dual_config_validation_education(self) -> None:
+        """DataPaths should reject both education and education_dir."""
+        from resume_as_code.models.config import DataPaths
+
+        with pytest.raises(ValueError, match="Cannot specify both"):
+            DataPaths(
+                education="./education.yaml",
+                education_dir="./education/",
+            )
+
+    def test_dual_config_validation_publications(self) -> None:
+        """DataPaths should reject both publications and publications_dir."""
+        from resume_as_code.models.config import DataPaths
+
+        with pytest.raises(ValueError, match="Cannot specify both"):
+            DataPaths(
+                publications="./publications.yaml",
+                publications_dir="./publications/",
+            )
+
+    def test_dual_config_validation_board_roles(self) -> None:
+        """DataPaths should reject both board_roles and board_roles_dir."""
+        from resume_as_code.models.config import DataPaths
+
+        with pytest.raises(ValueError, match="Cannot specify both"):
+            DataPaths(
+                board_roles="./board-roles.yaml",
+                board_roles_dir="./board-roles/",
+            )
+
+    def test_dual_config_validation_highlights(self) -> None:
+        """DataPaths should reject both highlights and highlights_dir."""
+        from resume_as_code.models.config import DataPaths
+
+        with pytest.raises(ValueError, match="Cannot specify both"):
+            DataPaths(
+                highlights="./highlights.yaml",
+                highlights_dir="./highlights/",
+            )
+
+    def test_mixed_file_and_directory_allowed(self) -> None:
+        """DataPaths should allow file mode for some and dir mode for others."""
+        from resume_as_code.models.config import DataPaths
+
+        paths = DataPaths(
+            certifications="./certifications.yaml",  # File mode
+            publications_dir="./publications/",  # Directory mode
+        )
+        assert paths.certifications == "./certifications.yaml"
+        assert paths.certifications_dir is None
+        assert paths.publications is None
+        assert paths.publications_dir == "./publications/"
+
+
 class TestTemplateOptions:
     """Test TemplateOptions model for template rendering configuration (Story 8.1)."""
 

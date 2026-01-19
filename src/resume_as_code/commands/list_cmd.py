@@ -144,9 +144,16 @@ def list_positions(ctx: click.Context) -> None:
 
 
 @list_command.command("certifications")
+@click.option(
+    "--verbose",
+    "-v",
+    "verbose",
+    is_flag=True,
+    help="Show source file paths (Story 11.2)",
+)
 @click.pass_context
 @handle_errors
-def list_certifications(ctx: click.Context) -> None:
+def list_certifications(ctx: click.Context, verbose: bool) -> None:
     """List all certifications with expiration status."""
     service = CertificationService(config_path=ctx.obj.effective_config_path)
     certifications = service.load_certifications()
@@ -165,15 +172,22 @@ def list_certifications(ctx: click.Context) -> None:
         return
 
     if ctx.obj.json_output:
-        _output_certifications_json(certifications)
+        _output_certifications_json(certifications, verbose=verbose)
     else:
-        _output_certifications_table(certifications)
+        _output_certifications_table(certifications, verbose=verbose)
 
 
 @list_command.command("education")
+@click.option(
+    "--verbose",
+    "-v",
+    "verbose",
+    is_flag=True,
+    help="Show source file paths (Story 11.2)",
+)
 @click.pass_context
 @handle_errors
-def list_education(ctx: click.Context) -> None:
+def list_education(ctx: click.Context, verbose: bool) -> None:
     """List all education entries."""
     service = EducationService(config_path=ctx.obj.effective_config_path)
     education = service.load_education()
@@ -192,15 +206,22 @@ def list_education(ctx: click.Context) -> None:
         return
 
     if ctx.obj.json_output:
-        _output_education_json(education)
+        _output_education_json(education, verbose=verbose)
     else:
-        _output_education_table(education)
+        _output_education_table(education, verbose=verbose)
 
 
 @list_command.command("highlights")
+@click.option(
+    "--verbose",
+    "-v",
+    "verbose",
+    is_flag=True,
+    help="Show source file paths (Story 11.2)",
+)
 @click.pass_context
 @handle_errors
-def list_highlights(ctx: click.Context) -> None:
+def list_highlights(ctx: click.Context, verbose: bool) -> None:
     """List all career highlights."""
     service = HighlightService(config_path=ctx.obj.effective_config_path)
     highlights = service.load_highlights()
@@ -219,15 +240,22 @@ def list_highlights(ctx: click.Context) -> None:
         return
 
     if ctx.obj.json_output:
-        _output_highlights_json(highlights)
+        _output_highlights_json(highlights, verbose=verbose, service=service)
     else:
-        _output_highlights_table(highlights)
+        _output_highlights_table(highlights, verbose=verbose, service=service)
 
 
 @list_command.command("board-roles")
+@click.option(
+    "--verbose",
+    "-v",
+    "verbose",
+    is_flag=True,
+    help="Show source file paths (Story 11.2)",
+)
 @click.pass_context
 @handle_errors
-def list_board_roles(ctx: click.Context) -> None:
+def list_board_roles(ctx: click.Context, verbose: bool) -> None:
     """List all board and advisory roles."""
     service = BoardRoleService(config_path=ctx.obj.effective_config_path)
     board_roles = service.load_board_roles()
@@ -246,25 +274,62 @@ def list_board_roles(ctx: click.Context) -> None:
         return
 
     if ctx.obj.json_output:
-        _output_board_roles_json(board_roles)
+        _output_board_roles_json(board_roles, verbose=verbose)
     else:
-        _output_board_roles_table(board_roles)
+        _output_board_roles_table(board_roles, verbose=verbose)
 
 
-def _output_highlights_json(highlights: list[str]) -> None:
-    """Output highlights as JSON."""
+def _output_highlights_json(
+    highlights: list[str],
+    verbose: bool = False,
+    service: HighlightService | None = None,
+) -> None:
+    """Output highlights as JSON.
+
+    Args:
+        highlights: List of highlight strings.
+        verbose: If True, include source file paths (Story 11.2).
+        service: HighlightService to get source info from.
+    """
+    from resume_as_code.data_loader import get_storage_mode
+
     highlight_data = [{"index": idx, "text": text} for idx, text in enumerate(highlights)]
+
+    # Add storage mode info in verbose mode
+    storage_info = None
+    if verbose and service:
+        mode, path = get_storage_mode(service.project_path, "highlights")
+        storage_info = {
+            "mode": mode,
+            "path": str(path) if path else None,
+        }
 
     response = JSONResponse(
         status="success",
         command="list highlights",
-        data={"highlights": highlight_data, "count": len(highlight_data)},
+        data={
+            "highlights": highlight_data,
+            "count": len(highlight_data),
+            **({"storage": storage_info} if storage_info else {}),
+        },
     )
     json_output(response.to_json())
 
 
-def _output_highlights_table(highlights: list[str]) -> None:
-    """Output highlights as Rich table."""
+def _output_highlights_table(
+    highlights: list[str],
+    verbose: bool = False,
+    service: HighlightService | None = None,
+) -> None:
+    """Output highlights as Rich table.
+
+    Args:
+        highlights: List of highlight strings.
+        verbose: If True, show storage mode info (Story 11.2).
+        service: HighlightService to get source info from.
+    """
+    from resume_as_code.data_loader import get_storage_mode
+
     table = Table(title="Career Highlights")
     table.add_column("#", style="dim", width=3)
     table.add_column("Highlight", style="cyan")
@@ -275,6 +340,16 @@ def _output_highlights_table(highlights: list[str]) -> None:
     console.print(table)
     console.print(f"\n[dim]{len(highlights)} Career Highlight(s)[/dim]")
 
+    # Show storage info in verbose mode (Story 11.2)
+    if verbose and service:
+        mode, path = get_storage_mode(service.project_path, "highlights")
+        if mode == "dir" and path:
+            console.print(f"[dim]Source: {path}/[/dim]")
+        elif mode == "file" and path:
+            console.print(f"[dim]Source: {path}[/dim]")
+        else:
+            console.print("[dim]Source: embedded in .resume.yaml[/dim]")
+
     if len(highlights) > 4:
         console.print(
             "\n[yellow]Tip: Research suggests a maximum of 4 career highlights "
@@ -282,14 +357,19 @@ def _output_highlights_table(highlights: list[str]) -> None:
         )
 
 
-def _output_board_roles_json(board_roles: list[Any]) -> None:
-    """Output board roles as JSON."""
+def _output_board_roles_json(board_roles: list[Any], verbose: bool = False) -> None:
+    """Output board roles as JSON.
+
+    Args:
+        board_roles: List of BoardRole objects.
+        verbose: If True, include source file paths (Story 11.2).
+    """
     from resume_as_code.models.board_role import BoardRole
 
     role_data = []
     for role in board_roles:
         if isinstance(role, BoardRole):
-            data = {
+            data: dict[str, Any] = {
                 "organization": role.organization,
                 "role": role.role,
                 "type": role.type,
@@ -300,6 +380,10 @@ def _output_board_roles_json(board_roles: list[Any]) -> None:
                 "is_current": role.is_current,
                 "date_range": role.format_date_range(),
             }
+            # Add source file in verbose mode (Story 11.2)
+            if verbose:
+                source_file = getattr(role, "_source_file", None)
+                data["source_file"] = str(source_file) if source_file else None
             role_data.append(data)
 
     response = JSONResponse(
@@ -310,8 +394,13 @@ def _output_board_roles_json(board_roles: list[Any]) -> None:
     json_output(response.to_json())
 
 
-def _output_board_roles_table(board_roles: list[Any]) -> None:
-    """Output board roles as Rich table."""
+def _output_board_roles_table(board_roles: list[Any], verbose: bool = False) -> None:
+    """Output board roles as Rich table.
+
+    Args:
+        board_roles: List of BoardRole objects.
+        verbose: If True, show source file paths (Story 11.2).
+    """
     from resume_as_code.models.board_role import BoardRole
 
     table = Table(title="Board & Advisory Roles")
@@ -320,31 +409,45 @@ def _output_board_roles_table(board_roles: list[Any]) -> None:
     table.add_column("Type", style="dim")
     table.add_column("Dates")
     table.add_column("Status")
+    if verbose:
+        table.add_column("Source", style="dim")
 
     for role in board_roles:
         if isinstance(role, BoardRole):
             status_display = "[green]Current[/green]" if role.is_current else "[dim]Past[/dim]"
 
-            table.add_row(
+            row = [
                 role.organization,
                 role.role,
                 role.type,
                 role.format_date_range(),
                 status_display,
-            )
+            ]
+
+            if verbose:
+                source_file = getattr(role, "_source_file", None)
+                source_display = source_file.name if source_file else "-"
+                row.append(source_display)
+
+            table.add_row(*row)
 
     console.print(table)
     console.print(f"\n[dim]{len(board_roles)} Board Role(s)[/dim]")
 
 
-def _output_education_json(education: list[Any]) -> None:
-    """Output education as JSON."""
+def _output_education_json(education: list[Any], verbose: bool = False) -> None:
+    """Output education as JSON.
+
+    Args:
+        education: List of Education objects.
+        verbose: If True, include source file paths (Story 11.2).
+    """
     from resume_as_code.models.education import Education
 
     edu_data = []
     for edu in education:
         if isinstance(edu, Education):
-            data = {
+            data: dict[str, Any] = {
                 "degree": edu.degree,
                 "institution": edu.institution,
                 "graduation_year": edu.graduation_year,
@@ -352,6 +455,10 @@ def _output_education_json(education: list[Any]) -> None:
                 "gpa": edu.gpa,
                 "display": edu.display,
             }
+            # Add source file in verbose mode (Story 11.2)
+            if verbose:
+                source_file = getattr(edu, "_source_file", None)
+                data["source_file"] = str(source_file) if source_file else None
             edu_data.append(data)
 
     response = JSONResponse(
@@ -362,8 +469,13 @@ def _output_education_json(education: list[Any]) -> None:
     json_output(response.to_json())
 
 
-def _output_education_table(education: list[Any]) -> None:
-    """Output education as Rich table."""
+def _output_education_table(education: list[Any], verbose: bool = False) -> None:
+    """Output education as Rich table.
+
+    Args:
+        education: List of Education objects.
+        verbose: If True, show source file paths (Story 11.2).
+    """
     from resume_as_code.models.education import Education
 
     table = Table(title="Education")
@@ -371,28 +483,42 @@ def _output_education_table(education: list[Any]) -> None:
     table.add_column("Institution")
     table.add_column("Year")
     table.add_column("Honors")
+    if verbose:
+        table.add_column("Source", style="dim")
 
     for edu in education:
         if isinstance(edu, Education):
-            table.add_row(
+            row = [
                 edu.degree,
                 edu.institution,
                 edu.graduation_year or "-",
                 edu.honors or "-",
-            )
+            ]
+
+            if verbose:
+                source_file = getattr(edu, "_source_file", None)
+                source_display = source_file.name if source_file else "-"
+                row.append(source_display)
+
+            table.add_row(*row)
 
     console.print(table)
     console.print(f"\n[dim]{len(education)} Education Entry(ies)[/dim]")
 
 
-def _output_certifications_json(certifications: list[Any]) -> None:
-    """Output certifications as JSON with computed status."""
+def _output_certifications_json(certifications: list[Any], verbose: bool = False) -> None:
+    """Output certifications as JSON with computed status.
+
+    Args:
+        certifications: List of Certification objects.
+        verbose: If True, include source file paths (Story 11.2).
+    """
     from resume_as_code.models.certification import Certification
 
     cert_data = []
     for cert in certifications:
         if isinstance(cert, Certification):
-            data = {
+            data: dict[str, Any] = {
                 "name": cert.name,
                 "issuer": cert.issuer,
                 "date": cert.date,
@@ -402,6 +528,10 @@ def _output_certifications_json(certifications: list[Any]) -> None:
                 "display": cert.display,
                 "status": cert.get_status(),
             }
+            # Add source file in verbose mode (Story 11.2)
+            if verbose:
+                source_file = getattr(cert, "_source_file", None)
+                data["source_file"] = str(source_file) if source_file else None
             cert_data.append(data)
 
     response = JSONResponse(
@@ -412,8 +542,13 @@ def _output_certifications_json(certifications: list[Any]) -> None:
     json_output(response.to_json())
 
 
-def _output_certifications_table(certifications: list[Any]) -> None:
-    """Output certifications as Rich table with status highlighting."""
+def _output_certifications_table(certifications: list[Any], verbose: bool = False) -> None:
+    """Output certifications as Rich table with status highlighting.
+
+    Args:
+        certifications: List of Certification objects.
+        verbose: If True, show source file paths (Story 11.2).
+    """
     from resume_as_code.models.certification import Certification
 
     table = Table(title="Certifications")
@@ -422,6 +557,8 @@ def _output_certifications_table(certifications: list[Any]) -> None:
     table.add_column("Date")
     table.add_column("Expires")
     table.add_column("Status")
+    if verbose:
+        table.add_column("Source", style="dim")
 
     expired_indices: list[int] = []
     for idx, cert in enumerate(certifications):
@@ -437,13 +574,20 @@ def _output_certifications_table(certifications: list[Any]) -> None:
             else:
                 status_display = "[green]Active[/green]"
 
-            table.add_row(
+            row = [
                 cert.name,
                 cert.issuer or "-",
                 cert.date or "-",
                 cert.expires or "Never",
                 status_display,
-            )
+            ]
+
+            if verbose:
+                source_file = getattr(cert, "_source_file", None)
+                source_display = source_file.name if source_file else "-"
+                row.append(source_display)
+
+            table.add_row(*row)
 
     console.print(table)
     console.print(f"\n[dim]{len(certifications)} Certification(s)[/dim]")
@@ -716,9 +860,16 @@ def _format_tags(tags: list[Any]) -> str:
 
 
 @list_command.command("publications")
+@click.option(
+    "--verbose",
+    "-v",
+    "verbose",
+    is_flag=True,
+    help="Show source file paths (Story 11.2)",
+)
 @click.pass_context
 @handle_errors
-def list_publications(ctx: click.Context) -> None:
+def list_publications(ctx: click.Context, verbose: bool) -> None:
     """List all publications and speaking engagements."""
     service = PublicationService(config_path=ctx.obj.effective_config_path)
     publications = service.load_publications()
@@ -736,25 +887,33 @@ def list_publications(ctx: click.Context) -> None:
         return
 
     if ctx.obj.json_output:
-        _output_publications_json(publications)
+        _output_publications_json(publications, verbose=verbose)
     else:
-        _output_publications_table(publications)
+        _output_publications_table(publications, verbose=verbose)
 
 
-def _output_publications_json(publications: list[Any]) -> None:
-    """Output publications as JSON."""
+def _output_publications_json(publications: list[Any], verbose: bool = False) -> None:
+    """Output publications as JSON.
+
+    Args:
+        publications: List of Publication objects.
+        verbose: If True, include source file paths (Story 11.2).
+    """
     pub_data = []
     for pub in publications:
-        pub_data.append(
-            {
-                "title": pub.title,
-                "type": pub.type,
-                "venue": pub.venue,
-                "date": pub.date,
-                "url": str(pub.url) if pub.url else None,
-                "display": pub.display,
-            }
-        )
+        data: dict[str, Any] = {
+            "title": pub.title,
+            "type": pub.type,
+            "venue": pub.venue,
+            "date": pub.date,
+            "url": str(pub.url) if pub.url else None,
+            "display": pub.display,
+        }
+        # Add source file in verbose mode (Story 11.2)
+        if verbose:
+            source_file = getattr(pub, "_source_file", None)
+            data["source_file"] = str(source_file) if source_file else None
+        pub_data.append(data)
 
     response = JSONResponse(
         status="success",
@@ -764,8 +923,13 @@ def _output_publications_json(publications: list[Any]) -> None:
     click.echo(response.to_json())
 
 
-def _output_publications_table(publications: list[Any]) -> None:
-    """Output publications as Rich table."""
+def _output_publications_table(publications: list[Any], verbose: bool = False) -> None:
+    """Output publications as Rich table.
+
+    Args:
+        publications: List of Publication objects.
+        verbose: If True, show source file paths (Story 11.2).
+    """
     table = Table(
         title="Publications & Speaking",
         show_header=True,
@@ -776,6 +940,8 @@ def _output_publications_table(publications: list[Any]) -> None:
     table.add_column("Type", style="magenta")
     table.add_column("Venue", style="white")
     table.add_column("Date", style="dim")
+    if verbose:
+        table.add_column("Source", style="dim")
 
     # Sort by date descending
     sorted_pubs = sorted(publications, key=lambda p: p.date, reverse=True)
@@ -787,14 +953,20 @@ def _output_publications_table(publications: list[Any]) -> None:
         if not pub.display:
             title = f"[dim]{pub.title}[/dim]"
 
-        table.add_row(
+        row = [
             str(idx + 1),
             title,
             pub.type,
             pub.venue,
             pub.date,
-            style=style,
-        )
+        ]
+
+        if verbose:
+            source_file = getattr(pub, "_source_file", None)
+            source_display = source_file.name if source_file else "-"
+            row.append(source_display)
+
+        table.add_row(*row, style=style)
 
     console.print(table)
     console.print(f"\n[dim]{len(publications)} Publication(s)[/dim]")

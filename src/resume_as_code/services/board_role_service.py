@@ -2,6 +2,7 @@
 
 Handles loading, saving, and querying board roles.
 Story 9.2: Uses data_loader for cascading lookup (separate file or embedded).
+Story 11.2: Added directory mode support via ShardedLoader.
 """
 
 from __future__ import annotations
@@ -10,11 +11,14 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
+from resume_as_code.data_loader import get_storage_mode
 from resume_as_code.data_loader import load_board_roles as dl_load_board_roles
 from resume_as_code.models.board_role import BoardRole
+from resume_as_code.services.sharded_loader import ShardedLoader
 
 # Default filename for separated data structure (Story 9.2)
 DEFAULT_BOARD_ROLES_FILE = "board-roles.yaml"
+DEFAULT_BOARD_ROLES_DIR = "board-roles"
 
 
 class BoardRoleService:
@@ -79,15 +83,31 @@ class BoardRoleService:
         """
         return (self.project_path / DEFAULT_BOARD_ROLES_FILE).exists()
 
-    def save_board_role(self, board_role: BoardRole) -> None:
-        """Save a board role to the appropriate file.
+    def save_board_role(self, board_role: BoardRole) -> Path | None:
+        """Save a board role to the appropriate location.
 
         Story 9.2: Writes to board-roles.yaml if it exists (v3 format),
         otherwise writes to .resume.yaml (v2 format).
+        Story 11.2: Supports directory mode with per-item files.
 
         Args:
             board_role: The BoardRole to save.
+
+        Returns:
+            Path to the saved file (directory mode), or None (file/embedded mode).
         """
+        mode, path = get_storage_mode(self.project_path, "board_roles")
+
+        if mode == "dir":
+            # Story 11.2: Directory mode - save to individual file
+            dir_path = path or (self.project_path / DEFAULT_BOARD_ROLES_DIR)
+            loader = ShardedLoader(dir_path, BoardRole)
+            item_id = loader.generate_id(board_role)
+            saved_path = loader.save(board_role, item_id)
+            self._board_roles = None
+            return saved_path
+
+        # File or embedded mode - use existing logic
         yaml = YAML()
         yaml.default_flow_style = False
 
@@ -97,9 +117,9 @@ class BoardRoleService:
         if role_data.get("display") is True:
             del role_data["display"]
 
-        if self._uses_separated_format():
+        if mode == "file":
             # v3 format: write to board-roles.yaml (list format)
-            data_path = self.project_path / DEFAULT_BOARD_ROLES_FILE
+            data_path = path or (self.project_path / DEFAULT_BOARD_ROLES_FILE)
             if data_path.exists():
                 with open(data_path) as f:
                     roles_list = yaml.load(f) or []
@@ -111,7 +131,7 @@ class BoardRoleService:
             with open(data_path, "w") as f:
                 yaml.dump(roles_list, f)
         else:
-            # v2 format: write to .resume.yaml (embedded)
+            # Embedded mode: write to .resume.yaml
             if self.config_path.exists():
                 with open(self.config_path) as f:
                     data = yaml.load(f) or {}
@@ -128,12 +148,14 @@ class BoardRoleService:
 
         # Clear cache
         self._board_roles = None
+        return None
 
     def remove_board_role(self, organization: str) -> bool:
         """Remove a board role by organization (case-insensitive partial match).
 
         Story 9.2: Removes from board-roles.yaml if it exists (v3 format),
         otherwise removes from .resume.yaml (v2 format).
+        Story 11.2: Supports directory mode with per-item files.
 
         Args:
             organization: Full or partial organization name to match.
@@ -145,14 +167,33 @@ class BoardRoleService:
             Uses case-insensitive partial matching. If multiple board roles
             match, the first match is removed.
         """
+        mode, path = get_storage_mode(self.project_path, "board_roles")
+        org_lower = organization.lower().strip()
+
+        if mode == "dir":
+            # Story 11.2: Directory mode - find and remove file
+            dir_path = path or (self.project_path / DEFAULT_BOARD_ROLES_DIR)
+            loader = ShardedLoader(dir_path, BoardRole)
+            roles = loader.load_all()
+
+            # Find matching board role with its source file
+            for role in roles:
+                if org_lower in role.organization.lower():
+                    source_file = getattr(role, "_source_file", None)
+                    if source_file:
+                        item_id = source_file.stem
+                        if loader.remove(item_id):
+                            self._board_roles = None
+                            return True
+                    return False
+            return False
+
         yaml = YAML()
         yaml.default_flow_style = False
 
-        org_lower = organization.lower().strip()
-
-        if self._uses_separated_format():
+        if mode == "file":
             # v3 format: remove from board-roles.yaml
-            data_path = self.project_path / DEFAULT_BOARD_ROLES_FILE
+            data_path = path or (self.project_path / DEFAULT_BOARD_ROLES_FILE)
             if not data_path.exists():
                 return False
 
@@ -178,7 +219,7 @@ class BoardRoleService:
             with open(data_path, "w") as f:
                 yaml.dump(roles_list, f)
         else:
-            # v2 format: remove from .resume.yaml
+            # Embedded mode: remove from .resume.yaml
             if not self.config_path.exists():
                 return False
 

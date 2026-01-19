@@ -2,6 +2,7 @@
 
 Handles loading, saving, and querying publications.
 Story 9.2: Uses data_loader for cascading lookup (separate file or embedded).
+Story 11.2: Added directory mode support via ShardedLoader.
 """
 
 from __future__ import annotations
@@ -10,11 +11,14 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
+from resume_as_code.data_loader import get_storage_mode
 from resume_as_code.data_loader import load_publications as dl_load_publications
 from resume_as_code.models.publication import Publication
+from resume_as_code.services.sharded_loader import ShardedLoader
 
 # Default filename for separated data structure (Story 9.2)
 DEFAULT_PUBLICATIONS_FILE = "publications.yaml"
+DEFAULT_PUBLICATIONS_DIR = "publications"
 
 
 class PublicationService:
@@ -75,15 +79,31 @@ class PublicationService:
         """
         return (self.project_path / DEFAULT_PUBLICATIONS_FILE).exists()
 
-    def save_publication(self, publication: Publication) -> None:
-        """Save a publication to the appropriate file.
+    def save_publication(self, publication: Publication) -> Path | None:
+        """Save a publication to the appropriate location.
 
         Story 9.2: Writes to publications.yaml if it exists (v3 format),
         otherwise writes to .resume.yaml (v2 format).
+        Story 11.2: Supports directory mode with per-item files.
 
         Args:
             publication: The Publication to save.
+
+        Returns:
+            Path to the saved file (directory mode), or None (file/embedded mode).
         """
+        mode, path = get_storage_mode(self.project_path, "publications")
+
+        if mode == "dir":
+            # Story 11.2: Directory mode - save to individual file
+            dir_path = path or (self.project_path / DEFAULT_PUBLICATIONS_DIR)
+            loader = ShardedLoader(dir_path, Publication)
+            item_id = loader.generate_id(publication)
+            saved_path = loader.save(publication, item_id)
+            self._publications = None
+            return saved_path
+
+        # File or embedded mode - use existing logic
         yaml = YAML()
         yaml.default_flow_style = False
 
@@ -99,9 +119,9 @@ class PublicationService:
         if "url" in pub_data and pub_data["url"] is not None:
             pub_data["url"] = str(pub_data["url"])
 
-        if self._uses_separated_format():
+        if mode == "file":
             # v3 format: write to publications.yaml (list format)
-            data_path = self.project_path / DEFAULT_PUBLICATIONS_FILE
+            data_path = path or (self.project_path / DEFAULT_PUBLICATIONS_FILE)
             if data_path.exists():
                 with open(data_path) as f:
                     pubs_list = yaml.load(f) or []
@@ -113,7 +133,7 @@ class PublicationService:
             with open(data_path, "w") as f:
                 yaml.dump(pubs_list, f)
         else:
-            # v2 format: write to .resume.yaml (embedded)
+            # Embedded mode: write to .resume.yaml
             if self.config_path.exists():
                 with open(self.config_path) as f:
                     data = yaml.load(f) or {}
@@ -130,12 +150,14 @@ class PublicationService:
 
         # Clear cache
         self._publications = None
+        return None
 
     def remove_publication(self, title: str) -> bool:
         """Remove a publication by title (case-insensitive partial match).
 
         Story 9.2: Removes from publications.yaml if it exists (v3 format),
         otherwise removes from .resume.yaml (v2 format).
+        Story 11.2: Supports directory mode with per-item files.
 
         Args:
             title: Full or partial publication title to match.
@@ -147,14 +169,34 @@ class PublicationService:
             Uses case-insensitive partial matching. If multiple publications
             match, the first match is removed.
         """
+        mode, path = get_storage_mode(self.project_path, "publications")
+        title_lower = title.lower().strip()
+
+        if mode == "dir":
+            # Story 11.2: Directory mode - find and remove file
+            dir_path = path or (self.project_path / DEFAULT_PUBLICATIONS_DIR)
+            loader = ShardedLoader(dir_path, Publication)
+            pubs = loader.load_all()
+
+            # Find matching publication with its source file
+            for pub in pubs:
+                if title_lower in pub.title.lower():
+                    source_file = getattr(pub, "_source_file", None)
+                    if source_file:
+                        # Extract item_id from filename (without .yaml)
+                        item_id = source_file.stem
+                        if loader.remove(item_id):
+                            self._publications = None
+                            return True
+                    return False
+            return False
+
         yaml = YAML()
         yaml.default_flow_style = False
 
-        title_lower = title.lower().strip()
-
-        if self._uses_separated_format():
+        if mode == "file":
             # v3 format: remove from publications.yaml
-            data_path = self.project_path / DEFAULT_PUBLICATIONS_FILE
+            data_path = path or (self.project_path / DEFAULT_PUBLICATIONS_FILE)
             if not data_path.exists():
                 return False
 
@@ -180,7 +222,7 @@ class PublicationService:
             with open(data_path, "w") as f:
                 yaml.dump(pubs_list, f)
         else:
-            # v2 format: remove from .resume.yaml
+            # Embedded mode: remove from .resume.yaml
             if not self.config_path.exists():
                 return False
 

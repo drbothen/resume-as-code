@@ -1,6 +1,6 @@
 # Story 11.2: Directory-Based Sharding for Data Files
 
-Status: ready-for-dev
+Status: completed
 
 ## Story
 
@@ -22,50 +22,50 @@ So that **I get fine-grained version control and avoid merge conflicts**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Extend DataPaths model with directory options (AC: 1, 2)
-  - [ ] 1.1 Add `certifications_dir`, `publications_dir`, `education_dir`, `board_roles_dir`, `highlights_dir` fields to `DataPaths` model
-  - [ ] 1.2 Add model validation to ensure both `*_path` and `*_dir` aren't specified simultaneously
-  - [ ] 1.3 Update JSON schema generation to include new fields
+- [x] Task 1: Extend DataPaths model with directory options (AC: 1, 2)
+  - [x] 1.1 Add `certifications_dir`, `publications_dir`, `education_dir`, `board_roles_dir`, `highlights_dir` fields to `DataPaths` model
+  - [x] 1.2 Add model validation to ensure both `*_path` and `*_dir` aren't specified simultaneously
+  - [x] 1.3 Update JSON schema generation to include new fields
 
-- [ ] Task 2: Create generic ShardedLoader class (AC: 1, 3)
-  - [ ] 2.1 Create `src/resume_as_code/services/sharded_loader.py` following WorkUnitLoader pattern
-  - [ ] 2.2 Implement `load_all()` method that iterates `*.yaml` files in directory
-  - [ ] 2.3 Implement `save()` method to write individual item files
-  - [ ] 2.4 Implement `remove()` method to delete item files
-  - [ ] 2.5 Add ID generation logic per resource type (see ID Patterns below)
+- [x] Task 2: Create generic ShardedLoader class (AC: 1, 3)
+  - [x] 2.1 Create `src/resume_as_code/services/sharded_loader.py` following WorkUnitLoader pattern
+  - [x] 2.2 Implement `load_all()` method that iterates `*.yaml` files in directory
+  - [x] 2.3 Implement `save()` method to write individual item files
+  - [x] 2.4 Implement `remove()` method to delete item files
+  - [x] 2.5 Add ID generation logic per resource type (see ID Patterns below)
 
-- [ ] Task 3: Implement three-tier loading fallback in data_loader.py (AC: 1, 2)
-  - [ ] 3.1 Update `_resolve_data_path()` to check for `*_dir` config first
-  - [ ] 3.2 Add `_load_sharded_data()` helper for directory mode loading
-  - [ ] 3.3 Add warning logging when both directory and single file exist
-  - [ ] 3.4 Update each `load_*()` function to use three-tier fallback
+- [x] Task 3: Implement three-tier loading fallback in data_loader.py (AC: 1, 2)
+  - [x] 3.1 Update `_resolve_data_path()` to check for `*_dir` config first
+  - [x] 3.2 Add `_load_sharded_data()` helper for directory mode loading
+  - [x] 3.3 Add warning logging when both directory and single file exist
+  - [x] 3.4 Update each `load_*()` function to use three-tier fallback
 
-- [ ] Task 4: Update `new` commands for directory mode (AC: 3)
-  - [ ] 4.1 Update certification service `save_certification()` to check directory mode
-  - [ ] 4.2 Update publication service to support directory mode
-  - [ ] 4.3 Update education service to support directory mode
-  - [ ] 4.4 Update board-role service to support directory mode
-  - [ ] 4.5 Update highlight service to support directory mode
+- [x] Task 4: Update `new` commands for directory mode (AC: 3)
+  - [x] 4.1 Update certification service `save_certification()` to check directory mode
+  - [x] 4.2 Update publication service to support directory mode
+  - [x] 4.3 Update education service to support directory mode
+  - [x] 4.4 Update board-role service to support directory mode
+  - [x] 4.5 Update highlight service to support directory mode
 
-- [ ] Task 5: Update `remove` commands for directory mode (AC: 5)
-  - [ ] 5.1 Update certification service `remove_certification()` to handle directory mode
-  - [ ] 5.2 Update other services for directory-based removal
+- [x] Task 5: Update `remove` commands for directory mode (AC: 5)
+  - [x] 5.1 Update certification service `remove_certification()` to handle directory mode
+  - [x] 5.2 Update other services for directory-based removal
 
-- [ ] Task 6: Update `list` commands for verbose source display (AC: 5)
-  - [ ] 6.1 Add source file tracking to loaded items
-  - [ ] 6.2 Display source path in `--verbose` output
+- [x] Task 6: Update `list` commands for verbose source display (AC: 5)
+  - [x] 6.1 Add source file tracking to loaded items
+  - [x] 6.2 Display source path in `--verbose` output
 
-- [ ] Task 7: Implement `migrate --shard` command (AC: 4)
-  - [ ] 7.1 Add `--shard` option to migrate command accepting resource type
-  - [ ] 7.2 Implement single-file to directory extraction logic
-  - [ ] 7.3 Create backup of original file before migration
-  - [ ] 7.4 Update `.resume.yaml` to enable directory mode after migration
+- [x] Task 7: Implement `migrate --shard` command (AC: 4)
+  - [x] 7.1 Add `--shard` option to migrate command accepting resource type
+  - [x] 7.2 Implement single-file to directory extraction logic
+  - [x] 7.3 Create backup of original file before migration
+  - [x] 7.4 Update `.resume.yaml` to enable directory mode after migration
 
-- [ ] Task 8: Add tests for sharding functionality
-  - [ ] 8.1 Unit tests for ShardedLoader class
-  - [ ] 8.2 Integration tests for three-tier fallback
-  - [ ] 8.3 Integration tests for migrate --shard command
-  - [ ] 8.4 Tests for precedence when both directory and file exist
+- [x] Task 8: Add tests for sharding functionality
+  - [x] 8.1 Unit tests for ShardedLoader class
+  - [x] 8.2 Integration tests for three-tier fallback
+  - [x] 8.3 Integration tests for migrate --shard command
+  - [x] 8.4 Tests for precedence when both directory and file exist
 
 ## Dev Notes
 
@@ -371,19 +371,37 @@ Migration flow:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- All 8 tasks completed successfully
+- 15 unit tests for ShardedLoader class
+- 16 integration tests for sharding functionality
+- All acceptance criteria met:
+  - AC1: Directory mode loading with three-tier fallback
+  - AC2: Precedence rule (directory > file > embedded)
+  - AC3: Directory mode writing for all resource types
+  - AC4: migrate --shard command with backup and config update
+  - AC5: List command parity with --verbose source display
+
 ### Change Log
 - 2026-01-18: Story created with comprehensive implementation context
+- 2026-01-19: Completed Task 7 (migrate --shard command) and Task 8 (tests)
+- 2026-01-19: Story marked completed with all acceptance criteria verified
 
 ### File List
-- `src/resume_as_code/models/config.py` - Extend DataPaths with *_dir fields
-- `src/resume_as_code/data_loader.py` - Implement three-tier loading fallback
+- `src/resume_as_code/models/config.py` - Extended DataPaths with *_dir fields
+- `src/resume_as_code/data_loader.py` - Implemented three-tier loading fallback
 - `src/resume_as_code/services/sharded_loader.py` - New generic directory loader
-- `src/resume_as_code/services/certification_service.py` - Add directory mode
-- `src/resume_as_code/commands/migrate.py` - Add --shard option
-- Plus other service files for each resource type
+- `src/resume_as_code/services/certification_service.py` - Added directory mode
+- `src/resume_as_code/services/publication_service.py` - Added directory mode
+- `src/resume_as_code/services/education_service.py` - Added directory mode
+- `src/resume_as_code/services/board_role_service.py` - Added directory mode
+- `src/resume_as_code/services/highlight_service.py` - Added directory mode
+- `src/resume_as_code/commands/migrate.py` - Added --shard option
+- `src/resume_as_code/commands/list_cmd.py` - Added --verbose flag for source display
+- `tests/unit/services/test_sharded_loader.py` - Unit tests for ShardedLoader
+- `tests/integration/test_sharding.py` - Integration tests for sharding

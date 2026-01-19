@@ -311,7 +311,7 @@
       "type": "object"
     },
     "DataPaths": {
-      "description": "Custom paths for separated data files (Story 9.2).\n\nAllows users to customize the location of data files instead of using\nthe default locations in the project root.",
+      "description": "Custom paths for separated data files (Story 9.2 + 11.2).\n\nAllows users to customize the location of data files instead of using\nthe default locations in the project root.\n\nStory 11.2 adds directory mode options (*_dir fields) for sharded storage\nwhere each item is stored as a separate YAML file in a directory.",
       "properties": {
         "profile": {
           "anyOf": [
@@ -390,6 +390,71 @@
           "default": null,
           "description": "Path to board-roles.yaml",
           "title": "Board Roles"
+        },
+        "certifications_dir": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to certifications directory (sharded mode)",
+          "title": "Certifications Dir"
+        },
+        "education_dir": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to education directory (sharded mode)",
+          "title": "Education Dir"
+        },
+        "highlights_dir": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to highlights directory (sharded mode)",
+          "title": "Highlights Dir"
+        },
+        "publications_dir": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to publications directory (sharded mode)",
+          "title": "Publications Dir"
+        },
+        "board_roles_dir": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to board-roles directory (sharded mode)",
+          "title": "Board Roles Dir"
         }
       },
       "title": "DataPaths",

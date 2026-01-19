@@ -202,6 +202,7 @@ CLI tool for git-native resume generation from structured Work Units.
 | `resume migrate` | Apply schema migrations (prompts for confirmation) |
 | `resume migrate --yes` | Apply migrations without confirmation prompt |
 | `resume migrate --rollback <backup>` | Restore from backup directory |
+| `resume migrate --shard <type>` | Convert single-file to directory mode |
 
 ### Validate Command Options
 
@@ -269,12 +270,15 @@ When enabled (default), multiple positions at the same employer are rendered und
 | `--status` | Show current schema version vs latest, migration availability |
 | `--dry-run` | Preview what changes would be made without modifying files |
 | `--rollback <backup>` | Restore project files from backup directory |
+| `--shard <type>` | Convert single-file to directory mode (certifications, publications, education, board-roles, highlights) |
 | `-y, --yes` | Skip confirmation prompt (for non-interactive use) |
 
 The migrate command detects legacy configs (no `schema_version` field) as v1.0.0 and offers migration to the latest schema version. Migrations:
 - Create automatic backups before modifying files
 - Preserve YAML comments and formatting
 - Are idempotent (safe to run multiple times)
+
+**Directory sharding** (`--shard`): Converts single-file storage (e.g., `certifications.yaml`) to per-item files in a directory (e.g., `certifications/cert-2023-06-aws.yaml`). This enables fine-grained version control and reduces merge conflicts for power users with many items.
 
 ### List Command Options
 
@@ -283,6 +287,7 @@ The migrate command detects legacy configs (no `schema_version` field) as v1.0.0
 | `-f, --filter TEXT` | Filter Work Units (tag:value, confidence:value, or free text) |
 | `-s, --sort [date\|title\|confidence]` | Sort field (default: date) |
 | `-r, --reverse` | Reverse sort order (ascending) |
+| `-v, --verbose` | Show source file paths (for directory mode resources) |
 
 ### Global Flags
 
@@ -378,12 +383,14 @@ Use `--json` for structured output. Response format:
 | `work-units/*.yaml` | Work Unit files |
 | `positions.yaml` | Employment positions (employers, titles, dates) |
 | `profile.yaml` | Contact info, title, summary |
-| `certifications.yaml` | Professional credentials |
-| `education.yaml` | Academic credentials |
-| `publications.yaml` | Articles and speaking |
-| `board-roles.yaml` | Advisory positions |
-| `highlights.yaml` | Career summary bullets |
+| `certifications.yaml` | Professional credentials (or `certifications/` directory) |
+| `education.yaml` | Academic credentials (or `education/` directory) |
+| `publications.yaml` | Articles and speaking (or `publications/` directory) |
+| `board-roles.yaml` | Advisory positions (or `board-roles/` directory) |
+| `highlights.yaml` | Career summary bullets (or `highlights/` directory) |
 | `dist/` | Generated output |
+
+**Directory mode**: Resources can optionally use per-item files in directories instead of single YAML files. Use `resume migrate --shard <type>` to convert. Directory mode enables fine-grained git history and reduces merge conflicts.
 
 ---
 
