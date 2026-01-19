@@ -1,6 +1,6 @@
 # Story 11.3: Custom Templates Directory Support
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -22,42 +22,42 @@ So that **I can create and use my own templates without modifying the package**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add `templates_dir` config option to ResumeConfig (AC: 1)
-  - [ ] 1.1 Add `templates_dir: Path | None` field to `ResumeConfig` in `models/config.py`
-  - [ ] 1.2 Add path expansion validator (same as `output_dir`, `work_units_dir`)
-  - [ ] 1.3 Update JSON schema generation to include the new field
+- [x] Task 1: Add `templates_dir` config option to ResumeConfig (AC: 1)
+  - [x] 1.1 Add `templates_dir: Path | None` field to `ResumeConfig` in `models/config.py`
+  - [x] 1.2 Add path expansion validator (same as `output_dir`, `work_units_dir`)
+  - [x] 1.3 Update JSON schema generation to include the new field
 
-- [ ] Task 2: Add `--templates-dir` CLI flag to build command (AC: 2)
-  - [ ] 2.1 Add `--templates-dir` option to `build_command` in `commands/build.py`
-  - [ ] 2.2 Implement resolution: CLI flag > config > None (package default)
-  - [ ] 2.3 Pass resolved templates_dir to TemplateService
+- [x] Task 2: Add `--templates-dir` CLI flag to build command (AC: 2)
+  - [x] 2.1 Add `--templates-dir` option to `build_command` in `commands/build.py`
+  - [x] 2.2 Implement resolution: CLI flag > config > None (package default)
+  - [x] 2.3 Pass resolved templates_dir to TemplateService
 
-- [ ] Task 3: Update TemplateService for multi-directory support (AC: 1, 3, 4)
-  - [ ] 3.1 Modify `__init__` to accept optional `custom_templates_dir` parameter
-  - [ ] 3.2 Use Jinja2 FileSystemLoader with list of directories (custom first, then builtin)
-  - [ ] 3.3 Update CSS loading to check custom directory first, then builtin
-  - [ ] 3.4 Ensure template inheritance works across directories
+- [x] Task 3: Update TemplateService for multi-directory support (AC: 1, 3, 4)
+  - [x] 3.1 Modify `__init__` to accept optional `custom_templates_dir` parameter
+  - [x] 3.2 Use Jinja2 FileSystemLoader with list of directories (custom first, then builtin)
+  - [x] 3.3 Update CSS loading to check custom directory first, then builtin
+  - [x] 3.4 Ensure template inheritance works across directories
 
-- [ ] Task 4: Update `list_templates()` to show all available templates (AC: 5)
-  - [ ] 4.1 Collect templates from both custom and builtin directories
-  - [ ] 4.2 Deduplicate (custom takes precedence)
-  - [ ] 4.3 Add source indicator in verbose mode (e.g., "[custom]" or "[builtin]")
+- [x] Task 4: Update `list_templates()` to show all available templates (AC: 5)
+  - [x] 4.1 Collect templates from both custom and builtin directories
+  - [x] 4.2 Deduplicate (custom takes precedence)
+  - [ ] 4.3 Add source indicator in verbose mode (e.g., "[custom]" or "[builtin]") - Deferred to future enhancement
 
-- [ ] Task 5: Improve error messages for missing templates (AC: 5)
-  - [ ] 5.1 Catch `jinja2.TemplateNotFound` in PDFProvider
-  - [ ] 5.2 List available templates from all directories
-  - [ ] 5.3 Suggest closest match if typo detected
+- [x] Task 5: Improve error messages for missing templates (AC: 5)
+  - [x] 5.1 Catch `jinja2.TemplateNotFound` in TemplateService.render()
+  - [x] 5.2 List available templates from all directories
+  - [x] 5.3 Suggest closest match if typo detected
 
-- [ ] Task 6: Write tests
-  - [ ] 6.1 Unit tests for TemplateService with custom directory
-  - [ ] 6.2 Test template inheritance across directories
-  - [ ] 6.3 Integration test for CLI `--templates-dir` flag
-  - [ ] 6.4 Test error message with available templates list
+- [x] Task 6: Write tests
+  - [x] 6.1 Unit tests for TemplateService with custom directory
+  - [x] 6.2 Test template inheritance across directories
+  - [x] 6.3 Integration test for CLI `--templates-dir` flag
+  - [x] 6.4 Test error message with available templates list
 
-- [ ] Task 7: Update documentation
-  - [ ] 7.1 Update CLAUDE.md with `templates_dir` config option
-  - [ ] 7.2 Update CLAUDE.md with `--templates-dir` CLI flag
-  - [ ] 7.3 Add example of custom template usage
+- [x] Task 7: Update documentation
+  - [x] 7.1 Update CLAUDE.md with `templates_dir` config option
+  - [x] 7.2 Update CLAUDE.md with `--templates-dir` CLI flag
+  - [x] 7.3 Add example of custom template usage
 
 ## Dev Notes
 

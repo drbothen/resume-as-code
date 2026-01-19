@@ -93,6 +93,13 @@ if TYPE_CHECKING:
     help="Override employment_continuity mode: --allow-gaps for pure relevance filtering, "
     "--no-allow-gaps to guarantee at least one bullet per position (Story 7.20)",
 )
+@click.option(
+    "--templates-dir",
+    "templates_dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=None,
+    help="Path to custom templates directory (supplements built-in templates) (Story 11.3)",
+)
 @click.pass_context
 @handle_errors
 def build_command(
@@ -106,6 +113,7 @@ def build_command(
     output_name: str | None,
     tailored_notice: bool | None,
     allow_gaps: bool | None,
+    templates_dir: Path | None,
 ) -> None:
     """Build resume from plan or job description.
 
@@ -135,6 +143,8 @@ def build_command(
     # Map config "both" to build "all" for consistency
     config_format = "all" if config.default_format == "both" else config.default_format
     actual_format = output_format if output_format is not None else config_format
+    # CLI --templates-dir overrides config templates_dir (Story 11.3)
+    actual_templates_dir = templates_dir if templates_dir is not None else config.templates_dir
 
     # Validate inputs (AC: #3)
     if not plan_path and not jd_path:
@@ -257,6 +267,7 @@ def build_command(
         output_dir=actual_output_dir,
         template_name=actual_template,
         output_name=actual_name,
+        templates_dir=actual_templates_dir,
     )
 
     # AC: #6 - Success exit code is 0 (automatic if no exception)
@@ -507,6 +518,7 @@ def _generate_outputs(
     output_dir: Path,
     template_name: str,
     output_name: str = "resume",
+    templates_dir: Path | None = None,
 ) -> None:
     """Generate output files atomically.
 
@@ -521,6 +533,7 @@ def _generate_outputs(
         output_dir: Target output directory.
         template_name: Name of template to use.
         output_name: Base filename for output files (default: 'resume').
+        templates_dir: Optional path to custom templates directory (Story 11.3).
 
     Raises:
         RenderError: If generation fails.
@@ -544,7 +557,10 @@ def _generate_outputs(
             # Generate PDF (AC: #4)
             pdf_page_count: int | None = None
             if output_format in ("pdf", "all"):
-                pdf_provider = PDFProvider(template_name=template_name)
+                pdf_provider = PDFProvider(
+                    template_name=template_name,
+                    templates_dir=templates_dir,
+                )
                 tmp_pdf = tmp_path / f"{output_name}.pdf"
                 result = pdf_provider.render(resume, tmp_pdf)
                 pdf_page_count = result.page_count

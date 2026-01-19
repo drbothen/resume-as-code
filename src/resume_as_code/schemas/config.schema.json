@@ -1180,6 +1180,20 @@
       ],
       "default": null,
       "description": "Custom paths for separated data files"
+    },
+    "templates_dir": {
+      "anyOf": [
+        {
+          "format": "path",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Path to custom templates directory (supplements built-in templates)",
+      "title": "Templates Dir"
     }
   },
   "title": "ResumeConfig",

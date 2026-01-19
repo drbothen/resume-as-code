@@ -33,14 +33,21 @@ class PDFProvider:
         self,
         template_service: TemplateService | None = None,
         template_name: str = "modern",
+        templates_dir: Path | None = None,
     ) -> None:
         """Initialize PDF provider.
 
         Args:
             template_service: Template service for rendering HTML.
             template_name: Name of template to use.
+            templates_dir: Optional path to custom templates directory (Story 11.3).
+                If provided and template_service is None, creates TemplateService
+                with this as custom_templates_dir.
         """
-        self.template_service = template_service or TemplateService()
+        if template_service is not None:
+            self.template_service = template_service
+        else:
+            self.template_service = TemplateService(custom_templates_dir=templates_dir)
         self.template_name = template_name
 
     def render(self, resume: ResumeData, output_path: Path) -> PDFRenderResult:

@@ -98,6 +98,45 @@ class TestPDFProviderInit:
         provider = PDFProvider(template_service=service)
         assert provider.template_service is service
 
+    def test_init_with_templates_dir(self, tmp_path: Path) -> None:
+        """PDFProvider passes templates_dir to TemplateService (Story 11.3)."""
+        custom_dir = tmp_path / "custom-templates"
+        custom_dir.mkdir()
+
+        provider = PDFProvider(templates_dir=custom_dir)
+
+        # templates_dir should be passed to TemplateService as custom_templates_dir
+        assert provider.template_service.custom_templates_dir == custom_dir
+
+    def test_templates_dir_custom_template_used(
+        self, sample_resume: ResumeData, tmp_path: Path
+    ) -> None:
+        """PDFProvider renders custom template from templates_dir (Story 11.3)."""
+        custom_dir = tmp_path / "custom-templates"
+        custom_dir.mkdir()
+
+        # Create a custom template
+        custom_template = custom_dir / "branded.html"
+        custom_template.write_text(
+            """<!DOCTYPE html>
+<html>
+<head><title>Branded Resume</title><style>{{ css }}</style></head>
+<body>
+<h1>{{ resume.contact.name }} - BRANDED TEMPLATE</h1>
+{% if resume.summary %}<p>{{ resume.summary }}</p>{% endif %}
+</body>
+</html>"""
+        )
+
+        output_path = tmp_path / "resume.pdf"
+        provider = PDFProvider(template_name="branded", templates_dir=custom_dir)
+
+        result = provider.render(sample_resume, output_path)
+
+        assert result.output_path.exists()
+        with open(result.output_path, "rb") as f:
+            assert f.read(4) == b"%PDF"
+
 
 class TestPDFGeneration:
     """Tests for PDF generation."""
@@ -279,23 +318,30 @@ class TestErrorHandling:
     """Tests for PDF provider error handling."""
 
     def test_invalid_template_raises_error(self, sample_resume: ResumeData, tmp_path: Path) -> None:
-        """Should raise TemplateNotFound for nonexistent template."""
-        from jinja2 import TemplateNotFound
+        """Should raise RenderError for nonexistent template with helpful message."""
+        from resume_as_code.models.errors import RenderError
 
         output_path = tmp_path / "resume.pdf"
         provider = PDFProvider(template_name="nonexistent_template")
 
-        with pytest.raises(TemplateNotFound):
+        with pytest.raises(RenderError) as exc_info:
             provider.render(sample_resume, output_path)
 
+        error = exc_info.value
+        assert "nonexistent_template" in error.message
+        assert "Available templates:" in (error.suggestion or "")
+
     def test_invalid_template_bytes_raises_error(self, sample_resume: ResumeData) -> None:
-        """Should raise TemplateNotFound for nonexistent template in bytes mode."""
-        from jinja2 import TemplateNotFound
+        """Should raise RenderError for nonexistent template in bytes mode."""
+        from resume_as_code.models.errors import RenderError
 
         provider = PDFProvider(template_name="nonexistent_template")
 
-        with pytest.raises(TemplateNotFound):
+        with pytest.raises(RenderError) as exc_info:
             provider.render_to_bytes(sample_resume)
+
+        error = exc_info.value
+        assert "nonexistent_template" in error.message
 
 
 class TestFontHandling:

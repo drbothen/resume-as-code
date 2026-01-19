@@ -236,6 +236,7 @@ CLI tool for git-native resume generation from structured Work Units.
 | `-o, --output-dir PATH` | Output directory (default: dist) |
 | `-n, --name TEXT` | Base filename for output (default: 'resume') |
 | `-t, --template TEXT` | Template to use for rendering |
+| `--templates-dir PATH` | Custom templates directory (supplements built-in templates) |
 | `--strict-positions` | Validate position_id references exist (fail on invalid) |
 | `--tailored-notice` | Include footer notice that resume is tailored for role |
 | `--no-tailored-notice` | Exclude footer notice (overrides config) |
@@ -262,6 +263,17 @@ template_options:
   group_employer_positions: true  # Default: group multiple positions at same employer
 ```
 When enabled (default), multiple positions at the same employer are rendered under a single employer heading with nested roles showing career progression. Set to `false` for traditional separate position rendering.
+
+**Config-based custom templates directory** (in `.resume.yaml`):
+```yaml
+templates_dir: ./my-templates  # Path to custom templates directory
+```
+Custom templates supplement built-in templates. When a template name is requested:
+1. First checks `templates_dir` for the template
+2. Falls back to built-in templates if not found
+3. Custom templates can extend built-in templates using Jinja2 `{% extends "executive.html" %}`
+
+CLI flag `--templates-dir` overrides the config value.
 
 ### Migrate Command Options
 
@@ -322,6 +334,9 @@ resume build --jd job-description.txt
 
 # Build with custom filename and output directory
 resume build --jd job.txt --name john-doe-cto --output-dir ./applications/acme/
+
+# Build with custom templates directory
+resume build --jd job.txt --templates-dir ./my-templates --template branded
 
 # Generate test resume from jmagady-resume data (requires pango for PDF)
 cd /Users/jmagady/Dev/jmagady-resume && \

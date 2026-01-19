@@ -177,11 +177,15 @@ class TestTemplateRendering:
     def test_render_missing_template_raises_error(
         self, template_service: TemplateService, sample_resume: ResumeData
     ) -> None:
-        """render raises error for missing template."""
-        from jinja2 import TemplateNotFound
+        """render raises RenderError for missing template with helpful message."""
+        from resume_as_code.models.errors import RenderError
 
-        with pytest.raises(TemplateNotFound):
+        with pytest.raises(RenderError) as exc_info:
             template_service.render(sample_resume, "nonexistent")
+
+        error = exc_info.value
+        assert "nonexistent" in error.message
+        assert "Available templates:" in (error.suggestion or "")
 
     def test_render_default_template(
         self, template_service: TemplateService, sample_resume: ResumeData
@@ -408,3 +412,291 @@ class TestEmployerGrouping:
 
         # Should render without crashing, no employer groups
         assert "no-groups" in html
+
+
+class TestCustomTemplatesDirectory:
+    """Tests for custom templates directory support (Story 11.3)."""
+
+    @pytest.fixture
+    def custom_templates_dir(self, tmp_path: Path) -> Path:
+        """Create a custom templates directory."""
+        custom_dir = tmp_path / "custom-templates"
+        custom_dir.mkdir()
+        return custom_dir
+
+    @pytest.fixture
+    def builtin_templates_dir(self, tmp_path: Path) -> Path:
+        """Create a builtin templates directory with standard templates."""
+        builtin_dir = tmp_path / "builtin-templates"
+        builtin_dir.mkdir()
+
+        # Create modern template
+        (builtin_dir / "modern.html").write_text(
+            """<!DOCTYPE html>
+<html><head><title>Modern</title><style>{{ css }}</style></head>
+<body><h1>{{ resume.contact.name }} - Builtin Modern</h1></body></html>"""
+        )
+        (builtin_dir / "modern.css").write_text("body { font-family: Arial; }")
+
+        # Create executive template
+        (builtin_dir / "executive.html").write_text(
+            """<!DOCTYPE html>
+<html><head><title>Executive</title><style>{{ css }}</style></head>
+<body><h1>{{ resume.contact.name }} - Executive</h1></body></html>"""
+        )
+        (builtin_dir / "executive.css").write_text("body { font-family: Georgia; }")
+
+        return builtin_dir
+
+    def test_init_with_custom_templates_dir(
+        self, custom_templates_dir: Path, builtin_templates_dir: Path
+    ) -> None:
+        """TemplateService accepts custom_templates_dir parameter (AC: #1)."""
+        service = TemplateService(
+            custom_templates_dir=custom_templates_dir,
+            builtin_templates_dir=builtin_templates_dir,
+        )
+        assert service.custom_templates_dir == custom_templates_dir
+        assert service.builtin_templates_dir == builtin_templates_dir
+
+    def test_custom_template_takes_precedence(
+        self, custom_templates_dir: Path, builtin_templates_dir: Path
+    ) -> None:
+        """Custom templates override builtin templates with same name (AC: #3)."""
+        # Create custom modern template that overrides builtin
+        (custom_templates_dir / "modern.html").write_text(
+            """<!DOCTYPE html>
+<html><head><title>Custom Modern</title><style>{{ css }}</style></head>
+<body><h1>{{ resume.contact.name }} - Custom Modern</h1></body></html>"""
+        )
+
+        service = TemplateService(
+            custom_templates_dir=custom_templates_dir,
+            builtin_templates_dir=builtin_templates_dir,
+        )
+        contact = ContactInfo(name="Test User")
+        resume = ResumeData(contact=contact)
+
+        html = service.render(resume, "modern")
+        assert "Custom Modern" in html
+        assert "Builtin Modern" not in html
+
+    def test_builtin_templates_remain_available(
+        self, custom_templates_dir: Path, builtin_templates_dir: Path
+    ) -> None:
+        """Builtin templates accessible when not overridden by custom (AC: #3)."""
+        # Create only custom template, not overriding executive
+        (custom_templates_dir / "branded.html").write_text(
+            """<!DOCTYPE html>
+<html><head><title>Branded</title></head>
+<body><h1>{{ resume.contact.name }} - Branded</h1></body></html>"""
+        )
+
+        service = TemplateService(
+            custom_templates_dir=custom_templates_dir,
+            builtin_templates_dir=builtin_templates_dir,
+        )
+        contact = ContactInfo(name="Test User")
+        resume = ResumeData(contact=contact)
+
+        # Custom template should work
+        html_branded = service.render(resume, "branded")
+        assert "Branded" in html_branded
+
+        # Builtin template should still work
+        html_executive = service.render(resume, "executive")
+        assert "Executive" in html_executive
+
+    def test_list_templates_shows_both_custom_and_builtin(
+        self, custom_templates_dir: Path, builtin_templates_dir: Path
+    ) -> None:
+        """list_templates returns templates from both directories (AC: #5)."""
+        # Create custom template
+        (custom_templates_dir / "branded.html").write_text("<html></html>")
+
+        service = TemplateService(
+            custom_templates_dir=custom_templates_dir,
+            builtin_templates_dir=builtin_templates_dir,
+        )
+
+        templates = service.list_templates()
+        assert "branded" in templates  # Custom
+        assert "modern" in templates  # Builtin
+        assert "executive" in templates  # Builtin
+
+    def test_list_templates_deduplicates_override(
+        self, custom_templates_dir: Path, builtin_templates_dir: Path
+    ) -> None:
+        """list_templates doesn't duplicate when custom overrides builtin."""
+        # Create custom modern that overrides builtin modern
+        (custom_templates_dir / "modern.html").write_text("<html>custom</html>")
+
+        service = TemplateService(
+            custom_templates_dir=custom_templates_dir,
+            builtin_templates_dir=builtin_templates_dir,
+        )
+
+        templates = service.list_templates()
+        # Should only appear once
+        assert templates.count("modern") == 1
+
+    def test_template_inheritance_across_directories(
+        self, custom_templates_dir: Path, builtin_templates_dir: Path
+    ) -> None:
+        """Custom template can extend builtin template (AC: #4)."""
+        # Create custom template that extends builtin executive
+        (custom_templates_dir / "branded.html").write_text("""{% extends "executive.html" %}""")
+
+        service = TemplateService(
+            custom_templates_dir=custom_templates_dir,
+            builtin_templates_dir=builtin_templates_dir,
+        )
+        contact = ContactInfo(name="Test User")
+        resume = ResumeData(contact=contact)
+
+        # Should render without error, using builtin executive as base
+        html = service.render(resume, "branded")
+        assert "Executive" in html
+        assert "Test User" in html
+
+    def test_css_from_custom_dir_takes_precedence(
+        self, custom_templates_dir: Path, builtin_templates_dir: Path
+    ) -> None:
+        """Custom CSS file overrides builtin CSS for same template."""
+        # Create custom modern.css
+        (custom_templates_dir / "modern.css").write_text("body { font-family: Custom; }")
+
+        service = TemplateService(
+            custom_templates_dir=custom_templates_dir,
+            builtin_templates_dir=builtin_templates_dir,
+        )
+
+        css = service.get_css("modern")
+        assert "Custom" in css
+        assert "Arial" not in css  # Builtin should be overridden
+
+    def test_css_falls_back_to_builtin(
+        self, custom_templates_dir: Path, builtin_templates_dir: Path
+    ) -> None:
+        """CSS falls back to builtin when not in custom directory."""
+        service = TemplateService(
+            custom_templates_dir=custom_templates_dir,
+            builtin_templates_dir=builtin_templates_dir,
+        )
+
+        css = service.get_css("executive")
+        assert "Georgia" in css  # From builtin
+
+    def test_backwards_compatibility_single_templates_dir(
+        self, builtin_templates_dir: Path
+    ) -> None:
+        """Single templates_dir parameter still works for backwards compatibility."""
+        service = TemplateService(templates_dir=builtin_templates_dir)
+
+        # Should still work as before
+        assert service.builtin_templates_dir == builtin_templates_dir
+        templates = service.list_templates()
+        assert "modern" in templates
+
+    def test_custom_dir_none_uses_only_builtin(self, builtin_templates_dir: Path) -> None:
+        """When custom_templates_dir is None, only builtin is used."""
+        service = TemplateService(
+            custom_templates_dir=None,
+            builtin_templates_dir=builtin_templates_dir,
+        )
+
+        templates = service.list_templates()
+        assert "modern" in templates
+        assert "executive" in templates
+
+
+class TestMissingTemplateErrorMessage:
+    """Tests for improved error messages when template not found (Story 11.3 AC: #5)."""
+
+    @pytest.fixture
+    def templates_dir_with_templates(self, tmp_path: Path) -> Path:
+        """Create a templates directory with a few templates."""
+        templates_dir = tmp_path / "templates"
+        templates_dir.mkdir()
+
+        (templates_dir / "modern.html").write_text(
+            "<html><body>{{ resume.contact.name }}</body></html>"
+        )
+        (templates_dir / "executive.html").write_text(
+            "<html><body>{{ resume.contact.name }}</body></html>"
+        )
+        (templates_dir / "compact.html").write_text(
+            "<html><body>{{ resume.contact.name }}</body></html>"
+        )
+
+        return templates_dir
+
+    def test_render_missing_template_shows_available_templates(
+        self, templates_dir_with_templates: Path
+    ) -> None:
+        """Error message should list available templates when template not found."""
+        from resume_as_code.models.errors import RenderError
+
+        service = TemplateService(templates_dir=templates_dir_with_templates)
+        contact = ContactInfo(name="Test User")
+        resume = ResumeData(contact=contact)
+
+        with pytest.raises(RenderError) as exc_info:
+            service.render(resume, "nonexistent")
+
+        error = exc_info.value
+        assert "nonexistent" in error.message
+        assert "Available templates:" in (error.suggestion or "")
+        assert "modern" in (error.suggestion or "")
+        assert "executive" in (error.suggestion or "")
+        assert "compact" in (error.suggestion or "")
+
+    def test_render_missing_template_suggests_close_match(
+        self, templates_dir_with_templates: Path
+    ) -> None:
+        """Error message should suggest close match for typos."""
+        from resume_as_code.models.errors import RenderError
+
+        service = TemplateService(templates_dir=templates_dir_with_templates)
+        contact = ContactInfo(name="Test User")
+        resume = ResumeData(contact=contact)
+
+        # "modrn" is a typo of "modern"
+        with pytest.raises(RenderError) as exc_info:
+            service.render(resume, "modrn")
+
+        error = exc_info.value
+        assert "Did you mean" in (error.suggestion or "") or "modern" in (error.suggestion or "")
+
+    def test_render_missing_template_includes_custom_templates(self, tmp_path: Path) -> None:
+        """Error message should list templates from both custom and builtin directories."""
+        from resume_as_code.models.errors import RenderError
+
+        # Create builtin directory
+        builtin_dir = tmp_path / "builtin"
+        builtin_dir.mkdir()
+        (builtin_dir / "modern.html").write_text(
+            "<html><body>{{ resume.contact.name }}</body></html>"
+        )
+
+        # Create custom directory
+        custom_dir = tmp_path / "custom"
+        custom_dir.mkdir()
+        (custom_dir / "branded.html").write_text(
+            "<html><body>{{ resume.contact.name }}</body></html>"
+        )
+
+        service = TemplateService(
+            custom_templates_dir=custom_dir,
+            builtin_templates_dir=builtin_dir,
+        )
+        contact = ContactInfo(name="Test User")
+        resume = ResumeData(contact=contact)
+
+        with pytest.raises(RenderError) as exc_info:
+            service.render(resume, "nonexistent")
+
+        error = exc_info.value
+        # Should list both custom and builtin templates
+        assert "modern" in (error.suggestion or "")
+        assert "branded" in (error.suggestion or "")

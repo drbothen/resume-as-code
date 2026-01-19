@@ -700,3 +700,29 @@ class TestResumeConfigTemplateOptions:
         """ResumeConfig should accept template_options as dict (YAML parsing)."""
         config = ResumeConfig(template_options={"group_employer_positions": False})
         assert config.template_options.group_employer_positions is False
+
+
+class TestResumeConfigTemplatesDir:
+    """Test templates_dir field in ResumeConfig (Story 11.3)."""
+
+    def test_default_templates_dir_is_none(self) -> None:
+        """Default templates_dir should be None (use package default)."""
+        config = ResumeConfig()
+        assert config.templates_dir is None
+
+    def test_custom_templates_dir_string(self) -> None:
+        """ResumeConfig should accept string path for templates_dir."""
+        config = ResumeConfig(templates_dir="./my-templates")
+        assert config.templates_dir == Path("./my-templates")
+
+    def test_custom_templates_dir_path(self) -> None:
+        """ResumeConfig should accept Path object for templates_dir."""
+        config = ResumeConfig(templates_dir=Path("./custom-templates"))
+        assert config.templates_dir == Path("./custom-templates")
+
+    def test_templates_dir_tilde_expansion(self) -> None:
+        """Tilde in templates_dir should be expanded."""
+        config = ResumeConfig(templates_dir="~/templates")
+        assert config.templates_dir is not None
+        assert config.templates_dir.is_absolute()
+        assert "~" not in str(config.templates_dir)

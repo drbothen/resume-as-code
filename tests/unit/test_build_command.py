@@ -1971,3 +1971,208 @@ created_at: "2024-01-01T00:00:00"
 
             assert captured_resume is not None
             assert captured_resume.tailored_notice_text == DEFAULT_TAILORED_NOTICE
+
+
+class TestTemplatesDirFlag:
+    """Tests for --templates-dir CLI flag (Story 11.3)."""
+
+    def test_templates_dir_flag_passed_to_generate_outputs(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """--templates-dir flag should pass templates_dir to _generate_outputs (AC #2)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        custom_templates_dir = tmp_path / "my-templates"
+        custom_templates_dir.mkdir()
+
+        captured_templates_dir = None
+
+        def capture_generate(**kwargs: Any) -> None:
+            nonlocal captured_templates_dir
+            captured_templates_dir = kwargs.get("templates_dir")
+
+        with (
+            patch("resume_as_code.commands.build.SavedPlan.load") as mock_load,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+        ):
+            mock_plan = MagicMock()
+            mock_plan.selected_work_units = []
+            mock_load.return_value = mock_plan
+
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = Path("dist")
+            config.default_template = "modern"
+            config.default_format = "both"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.templates_dir = None  # Config doesn't have templates_dir
+            # Profile attrs
+            config.profile.name = "Test User"
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
+            mock_config.return_value = config
+            mock_gen.side_effect = capture_generate
+
+            # CLI flag should pass templates_dir
+            runner.invoke(
+                main,
+                ["build", "--plan", str(plan_file), "--templates-dir", str(custom_templates_dir)],
+            )
+
+            assert captured_templates_dir == custom_templates_dir
+
+    def test_config_templates_dir_used_when_no_flag(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """Config templates_dir should be used when no CLI flag provided (AC #1)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        config_templates_dir = tmp_path / "config-templates"
+        config_templates_dir.mkdir()
+
+        captured_templates_dir = None
+
+        def capture_generate(**kwargs: Any) -> None:
+            nonlocal captured_templates_dir
+            captured_templates_dir = kwargs.get("templates_dir")
+
+        with (
+            patch("resume_as_code.commands.build.SavedPlan.load") as mock_load,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+        ):
+            mock_plan = MagicMock()
+            mock_plan.selected_work_units = []
+            mock_load.return_value = mock_plan
+
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = Path("dist")
+            config.default_template = "modern"
+            config.default_format = "both"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.templates_dir = config_templates_dir  # Config has templates_dir
+            # Profile attrs
+            config.profile.name = "Test User"
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
+            mock_config.return_value = config
+            mock_gen.side_effect = capture_generate
+
+            # No CLI flag - should use config templates_dir
+            runner.invoke(main, ["build", "--plan", str(plan_file)])
+
+            assert captured_templates_dir == config_templates_dir
+
+    def test_cli_flag_overrides_config_templates_dir(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """CLI --templates-dir flag should override config value (AC #2)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        config_templates_dir = tmp_path / "config-templates"
+        config_templates_dir.mkdir()
+
+        cli_templates_dir = tmp_path / "cli-templates"
+        cli_templates_dir.mkdir()
+
+        captured_templates_dir = None
+
+        def capture_generate(**kwargs: Any) -> None:
+            nonlocal captured_templates_dir
+            captured_templates_dir = kwargs.get("templates_dir")
+
+        with (
+            patch("resume_as_code.commands.build.SavedPlan.load") as mock_load,
+            patch("resume_as_code.commands.build._generate_outputs") as mock_gen,
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+        ):
+            mock_plan = MagicMock()
+            mock_plan.selected_work_units = []
+            mock_load.return_value = mock_plan
+
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = Path("dist")
+            config.default_template = "modern"
+            config.default_format = "both"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.templates_dir = config_templates_dir  # Config has templates_dir
+            # Profile attrs
+            config.profile.name = "Test User"
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
+            mock_config.return_value = config
+            mock_gen.side_effect = capture_generate
+
+            # CLI flag should override config
+            runner.invoke(
+                main,
+                ["build", "--plan", str(plan_file), "--templates-dir", str(cli_templates_dir)],
+            )
+
+            assert captured_templates_dir == cli_templates_dir

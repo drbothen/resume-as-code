@@ -458,6 +458,12 @@ class ResumeConfig(BaseModel):
         description="Custom paths for separated data files",
     )
 
+    # Custom templates directory (Story 11.3)
+    templates_dir: Path | None = Field(
+        default=None,
+        description="Path to custom templates directory (supplements built-in templates)",
+    )
+
     @field_validator("career_highlights", mode="before")
     @classmethod
     def validate_career_highlights(cls, v: list[str] | None) -> list[str] | None:
@@ -497,6 +503,16 @@ class ResumeConfig(BaseModel):
     @classmethod
     def expand_path(cls, v: str | Path) -> Path:
         """Expand ~ and resolve path."""
+        if isinstance(v, str):
+            v = Path(v)
+        return v.expanduser()
+
+    @field_validator("templates_dir", mode="before")
+    @classmethod
+    def expand_templates_path(cls, v: str | Path | None) -> Path | None:
+        """Expand ~ and resolve templates_dir path."""
+        if v is None:
+            return None
         if isinstance(v, str):
             v = Path(v)
         return v.expanduser()
