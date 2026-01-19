@@ -66,12 +66,14 @@ class CurationResult(Generic[T]):
         selected: Items selected for inclusion (ordered by relevance).
         excluded: Items not selected (ordered by relevance).
         scores: Mapping of item identifier to relevance score (0.0 to 1.0).
+        metrics: Mapping of action text to quantified_impact from work unit outcomes.
         reason: Human-readable explanation of curation decision.
     """
 
     selected: list[T]
     excluded: list[T]
     scores: dict[str, float] = field(default_factory=dict)
+    metrics: dict[str, str] = field(default_factory=dict)
     reason: str = ""
 
 
@@ -560,10 +562,15 @@ class ContentCurator:
         # Extract all action bullets from all work units
         # Each action is stored as (action_text, work_unit_id, source_type)
         all_actions: list[tuple[str, str, str]] = []
+        # Build mapping from outcome.result text to quantified_impact
+        action_metrics: dict[str, str] = {}
         for wu in work_units:
             # Include outcome.result as primary bullet
             if wu.outcome.result:
                 all_actions.append((wu.outcome.result, wu.id, "result"))
+                # Preserve quantified_impact for this outcome
+                if wu.outcome.quantified_impact:
+                    action_metrics[wu.outcome.result] = wu.outcome.quantified_impact
             # Include actions
             for i, action in enumerate(wu.actions):
                 all_actions.append((action, wu.id, f"action_{i}"))
@@ -609,6 +616,7 @@ class ContentCurator:
             selected=selected,
             excluded=excluded_qualified + excluded_threshold,
             scores=scores,
+            metrics=action_metrics,
             reason=f"Selected {len(selected)} of {len(all_actions)} actions "
             f"by JD relevance for {years_ago:.0f}-year-old position "
             f"(limit: {max_bullets}, {len(below_threshold)} below threshold)",

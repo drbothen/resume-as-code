@@ -544,7 +544,11 @@ class ResumeData(BaseModel):
         result = curator.curate_action_bullets(position, wu_models, jd)
 
         # Convert selected action strings to ResumeBullet objects
-        return [ResumeBullet(text=action) for action in result.selected]
+        # Preserve quantified_impact from work unit outcomes as metrics
+        return [
+            ResumeBullet(text=action, metrics=result.metrics.get(action))
+            for action in result.selected
+        ]
 
     @staticmethod
     def _format_position_date(d: str | None) -> str | None:
