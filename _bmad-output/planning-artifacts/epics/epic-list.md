@@ -44,3 +44,49 @@ This is the killer feature - the Terraform-style preview that no other resume to
 This epic completes the workflow with the build command, PDF output via WeasyPrint, DOCX output via python-docx, manifest files for provenance tracking, configurable output directories, and template/scoring configuration options.
 
 ---
+
+## Epic 6: Executive Resume Template & Profile System
+**User Outcome:** Executive-level users get specialized templates with career highlights, board roles, and scope indicators
+
+See: [epic-6-executive-resume-template-profile-system.md](epic-6-executive-resume-template-profile-system.md)
+
+---
+
+## Epic 7: Schema & Data Model Refactoring
+**User Outcome:** Cleaner data models with proper separation and validation
+
+See: [epic-7-schema-data-model-refactoring.md](epic-7-schema-data-model-refactoring.md)
+
+---
+
+## Epic 8: Resume Template Enhancements
+**User Outcome:** Improved template rendering with grouped positions and better visual hierarchy
+
+See: [epic-8-resume-template-enhancements.md](epic-8-resume-template-enhancements.md)
+
+---
+
+## Epic 9: Data Management & Migration
+**User Outcome:** Safe schema upgrades with automatic migration and rollback support
+
+See: [epic-9-data-management-migration.md](epic-9-data-management-migration.md)
+
+---
+
+## Epic 10: Distribution & Release Management
+**User Outcome:** Simple installation via pip from PyPI
+
+This epic enables package distribution through PyPI with `pip install resume-as-code-ng`, GitHub Actions release workflows, and trusted publisher authentication.
+
+---
+
+## Epic 11: Technical Debt & Platform Enhancements
+**User Outcome:** Comprehensive validation, custom templates, and improved platform quality
+
+**Tech Debt Covered:** TD-004, TD-005, TD-006, TD-007, TD-008
+
+This epic addresses accumulated technical debt: PyPI logo display fix, directory-based sharding for data files, custom templates directory support, template authoring documentation, and comprehensive resource validation across all data types.
+
+See: [epic-11-technical-debt-platform-enhancements.md](epic-11-technical-debt-platform-enhancements.md)
+
+---

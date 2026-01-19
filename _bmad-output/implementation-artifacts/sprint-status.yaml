@@ -208,3 +208,14 @@ development_status:
 #   - Fallback to all certs when no JD
 #   Related: Story 8.2 (publication curation) uses same pattern
 #   Trigger: Consider when user has 15+ certifications or requests filtering
+
+  # Epic 11: Technical Debt & Platform Enhancements
+  # Goal: Address accumulated technical debt to improve platform quality, extensibility, and user experience
+  # Tech Debt Covered: TD-004, TD-005, TD-006, TD-007, TD-008
+  # Total Points: 21 (5 stories)
+  epic-11: in-progress
+  11-1-pypi-logo-display-fix: done  # P3, 1 pt - Fix PyPI logo display (TD-004)
+  11-2-directory-based-sharding: ready-for-dev  # P3, 8 pts - Optional per-item YAML files (TD-005)
+  11-3-custom-templates-directory: ready-for-dev  # P2, 3 pts - Expose templates_dir config (TD-006)
+  11-4-template-authoring-docs: ready-for-dev  # P3, 3 pts - Template authoring documentation (TD-007)
+  11-5-comprehensive-resource-validation: ready-for-dev  # P2, 6 pts - Validate all resources (TD-008)
