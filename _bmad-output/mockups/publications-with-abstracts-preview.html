@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story 11.6 Preview: Publications with Abstracts</title>
+    <style>
+        /* Base styles matching executive.css */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #1a1a1a;
+            max-width: 8.5in;
+            margin: 0 auto;
+            padding: 1in;
+            background: #f5f5f5;
+        }
+
+        .page {
+            background: white;
+            padding: 1in;
+            margin-bottom: 2em;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 16pt;
+            color: #2c3e50;
+            margin-bottom: 1em;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 0.5em;
+        }
+
+        h2 {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #2c3e50;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 0.25em;
+            margin-top: 1.25em;
+            margin-bottom: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pub-entry {
+            margin-bottom: 0.5em;
+            font-size: 10.5pt;
+        }
+
+        .pub-entry a {
+            color: #2c3e50;
+            text-decoration: none;
+        }
+
+        /* NEW: Abstract styling options */
+
+        /* Option A: Inline italic with dash separator */
+        .pub-entry .abstract-inline {
+            display: block;
+            font-style: italic;
+            color: #555;
+            font-size: 10pt;
+            margin-top: 0.25em;
+            margin-left: 1em;
+        }
+
+        /* Option B: Indented block quote style */
+        .pub-entry .abstract-block {
+            display: block;
+            color: #444;
+            font-size: 9.5pt;
+            margin: 0.3em 0 0.5em 1.5em;
+            padding-left: 0.5em;
+            border-left: 2px solid #ddd;
+            line-height: 1.35;
+        }
+
+        /* Option C: Compact with ellipsis (truncated) */
+        .pub-entry .abstract-compact {
+            display: inline;
+            color: #666;
+            font-size: 9.5pt;
+        }
+
+        .comparison {
+            display: flex;
+            gap: 2em;
+            margin-top: 1em;
+        }
+
+        .comparison > div {
+            flex: 1;
+            padding: 1em;
+            border: 1px solid #ddd;
+            background: #fafafa;
+        }
+
+        .comparison h3 {
+            font-size: 11pt;
+            color: #666;
+            margin-bottom: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .note {
+            background: #fff8e1;
+            border: 1px solid #ffcc80;
+            padding: 1em;
+            margin: 1em 0;
+            font-size: 10pt;
+        }
+
+        .option-label {
+            background: #2c3e50;
+            color: white;
+            padding: 0.2em 0.5em;
+            font-size: 9pt;
+            margin-bottom: 0.5em;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <h1>Story 11.6: Expose Publication Abstracts in Templates</h1>
+
+        <div class="note">
+            <strong>Context:</strong> The <code>Publication</code> model already has an <code>abstract</code> field (max 500 chars)
+            used for JD-relevant curation. This story would expose abstracts in templates so users can optionally
+            display them on their resume.
+        </div>
+
+        <h2>Current Rendering (No Abstracts)</h2>
+        <section class="publications">
+            <div class="pub-entry">
+                RSA Conference (2024) - <a href="#">Zero Trust Architecture: A Practical Implementation Guide</a>
+            </div>
+            <div class="pub-entry">
+                <a href="#">Scaling Engineering Teams: Lessons from Hypergrowth</a>, O'Reilly Media (2023)
+            </div>
+            <div class="pub-entry">
+                KubeCon (2022) - <a href="#">Building Resilient Microservices at Scale</a>
+            </div>
+        </section>
+
+        <h2>Proposed Options with Abstracts</h2>
+
+        <div class="comparison">
+            <div>
+                <span class="option-label">Option A: Inline Italic</span>
+                <section class="publications">
+                    <div class="pub-entry">
+                        RSA Conference (2024) - <a href="#">Zero Trust Architecture: A Practical Implementation Guide</a>
+                        <span class="abstract-inline">Deep dive into implementing zero trust principles across hybrid cloud environments, with real-world case studies from Fortune 500 deployments.</span>
+                    </div>
+                    <div class="pub-entry">
+                        <a href="#">Scaling Engineering Teams: Lessons from Hypergrowth</a>, O'Reilly Media (2023)
+                        <span class="abstract-inline">Practical strategies for growing engineering organizations from 20 to 200+ engineers while maintaining velocity and culture.</span>
+                    </div>
+                    <div class="pub-entry">
+                        KubeCon (2022) - <a href="#">Building Resilient Microservices at Scale</a>
+                        <span class="abstract-inline">Architecture patterns for building fault-tolerant distributed systems handling 100K+ requests per second.</span>
+                    </div>
+                </section>
+            </div>
+
+            <div>
+                <span class="option-label">Option B: Indented Block</span>
+                <section class="publications">
+                    <div class="pub-entry">
+                        RSA Conference (2024) - <a href="#">Zero Trust Architecture: A Practical Implementation Guide</a>
+                        <span class="abstract-block">Deep dive into implementing zero trust principles across hybrid cloud environments, with real-world case studies from Fortune 500 deployments.</span>
+                    </div>
+                    <div class="pub-entry">
+                        <a href="#">Scaling Engineering Teams: Lessons from Hypergrowth</a>, O'Reilly Media (2023)
+                        <span class="abstract-block">Practical strategies for growing engineering organizations from 20 to 200+ engineers while maintaining velocity and culture.</span>
+                    </div>
+                    <div class="pub-entry">
+                        KubeCon (2022) - <a href="#">Building Resilient Microservices at Scale</a>
+                        <span class="abstract-block">Architecture patterns for building fault-tolerant distributed systems handling 100K+ requests per second.</span>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <div style="margin-top: 2em;">
+            <span class="option-label">Option C: Compact/Truncated (Single Line)</span>
+            <section class="publications">
+                <div class="pub-entry">
+                    RSA Conference (2024) - <a href="#">Zero Trust Architecture: A Practical Implementation Guide</a>
+                    <span class="abstract-compact"> — Deep dive into implementing zero trust principles across hybrid cloud...</span>
+                </div>
+                <div class="pub-entry">
+                    <a href="#">Scaling Engineering Teams: Lessons from Hypergrowth</a>, O'Reilly Media (2023)
+                    <span class="abstract-compact"> — Practical strategies for growing engineering organizations from 20 to 200+...</span>
+                </div>
+                <div class="pub-entry">
+                    KubeCon (2022) - <a href="#">Building Resilient Microservices at Scale</a>
+                    <span class="abstract-compact"> — Architecture patterns for building fault-tolerant distributed systems...</span>
+                </div>
+            </section>
+        </div>
+
+        <h2>Implementation Notes</h2>
+        <div class="note">
+            <strong>Template Changes:</strong>
+            <ul style="margin-top: 0.5em; margin-left: 1.5em;">
+                <li>Add <code>show_abstracts</code> config option (default: false)</li>
+                <li>Update executive.html publications block to conditionally render abstracts</li>
+                <li>Add CSS classes for abstract styling</li>
+                <li>Respect <code>publications_curated</code> flag (only show abstracts if JD-curated)</li>
+            </ul>
+            <br>
+            <strong>Config Options:</strong>
+            <pre style="background: #f5f5f5; padding: 0.5em; margin-top: 0.5em;">
+# .resume.yaml
+template_options:
+  show_publication_abstracts: true  # default: false
+  abstract_style: inline  # inline | block | compact
+  abstract_max_length: 150  # truncate for compact style</pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <h1>Side-by-Side: With vs Without Abstracts</h1>
+
+        <h2>Resume Section Comparison</h2>
+
+        <div class="comparison">
+            <div>
+                <h3>Without Abstracts (Current)</h3>
+                <section class="publications">
+                    <h2 style="margin-top: 0;">Publications & Speaking</h2>
+                    <div class="pub-entry">
+                        RSA Conference (2024) - <a href="#">Zero Trust Architecture: A Practical Implementation Guide</a>
+                    </div>
+                    <div class="pub-entry">
+                        <a href="#">Scaling Engineering Teams: Lessons from Hypergrowth</a>, O'Reilly Media (2023)
+                    </div>
+                    <div class="pub-entry">
+                        KubeCon (2022) - <a href="#">Building Resilient Microservices at Scale</a>
+                    </div>
+                </section>
+                <p style="margin-top: 1em; font-size: 9pt; color: #666;">
+                    ~3 lines • Minimal context • Fast scan
+                </p>
+            </div>
+
+            <div>
+                <h3>With Abstracts (Proposed)</h3>
+                <section class="publications">
+                    <h2 style="margin-top: 0;">Publications & Speaking</h2>
+                    <div class="pub-entry">
+                        RSA Conference (2024) - <a href="#">Zero Trust Architecture: A Practical Implementation Guide</a>
+                        <span class="abstract-inline">Deep dive into implementing zero trust principles across hybrid cloud environments.</span>
+                    </div>
+                    <div class="pub-entry">
+                        <a href="#">Scaling Engineering Teams: Lessons from Hypergrowth</a>, O'Reilly Media (2023)
+                        <span class="abstract-inline">Practical strategies for growing engineering organizations from 20 to 200+ engineers.</span>
+                    </div>
+                    <div class="pub-entry">
+                        KubeCon (2022) - <a href="#">Building Resilient Microservices at Scale</a>
+                        <span class="abstract-inline">Architecture patterns for building fault-tolerant distributed systems at scale.</span>
+                    </div>
+                </section>
+                <p style="margin-top: 1em; font-size: 9pt; color: #666;">
+                    ~6-9 lines • Rich context • Shows expertise depth
+                </p>
+            </div>
+        </div>
+
+        <h2>Use Cases</h2>
+        <div class="note">
+            <strong>When to show abstracts:</strong>
+            <ul style="margin-top: 0.5em; margin-left: 1.5em;">
+                <li><strong>CTO/Executive roles:</strong> Demonstrates thought leadership depth</li>
+                <li><strong>Academic/Research positions:</strong> Shows research contributions</li>
+                <li><strong>Highly curated resumes:</strong> When only 2-3 publications are shown, abstracts add value</li>
+                <li><strong>Conference speaker roles:</strong> Helps recruiters understand talk content</li>
+            </ul>
+            <br>
+            <strong>When to hide abstracts (default):</strong>
+            <ul style="margin-top: 0.5em; margin-left: 1.5em;">
+                <li><strong>Space-constrained resumes:</strong> Abstracts add 50-100% more lines</li>
+                <li><strong>Many publications:</strong> 5+ publications with abstracts becomes unwieldy</li>
+                <li><strong>ATS optimization:</strong> Some ATS systems parse better with minimal formatting</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

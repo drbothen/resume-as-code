@@ -5,7 +5,7 @@
 **User Outcome:** Users gain comprehensive validation, customization capabilities, and improved PyPI presence while the codebase becomes more maintainable
 
 **Priority:** P2
-**Total Points:** 21 (5 stories)
+**Total Points:** 23 (6 stories)
 
 ---
 
@@ -531,6 +531,165 @@ class PositionValidator(ResourceValidator):
 
 ---
 
+## Story 11.6: Expose Publication Abstracts in Templates
+
+As a **CTO or executive with curated publications**,
+I want **to optionally display publication abstracts on my resume**,
+So that **recruiters and hiring managers can understand the depth and relevance of my thought leadership**.
+
+**Story Points:** 2
+**Priority:** P3
+
+**Problem Statement:**
+The `Publication` model already stores an `abstract` field (max 500 chars) used for JD-relevant curation during the `plan` and `build` commands. However, this valuable content is never rendered in the resume output. For executive roles where publications demonstrate thought leadership, showing abstracts provides context that titles alone cannot convey.
+
+**Current Behavior:**
+```html
+<!-- Publications render as title + venue + year only -->
+RSA Conference (2024) - Zero Trust Architecture: A Practical Guide
+Scaling Engineering Teams, O'Reilly Media (2023)
+```
+
+**Proposed Behavior:**
+```html
+<!-- With abstracts enabled -->
+RSA Conference (2024) - Zero Trust Architecture: A Practical Guide
+  Deep dive into implementing zero trust principles across hybrid cloud environments.
+
+Scaling Engineering Teams, O'Reilly Media (2023)
+  Practical strategies for growing engineering organizations from 20 to 200+ engineers.
+```
+
+**Acceptance Criteria:**
+
+**Given** a `.resume.yaml` with `template_options.show_publication_abstracts: true`
+**When** building a resume with publications that have abstracts
+**Then** abstracts are rendered below each publication entry
+**And** publications without abstracts render normally (no empty space)
+
+**Given** `template_options.show_publication_abstracts: false` (default)
+**When** building a resume
+**Then** publications render exactly as they do today (no abstracts)
+**And** existing resumes are not affected
+
+**Given** `template_options.abstract_style: block`
+**When** building with abstracts enabled
+**Then** abstracts render with left-border blockquote styling
+
+**Given** `template_options.abstract_style: compact`
+**When** building with abstracts enabled
+**Then** abstracts are truncated to `abstract_max_length` characters with ellipsis
+**And** render inline after the publication title
+
+**Given** a custom template that overrides the publications block
+**When** the user wants to show abstracts
+**Then** the `pub.abstract` variable is available in the template context
+
+**Technical Notes:**
+
+**Config Options:**
+```yaml
+# .resume.yaml
+template_options:
+  show_publication_abstracts: false  # default: false (opt-in feature)
+  abstract_style: inline             # inline | block | compact (default: inline)
+  abstract_max_length: 120           # for compact style truncation (default: 120)
+```
+
+**Template Variable Access:**
+The `Publication` model already exposes:
+- `pub.abstract` - Full abstract text (or None)
+- `pub.format_display(include_abstract=True)` - Pre-formatted display string
+
+**Styling Options:**
+| Style | Description | Use Case |
+|-------|-------------|----------|
+| `inline` | Indented italic text below title | Clean, professional look |
+| `block` | Left-bordered blockquote | Academic/research emphasis |
+| `compact` | Truncated inline after title | Space-constrained resumes |
+
+**Template Changes (executive.html):**
+```jinja2
+{% block publications %}
+{% if resume.get_sorted_publications() %}
+<section class="publications">
+    <h2>Publications & Speaking</h2>
+    {% for pub in resume.get_sorted_publications() %}
+    <div class="pub-entry">
+        {# Existing title/venue/year rendering #}
+        {% if pub.is_speaking %}
+        {{ pub.venue }} ({{ pub.year }}) - {% if pub.url %}<a href="{{ pub.url }}">{{ pub.title }}</a>{% else %}{{ pub.title }}{% endif %}
+        {% else %}
+        {% if pub.url %}<a href="{{ pub.url }}">{{ pub.title }}</a>{% else %}{{ pub.title }}{% endif %}, {{ pub.venue }} ({{ pub.year }})
+        {% endif %}
+
+        {# NEW: Optional abstract rendering #}
+        {% if show_abstracts and pub.abstract %}
+        <span class="abstract abstract-{{ abstract_style }}">{{ pub.abstract | truncate(abstract_max_length) if abstract_style == 'compact' else pub.abstract }}</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+</section>
+{% endif %}
+{% endblock %}
+```
+
+**CSS Additions (executive.css):**
+```css
+/* Publication abstracts */
+.pub-entry .abstract {
+    display: block;
+    margin-top: 0.25em;
+}
+
+.pub-entry .abstract-inline {
+    font-style: italic;
+    color: #555;
+    font-size: 10pt;
+    margin-left: 1em;
+}
+
+.pub-entry .abstract-block {
+    color: #444;
+    font-size: 9.5pt;
+    margin: 0.3em 0 0.5em 1.5em;
+    padding-left: 0.5em;
+    border-left: 2px solid #ddd;
+}
+
+.pub-entry .abstract-compact {
+    display: inline;
+    color: #666;
+    font-size: 9.5pt;
+}
+```
+
+**Files to Modify:**
+- Modify: `src/resume_as_code/models/config.py` (add `TemplateOptions` fields)
+- Modify: `src/resume_as_code/services/template_service.py` (pass config to template context)
+- Modify: `src/resume_as_code/templates/executive.html` (conditional abstract rendering)
+- Modify: `src/resume_as_code/templates/executive.css` (abstract styling)
+- Modify: `src/resume_as_code/templates/cto.html` (inherits from executive, verify behavior)
+- Update: `schemas/config.schema.json` (new template_options fields)
+
+**Definition of Done:**
+- [ ] `show_publication_abstracts` config option added to `TemplateOptions`
+- [ ] `abstract_style` config option with enum validation (inline/block/compact)
+- [ ] `abstract_max_length` config option for compact truncation
+- [ ] executive.html publications block updated with conditional abstract rendering
+- [ ] CSS classes for all three abstract styles
+- [ ] Config values passed to template context via TemplateService
+- [ ] Unit tests for config options
+- [ ] Integration test verifying abstract appears in rendered HTML
+- [ ] Default behavior unchanged (abstracts hidden by default)
+- [ ] CLAUDE.md updated with new template_options
+- [ ] Mockup file can be deleted after implementation
+
+**Visual Mockup:**
+See `_bmad-output/mockups/publications-with-abstracts-preview.html` for visual comparison of styling options.
+
+---
+
 ## Epic Dependencies
 
 | Story | Depends On | Blocks |
@@ -540,13 +699,15 @@ class PositionValidator(ResourceValidator):
 | 11.3 (Custom Templates) | None | 11.4 |
 | 11.4 (Template Docs) | 11.3 (partial) | None |
 | 11.5 (Validation) | None | None |
+| 11.6 (Publication Abstracts) | None | 11.4 (partial) |
 
 ## Recommended Implementation Order
 
 1. **11.1** - Quick win, 1 point
 2. **11.5** - High value, improves user experience
 3. **11.3** - Enables customization
-4. **11.4** - Documentation for 11.3
-5. **11.2** - Lower priority, power user feature
+4. **11.6** - Small enhancement, 2 points
+5. **11.4** - Documentation for 11.3 and 11.6
+6. **11.2** - Lower priority, power user feature
 
 ---
