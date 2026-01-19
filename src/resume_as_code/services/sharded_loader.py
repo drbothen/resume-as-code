@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, Protocol, TypeVar, runtime_checkable
 
 from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
@@ -19,10 +19,32 @@ from ruamel.yaml.error import YAMLError
 
 from resume_as_code.models.errors import ValidationError
 
+if TYPE_CHECKING:
+    pass
+
 logger = logging.getLogger(__name__)
 
 # Generic type for any Pydantic model
 T = TypeVar("T", bound=BaseModel)
+
+
+@runtime_checkable
+class SourceTracked(Protocol):
+    """Protocol for models that track their source file.
+
+    Models loaded via ShardedLoader will have a _source_file attribute
+    set to the Path of the YAML file they were loaded from.
+
+    This protocol enables type-safe access to the source file:
+
+        if isinstance(item, SourceTracked):
+            print(f"Loaded from: {item._source_file}")
+
+    Note: The _source_file attribute is dynamically set at runtime
+    after model instantiation, not defined in the model class itself.
+    """
+
+    _source_file: Path
 
 
 class ShardedLoader(Generic[T]):
@@ -56,7 +78,9 @@ class ShardedLoader(Generic[T]):
 
         Returns:
             List of model instances sorted alphabetically by file path.
-            Each item has a `_source_file` attribute set to its source path.
+            Each item satisfies the SourceTracked protocol with a `_source_file`
+            attribute set to its source Path. Use `isinstance(item, SourceTracked)`
+            for type-safe access to this attribute.
 
         Raises:
             ValidationError: If any file fails schema validation or YAML parsing.

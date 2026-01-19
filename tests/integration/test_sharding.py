@@ -338,7 +338,7 @@ class TestMigrateShardCommand:
         # Create publications.yaml
         (tmp_path / "publications.yaml").write_text(
             '- title: "Zero Trust Architecture"\n'
-            "  publication_type: conference\n"
+            "  type: conference\n"
             '  venue: "RSA Conference"\n'
             '  date: "2023-06"\n'
         )

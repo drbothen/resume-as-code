@@ -1,6 +1,6 @@
 # Story 11.2: Directory-Based Sharding for Data Files
 
-Status: completed
+Status: done
 
 ## Story
 
@@ -380,6 +380,7 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 - All 8 tasks completed successfully
 - 15 unit tests for ShardedLoader class
 - 16 integration tests for sharding functionality
+- 16 unit tests for service directory mode operations
 - All acceptance criteria met:
   - AC1: Directory mode loading with three-tier fallback
   - AC2: Precedence rule (directory > file > embedded)
@@ -387,15 +388,23 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
   - AC4: migrate --shard command with backup and config update
   - AC5: List command parity with --verbose source display
 
+### Code Review Remediation (2026-01-18)
+
+- **Issue #1 (MEDIUM)**: Added comprehensive unit tests for service directory mode save/remove operations in `tests/unit/services/test_service_directory_mode.py` (16 new tests)
+- **Issue #2 (LOW)**: Reviewed board_roles key naming - NOT a bug. Python uses underscores internally (`board_roles`), CLI/files use hyphens (`board-roles`). This follows standard Python conventions.
+- **Issue #3 (LOW)**: Fixed publication field mismatch in `tests/integration/test_sharding.py` - changed `publication_type` to `type` to match Publication model
+- **Issue #4 (LOW)**: Added `SourceTracked` protocol to `sharded_loader.py` for type-safe access to `_source_file` attribute with runtime-checkable support
+
 ### Change Log
 - 2026-01-18: Story created with comprehensive implementation context
 - 2026-01-19: Completed Task 7 (migrate --shard command) and Task 8 (tests)
 - 2026-01-19: Story marked completed with all acceptance criteria verified
+- 2026-01-18: Code review remediation - fixed 3 issues, added 16 service directory mode tests, added SourceTracked protocol
 
 ### File List
 - `src/resume_as_code/models/config.py` - Extended DataPaths with *_dir fields
 - `src/resume_as_code/data_loader.py` - Implemented three-tier loading fallback
-- `src/resume_as_code/services/sharded_loader.py` - New generic directory loader
+- `src/resume_as_code/services/sharded_loader.py` - New generic directory loader with SourceTracked protocol
 - `src/resume_as_code/services/certification_service.py` - Added directory mode
 - `src/resume_as_code/services/publication_service.py` - Added directory mode
 - `src/resume_as_code/services/education_service.py` - Added directory mode
@@ -404,4 +413,5 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 - `src/resume_as_code/commands/migrate.py` - Added --shard option
 - `src/resume_as_code/commands/list_cmd.py` - Added --verbose flag for source display
 - `tests/unit/services/test_sharded_loader.py` - Unit tests for ShardedLoader
+- `tests/unit/services/test_service_directory_mode.py` - Unit tests for service directory mode save/remove
 - `tests/integration/test_sharding.py` - Integration tests for sharding
