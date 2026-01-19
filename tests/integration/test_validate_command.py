@@ -55,7 +55,8 @@ class TestValidateCommandSuccess:
         file_path = tmp_path / "wu-test.yaml"
         file_path.write_text(VALID_WORK_UNIT)
 
-        result = cli_runner.invoke(main, ["validate", str(file_path)])
+        # Story 11.5: Use work-units subcommand with PATH argument
+        result = cli_runner.invoke(main, ["validate", "work-units", str(file_path)])
 
         assert result.exit_code == 0
 
@@ -64,7 +65,8 @@ class TestValidateCommandSuccess:
         (tmp_path / "wu-1.yaml").write_text(VALID_WORK_UNIT)
         (tmp_path / "wu-2.yaml").write_text(VALID_WORK_UNIT)
 
-        result = cli_runner.invoke(main, ["validate", str(tmp_path)])
+        # Story 11.5: Use work-units subcommand with PATH argument
+        result = cli_runner.invoke(main, ["validate", "work-units", str(tmp_path)])
 
         assert result.exit_code == 0
 
@@ -97,7 +99,8 @@ class TestValidateCommandErrors:
 
     def test_validate_nonexistent_path_click_error(self, cli_runner: CliRunner) -> None:
         """Should exit 2 when path doesn't exist (Click validation)."""
-        result = cli_runner.invoke(main, ["validate", "/nonexistent/path.yaml"])
+        # Story 11.5: Use work-units subcommand with PATH argument
+        result = cli_runner.invoke(main, ["validate", "work-units", "/nonexistent/path.yaml"])
 
         # Click's Path(exists=True) validates before command runs, returns exit code 2
         assert result.exit_code == 2
@@ -109,13 +112,18 @@ class TestValidateCommandJsonOutput:
     def test_validate_json_output_structure(
         self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Should output valid JSON with expected structure (AC #6)."""
+        """Should output valid JSON with expected structure (AC #6).
+
+        Story 11.5: validate (no subcommand) now returns aggregated results
+        with resources array. Use work-units subcommand for legacy structure.
+        """
         work_units = tmp_path / "work-units"
         work_units.mkdir()
         (work_units / "wu-test.yaml").write_text(VALID_WORK_UNIT)
 
         monkeypatch.chdir(tmp_path)
-        result = cli_runner.invoke(main, ["--json", "validate"])
+        # Use work-units subcommand for work-unit specific output structure
+        result = cli_runner.invoke(main, ["--json", "validate", "work-units"])
 
         assert result.exit_code == 0
         data = json.loads(result.output)
@@ -142,12 +150,17 @@ class TestValidateCommandJsonOutput:
     def test_validate_json_empty_directory(
         self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Should return JSON with zero counts for empty directory."""
+        """Should return JSON with zero counts for empty directory.
+
+        Story 11.5: validate (no subcommand) returns aggregated results.
+        Use work-units subcommand for legacy structure.
+        """
         work_units = tmp_path / "work-units"
         work_units.mkdir()
 
         monkeypatch.chdir(tmp_path)
-        result = cli_runner.invoke(main, ["--json", "validate"])
+        # Use work-units subcommand for work-unit specific output structure
+        result = cli_runner.invoke(main, ["--json", "validate", "work-units"])
 
         assert result.exit_code == 0
         data = json.loads(result.output)
@@ -248,7 +261,10 @@ class TestValidateContentQuality:
         file_path = tmp_path / "wu-weak.yaml"
         file_path.write_text(WORK_UNIT_WITH_WEAK_VERBS)
 
-        result = cli_runner.invoke(main, ["validate", "--content-quality", str(file_path)])
+        # Story 11.5: Use work-units subcommand for content quality flags
+        result = cli_runner.invoke(
+            main, ["validate", "work-units", "--content-quality", str(file_path)]
+        )
 
         assert result.exit_code == 0  # Valid schema, warnings don't affect exit code
         assert "WEAK_ACTION_VERB" in result.output
@@ -261,7 +277,10 @@ class TestValidateContentQuality:
         file_path = tmp_path / "wu-weak.yaml"
         file_path.write_text(WORK_UNIT_WITH_WEAK_VERBS)
 
-        result = cli_runner.invoke(main, ["validate", "--content-quality", str(file_path)])
+        # Story 11.5: Use work-units subcommand for content quality flags
+        result = cli_runner.invoke(
+            main, ["validate", "work-units", "--content-quality", str(file_path)]
+        )
 
         assert result.exit_code == 0
         # Should suggest alternatives for 'managed'
@@ -274,7 +293,10 @@ class TestValidateContentQuality:
         file_path = tmp_path / "wu-weak.yaml"
         file_path.write_text(WORK_UNIT_WITH_WEAK_VERBS)
 
-        result = cli_runner.invoke(main, ["validate", "--content-quality", str(file_path)])
+        # Story 11.5: Use work-units subcommand for content quality flags
+        result = cli_runner.invoke(
+            main, ["validate", "work-units", "--content-quality", str(file_path)]
+        )
 
         assert result.exit_code == 0
         assert "VERB_REPETITION" in result.output
@@ -287,7 +309,10 @@ class TestValidateContentQuality:
         file_path = tmp_path / "wu-weak.yaml"
         file_path.write_text(WORK_UNIT_WITH_WEAK_VERBS)
 
-        result = cli_runner.invoke(main, ["validate", "--content-quality", str(file_path)])
+        # Story 11.5: Use work-units subcommand for content quality flags
+        result = cli_runner.invoke(
+            main, ["validate", "work-units", "--content-quality", str(file_path)]
+        )
 
         assert result.exit_code == 0
         assert "MISSING_QUANTIFICATION" in result.output
@@ -297,8 +322,9 @@ class TestValidateContentQuality:
         file_path = tmp_path / "wu-weak.yaml"
         file_path.write_text(WORK_UNIT_WITH_WEAK_VERBS)
 
+        # Story 11.5: Use work-units subcommand for content quality flags
         result = cli_runner.invoke(
-            main, ["--json", "validate", "--content-quality", str(file_path)]
+            main, ["--json", "validate", "work-units", "--content-quality", str(file_path)]
         )
 
         assert result.exit_code == 0
@@ -333,7 +359,10 @@ outcome:
         file_path = tmp_path / "wu-short.yaml"
         file_path.write_text(work_unit)
 
-        result = cli_runner.invoke(main, ["validate", "--content-density", str(file_path)])
+        # Story 11.5: Use work-units subcommand for content density flags
+        result = cli_runner.invoke(
+            main, ["validate", "work-units", "--content-density", str(file_path)]
+        )
 
         assert result.exit_code == 0
         assert "BULLET_TOO_SHORT" in result.output
@@ -361,7 +390,10 @@ outcome:
         file_path = tmp_path / "wu-long.yaml"
         file_path.write_text(work_unit)
 
-        result = cli_runner.invoke(main, ["validate", "--content-density", str(file_path)])
+        # Story 11.5: Use work-units subcommand for content density flags
+        result = cli_runner.invoke(
+            main, ["validate", "work-units", "--content-density", str(file_path)]
+        )
 
         assert result.exit_code == 0
         assert "BULLET_TOO_LONG" in result.output
@@ -389,7 +421,10 @@ outcome:
         file_path = tmp_path / "wu-optimal.yaml"
         file_path.write_text(work_unit)
 
-        result = cli_runner.invoke(main, ["validate", "--content-density", str(file_path)])
+        # Story 11.5: Use work-units subcommand for content density flags
+        result = cli_runner.invoke(
+            main, ["validate", "work-units", "--content-density", str(file_path)]
+        )
 
         assert result.exit_code == 0
         # Should show successful validation without density warnings
@@ -417,8 +452,9 @@ outcome:
         file_path = tmp_path / "wu-short.yaml"
         file_path.write_text(work_unit)
 
+        # Story 11.5: Use work-units subcommand for content density flags
         result = cli_runner.invoke(
-            main, ["--json", "validate", "--content-density", str(file_path)]
+            main, ["--json", "validate", "work-units", "--content-density", str(file_path)]
         )
 
         assert result.exit_code == 0
@@ -489,7 +525,8 @@ class TestValidatePositionReferences:
         (tmp_path / "positions.yaml").write_text(POSITIONS_YAML)
 
         monkeypatch.chdir(tmp_path)
-        result = cli_runner.invoke(main, ["validate", "--check-positions"])
+        # Story 11.5: Use work-units subcommand for --check-positions flag
+        result = cli_runner.invoke(main, ["validate", "work-units", "--check-positions"])
 
         # Missing position_id is a warning, not an error - validation passes
         assert result.exit_code == 0
@@ -511,7 +548,8 @@ class TestValidatePositionReferences:
         (tmp_path / "positions.yaml").write_text(POSITIONS_YAML)
 
         monkeypatch.chdir(tmp_path)
-        result = cli_runner.invoke(main, ["validate", "--check-positions"])
+        # Story 11.5: Use work-units subcommand for --check-positions flag
+        result = cli_runner.invoke(main, ["validate", "work-units", "--check-positions"])
 
         # Invalid position_id is an error - validation fails
         assert result.exit_code == 3  # ValidationError exit code
@@ -531,7 +569,8 @@ class TestValidatePositionReferences:
         (tmp_path / "positions.yaml").write_text(POSITIONS_YAML)
 
         monkeypatch.chdir(tmp_path)
-        result = cli_runner.invoke(main, ["validate", "--check-positions"])
+        # Story 11.5: Use work-units subcommand for --check-positions flag
+        result = cli_runner.invoke(main, ["validate", "work-units", "--check-positions"])
 
         # Valid position_id passes without errors
         assert result.exit_code == 0
@@ -549,7 +588,8 @@ class TestValidatePositionReferences:
         # No positions.yaml file
 
         monkeypatch.chdir(tmp_path)
-        result = cli_runner.invoke(main, ["validate", "--check-positions"])
+        # Story 11.5: Use work-units subcommand for --check-positions flag
+        result = cli_runner.invoke(main, ["validate", "work-units", "--check-positions"])
 
         # Without positions.yaml, position_id is treated as invalid reference
         assert result.exit_code == 3  # Error for invalid position_id
@@ -571,7 +611,8 @@ class TestValidatePositionReferences:
         (tmp_path / "positions.yaml").write_text(POSITIONS_YAML)
 
         monkeypatch.chdir(tmp_path)
-        result = cli_runner.invoke(main, ["--json", "validate", "--check-positions"])
+        # Story 11.5: Use work-units subcommand for --check-positions flag
+        result = cli_runner.invoke(main, ["--json", "validate", "work-units", "--check-positions"])
 
         assert result.exit_code == 3
         data = json.loads(result.output)
@@ -592,9 +633,229 @@ class TestValidatePositionReferences:
         (tmp_path / "positions.yaml").write_text(POSITIONS_YAML)
 
         monkeypatch.chdir(tmp_path)
-        result = cli_runner.invoke(main, ["--json", "validate", "--check-positions"])
+        # Story 11.5: Use work-units subcommand for --check-positions flag
+        result = cli_runner.invoke(main, ["--json", "validate", "work-units", "--check-positions"])
 
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert "content_warnings" in data["data"]
         assert any(w["code"] == "MISSING_POSITION_ID" for w in data["data"]["content_warnings"])
+
+
+# =============================================================================
+# Story 11.5: Comprehensive Validation Tests
+# =============================================================================
+
+
+# Story 11.5: Certifications are root-level lists (not wrapped in certifications: key)
+VALID_CERTIFICATIONS = """\
+- name: "AWS Solutions Architect"
+  issuer: "Amazon Web Services"
+  date: "2023-01"
+"""
+
+INVALID_CERTIFICATIONS_DATE = """\
+- name: "Invalid Cert"
+  issuer: "Test Issuer"
+  date: "2025-01"
+  expires: "2024-01"
+"""
+
+
+class TestValidateAllResources:
+    """Tests for comprehensive validation (Story 11.5 AC1)."""
+
+    def test_validate_all_resources(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should validate all resource types when no subcommand (AC1)."""
+        # Create minimal project
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-test.yaml").write_text(VALID_WORK_UNIT)
+        (tmp_path / "positions.yaml").write_text(POSITIONS_YAML)
+        (tmp_path / "certifications.yaml").write_text(VALID_CERTIFICATIONS)
+        config_yaml = "schema_version: '2.0.0'\nwork_units_dir: work-units"
+        (tmp_path / ".resume.yaml").write_text(config_yaml)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate"])
+
+        assert result.exit_code == 0
+        # Should show summary table with all resource types
+        assert "Work Units" in result.output
+        assert "Positions" in result.output
+        assert "Certifications" in result.output
+
+    def test_validate_all_shows_summary_table(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should show summary table with counts (AC2)."""
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-test.yaml").write_text(VALID_WORK_UNIT)
+        config_yaml = "schema_version: '2.0.0'\nwork_units_dir: work-units"
+        (tmp_path / ".resume.yaml").write_text(config_yaml)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate"])
+
+        assert result.exit_code == 0
+        # Table headers should be present
+        assert "Resource Type" in result.output
+        assert "Valid" in result.output
+        assert "Invalid" in result.output
+
+    def test_validate_all_exit_code_on_errors(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should exit 3 when any resource has errors (AC6)."""
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-test.yaml").write_text(VALID_WORK_UNIT)
+        (tmp_path / "certifications.yaml").write_text(INVALID_CERTIFICATIONS_DATE)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate"])
+
+        assert result.exit_code == 3
+
+    def test_validate_all_json_output(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should output aggregated JSON with --json (AC5)."""
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-test.yaml").write_text(VALID_WORK_UNIT)
+        config_yaml = "schema_version: '2.0.0'\nwork_units_dir: work-units"
+        (tmp_path / ".resume.yaml").write_text(config_yaml)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["--json", "validate"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "total_valid" in data["data"]
+        assert "total_invalid" in data["data"]
+        assert "resources" in data["data"]
+        assert isinstance(data["data"]["resources"], list)
+
+
+class TestValidateSubcommands:
+    """Tests for individual resource validation subcommands (Story 11.5 AC3)."""
+
+    def test_validate_positions_subcommand(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should validate only positions with subcommand (AC3)."""
+        (tmp_path / "positions.yaml").write_text(POSITIONS_YAML)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate", "positions"])
+
+        assert result.exit_code == 0
+        assert "Positions" in result.output
+
+    def test_validate_certifications_subcommand(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should validate only certifications with subcommand (AC3)."""
+        (tmp_path / "certifications.yaml").write_text(VALID_CERTIFICATIONS)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate", "certifications"])
+
+        assert result.exit_code == 0
+        assert "Certifications" in result.output
+
+    def test_validate_certifications_cross_field_error(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should detect date > expires error (AC4)."""
+        (tmp_path / "certifications.yaml").write_text(INVALID_CERTIFICATIONS_DATE)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate", "certifications"])
+
+        assert result.exit_code == 3
+        assert "INVALID_DATE_RANGE" in result.output
+
+    def test_validate_work_units_subcommand(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should validate work-units with subcommand."""
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-test.yaml").write_text(VALID_WORK_UNIT)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate", "work-units"])
+
+        assert result.exit_code == 0
+        assert "passed" in result.output.lower()
+
+    def test_validate_subcommand_json_output(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should output JSON for single resource (AC5)."""
+        (tmp_path / "positions.yaml").write_text(POSITIONS_YAML)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["--json", "validate", "positions"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["data"]["resource_type"] == "Positions"
+        assert "valid_count" in data["data"]
+        assert "is_valid" in data["data"]
+
+    def test_validate_config_subcommand(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should validate config with subcommand."""
+        config_yaml = "schema_version: '2.0.0'\nwork_units_dir: work-units"
+        (tmp_path / ".resume.yaml").write_text(config_yaml)
+        (tmp_path / "work-units").mkdir()
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate", "config"])
+
+        assert result.exit_code == 0
+        assert "Config" in result.output
+
+    def test_validate_board_roles_subcommand(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should validate board roles with subcommand."""
+        # Story 11.5: Board roles are root-level lists (not wrapped in board_roles: key)
+        board_roles_yaml = """\
+- organization: "TechStartup Inc"
+  role: "Technical Advisor"
+  type: "advisory"
+  start_date: "2021-01"
+"""
+        (tmp_path / "board-roles.yaml").write_text(board_roles_yaml)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate", "board-roles"])
+
+        assert result.exit_code == 0
+        assert "Board Roles" in result.output
+
+
+class TestValidateHelpText:
+    """Tests for validate command help text."""
+
+    def test_validate_help_shows_subcommands(self, cli_runner: CliRunner) -> None:
+        """Should list all subcommands in help."""
+        result = cli_runner.invoke(main, ["validate", "--help"])
+
+        assert result.exit_code == 0
+        assert "work-units" in result.output
+        assert "positions" in result.output
+        assert "certifications" in result.output
+        assert "education" in result.output
+        assert "publications" in result.output
+        assert "board-roles" in result.output
+        assert "highlights" in result.output
+        assert "config" in result.output

@@ -194,7 +194,15 @@ CLI tool for git-native resume generation from structured Work Units.
 | `resume list highlights` | List all career highlights |
 | `resume cache stats` | Show embedding cache statistics |
 | `resume cache clear` | Clear stale cache entries |
-| `resume validate [PATH]` | Validate Work Units against schema |
+| `resume validate` | Validate ALL resource types (comprehensive) |
+| `resume validate work-units [PATH]` | Validate Work Units against schema |
+| `resume validate positions` | Validate positions.yaml |
+| `resume validate certifications` | Validate certifications |
+| `resume validate education` | Validate education entries |
+| `resume validate publications` | Validate publications |
+| `resume validate board-roles` | Validate board roles |
+| `resume validate highlights` | Validate career highlights |
+| `resume validate config` | Validate .resume.yaml configuration |
 | `resume plan --jd <file>` | Analyze JD, select Work Units |
 | `resume build --jd <file>` | Generate resume files |
 | `resume migrate --status` | Show schema version and migration status |
@@ -204,13 +212,37 @@ CLI tool for git-native resume generation from structured Work Units.
 | `resume migrate --rollback <backup>` | Restore from backup directory |
 | `resume migrate --shard <type>` | Convert single-file to directory mode |
 
-### Validate Command Options
+### Validate Command
+
+The validate command validates all resource types by default, or specific types via subcommands.
+
+**Subcommands:**
+- `work-units [PATH]` - Validate Work Units (supports PATH argument and content flags)
+- `positions` - Validate positions.yaml
+- `certifications` - Validate certifications (checks date <= expires)
+- `education` - Validate education entries
+- `publications` - Validate publications
+- `board-roles` - Validate board roles (checks start_date <= end_date)
+- `highlights` - Validate career highlights
+- `config` - Validate .resume.yaml configuration
+
+**Work Units Subcommand Options:**
 
 | Flag | Description |
 |------|-------------|
 | `--content-quality` | Check content quality (weak verbs, quantification) |
 | `--content-density` | Check content density (bullet length) |
 | `--check-positions` | Validate position_id references exist in positions.yaml |
+
+**Examples:**
+```bash
+resume validate                           # Validate ALL resources
+resume validate work-units                # Validate only work units
+resume validate work-units --check-positions  # With position validation
+resume validate certifications            # Validate only certifications
+resume --json validate                    # JSON output for all resources
+resume --json validate positions          # JSON output for positions only
+```
 
 ### Plan Command Options
 
@@ -799,7 +831,8 @@ resume new work-unit \
   --result "Deployments now take 48 minutes"
 
 # 4. Validate and generate
-resume validate --check-positions
+resume validate                                    # Validate all resources
+resume validate work-units --check-positions       # Validate work units with position refs
 resume plan --jd job-description.txt
 resume build --jd job-description.txt
 ```
@@ -817,7 +850,7 @@ resume new position
 resume new work-unit --archetype greenfield
 
 # 4. Validate and generate
-resume validate --check-positions
+resume validate                                    # Validate all resources
 resume plan --jd job-description.txt
 resume build --jd job-description.txt
 ```
