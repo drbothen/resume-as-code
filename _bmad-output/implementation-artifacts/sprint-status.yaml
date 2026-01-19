@@ -218,4 +218,15 @@ development_status:
   11-2-directory-based-sharding: done  # P3, 8 pts - Optional per-item YAML files (TD-005)
   11-3-custom-templates-directory: done  # P2, 3 pts - Expose templates_dir config (TD-006)
   11-4-template-authoring-docs: done  # P3, 3 pts - Template authoring documentation (TD-007)
-  11-5-comprehensive-resource-validation: done  # P2, 6 pts - Validate all resources (TD-008)
+  11-5-comprehensive-resource-validation: done
+
+  # Epic 12: Work Unit Archetype Tracking & Validation
+  # Goal: Add persistent archetype tracking to work units for categorization analysis, PAR validation, and improved resume generation
+  # Feature Request: January 2026 - based on jmagady-resume analysis identifying need for archetype metadata
+  # Total Points: TBD (5 stories)
+  epic-12: in-progress
+  12-1-archetype-field-model: done  # P1, 3 pts - Add WorkUnitArchetype enum + field to model
+  12-2-persist-archetype-creation: backlog  # P1, 3 pts - Save archetype when using --archetype flag
+  12-3-archetype-inference-service: backlog  # P2, 8 pts - Infer archetypes from existing work units
+  12-4-par-structure-validation: backlog  # P2, 5 pts - Validate PAR structure matches archetype
+  12-5-archetype-reporting-statistics: backlog  # P3, 3 pts - Add --by-archetype to list command
