@@ -281,7 +281,7 @@ class TestEvidenceIntegrationWithWorkUnit:
 
     def test_work_unit_with_narrative_evidence(self) -> None:
         """WorkUnit accepts narrative evidence."""
-        from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit
+        from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit, WorkUnitArchetype
 
         wu = WorkUnit(
             id="wu-2024-03-15-internal-achievement",
@@ -289,6 +289,7 @@ class TestEvidenceIntegrationWithWorkUnit:
             problem=Problem(statement="Cloud costs exceeded budget by 40%"),
             actions=["Analyzed costs", "Implemented savings"],
             outcome=Outcome(result="Reduced costs by 35%"),
+            archetype=WorkUnitArchetype.OPTIMIZATION,
             evidence=[
                 NarrativeEvidence(
                     description="Recognized in company all-hands for cost savings",
@@ -301,7 +302,7 @@ class TestEvidenceIntegrationWithWorkUnit:
 
     def test_work_unit_with_link_evidence(self) -> None:
         """WorkUnit accepts link evidence."""
-        from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit
+        from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit, WorkUnitArchetype
 
         wu = WorkUnit(
             id="wu-2024-03-15-blog-post",
@@ -309,6 +310,7 @@ class TestEvidenceIntegrationWithWorkUnit:
             problem=Problem(statement="Team needed microservices guidance"),
             actions=["Researched patterns", "Wrote blog post"],
             outcome=Outcome(result="Post read by 10K+ developers"),
+            archetype=WorkUnitArchetype.STRATEGIC,
             evidence=[
                 LinkEvidence(
                     url="https://medium.com/@user/microservices-patterns",
@@ -321,7 +323,7 @@ class TestEvidenceIntegrationWithWorkUnit:
 
     def test_work_unit_with_artifact_local_path(self) -> None:
         """WorkUnit accepts artifact evidence with local path only."""
-        from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit
+        from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit, WorkUnitArchetype
 
         wu = WorkUnit(
             id="wu-2024-03-15-local-artifact",
@@ -329,6 +331,7 @@ class TestEvidenceIntegrationWithWorkUnit:
             problem=Problem(statement="Deployment process was manual"),
             actions=["Built automation scripts"],
             outcome=Outcome(result="Automated 80% of deployments"),
+            archetype=WorkUnitArchetype.GREENFIELD,
             evidence=[
                 ArtifactEvidence(
                     local_path="artifacts/deploy-package.tar.gz",
@@ -348,6 +351,7 @@ class TestEvidenceIntegrationWithWorkUnit:
             Outcome,
             Problem,
             WorkUnit,
+            WorkUnitArchetype,
         )
 
         wu = WorkUnit(
@@ -356,6 +360,7 @@ class TestEvidenceIntegrationWithWorkUnit:
             problem=Problem(statement="Project needed security improvements"),
             actions=["Implemented security fixes", "Received recognition"],
             outcome=Outcome(result="Security vulnerabilities reduced by 90%"),
+            archetype=WorkUnitArchetype.OPTIMIZATION,
             evidence=[
                 GitRepoEvidence(url="https://github.com/org/project"),
                 NarrativeEvidence(description="Featured in project newsletter"),

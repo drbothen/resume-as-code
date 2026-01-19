@@ -225,6 +225,8 @@ curation:
         work_units_dir = tmp_path / "work-units"
         work_units_dir.mkdir()
         (work_units_dir / "wu-2024-01-01-test.yaml").write_text("""
+schema_version: "4.0.0"
+archetype: minimal
 id: wu-2024-01-01-test
 title: "Test work unit"
 problem:
@@ -305,6 +307,8 @@ curation:
         work_units_dir = tmp_path / "work-units"
         work_units_dir.mkdir()
         (work_units_dir / "wu-2024-01-01-test.yaml").write_text("""
+schema_version: "4.0.0"
+archetype: minimal
 id: wu-2024-01-01-test
 title: "Test work unit"
 problem:

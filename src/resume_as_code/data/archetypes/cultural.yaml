@@ -5,7 +5,8 @@
 # Focus on "soft" accomplishments that drive organizational health
 # Emphasizes people development and organizational capability building
 
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: cultural
 
 # ID Format: wu-YYYY-MM-DD-slug
 id: "wu-YYYY-MM-DD-cultural-slug"

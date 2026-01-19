@@ -15,7 +15,8 @@ class TestPositionServiceLoad:
         """Should load positions from YAML file."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-senior:
     employer: "TechCorp Industries"
@@ -40,7 +41,8 @@ positions:
         """Should load multiple positions from YAML."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-senior:
     employer: "TechCorp Industries"
@@ -88,7 +90,8 @@ positions:
         """Should cache loaded positions."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: "Test Corp"
@@ -101,7 +104,8 @@ positions:
         positions1 = service.load_positions()
         # Modify file
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-different:
     employer: "Different Corp"
@@ -122,7 +126,8 @@ class TestPositionServiceGet:
         """Should return position by ID."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: "Test Corp"
@@ -140,7 +145,8 @@ positions:
         """Should return None for non-existent position ID."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: "Test Corp"
@@ -156,7 +162,8 @@ positions:
         """Should return True when position exists."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: "Test Corp"
@@ -171,7 +178,8 @@ positions:
         """Should return False when position doesn't exist."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: "Test Corp"
@@ -282,7 +290,8 @@ class TestPositionServicePromotionChain:
         """Should return single position when no promotion history."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-senior:
     employer: "TechCorp"
@@ -299,7 +308,8 @@ positions:
         """Should return chain of two promotions."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-senior:
     employer: "TechCorp"
@@ -323,7 +333,8 @@ positions:
         """Should return chain of three promotions."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-director:
     employer: "TechCorp"
@@ -354,7 +365,8 @@ positions:
         """Should return empty list for non-existent position."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: "TechCorp"
@@ -371,7 +383,8 @@ positions:
         positions_file = tmp_path / "positions.yaml"
         # Create circular reference: A -> B -> C -> A
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-a:
     employer: "TechCorp"
@@ -404,7 +417,8 @@ positions:
         """Should handle self-referential promoted_from without infinite loop."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-self:
     employer: "TechCorp"
@@ -446,7 +460,8 @@ class TestPositionServiceSave:
         """Should add position to existing file."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-existing:
     employer: "Existing Corp"
@@ -518,7 +533,8 @@ class TestPositionServiceSuggestForDate:
         """Should suggest current position for today's date."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-current:
     employer: "Current Corp"
@@ -535,7 +551,8 @@ positions:
         """Should suggest past position for date within its tenure."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-current:
     employer: "Current Corp"
@@ -558,7 +575,8 @@ positions:
         positions_file = tmp_path / "positions.yaml"
         # Overlapping positions (e.g., promotion mid-month)
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-senior:
     employer: "TechCorp"
@@ -589,7 +607,8 @@ positions:
         """Should return None when date is before all positions."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-first:
     employer: "First Corp"
@@ -605,7 +624,8 @@ positions:
         """Should return None when date falls in employment gap."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-later:
     employer: "Later Corp"
@@ -627,7 +647,8 @@ positions:
         """Should handle YYYY-MM-DD date format."""
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: "Test Corp"

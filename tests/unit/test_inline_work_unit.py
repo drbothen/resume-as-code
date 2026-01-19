@@ -364,6 +364,7 @@ class TestWorkUnitServiceFromData:
             actions=["First action taken", "Second action taken"],
             result="The result achieved",
             work_units_dir=work_units_dir,
+            archetype="minimal",
         )
 
         assert file_path.exists()
@@ -373,7 +374,8 @@ class TestWorkUnitServiceFromData:
 
         assert data["id"] == "wu-2024-01-15-test"
         assert data["title"] == "Test Work Unit"
-        assert data["schema_version"] == "1.0.0"
+        assert data["schema_version"] == "4.0.0"
+        assert data["archetype"] == "minimal"
         assert data["problem"]["statement"] == "This is the problem that needed solving"
         assert len(data["actions"]) == 2
         assert data["outcome"]["result"] == "The result achieved"
@@ -392,6 +394,7 @@ class TestWorkUnitServiceFromData:
             actions=["Action taken"],
             result="Result achieved",
             work_units_dir=work_units_dir,
+            archetype="greenfield",
             position_id="pos-company-role",
             quantified_impact="50% improvement",
             skills=["Python", "Testing"],

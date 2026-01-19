@@ -289,7 +289,12 @@ class TestSchemaAndPydanticConsistency:
         """Valid Work Unit should pass both JSON Schema and Pydantic validation."""
         import jsonschema
 
-        from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit
+        from resume_as_code.models.work_unit import (
+            Outcome,
+            Problem,
+            WorkUnit,
+            WorkUnitArchetype,
+        )
 
         # Valid work unit data
         valid_data = {
@@ -298,7 +303,8 @@ class TestSchemaAndPydanticConsistency:
             "problem": {"statement": "Legacy on-prem system was costly to maintain"},
             "actions": ["Designed architecture", "Migrated databases"],
             "outcome": {"result": "Reduced costs by 40%"},
-            "schema_version": "1.0.0",
+            "schema_version": "4.0.0",
+            "archetype": "migration",
         }
 
         # Should pass JSON Schema validation
@@ -311,6 +317,7 @@ class TestSchemaAndPydanticConsistency:
             problem=Problem(statement=valid_data["problem"]["statement"]),
             actions=valid_data["actions"],
             outcome=Outcome(result=valid_data["outcome"]["result"]),
+            archetype=WorkUnitArchetype.MIGRATION,
         )
         assert wu.id == valid_data["id"]
 
@@ -319,7 +326,7 @@ class TestSchemaAndPydanticConsistency:
         import jsonschema
         from pydantic import ValidationError as PydanticValidationError
 
-        from resume_as_code.models.work_unit import Problem, WorkUnit
+        from resume_as_code.models.work_unit import Problem, WorkUnit, WorkUnitArchetype
 
         # Missing 'outcome' field
         invalid_data = {
@@ -341,4 +348,5 @@ class TestSchemaAndPydanticConsistency:
                 title=invalid_data["title"],
                 problem=Problem(statement=invalid_data["problem"]["statement"]),
                 actions=invalid_data["actions"],
+                archetype=WorkUnitArchetype.MINIMAL,
             )

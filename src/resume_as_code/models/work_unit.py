@@ -81,6 +81,53 @@ class ImpactCategory(str, Enum):
     ORGANIZATIONAL = "organizational"
 
 
+class WorkUnitArchetype(str, Enum):
+    """Work unit archetype classification for PAR structure patterns.
+
+    Each archetype represents a common pattern of professional achievement
+    with distinct problem-action-result structures. The archetype guides
+    how achievements are categorized, validated, and presented on resumes.
+
+    Values must match archetype template filenames exactly (lowercase).
+    """
+
+    GREENFIELD = "greenfield"
+    """New system/feature built from scratch. Focus on design decisions,
+    technology choices, and delivery of new capabilities."""
+
+    MIGRATION = "migration"
+    """System/data migration projects. Focus on planning, risk mitigation,
+    and successful transition from legacy to modern systems."""
+
+    OPTIMIZATION = "optimization"
+    """Performance or cost improvements. Focus on measurable improvements
+    with clear before/after metrics (latency, cost, efficiency)."""
+
+    INCIDENT = "incident"
+    """Production incident response or security assessments. Focus on
+    rapid response, root cause analysis, and remediation."""
+
+    LEADERSHIP = "leadership"
+    """Team building, hiring, and mentorship. Focus on people development,
+    team growth, and organizational capability building."""
+
+    STRATEGIC = "strategic"
+    """Strategic initiatives and architecture decisions. Focus on long-term
+    planning, roadmap definition, and cross-org alignment."""
+
+    TRANSFORMATION = "transformation"
+    """Large-scale organizational change. Focus on enterprise-wide impact,
+    process overhauls, and digital transformation initiatives."""
+
+    CULTURAL = "cultural"
+    """Culture, DEI, and engagement initiatives. Focus on improving
+    organizational health, inclusion, and employee experience."""
+
+    MINIMAL = "minimal"
+    """Quick capture with basic structure. Used when full PAR details
+    are not yet available or for simple achievements."""
+
+
 class EvidenceType(str, Enum):
     """Types of supporting evidence."""
 
@@ -354,6 +401,12 @@ class WorkUnit(BaseModel):
     problem: Problem
     actions: list[str] = Field(..., min_length=1)
     outcome: Outcome
+    archetype: WorkUnitArchetype = Field(
+        ...,
+        description="Archetype classification for PAR structure patterns. "
+        "Must be one of: greenfield, migration, optimization, incident, "
+        "leadership, strategic, transformation, cultural, minimal.",
+    )
 
     # Optional time fields
     time_started: date | None = None
@@ -383,8 +436,8 @@ class WorkUnit(BaseModel):
     metrics: Metrics | None = None
     framing: Framing | None = None
 
-    # Schema version
-    schema_version: str = Field(default="1.0.0")
+    # Schema version (4.0.0 adds required archetype field)
+    schema_version: str = Field(default="4.0.0")
 
     # Private attribute for attached Position (not serialized)
     _position: Position | None = PrivateAttr(default=None)

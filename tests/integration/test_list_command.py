@@ -24,7 +24,8 @@ def _create_work_unit(
     tags_section = f"tags:\n{tags_yaml}" if tags else "tags: []"
 
     content = f"""\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 id: "{wu_id}"
 title: "{title}"
 problem:

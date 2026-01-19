@@ -14,7 +14,7 @@ from resume_as_code.models.config import BulletsPerPositionConfig, CurationConfi
 from resume_as_code.models.job_description import ExperienceLevel, JobDescription
 from resume_as_code.models.position import Position
 from resume_as_code.models.publication import Publication
-from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit
+from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit, WorkUnitArchetype
 from resume_as_code.services.content_curator import (
     BULLETS_PER_POSITION,
     ContentCurator,
@@ -757,6 +757,7 @@ class TestCuratePositionBullets:
                 problem=Problem(statement=f"Problem {i} needed to be solved"),
                 actions=[f"Implemented solution {i} with Python"],
                 outcome=Outcome(result=f"Achieved result {i}"),
+                archetype=WorkUnitArchetype.MINIMAL,
                 position_id="pos-recent",
             )
             for i in range(1, 9)
@@ -795,6 +796,7 @@ class TestCuratePositionBullets:
                     result="Improved performance significantly",
                     quantified_impact="Reduced latency by 50%",
                 ),
+                archetype=WorkUnitArchetype.OPTIMIZATION,
                 position_id="pos-recent",
             ),
             WorkUnit(
@@ -803,6 +805,7 @@ class TestCuratePositionBullets:
                 problem=Problem(statement="Code was messy and hard to maintain"),
                 actions=["Refactored code"],
                 outcome=Outcome(result="Cleaner code"),
+                archetype=WorkUnitArchetype.MINIMAL,
                 position_id="pos-recent",
             ),
         ]
@@ -984,6 +987,7 @@ class TestHelperMethods:
             problem=Problem(statement="This is a test problem statement"),
             actions=["Did something meaningful"],
             outcome=Outcome(result="Improved performance by 50%"),
+            archetype=WorkUnitArchetype.OPTIMIZATION,
         )
 
         assert curator._has_quantified_impact(wu) is True
@@ -997,6 +1001,7 @@ class TestHelperMethods:
             problem=Problem(statement="This is a test problem statement"),
             actions=["Did something meaningful"],
             outcome=Outcome(result="Saved $100K in costs"),
+            archetype=WorkUnitArchetype.OPTIMIZATION,
         )
 
         assert curator._has_quantified_impact(wu) is True
@@ -1010,6 +1015,7 @@ class TestHelperMethods:
             problem=Problem(statement="This is a test problem statement"),
             actions=["Did something meaningful"],
             outcome=Outcome(result="Achieved 3x improvement"),
+            archetype=WorkUnitArchetype.OPTIMIZATION,
         )
 
         assert curator._has_quantified_impact(wu) is True
@@ -1023,6 +1029,7 @@ class TestHelperMethods:
             problem=Problem(statement="This is a test problem statement"),
             actions=["Did something meaningful"],
             outcome=Outcome(result="Made things better overall"),
+            archetype=WorkUnitArchetype.MINIMAL,
         )
 
         assert curator._has_quantified_impact(wu) is False
@@ -1183,6 +1190,7 @@ class TestCurateActionBullets:
                     f"Deployed Kubernetes {i} infrastructure",
                 ],
                 outcome=Outcome(result=f"Achieved result {i} with 50% improvement"),
+                archetype=WorkUnitArchetype.GREENFIELD,
                 position_id="pos-recent-test",
             )
             for i in range(1, 4)  # 3 work units × (1 result + 3 actions) = 12 bullets
@@ -1235,6 +1243,7 @@ class TestCurateActionBullets:
                 problem=Problem(statement="Problem statement here"),
                 actions=["Action one executed", "Action two completed"],
                 outcome=Outcome(result="Outcome result achieved"),
+                archetype=WorkUnitArchetype.MINIMAL,
                 position_id="pos-recent-test",
             )
         ]
@@ -1281,6 +1290,7 @@ class TestCurateActionBullets:
                 problem=Problem(statement="This is a test problem statement"),
                 actions=["Some action performed", "Another action completed"],
                 outcome=Outcome(result="Test result achieved"),
+                archetype=WorkUnitArchetype.MINIMAL,
                 position_id="pos-recent-test",
             )
         ]
@@ -1309,6 +1319,7 @@ class TestCurateActionBullets:
                     "Deployed Kubernetes clusters with CI/CD pipelines",
                 ],
                 outcome=Outcome(result="Improved deployment by 50%"),
+                archetype=WorkUnitArchetype.GREENFIELD,
                 position_id="pos-recent-test",
             ),
             WorkUnit(
@@ -1317,6 +1328,7 @@ class TestCurateActionBullets:
                 problem=Problem(statement="Administrative coordination needed improvement"),
                 actions=["Organized team meetings"],
                 outcome=Outcome(result="Better communication"),
+                archetype=WorkUnitArchetype.MINIMAL,
                 position_id="pos-recent-test",
             ),
         ]

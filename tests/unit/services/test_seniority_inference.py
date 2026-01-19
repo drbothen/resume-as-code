@@ -173,7 +173,7 @@ class TestInferSeniority:
 
     def test_explicit_seniority_takes_priority(self) -> None:
         """Explicit seniority_level on work unit should be used."""
-        from resume_as_code.models.work_unit import WorkUnit
+        from resume_as_code.models.work_unit import WorkUnit, WorkUnitArchetype
 
         wu = WorkUnit(
             id="wu-2024-01-01-test",
@@ -181,6 +181,7 @@ class TestInferSeniority:
             problem={"statement": "This is a test problem statement"},
             actions=["Action taken to resolve the issue"],
             outcome={"result": "Successful outcome achieved"},
+            archetype=WorkUnitArchetype.MINIMAL,
             seniority_level=ExperienceLevel.EXECUTIVE,  # Explicit override
         )
         assert infer_seniority(wu, None) == ExperienceLevel.EXECUTIVE
@@ -188,7 +189,7 @@ class TestInferSeniority:
     def test_position_title_inference(self) -> None:
         """Position title should be used when no explicit seniority."""
         from resume_as_code.models.position import Position
-        from resume_as_code.models.work_unit import WorkUnit
+        from resume_as_code.models.work_unit import WorkUnit, WorkUnitArchetype
 
         position = Position(
             id="pos-acme-vp-engineering",
@@ -202,6 +203,7 @@ class TestInferSeniority:
             problem={"statement": "This is a test problem statement"},
             actions=["Action taken to resolve the issue"],
             outcome={"result": "Successful outcome achieved"},
+            archetype=WorkUnitArchetype.STRATEGIC,
             position_id="pos-acme-vp-engineering",
         )
         assert infer_seniority(wu, position) == ExperienceLevel.EXECUTIVE
@@ -210,7 +212,7 @@ class TestInferSeniority:
         """P&L responsibility should boost to executive level."""
         from resume_as_code.models.position import Position
         from resume_as_code.models.scope import Scope
-        from resume_as_code.models.work_unit import WorkUnit
+        from resume_as_code.models.work_unit import WorkUnit, WorkUnitArchetype
 
         position = Position(
             id="pos-acme-engineer",
@@ -225,6 +227,7 @@ class TestInferSeniority:
             problem={"statement": "This is a test problem statement"},
             actions=["Action taken to resolve the issue"],
             outcome={"result": "Successful outcome achieved"},
+            archetype=WorkUnitArchetype.LEADERSHIP,
             position_id="pos-acme-engineer",
         )
         assert infer_seniority(wu, position) == ExperienceLevel.EXECUTIVE
@@ -233,7 +236,7 @@ class TestInferSeniority:
         """Revenue >= $100M should boost to executive level."""
         from resume_as_code.models.position import Position
         from resume_as_code.models.scope import Scope
-        from resume_as_code.models.work_unit import WorkUnit
+        from resume_as_code.models.work_unit import WorkUnit, WorkUnitArchetype
 
         position = Position(
             id="pos-acme-engineer",
@@ -248,6 +251,7 @@ class TestInferSeniority:
             problem={"statement": "This is a test problem statement"},
             actions=["Action taken to resolve the issue"],
             outcome={"result": "Successful outcome achieved"},
+            archetype=WorkUnitArchetype.STRATEGIC,
             position_id="pos-acme-engineer",
         )
         assert infer_seniority(wu, position) == ExperienceLevel.EXECUTIVE
@@ -256,7 +260,7 @@ class TestInferSeniority:
         """Team size >= 50 should boost to at least STAFF level."""
         from resume_as_code.models.position import Position
         from resume_as_code.models.scope import Scope
-        from resume_as_code.models.work_unit import WorkUnit
+        from resume_as_code.models.work_unit import WorkUnit, WorkUnitArchetype
 
         position = Position(
             id="pos-acme-engineer",
@@ -271,6 +275,7 @@ class TestInferSeniority:
             problem={"statement": "This is a test problem statement"},
             actions=["Action taken to resolve the issue"],
             outcome={"result": "Successful outcome achieved"},
+            archetype=WorkUnitArchetype.LEADERSHIP,
             position_id="pos-acme-engineer",
         )
         assert infer_seniority(wu, position) == ExperienceLevel.STAFF
@@ -279,7 +284,7 @@ class TestInferSeniority:
         """Team size >= 10 should boost to at least LEAD level."""
         from resume_as_code.models.position import Position
         from resume_as_code.models.scope import Scope
-        from resume_as_code.models.work_unit import WorkUnit
+        from resume_as_code.models.work_unit import WorkUnit, WorkUnitArchetype
 
         position = Position(
             id="pos-acme-engineer",
@@ -294,13 +299,14 @@ class TestInferSeniority:
             problem={"statement": "This is a test problem statement"},
             actions=["Action taken to resolve the issue"],
             outcome={"result": "Successful outcome achieved"},
+            archetype=WorkUnitArchetype.LEADERSHIP,
             position_id="pos-acme-engineer",
         )
         assert infer_seniority(wu, position) == ExperienceLevel.LEAD
 
     def test_fallback_to_work_unit_title(self) -> None:
         """Should fall back to work unit title if no position."""
-        from resume_as_code.models.work_unit import WorkUnit
+        from resume_as_code.models.work_unit import WorkUnit, WorkUnitArchetype
 
         wu = WorkUnit(
             id="wu-2024-01-01-test",
@@ -308,6 +314,7 @@ class TestInferSeniority:
             problem={"statement": "This is a test problem statement"},
             actions=["Action taken to resolve the issue"],
             outcome={"result": "Successful outcome achieved"},
+            archetype=WorkUnitArchetype.MIGRATION,
         )
         # Should match "senior" in the title
         assert infer_seniority(wu, None) == ExperienceLevel.SENIOR

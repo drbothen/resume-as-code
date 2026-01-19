@@ -704,6 +704,22 @@
       "title": "Skill",
       "type": "object"
     },
+    "WorkUnitArchetype": {
+      "description": "Work unit archetype classification for PAR structure patterns.\n\nEach archetype represents a common pattern of professional achievement\nwith distinct problem-action-result structures. The archetype guides\nhow achievements are categorized, validated, and presented on resumes.\n\nValues must match archetype template filenames exactly (lowercase).",
+      "enum": [
+        "greenfield",
+        "migration",
+        "optimization",
+        "incident",
+        "leadership",
+        "strategic",
+        "transformation",
+        "cultural",
+        "minimal"
+      ],
+      "title": "WorkUnitArchetype",
+      "type": "string"
+    },
     "WorkUnitConfidence": {
       "description": "Overall confidence in Work Unit accuracy.",
       "enum": [
@@ -742,6 +758,10 @@
     },
     "outcome": {
       "$ref": "#/$defs/Outcome"
+    },
+    "archetype": {
+      "$ref": "#/$defs/WorkUnitArchetype",
+      "description": "Archetype classification for PAR structure patterns. Must be one of: greenfield, migration, optimization, incident, leadership, strategic, transformation, cultural, minimal."
     },
     "time_started": {
       "anyOf": [
@@ -901,7 +921,7 @@
       "default": null
     },
     "schema_version": {
-      "default": "1.0.0",
+      "default": "4.0.0",
       "title": "Schema Version",
       "type": "string"
     }
@@ -911,7 +931,8 @@
     "title",
     "problem",
     "actions",
-    "outcome"
+    "outcome",
+    "archetype"
   ],
   "title": "WorkUnit",
   "type": "object",

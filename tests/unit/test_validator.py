@@ -21,7 +21,7 @@ from resume_as_code.services.validator import (
 def valid_work_unit_content() -> str:
     """Valid Work Unit YAML content."""
     return """\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
 id: "wu-2026-01-10-test-work-unit"
 title: "Test Work Unit for Validation"
 
@@ -33,6 +33,8 @@ actions:
 
 outcome:
   result: "Got a result that is long enough"
+
+archetype: minimal
 """
 
 
@@ -40,7 +42,8 @@ outcome:
 def invalid_work_unit_content() -> str:
     """Invalid Work Unit YAML content (missing required fields)."""
     return """\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 id: "wu-2026-01-10-test"
 # Missing: title, problem, actions, outcome
 """
@@ -320,7 +323,8 @@ class TestErrorCollection:
         # Create file with multiple errors
         file_path = tmp_path / "multi-error.yaml"
         file_path.write_text("""\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 # Missing: id, title, problem, actions, outcome
 confidence: super-high
 """)
@@ -334,7 +338,8 @@ confidence: super-high
         """Should sort errors by field path for consistent output (AC #4)."""
         file_path = tmp_path / "unsorted.yaml"
         file_path.write_text("""\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 # Missing required fields, should be sorted
 """)
         result = validate_file(file_path)

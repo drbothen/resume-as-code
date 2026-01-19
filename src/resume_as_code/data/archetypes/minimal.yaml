@@ -5,7 +5,8 @@
 # Captures the essentials quickly - fill in details later
 # Perfect for jotting down accomplishments right after they happen
 
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 
 # ID Format: wu-YYYY-MM-DD-slug
 id: "wu-YYYY-MM-DD-quick-slug"

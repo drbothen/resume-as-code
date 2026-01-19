@@ -11,7 +11,8 @@ from click.testing import CliRunner
 from resume_as_code.cli import main
 
 VALID_WORK_UNIT = """\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 id: "wu-2026-01-10-test-work-unit"
 title: "Test Work Unit for Validation"
 
@@ -26,7 +27,8 @@ outcome:
 """
 
 INVALID_WORK_UNIT = """\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 id: "wu-2026-01-10-test"
 # Missing required fields: title, problem, actions, outcome
 """
@@ -236,7 +238,8 @@ class TestValidateCommandSummary:
 
 
 WORK_UNIT_WITH_WEAK_VERBS = """\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 id: "wu-2026-01-10-test-weak-verbs"
 title: "Test Work Unit with Weak Verbs"
 
@@ -345,7 +348,8 @@ class TestValidateContentDensity:
         # Action must be at least 10 chars to pass schema, but under 100 for density warning
         short_action = "Completed a short task here"  # 27 chars, triggers density warning
         work_unit = f"""\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 id: "wu-2026-01-10-test-short"
 title: "Test Work Unit with Short Actions"
 
@@ -376,7 +380,8 @@ outcome:
         """Should warn about too-long bullets (AC #8)."""
         long_action = "x" * 200
         work_unit = f"""\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 id: "wu-2026-01-10-test-long"
 title: "Test Work Unit with Long Actions"
 
@@ -407,7 +412,8 @@ outcome:
         """Should not warn for optimal length bullets (100-160 chars)."""
         optimal_action = "x" * 130  # Within range
         work_unit = f"""\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 id: "wu-2026-01-10-test-optimal"
 title: "Test Work Unit with Optimal Actions"
 
@@ -438,7 +444,8 @@ outcome:
         # Action must be at least 10 chars to pass schema, but under 100 for density warning
         short_action = "Completed a short task here"  # 27 chars
         work_unit = f"""\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 id: "wu-2026-01-10-test-short"
 title: "Test Work Unit with Short Actions"
 
@@ -466,7 +473,8 @@ outcome:
 
 
 WORK_UNIT_WITH_POSITION = """\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 id: "wu-2026-01-10-with-position"
 title: "Test Work Unit with Position ID"
 position_id: "pos-techcorp-senior"
@@ -482,7 +490,8 @@ outcome:
 """
 
 WORK_UNIT_WITHOUT_POSITION = """\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 id: "wu-2026-01-10-no-position"
 title: "Test Work Unit without Position ID"
 
@@ -497,7 +506,8 @@ outcome:
 """
 
 POSITIONS_YAML = """\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-senior:
     employer: "TechCorp Industries"

@@ -7,7 +7,8 @@
 # - Action: How did you design and build the solution?
 # - Result: What was delivered and what impact did it have?
 
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: greenfield
 
 # ID Format: wu-YYYY-MM-DD-slug (replace with actual date and description)
 id: "wu-YYYY-MM-DD-project-slug"

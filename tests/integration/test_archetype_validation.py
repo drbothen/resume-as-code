@@ -75,6 +75,8 @@ class TestArchetypeSchemaValidation:
         return {
             "id": "wu-2026-01-15-sample-work-unit",
             "title": "Resolved critical production incident affecting 5000 users",
+            "schema_version": "4.0.0",
+            "archetype": "incident",
             "problem": {
                 "statement": (
                     "Production database cluster experienced cascading failures "

@@ -597,7 +597,8 @@ class TestResumeDataPositionGrouping:
 
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-senior:
     employer: "TechCorp Industries"
@@ -643,7 +644,8 @@ positions:
 
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp:
     employer: "TechCorp"
@@ -681,7 +683,8 @@ positions:
 
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-old:
     employer: "OldCorp"
@@ -728,7 +731,8 @@ positions:
 
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-valid:
     employer: "ValidCorp"
@@ -935,7 +939,8 @@ class TestResumeDataActionScoring:
 
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: "TestCorp"
@@ -982,7 +987,8 @@ positions:
 
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: "TestCorp"
@@ -1027,7 +1033,8 @@ positions:
 
         positions_file = tmp_path / "positions.yaml"
         positions_file.write_text("""
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: "TestCorp"

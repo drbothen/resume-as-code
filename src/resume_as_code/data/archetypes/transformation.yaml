@@ -5,7 +5,8 @@
 # RAS Framework (Results-Action-Situation) - Lead with impact for executive-level work
 # This template is designed for C-suite and VP-level accomplishments
 
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: transformation
 
 # ID Format: wu-YYYY-MM-DD-slug
 id: "wu-YYYY-MM-DD-transformation-slug"

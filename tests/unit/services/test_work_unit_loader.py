@@ -32,6 +32,7 @@ actions:
   - First action with enough characters to pass validation
 outcome:
   result: Test outcome result here
+archetype: minimal
 """
         )
 
@@ -46,6 +47,7 @@ actions:
   - Action with enough characters here for validation
 outcome:
   result: Outcome result here
+archetype: minimal
 """
         )
 
@@ -114,6 +116,7 @@ actions:
   - Action here
 outcome:
   result: Result here
+archetype: minimal
 """
         )
 
@@ -210,6 +213,7 @@ actions:
   - Action with enough characters here
 outcome:
   result: Result here
+archetype: minimal
 """
             )
             (work_units_dir / "wu-2.yaml").write_text(
@@ -223,6 +227,7 @@ actions:
   - Action with enough characters here
 outcome:
   result: Result here
+archetype: minimal
 """
             )
 
@@ -300,6 +305,7 @@ actions:
   - Action with enough characters here
 outcome:
   result: Result here
+archetype: minimal
 """
             )
             (work_units_dir / "wu-2.yaml").write_text(
@@ -313,6 +319,7 @@ actions:
   - Action with enough characters here
 outcome:
   result: Result here
+archetype: minimal
 """
             )
 

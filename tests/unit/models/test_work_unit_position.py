@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from resume_as_code.models.position import Position
-from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit
+from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit, WorkUnitArchetype
 
 
 @pytest.fixture
@@ -17,6 +17,7 @@ def sample_work_unit() -> WorkUnit:
         problem=Problem(statement="Test problem statement here for validation"),
         actions=["First action with enough characters to pass validation"],
         outcome=Outcome(result="Test outcome result here"),
+        archetype=WorkUnitArchetype.MINIMAL,
         position_id="pos-acme-engineer",
     )
 
@@ -67,6 +68,7 @@ def test_attach_position_without_position_id() -> None:
         problem=Problem(statement="Problem statement here for testing"),
         actions=["Action with enough characters here for validation"],
         outcome=Outcome(result="Outcome result here"),
+        archetype=WorkUnitArchetype.MINIMAL,
         # position_id is None
     )
 

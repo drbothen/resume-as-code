@@ -19,6 +19,7 @@ def _create_work_unit(
     problem: str = "Test problem statement for ranking purposes",
     actions: list[str] | None = None,
     outcome: str = "Improved performance by 50%",
+    archetype: str = "minimal",
 ) -> None:
     """Helper to create a Work Unit file."""
     tags = tags or []
@@ -28,7 +29,8 @@ def _create_work_unit(
     actions_yaml = "\n".join([f'  - "{a}"' for a in actions])
 
     content = f"""\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: "{archetype}"
 id: "{wu_id}"
 title: "{title}"
 problem:
@@ -281,7 +283,8 @@ class TestPlanCommandRichOutput:
         old_date = date.today() - timedelta(days=5 * 365)
         old_date_str = old_date.strftime("%Y-%m-%d")
         old_wu = f"""\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: "minimal"
 id: "wu-{old_date_str}-old-python"
 title: "Python Backend Service"
 time_ended: "{old_date_str}"
@@ -301,7 +304,8 @@ confidence: high
         # Recent work unit (current - should get 100% recency)
         recent_date = date.today().strftime("%Y-%m-%d")
         recent_wu = f"""\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: "minimal"
 id: "wu-{recent_date}-recent-python"
 title: "Python Backend Service"
 problem:
@@ -1458,7 +1462,8 @@ class TestPlanEnhancedDataModelPreview:
 
         # Create work unit linked to position
         content = """\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: "minimal"
 id: "wu-2026-01-01-api"
 title: "Built REST API service"
 position_id: "pos-techcorp-senior"
@@ -2290,6 +2295,7 @@ class TestPlanCommandEmploymentContinuity:
         tags: list[str] | None = None,
         problem: str = "Test problem statement for ranking purposes and evaluation",
         outcome: str = "Improved performance and quality by significant margin",
+        archetype: str = "minimal",
     ) -> None:
         """Helper to create a Work Unit with position reference."""
         tags = tags or []
@@ -2297,7 +2303,8 @@ class TestPlanCommandEmploymentContinuity:
         tags_section = f"tags:\n{tags_yaml}" if tags else "tags: []"
 
         content = f"""\
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: "{archetype}"
 id: "{wu_id}"
 title: "{title}"
 position_id: "{position_id}"

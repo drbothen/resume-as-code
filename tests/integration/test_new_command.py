@@ -546,7 +546,8 @@ class TestNewWorkUnitPositionSelection:
 
         # Create positions file first
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-engineer:
     employer: TechCorp
@@ -583,7 +584,8 @@ positions:
 
         # Create position first (required since AC#3 validates position ID exists)
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: "Test Corp"
@@ -618,7 +620,8 @@ positions:
         monkeypatch.chdir(tmp_path)
 
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-senior:
     employer: TechCorp
@@ -646,7 +649,8 @@ positions:
         monkeypatch.chdir(tmp_path)
 
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-senior:
     employer: TechCorp
@@ -674,7 +678,8 @@ positions:
         monkeypatch.chdir(tmp_path)
 
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: Test
@@ -698,7 +703,8 @@ positions:
         monkeypatch.chdir(tmp_path)
 
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: Test

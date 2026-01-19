@@ -146,7 +146,8 @@ class TestPositionAutoCreation:
 
         # Create initial position
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-engineer:
     employer: "TechCorp"
@@ -194,7 +195,8 @@ class TestPositionIdFlag:
 
         # Create existing position
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-senior:
     employer: "TechCorp"
@@ -312,7 +314,8 @@ class TestJsonOutput:
 
         # Create existing position
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-company-title:
     employer: "Company"
@@ -381,7 +384,8 @@ class TestNonInteractivePosition:
 
         # Create base position first
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-engineer:
     employer: "TechCorp"
@@ -595,7 +599,8 @@ class TestListPositionsJson:
         """Should return JSON array of positions (AC#7)."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: "Test"
@@ -626,7 +631,8 @@ class TestPositionMatching:
 
         # Create position with mixed case
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-engineer:
     employer: "TechCorp"
@@ -663,7 +669,8 @@ positions:
 
         # Create position
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-tech-corp-engineer:
     employer: "Tech Corp"

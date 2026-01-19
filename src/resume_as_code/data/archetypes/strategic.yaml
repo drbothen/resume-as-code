@@ -5,7 +5,8 @@
 # Focus on strategic thinking and business development accomplishments
 # Designed for roles requiring business acumen and market insight
 
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: strategic
 
 # ID Format: wu-YYYY-MM-DD-slug
 id: "wu-YYYY-MM-DD-strategic-slug"

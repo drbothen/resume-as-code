@@ -152,6 +152,7 @@ def create_work_unit_from_data(
     actions: list[str],
     result: str,
     work_units_dir: Path,
+    archetype: str,
     position_id: str | None = None,
     quantified_impact: str | None = None,
     skills: list[str] | None = None,
@@ -168,6 +169,7 @@ def create_work_unit_from_data(
         actions: List of actions taken.
         result: The outcome result.
         work_units_dir: Directory to create file in.
+        archetype: Work unit archetype (e.g., 'minimal', 'greenfield').
         position_id: Optional position ID to link to.
         quantified_impact: Optional quantified impact string.
         skills: Optional list of skill names.
@@ -188,7 +190,8 @@ def create_work_unit_from_data(
     data: dict[str, Any] = {
         "id": work_unit_id,
         "title": title,
-        "schema_version": "1.0.0",
+        "schema_version": "4.0.0",
+        "archetype": archetype,
     }
 
     # Add position_id if provided

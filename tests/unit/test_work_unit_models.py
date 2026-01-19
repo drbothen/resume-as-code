@@ -24,6 +24,7 @@ from resume_as_code.models.work_unit import (
     Problem,
     Skill,
     WorkUnit,
+    WorkUnitArchetype,
     WorkUnitConfidence,
 )
 
@@ -97,9 +98,10 @@ class TestWorkUnitModel:
             problem=Problem(statement="Legacy on-prem system was costly and hard to scale"),
             actions=["Designed cloud architecture", "Migrated databases", "Updated deployments"],
             outcome=Outcome(result="Reduced infrastructure costs by 40%"),
+            archetype=WorkUnitArchetype.MIGRATION,
         )
         assert wu.id == "wu-2024-03-15-cloud-migration"
-        assert wu.schema_version == "1.0.0"
+        assert wu.schema_version == "4.0.0"
 
     def test_missing_required_field_raises_error(self) -> None:
         """Missing required fields should raise ValidationError."""
@@ -109,6 +111,7 @@ class TestWorkUnitModel:
                 title="Test work unit title here",
                 problem=Problem(statement="This is the problem statement here"),
                 actions=["Action taken here"],
+                archetype=WorkUnitArchetype.MINIMAL,
                 # Missing outcome
             )
         errors = exc_info.value.errors()
@@ -125,6 +128,7 @@ class TestWorkUnitModel:
                 problem=Problem(statement="This is the problem statement here"),
                 actions=["Action taken here for test"],
                 outcome=Outcome(result="Result achieved here"),
+                archetype=WorkUnitArchetype.MINIMAL,
             )
 
     def test_time_ended_before_started_raises_error(self) -> None:
@@ -136,6 +140,7 @@ class TestWorkUnitModel:
                 problem=Problem(statement="This is the problem statement here"),
                 actions=["Action taken here for test"],
                 outcome=Outcome(result="Result achieved here"),
+                archetype=WorkUnitArchetype.MINIMAL,
                 time_started=date(2024, 3, 15),
                 time_ended=date(2024, 3, 10),  # Before start
             )
@@ -149,6 +154,7 @@ class TestWorkUnitModel:
                 problem=Problem(statement="This is the problem statement here"),
                 actions=[],  # Empty
                 outcome=Outcome(result="Result achieved here"),
+                archetype=WorkUnitArchetype.MINIMAL,
             )
 
     def test_action_too_short_raises_error(self) -> None:
@@ -160,6 +166,7 @@ class TestWorkUnitModel:
                 problem=Problem(statement="This is the problem statement here"),
                 actions=["Short"],  # Too short
                 outcome=Outcome(result="Result achieved here"),
+                archetype=WorkUnitArchetype.MINIMAL,
             )
 
     def test_work_unit_with_position_id(self) -> None:
@@ -170,6 +177,7 @@ class TestWorkUnitModel:
             problem=Problem(statement="Legacy on-prem system was costly and hard to scale"),
             actions=["Designed cloud architecture", "Migrated databases"],
             outcome=Outcome(result="Reduced infrastructure costs by 40%"),
+            archetype=WorkUnitArchetype.MIGRATION,
             position_id="pos-techcorp-senior",
         )
         assert wu.position_id == "pos-techcorp-senior"
@@ -182,6 +190,7 @@ class TestWorkUnitModel:
             problem=Problem(statement="Open source project needed better security tooling"),
             actions=["Implemented feature", "Added documentation"],
             outcome=Outcome(result="Feature merged and used by 1000+ users"),
+            archetype=WorkUnitArchetype.GREENFIELD,
         )
         assert wu.position_id is None
 
@@ -344,6 +353,7 @@ class TestWorkUnitWithAllFields:
                 business_value="Improved scalability",
                 confidence=ConfidenceLevel.EXACT,
             ),
+            archetype=WorkUnitArchetype.MIGRATION,
             time_started=date(2024, 1, 1),
             time_ended=date(2024, 3, 15),
             skills_demonstrated=[
@@ -393,6 +403,7 @@ class TestWeakVerbDetection:
             problem=Problem(statement="This is the problem statement here"),
             actions=["Managed the team during project", "Handled customer complaints"],
             outcome=Outcome(result="Result achieved here"),
+            archetype=WorkUnitArchetype.LEADERSHIP,
         )
         warnings = wu.get_weak_verb_warnings()
         assert len(warnings) > 0
@@ -406,6 +417,7 @@ class TestWeakVerbDetection:
             problem=Problem(statement="This is the problem statement here"),
             actions=["Orchestrated the migration project", "Spearheaded the initiative"],
             outcome=Outcome(result="Result achieved here"),
+            archetype=WorkUnitArchetype.MIGRATION,
         )
         warnings = wu.get_weak_verb_warnings()
         assert len(warnings) == 0
@@ -418,6 +430,7 @@ class TestWeakVerbDetection:
             problem=Problem(statement="This is the problem statement here"),
             actions=["Designed the architecture solution"],
             outcome=Outcome(result="Result achieved here"),
+            archetype=WorkUnitArchetype.GREENFIELD,
             framing=Framing(action_verb="Managed"),
         )
         warnings = wu.get_weak_verb_warnings()
@@ -432,6 +445,7 @@ class TestWeakVerbDetection:
             problem=Problem(statement="This is the problem statement here"),
             actions=["The team managed"],
             outcome=Outcome(result="Result achieved here"),
+            archetype=WorkUnitArchetype.LEADERSHIP,
         )
         warnings = wu.get_weak_verb_warnings()
         assert len(warnings) > 0
@@ -449,6 +463,7 @@ class TestTagNormalization:
             problem=Problem(statement="This is the problem statement"),
             actions=["Action taken here"],
             outcome=Outcome(result="Result achieved"),
+            archetype=WorkUnitArchetype.MINIMAL,
             tags=["Python", "AWS", "Incident-Response"],
         )
         assert wu.tags == ["python", "aws", "incident-response"]
@@ -461,6 +476,7 @@ class TestTagNormalization:
             problem=Problem(statement="This is the problem statement"),
             actions=["Action taken here"],
             outcome=Outcome(result="Result achieved"),
+            archetype=WorkUnitArchetype.MINIMAL,
             tags=["  python  ", "aws ", " kubernetes"],
         )
         assert wu.tags == ["python", "aws", "kubernetes"]
@@ -473,6 +489,7 @@ class TestTagNormalization:
             problem=Problem(statement="This is the problem statement"),
             actions=["Action taken here"],
             outcome=Outcome(result="Result achieved"),
+            archetype=WorkUnitArchetype.MINIMAL,
         )
         assert wu.tags == []
 
@@ -484,6 +501,7 @@ class TestTagNormalization:
             problem=Problem(statement="This is the problem statement"),
             actions=["Action taken here"],
             outcome=Outcome(result="Result achieved"),
+            archetype=WorkUnitArchetype.MINIMAL,
             tags=["python", "", "aws"],
         )
         assert wu.tags == ["python", "aws"]
@@ -496,6 +514,7 @@ class TestTagNormalization:
             problem=Problem(statement="This is the problem statement"),
             actions=["Action taken here"],
             outcome=Outcome(result="Result achieved"),
+            archetype=WorkUnitArchetype.MINIMAL,
             tags=["python", "   ", "aws"],
         )
         assert wu.tags == ["python", "aws"]
@@ -508,6 +527,7 @@ class TestTagNormalization:
             problem=Problem(statement="This is the problem statement"),
             actions=["Action taken here"],
             outcome=Outcome(result="Result achieved"),
+            archetype=WorkUnitArchetype.MINIMAL,
             tags=["python", "Python", "PYTHON", "aws", "AWS"],
         )
         assert wu.tags == ["python", "aws"]
@@ -520,6 +540,7 @@ class TestTagNormalization:
             problem=Problem(statement="This is the problem statement"),
             actions=["Action taken here"],
             outcome=Outcome(result="Result achieved"),
+            archetype=WorkUnitArchetype.MINIMAL,
             tags=["AWS", "python", "aws", "kubernetes", "Python"],
         )
         assert wu.tags == ["aws", "python", "kubernetes"]
@@ -536,6 +557,7 @@ class TestMetadataDefaults:
             problem=Problem(statement="This is the problem statement"),
             actions=["Action taken here"],
             outcome=Outcome(result="Result achieved"),
+            archetype=WorkUnitArchetype.MINIMAL,
         )
         assert wu.confidence is None
 
@@ -547,6 +569,7 @@ class TestMetadataDefaults:
             problem=Problem(statement="This is the problem statement"),
             actions=["Action taken here"],
             outcome=Outcome(result="Result achieved"),
+            archetype=WorkUnitArchetype.MINIMAL,
         )
         assert wu.evidence == []
 
@@ -559,6 +582,7 @@ class TestMetadataDefaults:
             problem=Problem(statement="This is the problem statement"),
             actions=["Action taken here"],
             outcome=Outcome(result="Result achieved"),
+            archetype=WorkUnitArchetype.MINIMAL,
         )
         assert wu.confidence is None
         assert wu.tags == []
@@ -577,6 +601,7 @@ class TestMetadataValidation:
                 problem=Problem(statement="This is the problem statement"),
                 actions=["Action taken here"],
                 outcome=Outcome(result="Result achieved"),
+                archetype=WorkUnitArchetype.MINIMAL,
                 confidence="super-high",  # Invalid value
             )
         errors = exc_info.value.errors()
@@ -598,6 +623,7 @@ class TestMetadataValidation:
                 problem=Problem(statement="This is the problem statement"),
                 actions=["Action taken here"],
                 outcome=Outcome(result="Result achieved"),
+                archetype=WorkUnitArchetype.MINIMAL,
                 confidence=level,
             )
             assert wu.confidence == level
@@ -615,6 +641,7 @@ class TestWorkUnitScopeDeprecation:
                 problem=Problem(statement="This is the problem statement"),
                 actions=["Action taken here"],
                 outcome=Outcome(result="Result achieved"),
+                archetype=WorkUnitArchetype.LEADERSHIP,
                 scope=LegacyWorkUnitScope(team_size=10),  # Deprecated usage
             )
             assert wu.scope is not None
@@ -631,6 +658,7 @@ class TestWorkUnitScopeDeprecation:
                 problem=Problem(statement="This is the problem statement"),
                 actions=["Action taken here"],
                 outcome=Outcome(result="Result achieved"),
+                archetype=WorkUnitArchetype.MINIMAL,
             )
             # Should NOT emit deprecation warning
             deprecation_warnings = [
@@ -649,6 +677,7 @@ class TestExtraFieldsForbidden:
                 problem=Problem(statement="This is the problem statement here"),
                 actions=["Action taken here for test"],
                 outcome=Outcome(result="Result achieved here"),
+                archetype=WorkUnitArchetype.MINIMAL,
                 extra_field="should not be allowed",
             )
         errors = exc_info.value.errors()

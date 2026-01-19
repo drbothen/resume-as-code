@@ -517,6 +517,8 @@ def new_work_unit(
 
         # Generate ID and create file from data
         work_unit_id = generate_id(title, date.today())
+        # Default to 'minimal' archetype for inline mode (like --from-memory)
+        inline_archetype = archetype or "minimal"
         file_path = create_work_unit_from_data(
             work_unit_id=work_unit_id,
             title=title,
@@ -524,6 +526,7 @@ def new_work_unit(
             actions=list(actions),
             result=result,
             work_units_dir=config.work_units_dir,
+            archetype=inline_archetype,
             position_id=actual_position_id,
             quantified_impact=impact,
             skills=list(skills) if skills else None,
@@ -537,6 +540,7 @@ def new_work_unit(
             data: dict[str, Any] = {
                 "id": work_unit_id,
                 "file": str(file_path),
+                "archetype": inline_archetype,
                 "inline_created": True,
                 "position_created": position_created,
             }
@@ -555,6 +559,7 @@ def new_work_unit(
         elif not ctx.obj.quiet:
             success(f"Created Work Unit: {work_unit_id}")
             info(f"File: {file_path}")
+            info(f"Archetype: {inline_archetype}")
             info(f"Actions: {len(actions)}")
             if skills:
                 info(f"Skills: {len(skills)}")

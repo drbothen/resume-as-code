@@ -71,7 +71,8 @@ class TestNewPositionCommand:
         # First create an existing position
         positions_yaml = tmp_path / "positions.yaml"
         positions_yaml.write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-junior:
     employer: TechCorp
@@ -140,7 +141,8 @@ class TestListPositionsCommand:
 
         # Create positions.yaml
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-senior:
     employer: TechCorp Industries
@@ -176,7 +178,8 @@ positions:
         monkeypatch.chdir(tmp_path)
 
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-old:
     employer: Old Corp
@@ -207,7 +210,8 @@ positions:
         monkeypatch.chdir(tmp_path)
 
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-test:
     employer: Test Corp
@@ -231,7 +235,8 @@ class TestShowPositionCommand:
         monkeypatch.chdir(tmp_path)
 
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-senior:
     employer: TechCorp Industries
@@ -257,7 +262,8 @@ positions:
         monkeypatch.chdir(tmp_path)
 
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-senior:
     employer: TechCorp
@@ -290,7 +296,8 @@ impact: Test impact
         monkeypatch.chdir(tmp_path)
 
         (tmp_path / "positions.yaml").write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-techcorp-junior:
     employer: TechCorp
@@ -491,7 +498,8 @@ class TestPositionScopeDisplay:
         monkeypatch.chdir(tmp_path)
         positions_yaml = tmp_path / "positions.yaml"
         positions_yaml.write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-executive-cto:
     employer: Executive Corp
@@ -552,7 +560,8 @@ positions:
         monkeypatch.chdir(tmp_path)
         positions_yaml = tmp_path / "positions.yaml"
         positions_yaml.write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-simple-engineer:
     employer: Simple Corp
@@ -610,7 +619,8 @@ positions:
         monkeypatch.chdir(tmp_path)
         positions_yaml = tmp_path / "positions.yaml"
         positions_yaml.write_text(
-            """schema_version: "1.0.0"
+            """schema_version: "4.0.0"
+archetype: minimal
 positions:
   pos-no-scope:
     employer: Basic Corp

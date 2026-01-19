@@ -260,6 +260,8 @@ class TestRankerSeniorityBlending:
         wu_with_position = {
             "id": "wu-2024-01-01-exec",
             "title": "Led strategic initiative",  # No seniority keywords
+            "schema_version": "4.0.0",
+            "archetype": "minimal",
             "problem": {"statement": "This is a test problem statement"},
             "actions": ["Action taken to resolve the issue"],
             "outcome": {"result": "Successful outcome achieved"},

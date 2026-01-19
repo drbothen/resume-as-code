@@ -7,7 +7,7 @@ from datetime import date
 import pytest
 
 from resume_as_code.models.position import Position
-from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit
+from resume_as_code.models.work_unit import Outcome, Problem, WorkUnit, WorkUnitArchetype
 from resume_as_code.services.employment_continuity import (
     EmploymentContinuityService,
     EmploymentGap,
@@ -56,6 +56,7 @@ def work_units(positions: list[Position]) -> list[WorkUnit]:
             outcome=Outcome(result="Reduced costs by 40%"),
             position_id="pos-acme-senior",
             time_ended=date(2024, 1, 15),
+            archetype=WorkUnitArchetype.MIGRATION,
         ),
         WorkUnit(
             id="wu-2023-06-01-acme-security",
@@ -65,6 +66,7 @@ def work_units(positions: list[Position]) -> list[WorkUnit]:
             outcome=Outcome(result="Achieved SOC2 compliance"),
             position_id="pos-acme-senior",
             time_ended=date(2023, 6, 15),
+            archetype=WorkUnitArchetype.INCIDENT,
         ),
         WorkUnit(
             id="wu-2022-01-01-techcorp-api",
@@ -74,6 +76,7 @@ def work_units(positions: list[Position]) -> list[WorkUnit]:
             outcome=Outcome(result="Improved latency by 60%"),
             position_id="pos-techcorp-lead",
             time_ended=date(2022, 6, 15),
+            archetype=WorkUnitArchetype.OPTIMIZATION,
         ),
         WorkUnit(
             id="wu-2020-06-01-startup-mvp",
@@ -83,6 +86,7 @@ def work_units(positions: list[Position]) -> list[WorkUnit]:
             outcome=Outcome(result="Launched in 3 months"),
             position_id="pos-startup-dev",
             time_ended=date(2020, 8, 15),
+            archetype=WorkUnitArchetype.GREENFIELD,
         ),
     ]
 

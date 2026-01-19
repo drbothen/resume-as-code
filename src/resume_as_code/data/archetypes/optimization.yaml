@@ -8,7 +8,8 @@
 # - Action: How did you analyze and optimize?
 # - Result: What improvement was achieved?
 
-schema_version: "1.0.0"
+schema_version: "4.0.0"
+archetype: optimization
 
 # ID Format: wu-YYYY-MM-DD-slug
 id: "wu-YYYY-MM-DD-optimization-slug"

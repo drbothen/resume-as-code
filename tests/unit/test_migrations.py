@@ -155,9 +155,9 @@ class TestVersionConstants:
         assert len(parts) == 3
         assert all(p.isdigit() for p in parts)
 
-    def test_current_version_is_3_0_0(self) -> None:
-        """Test that current version is 3.0.0 (Story 9.2)."""
-        assert CURRENT_SCHEMA_VERSION == "3.0.0"
+    def test_current_version_is_4_0_0(self) -> None:
+        """Test that current version is 4.0.0 (Story 12.1)."""
+        assert CURRENT_SCHEMA_VERSION == "4.0.0"
 
     def test_legacy_version_is_1_0_0(self) -> None:
         """Test that legacy version is 1.0.0."""
@@ -1097,3 +1097,321 @@ board_roles:
             "board_roles",
         ]:
             assert f"{field}:" not in content
+
+
+class TestMigrationV3ToV4:
+    """Tests for v3.0.0 to v4.0.0 migration (Story 12.1).
+
+    This migration adds the required archetype field to all work units
+    via inference.
+    """
+
+    def test_v3_to_v4_check_applicable_no_file(self, tmp_path: Path) -> None:
+        """Test check_applicable returns False when no config file."""
+        from resume_as_code.migrations.v3_to_v4 import MigrationV3ToV4
+
+        migration = MigrationV3ToV4()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        assert migration.check_applicable(ctx) is False
+
+    def test_v3_to_v4_check_applicable_v3_config(self, tmp_path: Path) -> None:
+        """Test check_applicable returns True for v3 config."""
+        from resume_as_code.migrations.v3_to_v4 import MigrationV3ToV4
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text("schema_version: 3.0.0\noutput_dir: ./dist\n")
+
+        migration = MigrationV3ToV4()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        assert migration.check_applicable(ctx) is True
+
+    def test_v3_to_v4_check_applicable_already_v4(self, tmp_path: Path) -> None:
+        """Test check_applicable returns False when already at v4."""
+        from resume_as_code.migrations.v3_to_v4 import MigrationV3ToV4
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text("schema_version: 4.0.0\noutput_dir: ./dist\n")
+
+        migration = MigrationV3ToV4()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        assert migration.check_applicable(ctx) is False
+
+    def test_v3_to_v4_check_applicable_work_units_without_archetype(self, tmp_path: Path) -> None:
+        """Test check_applicable returns True when work units lack archetype."""
+        from resume_as_code.migrations.v3_to_v4 import MigrationV3ToV4
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text("schema_version: 3.0.0\noutput_dir: ./dist\n")
+
+        # Create work unit without archetype
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-2024-01-01-test.yaml").write_text(
+            """id: wu-2024-01-01-test
+title: Test work unit title here
+problem:
+  statement: This is the problem statement
+actions:
+  - Did some action here
+outcome:
+  result: Achieved results
+"""
+        )
+
+        migration = MigrationV3ToV4()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        assert migration.check_applicable(ctx) is True
+
+    def test_v3_to_v4_preview_shows_archetype(self, tmp_path: Path) -> None:
+        """Test preview shows inferred archetype for each work unit."""
+        from resume_as_code.migrations.v3_to_v4 import MigrationV3ToV4
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text("schema_version: 3.0.0\noutput_dir: ./dist\n")
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-2024-01-01-test.yaml").write_text(
+            """id: wu-2024-01-01-test
+title: Built new authentication platform
+problem:
+  statement: Needed secure authentication system
+actions:
+  - Designed architecture from scratch
+outcome:
+  result: Launched new platform
+"""
+        )
+
+        migration = MigrationV3ToV4()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        changes = migration.preview(ctx)
+
+        # Should show archetype and confidence for work unit
+        assert any("archetype=" in c for c in changes)
+        assert any("confidence=" in c for c in changes)
+        # Should show version update
+        assert any("4.0.0" in c for c in changes)
+
+    def test_v3_to_v4_apply_adds_archetype(self, tmp_path: Path) -> None:
+        """Test apply adds archetype field to work units."""
+        from resume_as_code.migrations.v3_to_v4 import MigrationV3ToV4
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text("schema_version: 3.0.0\noutput_dir: ./dist\n")
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        wu_file = work_units / "wu-2024-01-01-test.yaml"
+        wu_file.write_text(
+            """id: wu-2024-01-01-test
+title: Built new authentication platform
+problem:
+  statement: Needed secure authentication system
+actions:
+  - Designed architecture from scratch
+outcome:
+  result: Launched new platform
+"""
+        )
+
+        migration = MigrationV3ToV4()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        result = migration.apply(ctx)
+
+        assert result.success is True
+        assert wu_file in result.files_modified
+
+        # Check archetype was added
+        content = wu_file.read_text()
+        assert "archetype:" in content
+
+    def test_v3_to_v4_apply_updates_schema_version(self, tmp_path: Path) -> None:
+        """Test apply updates schema_version to 4.0.0."""
+        from resume_as_code.migrations.v3_to_v4 import MigrationV3ToV4
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text("schema_version: 3.0.0\noutput_dir: ./dist\n")
+
+        migration = MigrationV3ToV4()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        migration.apply(ctx)
+
+        content = config.read_text()
+        assert "schema_version: 4.0.0" in content
+        assert "schema_version: 3.0.0" not in content
+
+    def test_v3_to_v4_apply_idempotent(self, tmp_path: Path) -> None:
+        """Test apply is idempotent (safe to run multiple times)."""
+        from resume_as_code.migrations.v3_to_v4 import MigrationV3ToV4
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text("schema_version: 4.0.0\noutput_dir: ./dist\n")
+
+        migration = MigrationV3ToV4()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        result = migration.apply(ctx)
+
+        assert result.success is True
+        assert len(result.warnings) == 1
+        assert "v4.0.0" in result.warnings[0]
+
+    def test_v3_to_v4_dry_run(self, tmp_path: Path) -> None:
+        """Test apply in dry_run mode doesn't modify files."""
+        from resume_as_code.migrations.v3_to_v4 import MigrationV3ToV4
+
+        config = tmp_path / ".resume.yaml"
+        original_config_content = "schema_version: 3.0.0\noutput_dir: ./dist\n"
+        config.write_text(original_config_content)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        wu_file = work_units / "wu-2024-01-01-test.yaml"
+        original_wu_content = """id: wu-2024-01-01-test
+title: Test work unit
+problem:
+  statement: Problem statement here
+actions:
+  - Did some action
+outcome:
+  result: Achieved results
+"""
+        wu_file.write_text(original_wu_content)
+
+        migration = MigrationV3ToV4()
+        ctx = MigrationContext(project_path=tmp_path, dry_run=True)
+
+        result = migration.apply(ctx)
+
+        assert result.success is True
+        assert len(result.files_modified) == 0
+        # Files should not be modified
+        assert config.read_text() == original_config_content
+        assert wu_file.read_text() == original_wu_content
+
+    def test_v3_to_v4_version_attributes(self) -> None:
+        """Test migration has correct version attributes."""
+        from resume_as_code.migrations.v3_to_v4 import MigrationV3ToV4
+
+        migration = MigrationV3ToV4()
+
+        assert migration.from_version == "3.0.0"
+        assert migration.to_version == "4.0.0"
+        assert "archetype" in migration.description.lower()
+
+    def test_v3_to_v4_registered_in_registry(self) -> None:
+        """Test migration is registered in the registry."""
+        from resume_as_code.migrations.registry import get_migration_path
+
+        path = get_migration_path("3.0.0", "4.0.0")
+
+        assert len(path) == 1
+        assert path[0].from_version == "3.0.0"
+        assert path[0].to_version == "4.0.0"
+
+    def test_v3_to_v4_full_path_from_v1(self) -> None:
+        """Test migration path from v1 to v4 goes through all versions."""
+        from resume_as_code.migrations.registry import get_migration_path
+
+        path = get_migration_path("1.0.0", "4.0.0")
+
+        assert len(path) == 3
+        assert path[0].from_version == "1.0.0"
+        assert path[0].to_version == "2.0.0"
+        assert path[1].from_version == "2.0.0"
+        assert path[1].to_version == "3.0.0"
+        assert path[2].from_version == "3.0.0"
+        assert path[2].to_version == "4.0.0"
+
+    def test_v3_to_v4_apply_preserves_comments(self, tmp_path: Path) -> None:
+        """Test apply preserves YAML comments in config file."""
+        from resume_as_code.migrations.v3_to_v4 import MigrationV3ToV4
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text(
+            """# My resume configuration
+schema_version: 3.0.0
+output_dir: ./dist  # Output directory
+"""
+        )
+
+        migration = MigrationV3ToV4()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        migration.apply(ctx)
+
+        content = config.read_text()
+        assert "# My resume configuration" in content
+        assert "# Output directory" in content
+
+    def test_v3_to_v4_infers_greenfield_archetype(self, tmp_path: Path) -> None:
+        """Test migration infers greenfield archetype from content."""
+        from resume_as_code.migrations.v3_to_v4 import MigrationV3ToV4
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text("schema_version: 3.0.0\noutput_dir: ./dist\n")
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        wu_file = work_units / "wu-2024-01-01-platform.yaml"
+        wu_file.write_text(
+            """id: wu-2024-01-01-platform
+title: Built new authentication platform from scratch
+problem:
+  statement: Needed new secure authentication capability
+actions:
+  - Designed architecture
+  - Built the platform
+outcome:
+  result: Launched new authentication system
+tags:
+  - greenfield
+  - architecture
+"""
+        )
+
+        migration = MigrationV3ToV4()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        migration.apply(ctx)
+
+        content = wu_file.read_text()
+        assert "archetype: greenfield" in content
+
+    def test_v3_to_v4_infers_minimal_low_confidence(self, tmp_path: Path) -> None:
+        """Test migration falls back to minimal for ambiguous content."""
+        from resume_as_code.migrations.v3_to_v4 import MigrationV3ToV4
+
+        config = tmp_path / ".resume.yaml"
+        config.write_text("schema_version: 3.0.0\noutput_dir: ./dist\n")
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        wu_file = work_units / "wu-2024-01-01-generic.yaml"
+        wu_file.write_text(
+            """id: wu-2024-01-01-generic
+title: Generic task completed
+problem:
+  statement: Something needed doing here
+actions:
+  - Did the thing
+outcome:
+  result: Thing was done
+"""
+        )
+
+        migration = MigrationV3ToV4()
+        ctx = MigrationContext(project_path=tmp_path)
+
+        migration.apply(ctx)
+
+        content = wu_file.read_text()
+        assert "archetype: minimal" in content
