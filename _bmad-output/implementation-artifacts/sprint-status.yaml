@@ -215,7 +215,7 @@ development_status:
   # Total Points: 21 (5 stories)
   epic-11: in-progress
   11-1-pypi-logo-display-fix: done  # P3, 1 pt - Fix PyPI logo display (TD-004)
-  11-2-directory-based-sharding: review  # P3, 8 pts - Optional per-item YAML files (TD-005)
-  11-3-custom-templates-directory: review  # P2, 3 pts - Expose templates_dir config (TD-006)
-  11-4-template-authoring-docs: ready-for-dev  # P3, 3 pts - Template authoring documentation (TD-007)
+  11-2-directory-based-sharding: done  # P3, 8 pts - Optional per-item YAML files (TD-005)
+  11-3-custom-templates-directory: done  # P2, 3 pts - Expose templates_dir config (TD-006)
+  11-4-template-authoring-docs: done  # P3, 3 pts - Template authoring documentation (TD-007)
   11-5-comprehensive-resource-validation: ready-for-dev  # P2, 6 pts - Validate all resources (TD-008)

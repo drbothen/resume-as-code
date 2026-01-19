@@ -393,6 +393,7 @@ For detailed documentation, see the [docs/](./docs/) folder:
 | [Philosophy](./docs/philosophy.md) | Why "Resume as Code" works — the data-centric approach |
 | [Data Model](./docs/data-model.md) | Work Units, Positions, and entity schemas |
 | [Workflow](./docs/workflow.md) | The Capture → Validate → Plan → Build pipeline |
+| [Template Authoring](./docs/template-authoring.md) | Creating custom resume templates |
 
 ## Development
 

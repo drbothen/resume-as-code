@@ -1,6 +1,6 @@
 # Story 11.4: Template Authoring Documentation
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -22,59 +22,59 @@ So that **I can create professional templates without reverse-engineering the co
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create `docs/template-authoring.md` documentation file
-  - [ ] 1.1 Write Quick Start section with minimal working example
-  - [ ] 1.2 Document template file structure (HTML + CSS)
-  - [ ] 1.3 Create complete Template Variables Reference section
+- [x] Task 1: Create `docs/template-authoring.md` documentation file
+  - [x] 1.1 Write Quick Start section with minimal working example
+  - [x] 1.2 Document template file structure (HTML + CSS)
+  - [x] 1.3 Create complete Template Variables Reference section
 
-- [ ] Task 2: Document all data models for templates
-  - [ ] 2.1 Document root context variables (resume, css, employer_groups)
-  - [ ] 2.2 Document ContactInfo fields
-  - [ ] 2.3 Document ResumeData fields
-  - [ ] 2.4 Document ResumeSection and ResumeItem
-  - [ ] 2.5 Document ResumeBullet
-  - [ ] 2.6 Document Certification model
-  - [ ] 2.7 Document Education model
-  - [ ] 2.8 Document BoardRole model
-  - [ ] 2.9 Document Publication model
-  - [ ] 2.10 Document EmployerGroup (for grouped positions)
+- [x] Task 2: Document all data models for templates
+  - [x] 2.1 Document root context variables (resume, css, employer_groups)
+  - [x] 2.2 Document ContactInfo fields
+  - [x] 2.3 Document ResumeData fields
+  - [x] 2.4 Document ResumeSection and ResumeItem
+  - [x] 2.5 Document ResumeBullet
+  - [x] 2.6 Document Certification model
+  - [x] 2.7 Document Education model
+  - [x] 2.8 Document BoardRole model
+  - [x] 2.9 Document Publication model
+  - [x] 2.10 Document EmployerGroup (for grouped positions)
 
-- [ ] Task 3: Document helper methods
-  - [ ] 3.1 Document `resume.get_active_certifications()`
-  - [ ] 3.2 Document `resume.get_sorted_board_roles()`
-  - [ ] 3.3 Document `resume.get_sorted_publications()`
-  - [ ] 3.4 Document `role.format_date_range()`
-  - [ ] 3.5 Document Publication properties (`year`, `is_speaking`)
+- [x] Task 3: Document helper methods
+  - [x] 3.1 Document `resume.get_active_certifications()`
+  - [x] 3.2 Document `resume.get_sorted_board_roles()`
+  - [x] 3.3 Document `resume.get_sorted_publications()`
+  - [x] 3.4 Document `role.format_date_range()`
+  - [x] 3.5 Document Publication properties (`year`, `is_speaking`)
 
-- [ ] Task 4: Write CSS Styling Guide section
-  - [ ] 4.1 Document file structure (template.html + template.css)
-  - [ ] 4.2 Document @page rules for print/PDF
-  - [ ] 4.3 Document recommended base styles
-  - [ ] 4.4 Document color palette recommendations
-  - [ ] 4.5 Document typography scale
-  - [ ] 4.6 Create complete CSS class reference table
-  - [ ] 4.7 Document print styles (@media print)
-  - [ ] 4.8 Document screen preview styles (@media screen)
+- [x] Task 4: Write CSS Styling Guide section
+  - [x] 4.1 Document file structure (template.html + template.css)
+  - [x] 4.2 Document @page rules for print/PDF
+  - [x] 4.3 Document recommended base styles
+  - [x] 4.4 Document color palette recommendations
+  - [x] 4.5 Document typography scale
+  - [x] 4.6 Create complete CSS class reference table
+  - [x] 4.7 Document print styles (@media print)
+  - [x] 4.8 Document screen preview styles (@media screen)
 
-- [ ] Task 5: Document template inheritance
-  - [ ] 5.1 Explain Jinja2 extends pattern with executive.html example
-  - [ ] 5.2 Document available blocks in executive.html
-  - [ ] 5.3 Document CSS inheritance via `_css_inheritance` map
+- [x] Task 5: Document template inheritance
+  - [x] 5.1 Explain Jinja2 extends pattern with executive.html example
+  - [x] 5.2 Document available blocks in executive.html
+  - [x] 5.3 Document CSS inheritance via `_css_inheritance` map
 
-- [ ] Task 6: Write Best Practices section
-  - [ ] 6.1 ATS compatibility guidelines
-  - [ ] 6.2 Handling null/empty values with `{% if field %}`
-  - [ ] 6.3 Page length control strategies
-  - [ ] 6.4 Testing templates with resume build command
+- [x] Task 6: Write Best Practices section
+  - [x] 6.1 ATS compatibility guidelines
+  - [x] 6.2 Handling null/empty values with `{% if field %}`
+  - [x] 6.3 Page length control strategies
+  - [x] 6.4 Testing templates with resume build command
 
-- [ ] Task 7: Add complete examples
-  - [ ] 7.1 Minimal template example (from scratch)
-  - [ ] 7.2 Template extending executive.html example
-  - [ ] 7.3 Custom CSS-only modification example
+- [x] Task 7: Add complete examples
+  - [x] 7.1 Minimal template example (from scratch)
+  - [x] 7.2 Template extending executive.html example
+  - [x] 7.3 Custom CSS-only modification example
 
-- [ ] Task 8: Link documentation
-  - [ ] 8.1 Add link from README.md to template authoring guide
-  - [ ] 8.2 Reference in CLAUDE.md if needed
+- [x] Task 8: Link documentation
+  - [x] 8.1 Add link from README.md to template authoring guide
+  - [x] 8.2 Reference in CLAUDE.md if needed (not needed - CLAUDE.md references docs/)
 
 ## Dev Notes
 
@@ -488,15 +488,35 @@ From `_bmad-output/project-context.md`:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None - documentation-only story, no debugging required.
+
 ### Completion Notes List
+
+- Created comprehensive `docs/template-authoring.md` (800+ lines) covering:
+  - Quick Start guide with 3-step minimal template creation
+  - Template file structure and configuration
+  - Complete Template Variables Reference for all data models
+  - Helper methods documentation with code examples
+  - CSS Styling Guide with @page rules, base styles, class reference
+  - Template inheritance documentation with Jinja2 extends pattern
+  - Best practices for ATS compatibility, null handling, page control
+  - Three complete examples: minimal, extending executive, CSS-only
+  - Troubleshooting section for common issues
+- Verified all data models against actual source code (resume.py, publication.py, board_role.py)
+- Verified template blocks against executive.html implementation
+- Verified CSS inheritance map in template_service.py
+- Added link to template authoring guide in README.md Documentation section
 
 ### Change Log
 - 2026-01-18: Story created with comprehensive documentation content
+- 2026-01-18: Implementation complete - created docs/template-authoring.md, linked from README.md
+- 2026-01-18: Code review remediation - fixed CSS class name (.tenure → .total-tenure), updated File List
 
 ### File List
-- `docs/template-authoring.md` - Main documentation file (create)
-- `README.md` - Add link to template authoring guide
+- `docs/template-authoring.md` - Created: Main template authoring documentation
+- `README.md` - Modified: Added link to template authoring guide in Documentation table
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` - Modified: Story status tracking
