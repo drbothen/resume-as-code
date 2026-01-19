@@ -10,6 +10,7 @@ import pytest
 from resume_as_code.services.work_unit_service import (
     _escape_yaml_string,
     create_work_unit_file,
+    create_work_unit_from_data,
     generate_id,
     generate_slug,
     get_work_units_dir,
@@ -228,3 +229,156 @@ class TestCreateWorkUnitFile:
         )
 
         assert file_path.name == "wu-2024-01-01-outage-fix.yaml"
+
+    def test_creates_file_with_correct_archetype(self, tmp_path: Path) -> None:
+        """Should create file with archetype matching the flag."""
+        work_units_dir = tmp_path / "work-units"
+
+        file_path = create_work_unit_file(
+            archetype="incident",
+            work_unit_id="wu-2024-03-15-test",
+            title="Test Incident",
+            work_units_dir=work_units_dir,
+        )
+
+        content = file_path.read_text()
+        assert "archetype: incident" in content
+
+    def test_archetype_persisted_for_all_types(self, tmp_path: Path) -> None:
+        """Should persist archetype for every valid archetype type."""
+        from resume_as_code.services.archetype_service import list_archetypes
+
+        work_units_dir = tmp_path / "work-units"
+
+        for arch in list_archetypes():
+            file_path = create_work_unit_file(
+                archetype=arch,
+                work_unit_id=f"wu-2024-03-15-{arch}",
+                title=f"Test {arch}",
+                work_units_dir=work_units_dir,
+            )
+            content = file_path.read_text()
+            assert f"archetype: {arch}" in content, f"Archetype {arch} not persisted"
+
+    def test_archetype_overrides_template_value(self, tmp_path: Path) -> None:
+        """Should override any existing archetype value in template."""
+        work_units_dir = tmp_path / "work-units"
+
+        # Create with greenfield template and verify archetype is set correctly
+        file_path = create_work_unit_file(
+            archetype="greenfield",
+            work_unit_id="wu-2024-03-15-override-test",
+            title="Override Test",
+            work_units_dir=work_units_dir,
+        )
+
+        content = file_path.read_text()
+        # Should have exactly one archetype field matching the flag
+        assert content.count("archetype:") == 1
+        assert "archetype: greenfield" in content
+
+    def test_archetype_added_when_template_missing_field(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should add archetype field if template lacks it (defensive code path)."""
+        work_units_dir = tmp_path / "work-units"
+
+        # Mock load_archetype to return template WITHOUT archetype field
+        template_without_archetype = """id: "wu-YYYY-MM-DD-slug"
+title: "Template Title"
+schema_version: "4.0.0"
+problem:
+  statement: "Problem here"
+"""
+        monkeypatch.setattr(
+            "resume_as_code.services.work_unit_service.load_archetype",
+            lambda _: template_without_archetype,
+        )
+
+        file_path = create_work_unit_file(
+            archetype="incident",
+            work_unit_id="wu-2024-03-15-no-arch",
+            title="No Archetype Template",
+            work_units_dir=work_units_dir,
+        )
+
+        content = file_path.read_text()
+        # Should have added archetype field after schema_version
+        assert "archetype: incident" in content
+        # Verify it was inserted in the right place (after schema_version)
+        schema_idx = content.find("schema_version:")
+        arch_idx = content.find("archetype:")
+        assert arch_idx > schema_idx, "archetype should appear after schema_version"
+
+    def test_archetype_handles_quoted_template_value(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should handle templates with quoted archetype values."""
+        work_units_dir = tmp_path / "work-units"
+
+        # Mock template with quoted archetype value
+        template_with_quoted_archetype = """id: "wu-YYYY-MM-DD-slug"
+title: "Template Title"
+schema_version: "4.0.0"
+archetype: "greenfield"
+problem:
+  statement: "Problem here"
+"""
+        monkeypatch.setattr(
+            "resume_as_code.services.work_unit_service.load_archetype",
+            lambda _: template_with_quoted_archetype,
+        )
+
+        file_path = create_work_unit_file(
+            archetype="migration",
+            work_unit_id="wu-2024-03-15-quoted",
+            title="Quoted Archetype",
+            work_units_dir=work_units_dir,
+        )
+
+        content = file_path.read_text()
+        # Should replace quoted value with unquoted
+        assert "archetype: migration" in content
+        assert content.count("archetype:") == 1
+
+
+class TestCreateWorkUnitFromData:
+    """Tests for inline work unit creation."""
+
+    def test_both_creation_paths_produce_consistent_archetype(self, tmp_path: Path) -> None:
+        """Both create_work_unit_file and create_work_unit_from_data should persist archetype."""
+        from ruamel.yaml import YAML
+
+        work_units_dir = tmp_path / "work-units"
+
+        # Create via template path
+        template_path = create_work_unit_file(
+            archetype="optimization",
+            work_unit_id="wu-2024-03-15-template",
+            title="Template Path",
+            work_units_dir=work_units_dir,
+        )
+
+        # Create via inline data path
+        inline_path = create_work_unit_from_data(
+            work_unit_id="wu-2024-03-15-inline",
+            title="Inline Path",
+            problem_statement="Test problem",
+            actions=["Test action"],
+            result="Test result",
+            work_units_dir=work_units_dir,
+            archetype="optimization",
+        )
+
+        yaml = YAML()
+
+        # Parse both files
+        with template_path.open() as f:
+            template_data = yaml.load(f)
+        with inline_path.open() as f:
+            inline_data = yaml.load(f)
+
+        # Both should have identical archetype values
+        assert template_data["archetype"] == "optimization"
+        assert inline_data["archetype"] == "optimization"
+        assert template_data["archetype"] == inline_data["archetype"]

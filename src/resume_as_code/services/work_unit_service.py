@@ -138,6 +138,24 @@ def create_work_unit_file(
             count=1,
         )
 
+    # Ensure archetype field matches the requested archetype
+    # Handle both quoted and unquoted values in templates
+    if re.search(r"archetype:\s*\S+", content):
+        content = re.sub(
+            r"archetype:\s*[\"']?\S+[\"']?",
+            f"archetype: {archetype}",
+            content,
+            count=1,
+        )
+    else:
+        # Defensive: add archetype if template lacks it (should not happen)
+        content = re.sub(
+            r"(schema_version:\s*[\"']?\S+[\"']?)",
+            rf"\1\narchetype: {archetype}",
+            content,
+            count=1,
+        )
+
     # Write file
     file_path = work_units_dir / f"{work_unit_id}.yaml"
     file_path.write_text(content)
