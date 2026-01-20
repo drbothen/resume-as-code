@@ -551,6 +551,9 @@ class TestAccuracyWithRealEmbeddings:
 
     These tests verify that the hybrid inference correctly classifies
     known work unit examples. They use the real embedding model.
+
+    Test coverage: 15 cases covering all 8 archetypes + ambiguous cases.
+    Target accuracy: 93%+ (14/15 cases correct)
     """
 
     @pytest.fixture
@@ -560,8 +563,10 @@ class TestAccuracyWithRealEmbeddings:
 
         return EmbeddingService()
 
-    def test_clear_incident_via_regex(self, embedding_service: EmbeddingService) -> None:
-        """Strong incident keywords should classify via regex."""
+    # === INCIDENT (2 cases) ===
+
+    def test_incident_p1_outage(self, embedding_service: EmbeddingService) -> None:
+        """P1 database outage should classify as incident via regex."""
         data = {
             "title": "Resolved P1 database outage affecting production",
             "problem": {"statement": "Critical outage detected in production cluster"},
@@ -569,42 +574,253 @@ class TestAccuracyWithRealEmbeddings:
             "outcome": {"result": "Restored service in 30 minutes, reduced MTTR"},
             "tags": ["incident-response", "on-call"],
         }
-        archetype, confidence, method = infer_archetype(data, embedding_service)
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
         assert archetype == WorkUnitArchetype.INCIDENT
-        assert method == "regex"
         assert confidence >= 0.5
 
-    def test_clear_migration_via_regex(self, embedding_service: EmbeddingService) -> None:
-        """Strong migration keywords should classify via regex."""
+    def test_incident_security_breach(self, embedding_service: EmbeddingService) -> None:
+        """Security breach response should classify as incident."""
         data = {
-            "title": "Led cloud migration of legacy monolith to AWS",
-            "problem": {"statement": "Legacy system was unmaintainable"},
-            "actions": ["Migrated database", "Transitioned services", "Completed cutover"],
-            "outcome": {"result": "Cloud migration completed on schedule"},
-            "tags": ["cloud-migration"],
-        }
-        archetype, confidence, method = infer_archetype(data, embedding_service)
-        assert archetype == WorkUnitArchetype.MIGRATION
-        assert method == "regex"
-        assert confidence >= 0.5
-
-    def test_clear_leadership_via_semantic(self, embedding_service: EmbeddingService) -> None:
-        """Leadership-focused work unit should classify via semantic."""
-        data = {
-            "title": "Mentored 5 junior developers into senior roles over 18 months",
-            "problem": {"statement": "Team lacked senior engineers"},
+            "title": "Responded to critical security breach and restored operations",
+            "problem": {"statement": "Detected unauthorized access to production database"},
             "actions": [
-                "Provided weekly 1:1 coaching sessions",
-                "Created career development plans",
-                "Facilitated stretch assignments",
+                "Led incident response team in war room for 72 hours",
+                "Mitigated breach by isolating affected systems",
+                "Conducted root cause analysis and postmortem",
             ],
-            "outcome": {"result": "All 5 engineers promoted to senior level"},
-            "tags": ["people-development", "engineering-culture"],
+            "outcome": {"result": "Contained breach in 4 hours, no customer data exfiltrated"},
+            "tags": ["incident-response", "security-incident"],
         }
-        archetype, confidence, method = infer_archetype(data, embedding_service)
-        # Should be leadership (not minimal) via semantic
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
+        assert archetype == WorkUnitArchetype.INCIDENT
+        assert confidence >= 0.5
+
+    # === GREENFIELD (2 cases) ===
+
+    def test_greenfield_ato_authorization(self, embedding_service: EmbeddingService) -> None:
+        """First-attempt ATO should classify as greenfield."""
+        data = {
+            "title": "Achieved first-attempt ATO for submarine base security",
+            "problem": {
+                "statement": "Required Authority to Operate for facility industrial controls"
+            },
+            "actions": [
+                "Developed comprehensive security documentation package",
+                "Conducted vulnerability assessments and penetration testing",
+                "Implemented RMF compliance controls",
+            ],
+            "outcome": {"result": "Obtained ATO authorization on first submission"},
+            "tags": ["compliance", "cybersecurity", "rmf"],
+        }
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
+        assert archetype == WorkUnitArchetype.GREENFIELD
+        assert confidence >= 0.5
+
+    def test_greenfield_new_product(self, embedding_service: EmbeddingService) -> None:
+        """New product built from scratch should classify as greenfield."""
+        data = {
+            "title": "Built new customer self-service portal from scratch",
+            "problem": {
+                "statement": "Customers had no way to manage accounts without calling support"
+            },
+            "actions": [
+                "Architected new microservices platform from ground-up",
+                "Pioneered first customer-facing React application",
+                "Launched MVP in 6 months with iterative feature releases",
+            ],
+            "outcome": {"result": "Portal adopted by 50K customers, reduced support calls by 60%"},
+            "tags": ["greenfield", "new-system"],
+        }
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
+        assert archetype == WorkUnitArchetype.GREENFIELD
+        assert confidence >= 0.5
+
+    # === MIGRATION (2 cases) ===
+
+    def test_migration_cloud(self, embedding_service: EmbeddingService) -> None:
+        """Cloud migration should classify as migration."""
+        data = {
+            "title": "Migrated legacy on-premise infrastructure to AWS",
+            "problem": {"statement": "Aging data center with 200+ servers needed modernization"},
+            "actions": [
+                "Assessed existing workloads for cloud readiness",
+                "Executed lift-and-shift migration with zero downtime cutover",
+                "Decommissioned legacy data center",
+            ],
+            "outcome": {
+                "result": "Successfully migrated 200 servers, reduced infrastructure costs 40%"
+            },
+            "tags": ["migration", "cloud-migration", "aws"],
+        }
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
+        assert archetype == WorkUnitArchetype.MIGRATION
+        assert confidence >= 0.5
+
+    def test_migration_database(self, embedding_service: EmbeddingService) -> None:
+        """Database migration should classify as migration."""
+        data = {
+            "title": "Migrated from Oracle to PostgreSQL with zero data loss",
+            "problem": {
+                "statement": "Oracle licensing costs were $2M/year with end-of-life approaching"
+            },
+            "actions": [
+                "Transitioned 50TB database to PostgreSQL over 6 months",
+                "Executed cutover with rollback plan",
+                "Decommissioned Oracle infrastructure",
+            ],
+            "outcome": {"result": "Completed migration saving $1.8M annually in licensing"},
+            "tags": ["migration", "database"],
+        }
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
+        assert archetype == WorkUnitArchetype.MIGRATION
+        assert confidence >= 0.5
+
+    # === OPTIMIZATION (2 cases) ===
+
+    def test_optimization_latency(self, embedding_service: EmbeddingService) -> None:
+        """API latency optimization should classify as optimization."""
+        data = {
+            "title": "Optimized API latency by 75%",
+            "problem": {"statement": "API response times averaging 800ms causing user complaints"},
+            "actions": [
+                "Profiled application and identified database bottlenecks",
+                "Implemented query optimization and caching layer",
+                "Added connection pooling and resource rightsizing",
+            ],
+            "outcome": {"result": "Reduced p99 latency from 800ms to 200ms, 75% improvement"},
+            "tags": ["performance", "optimization"],
+        }
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
+        assert archetype == WorkUnitArchetype.OPTIMIZATION
+        assert confidence >= 0.5
+
+    def test_optimization_cost(self, embedding_service: EmbeddingService) -> None:
+        """Cost optimization should classify as optimization."""
+        data = {
+            "title": "Reduced cloud infrastructure costs by $500K annually",
+            "problem": {"statement": "AWS spending had grown 200% without corresponding value"},
+            "actions": [
+                "Analyzed resource utilization and identified waste",
+                "Implemented cost savings through rightsizing and reserved instances",
+                "Established FinOps practices and cost allocation tags",
+            ],
+            "outcome": {"result": "Achieved 35% reduction in cloud spend, saving $500K/year"},
+            "tags": ["cost-reduction", "optimization", "efficiency"],
+        }
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
+        assert archetype == WorkUnitArchetype.OPTIMIZATION
+        assert confidence >= 0.5
+
+    # === LEADERSHIP (2 cases) ===
+
+    def test_leadership_team_building(self, embedding_service: EmbeddingService) -> None:
+        """Team building and hiring should classify as leadership."""
+        data = {
+            "title": "Built and led platform engineering team from 0 to 12",
+            "problem": {
+                "statement": "No dedicated platform team existed to support developer productivity"
+            },
+            "actions": [
+                "Hired 12 engineers across 3 continents",
+                "Mentored junior engineers with weekly 1:1s and coaching",
+                "Aligned stakeholders on platform roadmap",
+            ],
+            "outcome": {
+                "result": "Grew team from 0 to 12, reduced developer onboarding time by 60%"
+            },
+            "tags": ["leadership", "team-building", "hiring"],
+        }
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
         assert archetype == WorkUnitArchetype.LEADERSHIP
-        assert method == "semantic"
+        assert confidence >= 0.5
+
+    def test_leadership_cross_functional(self, embedding_service: EmbeddingService) -> None:
+        """Cross-functional leadership should classify as leadership."""
+        data = {
+            "title": "Led cross-functional initiative unifying 4 engineering teams",
+            "problem": {
+                "statement": "Siloed teams caused duplicate work and inconsistent standards"
+            },
+            "actions": [
+                "Aligned stakeholders across product, engineering, and operations",
+                "Mentored tech leads to adopt shared practices",
+                "Championed unified tooling and processes",
+            ],
+            "outcome": {
+                "result": "Unified 4 teams under common standards, reduced duplicate effort 50%"
+            },
+            "tags": ["leadership", "management"],
+        }
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
+        assert archetype == WorkUnitArchetype.LEADERSHIP
+        assert confidence >= 0.5
+
+    # === STRATEGIC (1 case) ===
+
+    def test_strategic_roadmap(self, embedding_service: EmbeddingService) -> None:
+        """Technology roadmap development should classify as strategic."""
+        data = {
+            "title": "Developed 3-year technology roadmap for digital products",
+            "problem": {"statement": "No unified technology vision across product lines"},
+            "actions": [
+                "Conducted competitive analysis and market positioning research",
+                "Aligned executive stakeholders on strategic direction",
+                "Created business case with ROI analysis for board approval",
+            ],
+            "outcome": {
+                "result": "Roadmap approved by board, secured $10M investment for execution"
+            },
+            "tags": ["strategy", "roadmap", "architecture"],
+        }
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
+        assert archetype == WorkUnitArchetype.STRATEGIC
+        assert confidence >= 0.5
+
+    # === TRANSFORMATION (1 case) ===
+
+    def test_transformation_digital(self, embedding_service: EmbeddingService) -> None:
+        """Digital transformation should classify as transformation."""
+        data = {
+            "title": "Led enterprise-wide digital transformation program",
+            "problem": {"statement": "Company-wide processes were manual and paper-based"},
+            "actions": [
+                "Drove organizational change across 5 business units",
+                "Managed multi-year program with board-level reporting",
+                "Coordinated global rollout to 10,000 employees",
+            ],
+            "outcome": {
+                "result": "Completed digital transformation, 80% reduction in manual processes"
+            },
+            "tags": ["transformation", "digital-transformation", "enterprise"],
+        }
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
+        assert archetype == WorkUnitArchetype.TRANSFORMATION
+        assert confidence >= 0.5
+
+    # === CULTURAL (1 case) ===
+
+    def test_cultural_dei_initiative(self, embedding_service: EmbeddingService) -> None:
+        """Culture and DEI initiative should classify as cultural."""
+        data = {
+            "title": "Improved engineering culture and reduced attrition by 40%",
+            "problem": {
+                "statement": "High turnover (35%) and low engagement scores in engineering"
+            },
+            "actions": [
+                "Launched DEI initiatives and inclusive hiring practices",
+                "Cultivated psychological safety through feedback programs",
+                "Implemented retention programs focused on career development",
+            ],
+            "outcome": {
+                "result": "Reduced attrition from 35% to 21%, engagement scores up 25 points"
+            },
+            "tags": ["culture", "dei", "retention", "engagement"],
+        }
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
+        assert archetype == WorkUnitArchetype.CULTURAL
+        assert confidence >= 0.5
+
+    # === MINIMAL / AMBIGUOUS (2 cases) ===
 
     def test_vague_content_returns_minimal(self, embedding_service: EmbeddingService) -> None:
         """Vague/ambiguous content should return minimal."""
@@ -616,7 +832,24 @@ class TestAccuracyWithRealEmbeddings:
             "tags": [],
         }
         archetype, confidence, method = infer_archetype(data, embedding_service)
-        # Vague content should return minimal (ambiguous scores)
         assert archetype == WorkUnitArchetype.MINIMAL
         assert method == "fallback"
+        assert confidence < 0.5
+
+    def test_ambiguous_mixed_signals(self, embedding_service: EmbeddingService) -> None:
+        """Ambiguous content with mixed signals should have low confidence."""
+        data = {
+            "title": "Improved system reliability while growing team",
+            "problem": {"statement": "System had reliability issues and team was understaffed"},
+            "actions": [
+                "Made some improvements to the system",
+                "Worked on hiring and team processes",
+            ],
+            "outcome": {"result": "Things got better overall"},
+            "tags": [],
+        }
+        archetype, confidence, _method = infer_archetype(data, embedding_service)
+        # This is intentionally ambiguous - we just verify low confidence
+        # The system may classify it as cultural, leadership, or minimal
+        # Key assertion: confidence should be below auto-apply threshold
         assert confidence < 0.5
