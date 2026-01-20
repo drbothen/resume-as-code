@@ -437,43 +437,44 @@ class TestArchetypeStats:
         self, sample_work_units_with_archetype: list[dict]
     ) -> None:
         """JSON output should include archetype field (AC4)."""
-        from io import StringIO
+        import json
         from unittest.mock import patch
 
         from resume_as_code.commands.list_cmd import _output_json
 
-        output = StringIO()
-        with patch("resume_as_code.utils.console.console.print", lambda x: output.write(str(x))):
+        captured_output: list[str] = []
+        with patch("click.echo", lambda x: captured_output.append(x)):
             _output_json(sample_work_units_with_archetype)
 
-        # Parse the JSON output (it's written to console as json_output)
-        # Since we're testing the function directly, we can verify the data structure
-        # by checking that archetype is in the summary dict construction
-
-        # Just verify the function doesn't crash and includes archetype in data
-        assert True  # Function executed without error
+        # Parse the JSON output and verify archetype field is present
+        assert len(captured_output) == 1
+        response = json.loads(captured_output[0])
+        assert "data" in response
+        assert "work_units" in response["data"]
+        for wu in response["data"]["work_units"]:
+            assert "archetype" in wu
 
     def test_json_output_with_stats_includes_archetype_stats(
         self, sample_work_units_with_archetype: list[dict]
     ) -> None:
         """JSON output with stats should include archetype_stats field."""
-        from collections import Counter
-        from io import StringIO
+        import json
         from unittest.mock import patch
 
         from resume_as_code.commands.list_cmd import _output_json
 
-        output = StringIO()
-        with patch("resume_as_code.utils.console.console.print", lambda x: output.write(str(x))):
+        captured_output: list[str] = []
+        with patch("click.echo", lambda x: captured_output.append(x)):
             _output_json(sample_work_units_with_archetype, show_stats=True)
 
-        # Verify the expected stats would be calculated
-        counts = Counter(
-            wu.get("archetype") or "unknown" for wu in sample_work_units_with_archetype
-        )
-        assert counts["incident"] == 2
-        assert counts["greenfield"] == 1
-        assert counts["migration"] == 1
+        # Parse JSON output and verify archetype_stats is present
+        assert len(captured_output) == 1
+        response = json.loads(captured_output[0])
+        assert "data" in response
+        assert "archetype_stats" in response["data"]
+        assert response["data"]["archetype_stats"]["incident"] == 2
+        assert response["data"]["archetype_stats"]["greenfield"] == 1
+        assert response["data"]["archetype_stats"]["migration"] == 1
 
     def test_output_archetype_stats_function_exists(self) -> None:
         """_output_archetype_stats function should exist and be callable."""
