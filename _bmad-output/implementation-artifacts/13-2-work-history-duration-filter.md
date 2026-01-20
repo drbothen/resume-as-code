@@ -1,6 +1,6 @@
 # Story 13.2: Work History Duration Filter
 
-**Status:** ready-for-dev
+**Status:** completed
 **Story Points:** 3
 **Priority:** P2
 
@@ -65,35 +65,35 @@ Users with long careers (15+ years) may have positions from early in their caree
 ## Tasks
 
 ### Task 1: Add history_years config option
-- [ ] Add `history_years: int | None = None` field to `ResumeConfig` in `models/config.py`
-- [ ] Add field description/docstring
+- [x] Add `history_years: int | None = None` field to `ResumeConfig` in `models/config.py`
+- [x] Add field description/docstring
 
 ### Task 2: Add filter_by_years method to PositionService
-- [ ] Create `filter_by_years(positions: list[Position], years: int) -> list[Position]` method
-- [ ] Handle `end_date = None` (current positions always included)
-- [ ] Handle date parsing for YearMonth format
-- [ ] Add unit tests for filtering logic
+- [x] Create `filter_by_years(positions: list[Position], years: int) -> list[Position]` method
+- [x] Handle `end_date = None` (current positions always included)
+- [x] Handle date parsing for YearMonth format
+- [x] Add unit tests for filtering logic
 
 ### Task 3: Add --years flag to plan command
-- [ ] Add `--years` option to plan command
-- [ ] Load config default if flag not provided
-- [ ] Filter positions before ranking
-- [ ] Filter work units to only include those with matching position_ids or in date range
-- [ ] Update Position Grouping Preview to show only filtered positions
+- [x] Add `--years` option to plan command
+- [x] Load config default if flag not provided
+- [x] Filter positions before ranking
+- [x] Filter work units to only include those with matching position_ids or in date range
+- [x] Update Position Grouping Preview to show only filtered positions
 
 ### Task 4: Add --years flag to build command
-- [ ] Add `--years` option to build command
-- [ ] Pass to implicit plan generation
-- [ ] Ensure consistency with plan command
+- [x] Add `--years` option to build command
+- [x] Pass to implicit plan generation
+- [x] Ensure consistency with plan command
 
 ### Task 5: Update employment continuity
-- [ ] Modify employment continuity service to respect year filter
-- [ ] Only calculate gaps between filtered positions
-- [ ] Add tests for continuity with year filter
+- [x] Modify employment continuity service to respect year filter
+- [x] Only calculate gaps between filtered positions
+- [x] Add tests for continuity with year filter
 
 ### Task 6: Update documentation
-- [ ] Update CLAUDE.md with `--years` flag documentation
-- [ ] Add config option documentation
+- [x] Update CLAUDE.md with `--years` flag documentation
+- [x] Add config option documentation
 
 ---
 
@@ -167,15 +167,15 @@ history_years: 10  # Default years of history (null = unlimited)
 
 ## Definition of Done
 
-- [ ] `--years` flag added to plan command
-- [ ] `--years` flag added to build command
-- [ ] Config option `history_years` added
-- [ ] Position filtering by end_date implemented
-- [ ] Work unit filtering respects position filter
-- [ ] Employment continuity respects year filter
-- [ ] Position Grouping Preview shows only filtered positions
-- [ ] Unit tests for date filtering logic
-- [ ] CLAUDE.md updated with `--years` flag documentation
+- [x] `--years` flag added to plan command
+- [x] `--years` flag added to build command
+- [x] Config option `history_years` added
+- [x] Position filtering by end_date implemented
+- [x] Work unit filtering respects position filter
+- [x] Employment continuity respects year filter
+- [x] Position Grouping Preview shows only filtered positions
+- [x] Unit tests for date filtering logic
+- [x] CLAUDE.md updated with `--years` flag documentation
 
 ---
 

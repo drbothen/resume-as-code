@@ -94,6 +94,14 @@ if TYPE_CHECKING:
     "--no-allow-gaps to guarantee at least one bullet per position (Story 7.20)",
 )
 @click.option(
+    "--years",
+    "-y",
+    "years",
+    type=int,
+    default=None,
+    help="Limit work history to last N years (overrides config history_years)",
+)
+@click.option(
     "--templates-dir",
     "templates_dir",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
@@ -113,6 +121,7 @@ def build_command(
     output_name: str | None,
     tailored_notice: bool | None,
     allow_gaps: bool | None,
+    years: int | None,
     templates_dir: Path | None,
 ) -> None:
     """Build resume from plan or job description.
@@ -164,7 +173,9 @@ def build_command(
     else:
         # Generate implicit plan (same as `resume plan`) (AC: #2)
         assert jd_path is not None  # Guaranteed by validation above
-        plan, jd_keywords = _generate_implicit_plan(jd_path, config, strict_positions, allow_gaps)
+        plan, jd_keywords = _generate_implicit_plan(
+            jd_path, config, strict_positions, allow_gaps, years
+        )
         if not ctx.obj.quiet:
             info("Generated implicit plan from JD")
 
@@ -290,6 +301,7 @@ def _generate_implicit_plan(
     config: ResumeConfig,
     strict_positions: bool = False,
     allow_gaps: bool | None = None,
+    years: int | None = None,
 ) -> tuple[SavedPlan, set[str]]:
     """Generate plan on-the-fly from JD.
 
@@ -298,6 +310,7 @@ def _generate_implicit_plan(
         config: Application configuration.
         strict_positions: If True, validate position_id references before planning.
         allow_gaps: Override employment_continuity mode (None = use config).
+        years: Limit work history to last N years (None = use config or unlimited).
 
     Returns:
         Tuple of (SavedPlan created from ranking results, JD keywords set).
@@ -315,6 +328,21 @@ def _generate_implicit_plan(
     # Load positions for seniority inference (Story 7.12)
     position_service = PositionService(config.positions_path)
     positions = position_service.load_positions()
+
+    # Apply work history duration filter (Story 13.2)
+    # CLI --years flag overrides config.history_years
+    effective_years = years if years is not None else config.history_years
+    if effective_years is not None and positions:
+        positions_list = list(positions.values())
+        filtered_list = PositionService.filter_by_years(positions_list, effective_years)
+        positions = {pos.id: pos for pos in filtered_list}
+
+        # Also filter work units to exclude those referencing filtered-out positions
+        work_units = [
+            wu
+            for wu in work_units
+            if wu.get("position_id") is None or wu.get("position_id") in positions
+        ]
 
     # Validate position references if strict mode enabled (Story 7.6)
     if strict_positions:

@@ -2504,3 +2504,44 @@ created_at: "2024-01-01T00:00:00"
             assert result.exit_code == 0, f"Build failed: {result.output}"
             # DOCX should use default_template when config.docx.template is None
             assert captured_docx_template == "executive"
+
+
+class TestBuildCommandYearsFlag:
+    """Tests for work history duration filter --years flag (Story 13.2)."""
+
+    def test_years_flag_exists_in_help(self, runner: CliRunner) -> None:
+        """--years flag should be available in build command."""
+        result = runner.invoke(main, ["build", "--help"])
+
+        assert result.exit_code == 0
+        assert "--years" in result.output
+        assert "-y" in result.output
+        assert "history" in result.output.lower() or "years" in result.output.lower()
+
+    def test_years_flag_accepts_integer(self, runner: CliRunner, tmp_path: Path) -> None:
+        """--years flag should accept integer values."""
+        # Create minimal config
+        (tmp_path / ".resume.yaml").write_text(
+            """\
+schema_version: "2.0.0"
+work_units_dir: work-units
+positions_path: positions.yaml
+"""
+        )
+        (tmp_path / "work-units").mkdir()
+        (tmp_path / "positions.yaml").write_text("positions: {}")
+
+        jd_file = tmp_path / "jd.txt"
+        jd_file.write_text("Developer\n\nRequirements:\n- Programming")
+
+        import os
+
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_path)
+            result = runner.invoke(main, ["build", "--jd", str(jd_file), "--years", "5"])
+            # May fail for other reasons (no work units), but should not fail on --years parsing
+            # The flag should be recognized and parsed as integer
+            assert "--years" not in str(result.exception) if result.exception else True
+        finally:
+            os.chdir(old_cwd)

@@ -455,6 +455,14 @@ class ResumeConfig(BaseModel):
         "allow_gaps: pure relevance filtering with gap warnings",
     )
 
+    # Work history duration filter (Story 13.2)
+    history_years: int | None = Field(
+        default=None,
+        ge=1,
+        le=50,
+        description="Limit work history to last N years (None = unlimited)",
+    )
+
     # O*NET API configuration
     onet: ONetConfig | None = Field(default=None)
 

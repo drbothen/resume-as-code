@@ -257,6 +257,7 @@ resume --json validate positions          # JSON output for positions only
 | `--strict-positions` | Validate position_id references exist (fail on invalid) |
 | `--allow-gaps` | Allow employment gaps in resume (pure relevance filtering) |
 | `--no-allow-gaps` | Guarantee at least one bullet per position (default behavior) |
+| `-y, --years INTEGER` | Limit work history to last N years (overrides config) |
 
 ### Build Command Options
 
@@ -274,6 +275,7 @@ resume --json validate positions          # JSON output for positions only
 | `--no-tailored-notice` | Exclude footer notice (overrides config) |
 | `--allow-gaps` | Allow employment gaps in resume (pure relevance filtering) |
 | `--no-allow-gaps` | Guarantee at least one bullet per position (default behavior) |
+| `-y, --years INTEGER` | Limit work history to last N years (overrides config) |
 
 **Config-based tailored notice options** (in `.resume.yaml`):
 ```yaml
@@ -288,6 +290,12 @@ employment_continuity: minimum_bullet  # Default: ensure 1 bullet per position
 # employment_continuity: allow_gaps    # Alternative: pure relevance filtering with gap warnings
 ```
 When using `allow_gaps`, the CLI will detect and warn about employment gaps >3 months.
+
+**Config-based work history duration** (in `.resume.yaml`):
+```yaml
+history_years: 10  # Limit work history to last 10 years (null = unlimited)
+```
+When set, only positions with `end_date` within the last N years (or current positions with no `end_date`) are included. Work units associated with filtered positions are also excluded. CLI `--years` flag overrides this config value.
 
 **Config-based template options** (in `.resume.yaml`):
 ```yaml

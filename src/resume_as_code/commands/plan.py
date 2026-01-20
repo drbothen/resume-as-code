@@ -255,6 +255,14 @@ class CurationPreview:
     help="Override employment_continuity mode: --allow-gaps for pure relevance, "
     "--no-allow-gaps for minimum_bullet (default from config)",
 )
+@click.option(
+    "--years",
+    "-y",
+    "years",
+    type=int,
+    default=None,
+    help="Limit work history to last N years (overrides config history_years)",
+)
 @click.pass_context
 @handle_errors
 def plan_command(
@@ -267,6 +275,7 @@ def plan_command(
     show_all_excluded: bool,
     strict_positions: bool,
     allow_gaps: bool | None,
+    years: int | None,
 ) -> None:
     """Preview which Work Units will be included in a resume.
 
@@ -294,6 +303,29 @@ def plan_command(
     # Load positions for seniority inference (Story 7.12)
     position_service = PositionService(config.positions_path)
     positions = position_service.load_positions()
+
+    # Apply work history duration filter (Story 13.2)
+    # CLI --years flag overrides config.history_years
+    effective_years = years if years is not None else config.history_years
+    if effective_years is not None and positions:
+        original_count = len(positions)
+        positions_list = list(positions.values())
+        filtered_list = PositionService.filter_by_years(positions_list, effective_years)
+        positions = {pos.id: pos for pos in filtered_list}
+        filtered_count = original_count - len(positions)
+        if filtered_count > 0 and not ctx.obj.quiet:
+            info(f"Filtered to last {effective_years} years ({filtered_count} positions excluded)")
+
+        # Also filter work units to exclude those referencing filtered-out positions
+        original_wu_count = len(work_units)
+        work_units = [
+            wu
+            for wu in work_units
+            if wu.get("position_id") is None or wu.get("position_id") in positions
+        ]
+        filtered_wu_count = original_wu_count - len(work_units)
+        if filtered_wu_count > 0 and not ctx.obj.quiet:
+            info(f"Excluded {filtered_wu_count} work units from filtered positions")
 
     # Validate position references if strict mode enabled (Story 7.6)
     if strict_positions:
@@ -369,7 +401,8 @@ def plan_command(
     skills_curation = _curate_skills_from_work_units(selected_wu_dicts, config, jd_keywords_lower)
 
     # Get position grouping for selected work units
-    position_grouping = _get_position_grouping(selected_wu_dicts, config)
+    # Pass filtered positions to avoid re-loading (Story 13.2)
+    position_grouping = _get_position_grouping(selected_wu_dicts, config, positions)
 
     # Get certifications analysis (AC2)
     certs_analysis = _get_certifications_analysis(jd.raw_text, config)
@@ -493,18 +526,22 @@ def _curate_skills_from_work_units(
 def _get_position_grouping(
     selected_work_units: list[dict[str, Any]],
     config: ResumeConfig,
+    positions: dict[str, Any] | None = None,
 ) -> PositionGroupingResult:
     """Group selected work units by position/employer.
 
     Args:
         selected_work_units: List of selected Work Unit dictionaries.
         config: Resume configuration with positions path.
+        positions: Optional pre-filtered positions dict. If None, loads from file.
 
     Returns:
         PositionGroupingResult with employer groups and ungrouped count.
     """
+    # Always create position_service for group_by_employer method
     position_service = PositionService(config.positions_path)
-    positions = position_service.load_positions()
+    if positions is None:
+        positions = position_service.load_positions()
 
     # If no positions file, return empty result
     if not positions:

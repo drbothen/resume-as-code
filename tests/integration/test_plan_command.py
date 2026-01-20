@@ -2752,3 +2752,427 @@ employment_continuity: allow_gaps
         # Should NOT show gap warning because --no-allow-gaps overrides config
         # Both companies should be included due to continuity
         assert "Company A" in result.output
+
+
+class TestPlanCommandYearsFilter:
+    """Tests for work history duration filter --years flag (Story 13.2)."""
+
+    def _create_positions_file(
+        self,
+        path: Path,
+        positions: list[dict[str, str | None]],
+    ) -> None:
+        """Helper to create a positions.yaml file."""
+        import yaml
+
+        # Convert list to dict format expected by position service
+        positions_dict: dict[str, dict[str, str | None]] = {}
+        for pos in positions:
+            pos_copy = dict(pos)  # Copy to avoid mutating input
+            pos_id = pos_copy.pop("id")
+            if pos_id:
+                positions_dict[pos_id] = pos_copy
+
+        (path / "positions.yaml").write_text(yaml.dump({"positions": positions_dict}))
+
+    def _create_work_unit_with_position(
+        self,
+        path: Path,
+        wu_id: str,
+        title: str,
+        position_id: str,
+        tags: list[str] | None = None,
+        problem: str = "Test problem statement for ranking purposes and evaluation",
+        outcome: str = "Improved performance and quality by significant margin",
+        archetype: str = "minimal",
+    ) -> None:
+        """Helper to create a Work Unit with position reference."""
+        tags = tags or []
+        tags_yaml = "\n".join([f'  - "{t}"' for t in tags]) if tags else ""
+        tags_section = f"tags:\n{tags_yaml}" if tags else "tags: []"
+
+        content = f"""\
+schema_version: "4.0.0"
+archetype: "{archetype}"
+id: "{wu_id}"
+title: "{title}"
+position_id: "{position_id}"
+problem:
+  statement: "{problem}"
+actions:
+  - "Designed and implemented the solution architecture"
+  - "Developed core functionality and features"
+outcome:
+  result: "{outcome}"
+{tags_section}
+confidence: high
+"""
+        path.write_text(content)
+
+    def _years_ago_ym(self, years: int) -> str:
+        """Helper to generate YYYY-MM string for N years ago."""
+        from datetime import date
+
+        today = date.today()
+        return f"{today.year - years:04d}-{today.month:02d}"
+
+    def test_years_flag_filters_old_positions(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--years flag should filter out positions older than N years."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create config
+        (tmp_path / ".resume.yaml").write_text(
+            """\
+schema_version: "2.0.0"
+work_units_dir: work-units
+positions_path: positions.yaml
+"""
+        )
+
+        # Create positions: one current, one ending 10 years ago
+        self._create_positions_file(
+            tmp_path,
+            [
+                {
+                    "id": "pos-recent",
+                    "employer": "Recent Company",
+                    "title": "Engineer",
+                    "start_date": "2023-01",
+                    "end_date": None,
+                },
+                {
+                    "id": "pos-old",
+                    "employer": "Old Company",
+                    "title": "Developer",
+                    "start_date": "2010-01",
+                    "end_date": self._years_ago_ym(10),  # 10 years ago
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        self._create_work_unit_with_position(
+            work_units / "wu-recent.yaml",
+            "wu-2024-01-01-recent",
+            "Built Python microservices for distributed systems",
+            "pos-recent",
+            tags=["python"],
+        )
+        self._create_work_unit_with_position(
+            work_units / "wu-old.yaml",
+            "wu-2012-01-01-old",
+            "Developed legacy Java application backend",
+            "pos-old",
+            tags=["java"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Developer", "Requirements:\n- Programming experience")
+
+        # Run with --years 5 to filter out old position
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--years", "5"])
+
+        assert result.exit_code == 0
+        # Should show filter message
+        assert "Filtered to last 5 years" in result.output
+        # Recent company should be included
+        assert "Recent Company" in result.output
+        # Old company should be excluded
+        assert "Old Company" not in result.output
+
+    def test_years_flag_from_config(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """history_years in config should filter positions."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create config with history_years set
+        (tmp_path / ".resume.yaml").write_text(
+            """\
+schema_version: "2.0.0"
+work_units_dir: work-units
+positions_path: positions.yaml
+history_years: 5
+"""
+        )
+
+        # Create positions: one current, one ending 10 years ago
+        self._create_positions_file(
+            tmp_path,
+            [
+                {
+                    "id": "pos-recent",
+                    "employer": "Recent Company",
+                    "title": "Engineer",
+                    "start_date": "2023-01",
+                    "end_date": None,
+                },
+                {
+                    "id": "pos-old",
+                    "employer": "Old Company",
+                    "title": "Developer",
+                    "start_date": "2010-01",
+                    "end_date": self._years_ago_ym(10),
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        self._create_work_unit_with_position(
+            work_units / "wu-recent.yaml",
+            "wu-2024-01-01-recent",
+            "Built Python microservices",
+            "pos-recent",
+            tags=["python"],
+        )
+        self._create_work_unit_with_position(
+            work_units / "wu-old.yaml",
+            "wu-2012-01-01-old",
+            "Developed legacy Java application",
+            "pos-old",
+            tags=["java"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Developer", "Requirements:\n- Programming")
+
+        # Run without --years flag - should use config value
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should show filter message from config
+        assert "Filtered to last 5 years" in result.output
+        assert "Recent Company" in result.output
+        assert "Old Company" not in result.output
+
+    def test_years_cli_overrides_config(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """CLI --years flag should override config history_years."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create config with history_years: 5
+        (tmp_path / ".resume.yaml").write_text(
+            """\
+schema_version: "2.0.0"
+work_units_dir: work-units
+positions_path: positions.yaml
+history_years: 5
+"""
+        )
+
+        # Create positions: one current, one ending 8 years ago
+        self._create_positions_file(
+            tmp_path,
+            [
+                {
+                    "id": "pos-recent",
+                    "employer": "Recent Company",
+                    "title": "Engineer",
+                    "start_date": "2023-01",
+                    "end_date": None,
+                },
+                {
+                    "id": "pos-mid",
+                    "employer": "Mid Company",
+                    "title": "Developer",
+                    "start_date": "2014-01",
+                    "end_date": self._years_ago_ym(8),  # 8 years ago
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        self._create_work_unit_with_position(
+            work_units / "wu-recent.yaml",
+            "wu-2024-01-01-recent",
+            "Built Python microservices",
+            "pos-recent",
+            tags=["python"],
+        )
+        self._create_work_unit_with_position(
+            work_units / "wu-mid.yaml",
+            "wu-2015-01-01-mid",
+            "Developed Java application",
+            "pos-mid",
+            tags=["java"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Developer", "Requirements:\n- Programming")
+
+        # Run with --years 10 to override config's history_years: 5
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file), "--years", "10"])
+
+        assert result.exit_code == 0
+        # No filter message when nothing is filtered (8 years ago is within 10 years)
+        # But the important thing is both companies are included (CLI overrode config)
+        # With config's history_years: 5, the 8-year-old position would be excluded
+        assert "Recent Company" in result.output
+        assert "Mid Company" in result.output
+
+    def test_no_years_filter_without_flag_or_config(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Without --years or config, all positions should be included."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create config without history_years
+        (tmp_path / ".resume.yaml").write_text(
+            """\
+schema_version: "2.0.0"
+work_units_dir: work-units
+positions_path: positions.yaml
+"""
+        )
+
+        # Create positions: one current, one very old
+        self._create_positions_file(
+            tmp_path,
+            [
+                {
+                    "id": "pos-recent",
+                    "employer": "Recent Company",
+                    "title": "Engineer",
+                    "start_date": "2023-01",
+                    "end_date": None,
+                },
+                {
+                    "id": "pos-old",
+                    "employer": "Very Old Company",
+                    "title": "Developer",
+                    "start_date": "2000-01",
+                    "end_date": "2005-12",  # 20+ years ago
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        self._create_work_unit_with_position(
+            work_units / "wu-recent.yaml",
+            "wu-2024-01-01-recent",
+            "Built Python microservices",
+            "pos-recent",
+            tags=["python"],
+        )
+        self._create_work_unit_with_position(
+            work_units / "wu-old.yaml",
+            "wu-2003-01-01-old",
+            "Developed legacy application",
+            "pos-old",
+            tags=["java"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Developer", "Requirements:\n- Programming")
+
+        # Run without --years flag
+        result = cli_runner.invoke(main, ["plan", "--jd", str(jd_file)])
+
+        assert result.exit_code == 0
+        # Should NOT show filter message
+        assert "Filtered to last" not in result.output
+        # Both companies should be included
+        assert "Recent Company" in result.output
+        assert "Very Old Company" in result.output
+
+    def test_years_filter_no_gap_warning_for_filtered_positions(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """AC5: No gap warning should be generated for positions filtered by --years."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create config with allow_gaps mode to enable gap detection
+        (tmp_path / ".resume.yaml").write_text(
+            """\
+schema_version: "2.0.0"
+work_units_dir: work-units
+positions_path: positions.yaml
+employment_continuity: allow_gaps
+"""
+        )
+
+        # Create positions with a gap that would be detected without years filter:
+        # - Recent: 2023-01 to present
+        # - Mid: 2018-01 to 2020-06 (2.5 year gap to recent)
+        # - Old: 2005-01 to 2008-06 (very old, would create huge gap if not filtered)
+        self._create_positions_file(
+            tmp_path,
+            [
+                {
+                    "id": "pos-recent",
+                    "employer": "Recent Company",
+                    "title": "Engineer",
+                    "start_date": "2023-01",
+                    "end_date": None,
+                },
+                {
+                    "id": "pos-mid",
+                    "employer": "Mid Company",
+                    "title": "Developer",
+                    "start_date": "2018-01",
+                    "end_date": "2020-06",
+                },
+                {
+                    "id": "pos-old",
+                    "employer": "Ancient Company",
+                    "title": "Junior Dev",
+                    "start_date": "2005-01",
+                    "end_date": "2008-06",
+                },
+            ],
+        )
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+
+        self._create_work_unit_with_position(
+            work_units / "wu-recent.yaml",
+            "wu-2024-01-01-recent",
+            "Built Python microservices",
+            "pos-recent",
+            tags=["python"],
+        )
+        self._create_work_unit_with_position(
+            work_units / "wu-mid.yaml",
+            "wu-2019-01-01-mid",
+            "Developed Java application",
+            "pos-mid",
+            tags=["java"],
+        )
+        self._create_work_unit_with_position(
+            work_units / "wu-old.yaml",
+            "wu-2007-01-01-old",
+            "Maintained legacy systems",
+            "pos-old",
+            tags=["legacy"],
+        )
+
+        jd_file = tmp_path / "jd.txt"
+        _create_jd_file(jd_file, "Developer", "Requirements:\n- Python\n- Java")
+
+        # Run with --years 10 to filter out pos-old
+        result = cli_runner.invoke(
+            main, ["plan", "--jd", str(jd_file), "--years", "10", "--allow-gaps"]
+        )
+
+        assert result.exit_code == 0
+        # Ancient Company should be filtered out
+        assert "Ancient Company" not in result.output
+        # Should NOT mention a gap related to 2008-2018 (the gap between old and mid)
+        # because the old position is filtered out
+        # The only gap that might be mentioned is between mid (2020-06) and recent (2023-01)
+        if "Employment Gap" in result.output:
+            # If there's a gap warning, it should be about 2020-2023, not 2008-2018
+            assert "2008" not in result.output
+            assert "2005" not in result.output

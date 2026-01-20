@@ -6,6 +6,7 @@ Supports grouping by employer and promotion chain detection.
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -299,4 +300,36 @@ class PositionService:
             if query_lower in pos.employer.lower()
             or query_lower in pos.title.lower()
             or query_lower in pos.id.lower()
+        ]
+
+    @staticmethod
+    def filter_by_years(positions: list[Position], years: int) -> list[Position]:
+        """Filter positions to those active within the last N years.
+
+        A position is included if:
+        - end_date is None (current position), OR
+        - end_date >= (today - years)
+
+        This supports the --years CLI flag (Story 13.2) for limiting
+        work history to recent experience.
+
+        Args:
+            positions: List of positions to filter.
+            years: Number of years to look back from today.
+
+        Returns:
+            List of positions that ended within the last N years,
+            or are currently active.
+        """
+        # Calculate cutoff date in YYYY-MM format for comparison
+        today = date.today()
+        cutoff_year = today.year - years
+        cutoff_month = today.month
+        cutoff_ym = f"{cutoff_year:04d}-{cutoff_month:02d}"
+
+        return [
+            pos
+            for pos in positions
+            if pos.end_date is None  # Current positions always included
+            or pos.end_date >= cutoff_ym  # end_date is YYYY-MM, sortable strings
         ]

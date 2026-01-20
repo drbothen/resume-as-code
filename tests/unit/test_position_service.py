@@ -660,3 +660,184 @@ positions:
 
         assert result is not None
         assert result.id == "pos-test"
+
+
+def _years_ago_ym(years: int) -> str:
+    """Helper to get YYYY-MM format for N years ago from today."""
+    from datetime import date
+
+    today = date.today()
+    return f"{today.year - years:04d}-{today.month:02d}"
+
+
+class TestPositionServiceFilterByYears:
+    """Tests for filter_by_years method (Story 13.2)."""
+
+    def test_filter_current_position_always_included(self) -> None:
+        """Current positions (end_date=None) should always be included."""
+        positions = [
+            Position(
+                id="pos-current",
+                employer="TechCorp",
+                title="Engineer",
+                start_date="2020-01",
+                end_date=None,  # Current position
+            )
+        ]
+        result = PositionService.filter_by_years(positions, years=5)
+
+        assert len(result) == 1
+        assert result[0].id == "pos-current"
+
+    def test_filter_recent_position_included(self) -> None:
+        """Position ending within filter range should be included."""
+        # Position ended 2 years ago - should be included in 5-year filter
+        end_date = _years_ago_ym(2)
+
+        positions = [
+            Position(
+                id="pos-recent",
+                employer="RecentCorp",
+                title="Engineer",
+                start_date="2018-01",
+                end_date=end_date,
+            )
+        ]
+        result = PositionService.filter_by_years(positions, years=5)
+
+        assert len(result) == 1
+        assert result[0].id == "pos-recent"
+
+    def test_filter_old_position_excluded(self) -> None:
+        """Position ending before filter range should be excluded."""
+        # Position ended 15 years ago - should be excluded from 10-year filter
+        end_date = _years_ago_ym(15)
+
+        positions = [
+            Position(
+                id="pos-ancient",
+                employer="AncientCorp",
+                title="Developer",
+                start_date="2000-01",
+                end_date=end_date,
+            )
+        ]
+        result = PositionService.filter_by_years(positions, years=10)
+
+        assert len(result) == 0
+
+    def test_filter_position_at_cutoff_boundary_included(self) -> None:
+        """Position ending exactly at cutoff should be included."""
+        # Position ending exactly at cutoff (10 years ago)
+        end_date = _years_ago_ym(10)
+
+        positions = [
+            Position(
+                id="pos-boundary",
+                employer="BoundaryCorp",
+                title="Engineer",
+                start_date="2005-01",
+                end_date=end_date,
+            )
+        ]
+        result = PositionService.filter_by_years(positions, years=10)
+
+        assert len(result) == 1
+        assert result[0].id == "pos-boundary"
+
+    def test_filter_mixed_positions(self) -> None:
+        """Should correctly filter mix of current, recent, and old positions."""
+        five_years_ago = _years_ago_ym(5)
+        twenty_years_ago = _years_ago_ym(20)
+
+        positions = [
+            Position(
+                id="pos-current",
+                employer="CurrentCorp",
+                title="Director",
+                start_date="2022-01",
+                end_date=None,  # Current - should be included
+            ),
+            Position(
+                id="pos-recent",
+                employer="RecentCorp",
+                title="Manager",
+                start_date="2015-01",
+                end_date=five_years_ago,  # 5 years ago - included
+            ),
+            Position(
+                id="pos-ancient",
+                employer="AncientCorp",
+                title="Intern",
+                start_date="2000-01",
+                end_date=twenty_years_ago,  # 20 years ago - excluded
+            ),
+        ]
+        result = PositionService.filter_by_years(positions, years=10)
+
+        assert len(result) == 2
+        result_ids = {p.id for p in result}
+        assert "pos-current" in result_ids
+        assert "pos-recent" in result_ids
+        assert "pos-ancient" not in result_ids
+
+    def test_filter_position_spanning_cutoff_included(self) -> None:
+        """Position started before cutoff but ended after should be included (AC6)."""
+        # Position started 12 years ago, ended 8 years ago
+        start_date = _years_ago_ym(12)
+        end_date = _years_ago_ym(8)
+
+        positions = [
+            Position(
+                id="pos-spanning",
+                employer="SpanningCorp",
+                title="Engineer",
+                start_date=start_date,
+                end_date=end_date,
+            )
+        ]
+        result = PositionService.filter_by_years(positions, years=10)
+
+        # end_date (8 years ago) is within range, so position should be included
+        assert len(result) == 1
+        assert result[0].id == "pos-spanning"
+
+    def test_filter_empty_list(self) -> None:
+        """Should return empty list for empty input."""
+        result = PositionService.filter_by_years([], years=10)
+        assert result == []
+
+    def test_filter_with_one_year(self) -> None:
+        """Should work with minimum filter value of 1 year."""
+        from datetime import date
+
+        # Use months calculation for sub-year precision
+        today = date.today()
+        # 6 months ago - compute year/month manually
+        if today.month > 6:
+            six_months_ago = f"{today.year:04d}-{today.month - 6:02d}"
+        else:
+            six_months_ago = f"{today.year - 1:04d}-{today.month + 6:02d}"
+
+        two_years_ago = _years_ago_ym(2)
+
+        positions = [
+            Position(
+                id="pos-6months",
+                employer="RecentCorp",
+                title="Engineer",
+                start_date="2020-01",
+                end_date=six_months_ago,  # 6 months ago - included
+            ),
+            Position(
+                id="pos-2years",
+                employer="OlderCorp",
+                title="Developer",
+                start_date="2018-01",
+                end_date=two_years_ago,  # 2 years ago - excluded
+            ),
+        ]
+        result = PositionService.filter_by_years(positions, years=1)
+
+        assert len(result) == 1
+        assert result[0].id == "pos-6months"

@@ -1172,6 +1172,21 @@
       "title": "Employment Continuity",
       "type": "string"
     },
+    "history_years": {
+      "anyOf": [
+        {
+          "maximum": 50,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Limit work history to last N years (None = unlimited)",
+      "title": "History Years"
+    },
     "onet": {
       "anyOf": [
         {

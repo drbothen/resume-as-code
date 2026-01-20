@@ -726,3 +726,41 @@ class TestResumeConfigTemplatesDir:
         assert config.templates_dir is not None
         assert config.templates_dir.is_absolute()
         assert "~" not in str(config.templates_dir)
+
+
+class TestResumeConfigHistoryYears:
+    """Test history_years field in ResumeConfig (Story 13.2)."""
+
+    def test_default_history_years_is_none(self) -> None:
+        """Default history_years should be None (unlimited)."""
+        config = ResumeConfig()
+        assert config.history_years is None
+
+    def test_custom_history_years(self) -> None:
+        """ResumeConfig should accept custom history_years."""
+        config = ResumeConfig(history_years=10)
+        assert config.history_years == 10
+
+    def test_history_years_minimum_bound(self) -> None:
+        """history_years should have minimum value of 1."""
+        with pytest.raises(ValueError):
+            ResumeConfig(history_years=0)
+
+    def test_history_years_maximum_bound(self) -> None:
+        """history_years should have maximum value of 50."""
+        with pytest.raises(ValueError):
+            ResumeConfig(history_years=51)
+
+    def test_history_years_valid_boundary_values(self) -> None:
+        """history_years should accept boundary values 1 and 50."""
+        config_min = ResumeConfig(history_years=1)
+        assert config_min.history_years == 1
+
+        config_max = ResumeConfig(history_years=50)
+        assert config_max.history_years == 50
+
+    def test_history_years_common_values(self) -> None:
+        """history_years should accept common values (5, 10, 15, 20)."""
+        for years in [5, 10, 15, 20]:
+            config = ResumeConfig(history_years=years)
+            assert config.history_years == years
