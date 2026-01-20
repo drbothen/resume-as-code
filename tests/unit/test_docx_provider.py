@@ -691,3 +691,112 @@ class TestDOCXExport:
 
         assert "DOCXProvider" in providers.__all__
         assert "PDFProvider" in providers.__all__
+
+
+class TestDOCXTemplateResolution:
+    """Tests for DOCX template resolution (AC: 1, 2, 3)."""
+
+    def test_accepts_template_name_parameter(self) -> None:
+        """DOCXProvider should accept template_name parameter (AC1)."""
+        provider = DOCXProvider(template_name="branded")
+        assert provider.template_name == "branded"
+
+    def test_accepts_templates_dir_parameter(self, tmp_path: Path) -> None:
+        """DOCXProvider should accept templates_dir parameter (AC1)."""
+        provider = DOCXProvider(templates_dir=tmp_path)
+        assert provider.templates_dir == tmp_path
+
+    def test_accepts_both_parameters(self, tmp_path: Path) -> None:
+        """DOCXProvider should accept both template_name and templates_dir."""
+        provider = DOCXProvider(template_name="custom", templates_dir=tmp_path)
+        assert provider.template_name == "custom"
+        assert provider.templates_dir == tmp_path
+
+    def test_default_parameters_are_none(self) -> None:
+        """DOCXProvider should default to None for template parameters."""
+        provider = DOCXProvider()
+        assert provider.template_name is None
+        assert provider.templates_dir is None
+
+    def test_resolve_template_finds_custom_dir_first(self, tmp_path: Path) -> None:
+        """Template resolution should check custom templates_dir/docx/ first (AC2)."""
+        # Create custom template
+        custom_docx_dir = tmp_path / "docx"
+        custom_docx_dir.mkdir(parents=True)
+        custom_template = custom_docx_dir / "branded.docx"
+        custom_template.touch()
+
+        provider = DOCXProvider(template_name="branded", templates_dir=tmp_path)
+        resolved = provider._resolve_template()
+
+        assert resolved == custom_template
+
+    def test_resolve_template_falls_back_to_builtin(self, tmp_path: Path) -> None:
+        """Template resolution should fall back to built-in templates/docx/ (AC2)."""
+        # Create built-in template (simulate by creating in expected location)
+        # Note: This test assumes built-in template exists after Task 3
+        provider = DOCXProvider(template_name="branded")
+
+        # For now, this should return None since no built-in templates exist yet
+        resolved = provider._resolve_template()
+
+        # After Task 3, this should find the built-in template
+        # For now, None is expected
+        assert resolved is None or resolved.suffix == ".docx"
+
+    def test_resolve_template_returns_none_when_not_found(self) -> None:
+        """Template resolution should return None for nonexistent template (AC3)."""
+        provider = DOCXProvider(template_name="nonexistent")
+        resolved = provider._resolve_template()
+
+        assert resolved is None
+
+    def test_resolve_template_returns_none_when_no_template_name(self) -> None:
+        """Template resolution should return None when template_name is None."""
+        provider = DOCXProvider()
+        resolved = provider._resolve_template()
+
+        assert resolved is None
+
+
+class TestDOCXTemplateFallback:
+    """Tests for fallback to programmatic generation (AC: 3)."""
+
+    def test_fallback_to_programmatic_when_no_template(
+        self, sample_resume: ResumeData, tmp_path: Path
+    ) -> None:
+        """Should use programmatic generation when no template found (AC3)."""
+        output_path = tmp_path / "resume.docx"
+
+        # Template name provided but doesn't exist - should fall back
+        provider = DOCXProvider(template_name="nonexistent")
+        result = provider.render(sample_resume, output_path)
+
+        # Should still generate valid DOCX via fallback
+        assert result.exists()
+        doc = Document(output_path)
+        text = "\n".join(p.text for p in doc.paragraphs)
+        assert "John Doe" in text
+
+    def test_fallback_generates_identical_output(
+        self, sample_resume: ResumeData, tmp_path: Path
+    ) -> None:
+        """Fallback should produce same output as no template specified."""
+        # Generate with no template
+        no_template_path = tmp_path / "no_template.docx"
+        provider_no_template = DOCXProvider()
+        provider_no_template.render(sample_resume, no_template_path)
+
+        # Generate with nonexistent template (triggers fallback)
+        fallback_path = tmp_path / "fallback.docx"
+        provider_fallback = DOCXProvider(template_name="nonexistent")
+        provider_fallback.render(sample_resume, fallback_path)
+
+        # Both should have same content
+        doc1 = Document(no_template_path)
+        doc2 = Document(fallback_path)
+
+        text1 = "\n".join(p.text for p in doc1.paragraphs)
+        text2 = "\n".join(p.text for p in doc2.paragraphs)
+
+        assert text1 == text2

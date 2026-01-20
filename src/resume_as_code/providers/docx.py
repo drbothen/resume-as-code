@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -15,9 +16,53 @@ from resume_as_code.models.education import Education
 from resume_as_code.models.errors import RenderError
 from resume_as_code.models.resume import ResumeData, ResumeItem
 
+logger = logging.getLogger(__name__)
+
 
 class DOCXProvider:
-    """Provider for generating DOCX resumes using python-docx."""
+    """Provider for generating DOCX resumes using python-docx or docxtpl templates."""
+
+    def __init__(
+        self,
+        template_name: str | None = None,
+        templates_dir: Path | None = None,
+    ) -> None:
+        """Initialize DOCXProvider with optional template support.
+
+        Args:
+            template_name: Name of DOCX template (without .docx extension).
+            templates_dir: Custom directory to search for templates first.
+        """
+        self.template_name = template_name
+        self.templates_dir = templates_dir
+
+    def _resolve_template(self) -> Path | None:
+        """Find DOCX template file, checking custom dir first.
+
+        Template resolution order (AC2):
+        1. Custom templates_dir/docx/{template_name}.docx
+        2. Built-in templates/docx/{template_name}.docx
+
+        Returns:
+            Path to template if found, None otherwise.
+        """
+        if not self.template_name:
+            return None
+
+        template_filename = f"{self.template_name}.docx"
+
+        # Check custom templates dir first
+        if self.templates_dir:
+            custom_path = self.templates_dir / "docx" / template_filename
+            if custom_path.exists():
+                return custom_path
+
+        # Fall back to built-in templates
+        builtin_path = Path(__file__).parent.parent / "templates" / "docx" / template_filename
+        if builtin_path.exists():
+            return builtin_path
+
+        return None
 
     def render(self, resume: ResumeData, output_path: Path) -> Path:
         """Render resume to DOCX file.
@@ -92,6 +137,210 @@ class DOCXProvider:
 
     def _build_document(self, resume: ResumeData) -> Any:
         """Build the Word document from resume data.
+
+        Uses docxtpl template if found, otherwise falls back to programmatic generation.
+
+        Args:
+            resume: ResumeData to render.
+
+        Returns:
+            python-docx Document object.
+        """
+        template_path = self._resolve_template()
+
+        if template_path:
+            return self._render_from_template(resume, template_path)
+
+        # Fallback to programmatic generation (AC3)
+        if self.template_name:
+            logger.warning(
+                f"DOCX template '{self.template_name}' not found, using programmatic generation"
+            )
+
+        return self._build_programmatic(resume)
+
+    def _render_from_template(self, resume: ResumeData, template_path: Path) -> Any:
+        """Render resume using docxtpl template.
+
+        Args:
+            resume: ResumeData to render.
+            template_path: Path to .docx template file.
+
+        Returns:
+            python-docx Document object.
+        """
+        from docxtpl import DocxTemplate  # type: ignore[import-untyped]
+
+        doc = DocxTemplate(str(template_path))
+        context = self._build_template_context(resume)
+        doc.render(context)
+        return doc.docx  # Returns underlying python-docx Document
+
+    def _build_template_context(self, resume: ResumeData) -> dict[str, Any]:
+        """Build Jinja2 context dictionary for docxtpl template.
+
+        Args:
+            resume: ResumeData to render.
+
+        Returns:
+            Dictionary with all template variables.
+        """
+        # Build employer groups for grouped position rendering
+        employer_groups = self._build_employer_groups(resume)
+
+        return {
+            # Contact info
+            "contact": {
+                "name": resume.contact.name,
+                "title": resume.contact.title,
+                "email": resume.contact.email,
+                "phone": resume.contact.phone,
+                "location": resume.contact.location,
+                "linkedin": resume.contact.linkedin,
+                "github": resume.contact.github,
+                "website": resume.contact.website,
+            },
+            # Summary
+            "summary": resume.summary,
+            # Sections (experience, skills, etc.)
+            "sections": [
+                {
+                    "title": section.title,
+                    "items": [
+                        {
+                            "title": item.title,
+                            "organization": item.organization,
+                            "location": item.location,
+                            "start_date": item.start_date,
+                            "end_date": item.end_date or "Present",
+                            "scope_line": item.scope_line,
+                            "bullets": [b.text for b in item.bullets],
+                        }
+                        for item in section.items
+                    ],
+                }
+                for section in resume.sections
+            ],
+            # Employer groups (for grouped position rendering)
+            "employer_groups": employer_groups,
+            # Skills
+            "skills": resume.skills,
+            # Optional sections - always return lists (empty if no data)
+            # to avoid 'NoneType' is not iterable errors in templates
+            "certifications": [
+                {
+                    "name": c.name,
+                    "issuer": c.issuer,
+                    "date": c.date,
+                    "expires": c.expires,
+                    "year": c.date[:4] if c.date else None,
+                }
+                for c in resume.get_active_certifications()
+            ],
+            "education": [
+                {
+                    "degree": e.degree,
+                    "institution": e.institution,
+                    "graduation_year": e.graduation_year,
+                    "honors": e.honors,
+                    "gpa": e.gpa,
+                }
+                for e in resume.education
+                if e.display
+            ],
+            "publications": [
+                {
+                    "title": p.title,
+                    "type": p.type,
+                    "venue": p.venue,
+                    "date": p.date,
+                    "url": p.url,
+                }
+                for p in resume.get_sorted_publications()
+            ],
+            "board_roles": [
+                {
+                    "organization": b.organization,
+                    "role": b.role,
+                    "type": b.type,
+                    "start_date": b.start_date,
+                    "end_date": b.end_date,
+                    "focus": b.focus,
+                }
+                for b in resume.get_sorted_board_roles()  # Sorted by type priority and date
+            ],
+            "highlights": resume.career_highlights or [],
+            # Story 7.19: Tailored notice for customized resumes
+            "tailored_notice_text": resume.tailored_notice_text,
+        }
+
+    def _build_employer_groups(self, resume: ResumeData) -> list[dict[str, Any]]:
+        """Build employer-grouped positions for template rendering.
+
+        Groups multiple positions at the same employer together.
+
+        Args:
+            resume: ResumeData to extract positions from.
+
+        Returns:
+            List of employer groups with nested positions.
+        """
+        # Find Experience section
+        experience_section = next((s for s in resume.sections if s.title == "Experience"), None)
+        if not experience_section:
+            return []
+
+        # Group positions by employer (organization)
+        # Track both positions and location (from first/most recent position)
+        groups: dict[str, dict[str, Any]] = {}
+        for item in experience_section.items:
+            employer = item.organization or "Unknown"
+            if employer not in groups:
+                groups[employer] = {
+                    "positions": [],
+                    "location": item.location,  # Use first position's location
+                }
+            groups[employer]["positions"].append(
+                {
+                    "title": item.title,
+                    "start_date": item.start_date,
+                    "end_date": item.end_date or "Present",
+                    "scope_line": item.scope_line,
+                    "bullets": [b.text for b in item.bullets],
+                }
+            )
+
+        # Convert to list maintaining order
+        return [
+            {
+                "employer": employer,
+                "location": data["location"],
+                "positions": data["positions"],
+                "date_range": self._compute_employer_date_range(data["positions"]),
+                "is_multi_position": len(data["positions"]) > 1,
+            }
+            for employer, data in groups.items()
+        ]
+
+    def _compute_employer_date_range(self, positions: list[dict[str, Any]]) -> str:
+        """Compute overall date range for an employer.
+
+        Args:
+            positions: List of position dicts with start_date and end_date.
+
+        Returns:
+            Date range string like "2020-01 - Present".
+        """
+        start_dates = [p["start_date"] for p in positions if p.get("start_date")]
+        end_dates = [p["end_date"] for p in positions if p.get("end_date")]
+
+        earliest = min(start_dates) if start_dates else ""
+        latest = "Present" if "Present" in end_dates else (max(end_dates) if end_dates else "")
+
+        return f"{earliest} - {latest}" if earliest else ""
+
+    def _build_programmatic(self, resume: ResumeData) -> Any:
+        """Build Word document programmatically (fallback method).
 
         Args:
             resume: ResumeData to render.

@@ -460,6 +460,26 @@
       "title": "DataPaths",
       "type": "object"
     },
+    "DocxConfig": {
+      "description": "DOCX-specific configuration (Story 13.1).\n\nAllows specifying a different template for DOCX output than PDF.",
+      "properties": {
+        "template": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "DOCX template name (without .docx extension).",
+          "title": "Template"
+        }
+      },
+      "title": "DocxConfig",
+      "type": "object"
+    },
     "Education": {
       "additionalProperties": false,
       "description": "Educational credential record.\n\nStores education information for resume rendering with support\nfor honors, GPA, and display control.",
@@ -1194,6 +1214,18 @@
       "default": null,
       "description": "Path to custom templates directory (supplements built-in templates)",
       "title": "Templates Dir"
+    },
+    "docx": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DocxConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "DOCX-specific settings (template override)"
     }
   },
   "title": "ResumeConfig",

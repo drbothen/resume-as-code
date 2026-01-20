@@ -307,6 +307,23 @@ Custom templates supplement built-in templates. When a template name is requeste
 
 CLI flag `--templates-dir` overrides the config value.
 
+**DOCX-specific template configuration** (in `.resume.yaml`):
+```yaml
+docx:
+  template: branded  # DOCX template name (without .docx extension)
+```
+DOCX template resolution priority:
+1. CLI `--template` flag (applies to all formats)
+2. Config `docx.template` (DOCX-specific override)
+3. Config `default_template` (fallback)
+4. Programmatic generation (if no template found)
+
+DOCX templates use docxtpl (Jinja2-based) for templating. Template search order:
+1. `{templates_dir}/docx/{template_name}.docx` (custom templates)
+2. Built-in `templates/docx/{template_name}.docx`
+
+If the specified template is not found, the system falls back to programmatic DOCX generation with a warning.
+
 ### Migrate Command Options
 
 | Flag | Description |

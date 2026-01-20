@@ -2176,3 +2176,331 @@ created_at: "2024-01-01T00:00:00"
             )
 
             assert captured_templates_dir == cli_templates_dir
+
+
+class TestDocxTemplateConfig:
+    """Tests for DOCX-specific template config (Story 13.1)."""
+
+    def test_docx_config_template_used_when_no_cli_flag(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """config.docx.template should be used for DOCX when no CLI flag (AC #4)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+        output_dir = tmp_path / "dist"
+
+        from resume_as_code.providers.pdf import PDFRenderResult
+
+        captured_docx_template = None
+
+        def capture_pdf(resume: Any, path: Path) -> PDFRenderResult:
+            path.write_bytes(b"%PDF-1.4 dummy")
+            return PDFRenderResult(output_path=path, page_count=1)
+
+        def create_docx_capture_template(
+            template_name: str | None = None, templates_dir: Path | None = None
+        ) -> MagicMock:
+            nonlocal captured_docx_template
+            captured_docx_template = template_name
+            mock = MagicMock()
+            mock.render.side_effect = lambda r, p: p.write_bytes(b"PK dummy")
+            return mock
+
+        with (
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+            patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
+            patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
+            patch("resume_as_code.providers.docx.DOCXProvider") as mock_docx,
+        ):
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = output_dir
+            config.default_template = "modern"  # Global default
+            config.default_format = "both"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
+            config.templates_dir = None
+            # DOCX-specific config (Story 13.1)
+            config.docx = MagicMock()
+            config.docx.template = "branded"  # DOCX override
+            # Profile attrs
+            config.profile.name = "Test User"
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
+            mock_config.return_value = config
+            mock_load_wus.return_value = []
+
+            mock_pdf.return_value.render.side_effect = capture_pdf
+            mock_docx.side_effect = create_docx_capture_template
+
+            result = runner.invoke(
+                main,
+                ["build", "--plan", str(plan_file)],
+            )
+
+            assert result.exit_code == 0, f"Build failed: {result.output}"
+            # DOCX should use config.docx.template, not default_template
+            assert captured_docx_template == "branded"
+
+    def test_cli_template_overrides_docx_config(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """CLI --template should override config.docx.template (AC #5)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+        output_dir = tmp_path / "dist"
+
+        from resume_as_code.providers.pdf import PDFRenderResult
+
+        captured_docx_template = None
+
+        def capture_pdf(resume: Any, path: Path) -> PDFRenderResult:
+            path.write_bytes(b"%PDF-1.4 dummy")
+            return PDFRenderResult(output_path=path, page_count=1)
+
+        def create_docx_capture_template(
+            template_name: str | None = None, templates_dir: Path | None = None
+        ) -> MagicMock:
+            nonlocal captured_docx_template
+            captured_docx_template = template_name
+            mock = MagicMock()
+            mock.render.side_effect = lambda r, p: p.write_bytes(b"PK dummy")
+            return mock
+
+        with (
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+            patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
+            patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
+            patch("resume_as_code.providers.docx.DOCXProvider") as mock_docx,
+        ):
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = output_dir
+            config.default_template = "modern"
+            config.default_format = "both"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
+            config.templates_dir = None
+            # DOCX-specific config
+            config.docx = MagicMock()
+            config.docx.template = "branded"  # Would be used if no CLI flag
+            # Profile attrs
+            config.profile.name = "Test User"
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
+            mock_config.return_value = config
+            mock_load_wus.return_value = []
+
+            mock_pdf.return_value.render.side_effect = capture_pdf
+            mock_docx.side_effect = create_docx_capture_template
+
+            # CLI flag should override config.docx.template
+            result = runner.invoke(
+                main,
+                ["build", "--plan", str(plan_file), "--template", "executive"],
+            )
+
+            assert result.exit_code == 0, f"Build failed: {result.output}"
+            # DOCX should use CLI template, not config.docx.template
+            assert captured_docx_template == "executive"
+
+    def test_default_template_used_when_no_docx_config(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """default_template used for DOCX when config.docx is not set (AC #4)."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+        output_dir = tmp_path / "dist"
+
+        from resume_as_code.providers.pdf import PDFRenderResult
+
+        captured_docx_template = None
+
+        def capture_pdf(resume: Any, path: Path) -> PDFRenderResult:
+            path.write_bytes(b"%PDF-1.4 dummy")
+            return PDFRenderResult(output_path=path, page_count=1)
+
+        def create_docx_capture_template(
+            template_name: str | None = None, templates_dir: Path | None = None
+        ) -> MagicMock:
+            nonlocal captured_docx_template
+            captured_docx_template = template_name
+            mock = MagicMock()
+            mock.render.side_effect = lambda r, p: p.write_bytes(b"PK dummy")
+            return mock
+
+        with (
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+            patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
+            patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
+            patch("resume_as_code.providers.docx.DOCXProvider") as mock_docx,
+        ):
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = output_dir
+            config.default_template = "ats-safe"  # Should be used for DOCX
+            config.default_format = "both"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
+            config.templates_dir = None
+            # No DOCX-specific config
+            config.docx = None
+            # Profile attrs
+            config.profile.name = "Test User"
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
+            mock_config.return_value = config
+            mock_load_wus.return_value = []
+
+            mock_pdf.return_value.render.side_effect = capture_pdf
+            mock_docx.side_effect = create_docx_capture_template
+
+            result = runner.invoke(
+                main,
+                ["build", "--plan", str(plan_file)],
+            )
+
+            assert result.exit_code == 0, f"Build failed: {result.output}"
+            # DOCX should use default_template when config.docx is None
+            assert captured_docx_template == "ats-safe"
+
+    def test_default_template_used_when_docx_template_is_none(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """default_template used for DOCX when config.docx.template is None."""
+        plan_file = tmp_path / "plan.yaml"
+        plan_file.write_text("""
+version: "1.0.0"
+jd_hash: "abc123"
+selected_work_units: []
+selection_count: 0
+top_k: 8
+ranker_version: "hybrid-rrf-v1"
+created_at: "2024-01-01T00:00:00"
+""")
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+        output_dir = tmp_path / "dist"
+
+        from resume_as_code.providers.pdf import PDFRenderResult
+
+        captured_docx_template = None
+
+        def capture_pdf(resume: Any, path: Path) -> PDFRenderResult:
+            path.write_bytes(b"%PDF-1.4 dummy")
+            return PDFRenderResult(output_path=path, page_count=1)
+
+        def create_docx_capture_template(
+            template_name: str | None = None, templates_dir: Path | None = None
+        ) -> MagicMock:
+            nonlocal captured_docx_template
+            captured_docx_template = template_name
+            mock = MagicMock()
+            mock.render.side_effect = lambda r, p: p.write_bytes(b"PK dummy")
+            return mock
+
+        with (
+            patch("resume_as_code.commands.build.get_config") as mock_config,
+            patch("resume_as_code.commands.build.load_all_work_units") as mock_load_wus,
+            patch("resume_as_code.providers.pdf.PDFProvider") as mock_pdf,
+            patch("resume_as_code.providers.docx.DOCXProvider") as mock_docx,
+        ):
+            config = MagicMock()
+            config.work_units_dir = work_units_dir
+            config.output_dir = output_dir
+            config.default_template = "executive"  # Should be used for DOCX
+            config.default_format = "both"
+            config.tailored_notice = False
+            config.tailored_notice_text = None
+            config.employment_continuity = "minimum_bullet"
+            config.templates_dir = None
+            # DOCX config exists but template is None
+            config.docx = MagicMock()
+            config.docx.template = None  # Not set
+            # Profile attrs
+            config.profile.name = "Test User"
+            config.profile.title = None
+            config.profile.email = None
+            config.profile.phone = None
+            config.profile.location = None
+            config.profile.linkedin = None
+            config.profile.github = None
+            config.profile.website = None
+            config.profile.summary = None
+            mock_config.return_value = config
+            mock_load_wus.return_value = []
+
+            mock_pdf.return_value.render.side_effect = capture_pdf
+            mock_docx.side_effect = create_docx_capture_template
+
+            result = runner.invoke(
+                main,
+                ["build", "--plan", str(plan_file)],
+            )
+
+            assert result.exit_code == 0, f"Build failed: {result.output}"
+            # DOCX should use default_template when config.docx.template is None
+            assert captured_docx_template == "executive"

@@ -259,6 +259,15 @@ def build_command(
 
     # Generate outputs atomically (AC: #4, #5, #7)
     actual_name = output_name if output_name else "resume"
+
+    # Story 13.1: Resolve DOCX-specific template
+    # Priority: CLI --template > config.docx.template > config.default_template
+    actual_docx_template = template_name  # CLI flag takes precedence
+    if actual_docx_template is None and config.docx and config.docx.template:
+        actual_docx_template = config.docx.template
+    if actual_docx_template is None:
+        actual_docx_template = actual_template  # Falls back to default_template
+
     _generate_outputs(
         resume=resume,
         plan=plan,
@@ -266,6 +275,7 @@ def build_command(
         output_format=actual_format,
         output_dir=actual_output_dir,
         template_name=actual_template,
+        docx_template_name=actual_docx_template,
         output_name=actual_name,
         templates_dir=actual_templates_dir,
     )
@@ -517,6 +527,7 @@ def _generate_outputs(
     output_format: str,
     output_dir: Path,
     template_name: str,
+    docx_template_name: str | None = None,
     output_name: str = "resume",
     templates_dir: Path | None = None,
 ) -> None:
@@ -531,7 +542,9 @@ def _generate_outputs(
         work_units: List of Work Unit dictionaries included in build.
         output_format: Format to generate (pdf, docx, all).
         output_dir: Target output directory.
-        template_name: Name of template to use.
+        template_name: Name of template to use for PDF.
+        docx_template_name: Name of template to use for DOCX (Story 13.1).
+            Defaults to template_name if not specified.
         output_name: Base filename for output files (default: 'resume').
         templates_dir: Optional path to custom templates directory (Story 11.3).
 
@@ -575,9 +588,14 @@ def _generate_outputs(
                         f"(generated {pdf_page_count} pages). Consider trimming content."
                     )
 
-            # Generate DOCX (AC: #4)
+            # Generate DOCX (AC: #4, Story 13.1: template support)
             if output_format in ("docx", "all"):
-                docx_provider = DOCXProvider()
+                # Use DOCX-specific template (resolved in build_command, Story 13.1)
+                effective_docx_template = docx_template_name or template_name
+                docx_provider = DOCXProvider(
+                    template_name=effective_docx_template,
+                    templates_dir=templates_dir,
+                )
                 tmp_docx = tmp_path / f"{output_name}.docx"
                 docx_provider.render(resume, tmp_docx)
                 generated_files.append((tmp_docx, output_dir / f"{output_name}.docx"))

@@ -310,6 +310,18 @@ class TemplateOptions(BaseModel):
     )
 
 
+class DocxConfig(BaseModel):
+    """DOCX-specific configuration (Story 13.1).
+
+    Allows specifying a different template for DOCX output than PDF.
+    """
+
+    template: str | None = Field(
+        default=None,
+        description="DOCX template name (without .docx extension).",
+    )
+
+
 class DataPaths(BaseModel):
     """Custom paths for separated data files (Story 9.2 + 11.2).
 
@@ -462,6 +474,12 @@ class ResumeConfig(BaseModel):
     templates_dir: Path | None = Field(
         default=None,
         description="Path to custom templates directory (supplements built-in templates)",
+    )
+
+    # DOCX-specific configuration (Story 13.1)
+    docx: DocxConfig | None = Field(
+        default=None,
+        description="DOCX-specific settings (template override)",
     )
 
     @field_validator("career_highlights", mode="before")

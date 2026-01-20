@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 
 from resume_as_code.models.education import Education
 from resume_as_code.models.resume import (
@@ -948,3 +949,355 @@ class TestEmployerGroupingIntegration:
         engineer_pos = html.find("Engineer", senior_pos + 1)  # Find second occurrence
         # We're checking the position titles appear, and the group shows them properly
         assert senior_pos < engineer_pos or "Senior Engineer" in html
+
+
+class TestDOCXTemplateIntegration:
+    """Integration tests for DOCX template rendering (Story 13.1)."""
+
+    def test_branded_template_exists(self) -> None:
+        """Branded DOCX template is discoverable."""
+
+        from resume_as_code.providers.docx import DOCXProvider
+
+        provider = DOCXProvider(template_name="branded")
+        template_path = provider._resolve_template()
+
+        assert template_path is not None
+        assert template_path.exists()
+        assert template_path.name == "branded.docx"
+
+    def test_branded_template_renders_contact_info(self, tmp_path: Path) -> None:
+        """Branded template renders contact information via docxtpl."""
+
+        from docx import Document
+
+        from resume_as_code.providers.docx import DOCXProvider
+
+        contact = ContactInfo(
+            name="Jane Executive",
+            email="jane@example.com",
+            phone="555-1234",
+            location="San Francisco, CA",
+            linkedin="linkedin.com/in/janeexec",
+        )
+        resume = ResumeData(
+            contact=contact,
+            summary="Transformational technology leader with 15+ years experience.",
+        )
+
+        output_path = tmp_path / "branded_test.docx"
+        provider = DOCXProvider(template_name="branded")
+        provider.render(resume, output_path)
+
+        # Verify file created
+        assert output_path.exists()
+
+        # Verify content via python-docx
+        doc = Document(output_path)
+        text = "\n".join(p.text for p in doc.paragraphs)
+
+        assert "Jane Executive" in text
+        assert "jane@example.com" in text
+        assert "555-1234" in text
+
+    def test_branded_template_renders_experience_section(self, tmp_path: Path) -> None:
+        """Branded template renders experience with employer groups via docxtpl."""
+
+        from docx import Document
+
+        from resume_as_code.providers.docx import DOCXProvider
+
+        contact = ContactInfo(name="Test Candidate")
+        resume = ResumeData(
+            contact=contact,
+            sections=[
+                ResumeSection(
+                    title="Experience",
+                    items=[
+                        ResumeItem(
+                            title="VP of Engineering",
+                            organization="TechCorp Industries",
+                            start_date="2022",
+                            end_date=None,
+                            scope_line="$50M budget | 100+ engineers",
+                            bullets=[
+                                ResumeBullet(text="Scaled engineering organization"),
+                                ResumeBullet(text="Led digital transformation"),
+                            ],
+                        ),
+                        ResumeItem(
+                            title="Director of Engineering",
+                            organization="TechCorp Industries",
+                            start_date="2019",
+                            end_date="2022",
+                            bullets=[
+                                ResumeBullet(text="Built platform team from ground up"),
+                            ],
+                        ),
+                    ],
+                )
+            ],
+        )
+
+        output_path = tmp_path / "branded_experience.docx"
+        provider = DOCXProvider(template_name="branded")
+        provider.render(resume, output_path)
+
+        doc = Document(output_path)
+        text = "\n".join(p.text for p in doc.paragraphs)
+
+        # Verify employer name
+        assert "TechCorp Industries" in text
+        # Verify positions
+        assert "VP of Engineering" in text
+        assert "Director of Engineering" in text
+        # Verify bullets
+        assert "Scaled engineering organization" in text
+        assert "Built platform team" in text
+
+    def test_branded_template_renders_skills(self, tmp_path: Path) -> None:
+        """Branded template renders skills section via docxtpl."""
+
+        from docx import Document
+
+        from resume_as_code.providers.docx import DOCXProvider
+
+        contact = ContactInfo(name="Test Candidate")
+        resume = ResumeData(
+            contact=contact,
+            skills=["Python", "Kubernetes", "AWS", "Team Leadership", "Strategic Planning"],
+        )
+
+        output_path = tmp_path / "branded_skills.docx"
+        provider = DOCXProvider(template_name="branded")
+        provider.render(resume, output_path)
+
+        doc = Document(output_path)
+        text = "\n".join(p.text for p in doc.paragraphs)
+
+        assert "Python" in text
+        assert "Kubernetes" in text
+        assert "AWS" in text
+
+    def test_branded_template_renders_certifications(self, tmp_path: Path) -> None:
+        """Branded template renders certifications section via docxtpl."""
+
+        from docx import Document
+
+        from resume_as_code.models.certification import Certification
+        from resume_as_code.providers.docx import DOCXProvider
+
+        contact = ContactInfo(name="Test Candidate")
+        resume = ResumeData(
+            contact=contact,
+            certifications=[
+                Certification(
+                    name="AWS Solutions Architect Professional",
+                    issuer="Amazon Web Services",
+                    date="2024-01",
+                    expires="2027-01",
+                ),
+                Certification(
+                    name="CISSP",
+                    issuer="ISC2",
+                    date="2023-06",
+                ),
+            ],
+        )
+
+        output_path = tmp_path / "branded_certs.docx"
+        provider = DOCXProvider(template_name="branded")
+        provider.render(resume, output_path)
+
+        doc = Document(output_path)
+        text = "\n".join(p.text for p in doc.paragraphs)
+
+        assert "AWS Solutions Architect Professional" in text
+        assert "Amazon Web Services" in text
+        assert "CISSP" in text
+        assert "ISC2" in text
+
+    def test_branded_template_renders_education(self, tmp_path: Path) -> None:
+        """Branded template renders education section via docxtpl."""
+
+        from docx import Document
+
+        from resume_as_code.providers.docx import DOCXProvider
+
+        contact = ContactInfo(name="Test Candidate")
+        resume = ResumeData(
+            contact=contact,
+            education=[
+                Education(
+                    degree="MBA",
+                    institution="Stanford Graduate School of Business",
+                    graduation_year="2015",
+                ),
+                Education(
+                    degree="B.S. Computer Science",
+                    institution="MIT",
+                    graduation_year="2010",
+                    honors="Summa Cum Laude",
+                ),
+            ],
+        )
+
+        output_path = tmp_path / "branded_education.docx"
+        provider = DOCXProvider(template_name="branded")
+        provider.render(resume, output_path)
+
+        doc = Document(output_path)
+        text = "\n".join(p.text for p in doc.paragraphs)
+
+        assert "MBA" in text
+        assert "Stanford Graduate School of Business" in text
+        assert "B.S. Computer Science" in text
+        assert "MIT" in text
+
+    def test_custom_templates_dir_override(self, tmp_path: Path) -> None:
+        """Custom templates_dir should override built-in templates (AC2)."""
+        from pathlib import Path
+        from shutil import copy
+
+        from resume_as_code.providers.docx import DOCXProvider
+
+        # Create custom templates directory structure
+        custom_docx_dir = tmp_path / "custom" / "docx"
+        custom_docx_dir.mkdir(parents=True)
+
+        # Copy branded template to custom location (simulating custom template)
+        builtin_template = (
+            Path(__file__).parent.parent.parent
+            / "src"
+            / "resume_as_code"
+            / "templates"
+            / "docx"
+            / "branded.docx"
+        )
+        custom_template = custom_docx_dir / "branded.docx"
+        copy(builtin_template, custom_template)
+
+        # Provider should find custom template first
+        provider = DOCXProvider(
+            template_name="branded",
+            templates_dir=tmp_path / "custom",
+        )
+        resolved = provider._resolve_template()
+
+        assert resolved == custom_template
+
+    def test_fallback_to_builtin_when_not_in_custom_dir(self, tmp_path: Path) -> None:
+        """Should fall back to built-in when template not in custom dir (AC2)."""
+
+        from resume_as_code.providers.docx import DOCXProvider
+
+        # Create empty custom templates directory
+        custom_docx_dir = tmp_path / "custom" / "docx"
+        custom_docx_dir.mkdir(parents=True)
+
+        # Provider should fall back to built-in
+        provider = DOCXProvider(
+            template_name="branded",
+            templates_dir=tmp_path / "custom",
+        )
+        resolved = provider._resolve_template()
+
+        # Should find built-in template
+        assert resolved is not None
+        assert "resume_as_code" in str(resolved)
+        assert resolved.name == "branded.docx"
+
+    def test_template_with_all_sections(self, tmp_path: Path) -> None:
+        """End-to-end test with all resume sections populated."""
+
+        from docx import Document
+
+        from resume_as_code.models.board_role import BoardRole
+        from resume_as_code.models.certification import Certification
+        from resume_as_code.models.publication import Publication
+        from resume_as_code.providers.docx import DOCXProvider
+
+        contact = ContactInfo(
+            name="Executive Leader",
+            title="Chief Technology Officer",
+            email="cto@example.com",
+            phone="555-9999",
+            location="New York, NY",
+            linkedin="linkedin.com/in/ctoleader",
+            github="github.com/ctoleader",
+            website="ctoleader.com",
+        )
+
+        resume = ResumeData(
+            contact=contact,
+            summary="Visionary technology executive with 20+ years of experience.",
+            sections=[
+                ResumeSection(
+                    title="Experience",
+                    items=[
+                        ResumeItem(
+                            title="Chief Technology Officer",
+                            organization="Enterprise Corp",
+                            start_date="2020",
+                            scope_line="$100M ARR | 200 engineers | $25M budget",
+                            bullets=[
+                                ResumeBullet(
+                                    text="Led company-wide digital transformation",
+                                    metrics="resulting in 40% revenue growth",
+                                ),
+                            ],
+                        ),
+                    ],
+                )
+            ],
+            skills=["Strategic Planning", "Team Building", "Cloud Architecture"],
+            education=[
+                Education(
+                    degree="MBA",
+                    institution="Harvard Business School",
+                    graduation_year="2012",
+                ),
+            ],
+            certifications=[
+                Certification(
+                    name="AWS Solutions Architect",
+                    issuer="AWS",
+                    date="2023-01",
+                ),
+            ],
+            publications=[
+                Publication(
+                    title="Digital Transformation at Scale",
+                    type="conference",
+                    venue="CTO Summit",
+                    date="2024-03",
+                ),
+            ],
+            board_roles=[
+                BoardRole(
+                    organization="TechStartup Inc",
+                    role="Technical Advisor",
+                    type="advisory",
+                    start_date="2022-01",
+                ),
+            ],
+            career_highlights=["Grew engineering org from 50 to 200 engineers"],
+        )
+
+        output_path = tmp_path / "full_resume.docx"
+        provider = DOCXProvider(template_name="branded")
+        provider.render(resume, output_path)
+
+        assert output_path.exists()
+
+        doc = Document(output_path)
+        text = "\n".join(p.text for p in doc.paragraphs)
+
+        # Verify key content from all sections
+        assert "Executive Leader" in text
+        assert "Visionary technology executive" in text
+        assert "Chief Technology Officer" in text
+        assert "Enterprise Corp" in text
+        assert "Strategic Planning" in text
+        assert "MBA" in text
+        assert "AWS Solutions Architect" in text
