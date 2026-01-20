@@ -183,7 +183,8 @@ def score_archetype(text: str, archetype: WorkUnitArchetype) -> float:
     if not patterns:
         return 0.0
 
-    matches = sum(1 for p in patterns if re.search(p, text, re.IGNORECASE))
+    # Note: text is already lowercased by extract_text_content()
+    matches = sum(1 for p in patterns if re.search(p, text))
     return matches / len(patterns)
 
 

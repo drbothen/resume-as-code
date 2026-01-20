@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from resume_as_code.models.work_unit import WorkUnitArchetype
+from resume_as_code.models.work_unit import (
+    Outcome,
+    Problem,
+    WorkUnit,
+    WorkUnitArchetype,
+)
 from resume_as_code.services.archetype_inference_service import (
     MIN_CONFIDENCE_THRESHOLD,
     extract_text_content,
@@ -65,6 +70,58 @@ class TestExtractTextContent:
         }
         text = extract_text_content(data)
         assert "simple task" in text
+
+    def test_extracts_from_work_unit_object(self) -> None:
+        """Should extract all text fields from WorkUnit object."""
+        work_unit = WorkUnit(
+            id="wu-2024-01-15-test-incident",
+            title="Resolved P1 database outage",
+            problem=Problem(statement="Production database failed unexpectedly"),
+            actions=["Diagnosed issue", "Fixed configuration"],
+            outcome=Outcome(result="Restored service in 30 minutes"),
+            archetype=WorkUnitArchetype.INCIDENT,
+            tags=["incident-response", "database"],
+        )
+        text = extract_text_content(work_unit)
+        assert "resolved p1 database outage" in text
+        assert "production database failed" in text
+        assert "diagnosed issue" in text
+        assert "restored service" in text
+        assert "incident-response" in text
+
+    def test_extracts_quantified_impact_from_work_unit(self) -> None:
+        """Should extract quantified_impact from WorkUnit outcome."""
+        work_unit = WorkUnit(
+            id="wu-2024-01-15-cost-reduction",
+            title="Optimized cloud infrastructure costs",
+            problem=Problem(statement="Cloud spending exceeded budget by 40%"),
+            actions=["Analyzed resource usage", "Rightsized instances"],
+            outcome=Outcome(
+                result="Reduced monthly cloud costs",
+                quantified_impact="$50K monthly savings",
+            ),
+            archetype=WorkUnitArchetype.OPTIMIZATION,
+            tags=[],
+        )
+        text = extract_text_content(work_unit)
+        assert "$50k monthly savings" in text
+
+    def test_extracts_business_value_from_work_unit(self) -> None:
+        """Should extract business_value from WorkUnit outcome."""
+        work_unit = WorkUnit(
+            id="wu-2024-01-15-perf-improvement",
+            title="Improved API response times significantly",
+            problem=Problem(statement="API latency exceeded SLA requirements"),
+            actions=["Profiled slow endpoints", "Optimized database queries"],
+            outcome=Outcome(
+                result="Reduced P99 latency by 60%",
+                business_value="Improved customer satisfaction scores",
+            ),
+            archetype=WorkUnitArchetype.OPTIMIZATION,
+            tags=[],
+        )
+        text = extract_text_content(work_unit)
+        assert "improved customer satisfaction" in text
 
 
 class TestScoreArchetype:

@@ -889,3 +889,44 @@ tags: []
             "transformation",
             "cultural",
         ]
+
+    def test_infer_archetypes_apply_skips_low_confidence(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that --apply does NOT update files when confidence is below threshold."""
+        import json
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        # Ambiguous content that should have LOW confidence
+        work_unit_content = """id: wu-2024-01-01-ambiguous
+title: "Did some general work on the project"
+schema_version: "4.0.0"
+problem:
+  statement: "There was something to do"
+actions:
+  - "Worked on it"
+outcome:
+  result: "It was completed"
+tags: []
+"""
+        (work_units_dir / "test.yaml").write_text(work_unit_content)
+        monkeypatch.chdir(tmp_path)
+
+        # Apply with high threshold - should NOT modify file
+        result = cli_runner.invoke(
+            main, ["--json", "infer-archetypes", "--apply", "--min-confidence", "0.9"]
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+
+        # Verify inferred archetype is minimal (low confidence)
+        assert data["data"]["results"][0]["inferred"] == "minimal"
+        # Verify it was NOT applied (confidence below threshold)
+        assert data["data"]["results"][0]["applied"] is False
+
+        # Verify the file was NOT modified
+        content = (work_units_dir / "test.yaml").read_text()
+        assert "archetype:" not in content

@@ -13,6 +13,7 @@ from pathlib import Path
 import click
 from ruamel.yaml import YAML
 
+from resume_as_code.config import get_config
 from resume_as_code.models.output import JSONResponse
 from resume_as_code.services.archetype_inference_service import (
     MIN_CONFIDENCE_THRESHOLD,
@@ -67,8 +68,10 @@ def infer_archetypes_command(
         # JSON output for programmatic use
         resume --json infer-archetypes
     """
-    # Don't use get_work_units_dir() - it auto-creates the directory
-    work_units_dir = Path.cwd() / "work-units"
+    # Use config.work_units_dir for consistency with other commands
+    # Note: We check existence before accessing to avoid auto-creation
+    config = get_config()
+    work_units_dir = Path(config.work_units_dir)
 
     if not work_units_dir.exists():
         if ctx.obj.json_output:

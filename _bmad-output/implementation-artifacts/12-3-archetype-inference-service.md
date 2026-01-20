@@ -1,6 +1,6 @@
 # Story 12.3: Archetype Inference Service
 
-## Status: Review
+## Status: Done
 
 ---
 
@@ -477,8 +477,12 @@ class TestInferArchetype:
 | `src/resume_as_code/commands/infer.py` | **NEW** - CLI command |
 | `src/resume_as_code/cli.py` | Register new command |
 | `tests/unit/services/__init__.py` | **NEW** - Package init |
-| `tests/unit/services/test_archetype_inference_service.py` | **NEW** - Unit tests (22 tests) |
-| `tests/test_cli.py` | **MODIFIED** - CLI integration tests (10 tests added) |
+| `tests/unit/services/test_archetype_inference_service.py` | **NEW** - Unit tests (25 tests after review) |
+| `tests/test_cli.py` | **MODIFIED** - CLI integration tests (11 tests after review) |
+
+**Note:** The following files were also modified in the same commit (Story 12-2 bundled changes):
+| `src/resume_as_code/services/work_unit_service.py` | Archetype persistence in template creation |
+| `tests/unit/test_work_unit_service.py` | Tests for archetype persistence |
 
 ---
 
@@ -535,8 +539,20 @@ uv run pytest tests/unit/services/test_archetype_inference_service.py -v
 - Created inference service with regex-based pattern matching (no ML/embeddings per anti-patterns)
 - Service uses 0.5 confidence threshold (vs 0.3 in archetype_inference.py for migration use case)
 - CLI command is dry-run by default; `--apply` updates files using ruamel.yaml to preserve comments
-- Avoided using `get_work_units_dir()` in CLI to prevent auto-creation of directory
-- Full test coverage: 22 unit tests + 10 CLI integration tests
-- All quality checks pass: ruff, mypy --strict, pytest (2717 tests)
+- Full test coverage: 25 unit tests + 11 CLI integration tests (after review)
+- All quality checks pass: ruff, mypy --strict, pytest
 
 **Note on archetype_inference.py**: Existing `archetype_inference.py` (Story 12.1) is NOT redundant - it serves migration use case with lower 0.3 threshold and simpler interface. The new `archetype_inference_service.py` serves CLI use case with 0.5 threshold and richer API.
+
+---
+
+## Code Review Record
+
+**Reviewed**: 2026-01-19
+
+**Issues Fixed**:
+1. **HIGH**: Changed `infer.py` to use `config.work_units_dir` instead of hardcoded `Path.cwd() / "work-units"` for consistency with all other commands
+2. **MEDIUM**: Added 3 tests for WorkUnit object branch in `extract_text_content()` (was only testing dict branch)
+3. **MEDIUM**: Documented bundled Story 12-2 files in File List section
+4. **LOW**: Removed redundant `re.IGNORECASE` flag (text already lowercased), added clarifying comment
+5. **LOW**: Added negative test `test_infer_archetypes_apply_skips_low_confidence` to verify `--apply` doesn't modify files when confidence < threshold
