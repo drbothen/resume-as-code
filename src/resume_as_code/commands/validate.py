@@ -698,13 +698,16 @@ def _validate_archetype(work_unit: dict[str, Any], file_path: str) -> list[Conte
     result = validate_archetype_alignment(work_unit)
 
     # Convert archetype validation result to ContentWarning format
-    for warning in result.warnings:
+    # Warnings and suggestions are paired by index (problem, action, outcome order)
+    for i, warning in enumerate(result.warnings):
+        # Use corresponding suggestion if available, otherwise use empty string
+        suggestion = result.suggestions[i] if i < len(result.suggestions) else ""
         warnings.append(
             ContentWarning(
                 code="ARCHETYPE_MISALIGNMENT",
                 message=warning,
                 path=file_path,
-                suggestion=result.suggestions[0] if result.suggestions else "",
+                suggestion=suggestion,
                 severity="warning",
             )
         )

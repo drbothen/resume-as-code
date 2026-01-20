@@ -8,6 +8,10 @@ from typing import Any
 
 from resume_as_code.models.work_unit import WorkUnit, WorkUnitArchetype
 
+# Validation thresholds
+ALIGNMENT_THRESHOLD = 0.3  # Minimum score for PAR section to be considered aligned
+MIN_MATCHES_FOR_FULL_SCORE = 3  # Minimum pattern matches required for 1.0 score
+
 
 @dataclass
 class ArchetypeValidationResult:
@@ -301,7 +305,17 @@ ARCHETYPE_PAR_PATTERNS: dict[WorkUnitArchetype, dict[str, list[str]]] = {
 
 
 def extract_par_text(work_unit: WorkUnit | dict[str, Any]) -> tuple[str, str, str]:
-    """Extract Problem, Actions, Result text from work unit."""
+    """Extract Problem, Actions, Result text from work unit.
+
+    Combines relevant fields from each PAR section into searchable text strings.
+
+    Args:
+        work_unit: Either a WorkUnit model instance or raw dictionary from YAML.
+
+    Returns:
+        Tuple of (problem_text, action_text, outcome_text) all lowercased.
+        Returns empty strings for missing sections.
+    """
     if isinstance(work_unit, WorkUnit):
         problem_text = work_unit.problem.statement
         if work_unit.problem.context:
@@ -313,28 +327,37 @@ def extract_par_text(work_unit: WorkUnit | dict[str, Any]) -> tuple[str, str, st
         if work_unit.outcome.business_value:
             outcome_text += " " + work_unit.outcome.business_value
     else:
-        problem = work_unit.get("problem", {})
-        problem_text = str(problem.get("statement", ""))
+        problem = work_unit.get("problem") or {}
+        problem_text = str(problem.get("statement") or "")
         if problem.get("context"):
-            problem_text += " " + str(problem.get("context", ""))
-        action_text = " ".join(work_unit.get("actions", []))
-        outcome = work_unit.get("outcome", {})
-        outcome_text = str(outcome.get("result", ""))
+            problem_text += " " + str(problem.get("context") or "")
+        actions = work_unit.get("actions") or []
+        action_text = " ".join(str(a) for a in actions if a)
+        outcome = work_unit.get("outcome") or {}
+        outcome_text = str(outcome.get("result") or "")
         if outcome.get("quantified_impact"):
-            outcome_text += " " + str(outcome.get("quantified_impact", ""))
+            outcome_text += " " + str(outcome.get("quantified_impact") or "")
         if outcome.get("business_value"):
-            outcome_text += " " + str(outcome.get("business_value", ""))
+            outcome_text += " " + str(outcome.get("business_value") or "")
 
     return problem_text.lower(), action_text.lower(), outcome_text.lower()
 
 
 def score_par_section(text: str, patterns: list[str]) -> float:
-    """Score how well text matches expected patterns (0.0-1.0)."""
+    """Score how well text matches expected patterns (0.0-1.0).
+
+    Args:
+        text: The text content to search for pattern matches.
+        patterns: List of regex patterns to match against.
+
+    Returns:
+        Score from 0.0 to 1.0 based on pattern match density.
+    """
     if not patterns or not text:
         return 0.0
 
     matches = sum(1 for p in patterns if re.search(p, text, re.IGNORECASE))
-    return min(1.0, matches / max(3, len(patterns) // 2))  # Expect at least 3 matches for 1.0
+    return min(1.0, matches / max(MIN_MATCHES_FOR_FULL_SCORE, len(patterns) // 2))
 
 
 def validate_archetype_alignment(
@@ -383,9 +406,7 @@ def validate_archetype_alignment(
     suggestions: list[str] = []
 
     # Generate warnings for low scores
-    alignment_threshold = 0.3
-
-    if problem_score < alignment_threshold:
+    if problem_score < ALIGNMENT_THRESHOLD:
         warnings.append(
             f"Problem section may not align with {archetype.value} archetype "
             f"(score: {problem_score:.0%})"
@@ -394,7 +415,7 @@ def validate_archetype_alignment(
             f"For {archetype.value}, problem should describe: {_get_problem_guidance(archetype)}"
         )
 
-    if action_score < alignment_threshold:
+    if action_score < ALIGNMENT_THRESHOLD:
         warnings.append(
             f"Actions may not align with {archetype.value} archetype (score: {action_score:.0%})"
         )
@@ -402,7 +423,7 @@ def validate_archetype_alignment(
             f"For {archetype.value}, actions should include: {_get_action_guidance(archetype)}"
         )
 
-    if outcome_score < alignment_threshold:
+    if outcome_score < ALIGNMENT_THRESHOLD:
         warnings.append(
             f"Outcome may not align with {archetype.value} archetype (score: {outcome_score:.0%})"
         )
@@ -412,7 +433,7 @@ def validate_archetype_alignment(
 
     # Overall alignment check
     avg_score = (problem_score + action_score + outcome_score) / 3
-    is_aligned = avg_score >= alignment_threshold
+    is_aligned = avg_score >= ALIGNMENT_THRESHOLD
 
     if not is_aligned:
         suggestions.append(

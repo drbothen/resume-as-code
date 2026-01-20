@@ -1,6 +1,6 @@
 # Story 12.4: PAR Structure Validation by Archetype
 
-Status: review
+Status: done
 
 ## Story
 
@@ -768,13 +768,21 @@ N/A
 - 5 integration tests for CLI flag behavior
 - All 2748 tests pass with ruff, mypy clean
 
+**Code Review Fixes Applied (2026-01-19):**
+- Added module-level constants: `ALIGNMENT_THRESHOLD` and `MIN_MATCHES_FOR_FULL_SCORE` (replaced magic numbers)
+- Added full docstring documentation to `extract_par_text()` and `score_par_section()`
+- Fixed `_validate_archetype()` suggestion mapping bug - now pairs each warning with its corresponding suggestion by index
+- Fixed edge case in `extract_par_text()` to handle None values and missing sections gracefully
+- Added 4 new edge case tests for malformed work unit data
+- All 2460 tests pass with ruff and mypy clean
+
 ### File List
 
 | File | Action |
 |------|--------|
-| `src/resume_as_code/services/archetype_validation_service.py` | Created |
-| `src/resume_as_code/commands/validate.py` | Modified |
-| `tests/unit/services/test_archetype_validation_service.py` | Created |
+| `src/resume_as_code/services/archetype_validation_service.py` | Created, then modified (review fixes) |
+| `src/resume_as_code/commands/validate.py` | Modified, then modified (review fixes) |
+| `tests/unit/services/test_archetype_validation_service.py` | Created, then modified (review fixes) |
 | `tests/integration/test_validate_command.py` | Modified |
 
 ---

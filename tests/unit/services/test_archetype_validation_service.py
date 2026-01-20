@@ -60,6 +60,53 @@ class TestExtractParText:
         _, _, outcome = extract_par_text(data)
         assert "increased revenue" in outcome
 
+    def test_handles_missing_problem_section(self) -> None:
+        """Should handle missing problem section gracefully."""
+        data: dict[str, object] = {
+            "actions": ["Did something"],
+            "outcome": {"result": "Got result"},
+        }
+        problem, actions, outcome = extract_par_text(data)
+        assert problem == ""
+        assert "did something" in actions
+        assert "got result" in outcome
+
+    def test_handles_missing_outcome_section(self) -> None:
+        """Should handle missing outcome section gracefully."""
+        data: dict[str, object] = {
+            "problem": {"statement": "Had a problem"},
+            "actions": ["Did something"],
+        }
+        problem, actions, outcome = extract_par_text(data)
+        assert "had a problem" in problem
+        assert "did something" in actions
+        assert outcome == ""
+
+    def test_handles_empty_actions_list(self) -> None:
+        """Should handle empty actions list gracefully."""
+        data: dict[str, object] = {
+            "problem": {"statement": "Had a problem"},
+            "actions": [],
+            "outcome": {"result": "Got result"},
+        }
+        problem, actions, outcome = extract_par_text(data)
+        assert "had a problem" in problem
+        assert actions == ""
+        assert "got result" in outcome
+
+    def test_handles_none_values_in_dict(self) -> None:
+        """Should handle None values in dict gracefully."""
+        data: dict[str, object] = {
+            "problem": {"statement": None, "context": None},
+            "actions": None,
+            "outcome": {"result": None},
+        }
+        problem, actions, outcome = extract_par_text(data)
+        # Should return "none" strings (from str(None)) or empty
+        assert isinstance(problem, str)
+        assert isinstance(actions, str)
+        assert isinstance(outcome, str)
+
 
 class TestScoreParSection:
     """Tests for PAR section scoring."""
