@@ -227,9 +227,10 @@ development_status:
   epic-12: in-progress
   12-1-archetype-field-model: done  # P1, 3 pts - Add WorkUnitArchetype enum + field to model
   12-2-persist-archetype-creation: done  # P1, 3 pts - Save archetype when using --archetype flag
-  12-3-archetype-inference-service: ready-for-dev  # P2, 8 pts - Infer archetypes from existing work units
+  12-3-archetype-inference-service: review  # P2, 8 pts - Infer archetypes from existing work units
   12-4-par-structure-validation: ready-for-dev  # P2, 5 pts - Validate PAR structure matches archetype
   12-5-archetype-reporting-statistics: ready-for-dev  # P3, 3 pts - Add --by-archetype to list command
+  12-6-hybrid-archetype-inference: ready-for-dev  # P2, 5 pts - Hybrid regex + semantic inference
 
   # Epic 13: Output Format Enhancements
   # Goal: Enhance resume output formats to support branded, template-based generation for all output types

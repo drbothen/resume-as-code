@@ -68,6 +68,7 @@ def _register_commands() -> None:
     from resume_as_code.commands.build import build_command
     from resume_as_code.commands.cache import cache_group
     from resume_as_code.commands.config_cmd import config_command
+    from resume_as_code.commands.infer import infer_archetypes_command
     from resume_as_code.commands.init import init_command
     from resume_as_code.commands.list_cmd import list_command
     from resume_as_code.commands.migrate import migrate_command
@@ -82,6 +83,7 @@ def _register_commands() -> None:
     main.add_command(build_command)
     main.add_command(cache_group)
     main.add_command(config_command)
+    main.add_command(infer_archetypes_command)
     main.add_command(init_command)
     main.add_command(list_command)
     main.add_command(migrate_command)

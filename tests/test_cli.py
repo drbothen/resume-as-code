@@ -622,3 +622,270 @@ default_format: pdf
         assert result.exit_code == 0
         # Original content should be restored
         assert config.read_text() == original_content
+
+
+class TestInferArchetypesCommand:
+    """Integration tests for the infer-archetypes command (Story 12.3)."""
+
+    def test_infer_archetypes_help_shows_output(self, cli_runner: CliRunner) -> None:
+        """Test that infer-archetypes --help shows help output."""
+        result = cli_runner.invoke(main, ["infer-archetypes", "--help"])
+        assert result.exit_code == 0
+        assert "infer" in result.output.lower()
+        assert "--apply" in result.output
+        assert "--min-confidence" in result.output
+        assert "--include-assigned" in result.output
+
+    def test_infer_archetypes_no_work_units_dir(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that infer-archetypes handles missing work-units directory."""
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["infer-archetypes"])
+
+        assert result.exit_code == 0
+        assert "No work-units directory found" in result.output
+
+    def test_infer_archetypes_json_no_work_units(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test JSON output when no work-units directory."""
+        import json
+
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["--json", "infer-archetypes"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["status"] == "success"
+        assert data["command"] == "infer-archetypes"
+        assert data["data"]["total"] == 0
+
+    def test_infer_archetypes_dry_run_default(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that infer-archetypes is dry-run by default (AC5)."""
+        # Create work-units directory with a test file
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        work_unit_content = """id: wu-2024-01-01-test-incident
+title: Resolved P1 database outage affecting production
+problem:
+  statement: Production database failed unexpectedly
+actions:
+  - Detected via monitoring alerts
+  - Triaged and escalated
+  - Mitigated impact
+outcome:
+  result: Restored service in 45 minutes
+tags:
+  - incident-response
+"""
+        (work_units_dir / "test.yaml").write_text(work_unit_content)
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["infer-archetypes"])
+
+        assert result.exit_code == 0
+        assert "incident" in result.output.lower()
+        assert "suggested" in result.output.lower()
+        # Verify file was NOT modified (dry-run)
+        content = (work_units_dir / "test.yaml").read_text()
+        assert "archetype:" not in content
+
+    def test_infer_archetypes_apply_updates_files(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that --apply updates work unit files (AC4)."""
+        # Create work-units directory with a test file
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        work_unit_content = """id: wu-2024-01-01-test-incident
+title: Resolved P1 database outage affecting production
+problem:
+  statement: Production database failed unexpectedly
+actions:
+  - Detected via monitoring alerts
+  - Triaged and escalated
+  - Mitigated the incident
+outcome:
+  result: Restored service in 45 minutes
+tags:
+  - incident-response
+"""
+        (work_units_dir / "test.yaml").write_text(work_unit_content)
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["infer-archetypes", "--apply"])
+
+        assert result.exit_code == 0
+        assert "APPLIED" in result.output
+        # Verify file was modified
+        content = (work_units_dir / "test.yaml").read_text()
+        assert "archetype: incident" in content
+
+    def test_infer_archetypes_skips_assigned(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that work units with archetypes are skipped by default."""
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        # Work unit with archetype already assigned
+        work_unit_content = """id: wu-2024-01-01-test
+title: Some work unit with archetype
+archetype: greenfield
+problem:
+  statement: Some problem statement here
+actions:
+  - Did some action
+outcome:
+  result: Got some result
+tags: []
+"""
+        (work_units_dir / "test.yaml").write_text(work_unit_content)
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["infer-archetypes"])
+
+        assert result.exit_code == 0
+        assert "No work units to analyze" in result.output
+
+    def test_infer_archetypes_include_assigned(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that --include-assigned re-infers existing archetypes."""
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        work_unit_content = """id: wu-2024-01-01-test
+title: Built new system from scratch, architected
+archetype: minimal
+problem:
+  statement: No analytics capability existed in organization
+actions:
+  - Designed architecture from the ground up
+  - Built data pipeline system
+outcome:
+  result: Launched new analytics platform
+tags:
+  - greenfield
+"""
+        (work_units_dir / "test.yaml").write_text(work_unit_content)
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["infer-archetypes", "--include-assigned"])
+
+        assert result.exit_code == 0
+        # Should show suggestions even though archetype exists
+        assert "greenfield" in result.output.lower() or "test.yaml" in result.output
+
+    def test_infer_archetypes_json_output(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test JSON output format for infer-archetypes."""
+        import json
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        work_unit_content = """id: wu-2024-01-01-test
+title: Migrated legacy database to cloud platform
+problem:
+  statement: Legacy system was unmaintainable
+actions:
+  - Transitioned database
+  - Upgraded platform
+outcome:
+  result: Completed cloud migration
+tags:
+  - migration
+"""
+        (work_units_dir / "test.yaml").write_text(work_unit_content)
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["--json", "infer-archetypes"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["status"] == "success"
+        assert data["command"] == "infer-archetypes"
+        assert data["data"]["total"] == 1
+        assert len(data["data"]["results"]) == 1
+        assert "inferred" in data["data"]["results"][0]
+        assert "confidence" in data["data"]["results"][0]
+
+    def test_infer_archetypes_quiet_mode(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that --quiet suppresses output."""
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        work_unit_content = """id: wu-2024-01-01-test
+title: Some test work unit
+problem:
+  statement: Some problem to solve
+actions:
+  - Did something
+outcome:
+  result: Got result
+tags: []
+"""
+        (work_units_dir / "test.yaml").write_text(work_unit_content)
+        monkeypatch.chdir(tmp_path)
+
+        result = cli_runner.invoke(main, ["--quiet", "infer-archetypes"])
+
+        assert result.exit_code == 0
+        assert result.output.strip() == ""
+
+    def test_infer_archetypes_custom_threshold(
+        self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that --min-confidence threshold affects results."""
+        import json
+
+        work_units_dir = tmp_path / "work-units"
+        work_units_dir.mkdir()
+
+        # Ambiguous work unit that won't hit 0.5 threshold
+        work_unit_content = """id: wu-2024-01-01-test
+title: Did some work on project
+problem:
+  statement: There was a problem to address
+actions:
+  - Fixed it
+outcome:
+  result: It worked
+tags: []
+"""
+        (work_units_dir / "test.yaml").write_text(work_unit_content)
+        monkeypatch.chdir(tmp_path)
+
+        # With high threshold, should return minimal
+        result = cli_runner.invoke(main, ["--json", "infer-archetypes", "--min-confidence", "0.8"])
+        data = json.loads(result.output)
+        assert data["data"]["results"][0]["inferred"] == "minimal"
+
+        # With low threshold, may return specific archetype
+        result_low = cli_runner.invoke(
+            main, ["--json", "infer-archetypes", "--min-confidence", "0.1"]
+        )
+        data_low = json.loads(result_low.output)
+        # Either minimal or specific archetype depending on content
+        assert data_low["data"]["results"][0]["inferred"] in [
+            "minimal",
+            "greenfield",
+            "migration",
+            "optimization",
+            "incident",
+            "leadership",
+            "strategic",
+            "transformation",
+            "cultural",
+        ]
