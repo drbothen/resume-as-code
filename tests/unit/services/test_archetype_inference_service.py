@@ -5,9 +5,13 @@ Story 12.6: Updated for hybrid regex + semantic inference.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import pytest
+
+if TYPE_CHECKING:
+    from resume_as_code.services.embedder import EmbeddingService
 
 from resume_as_code.models.work_unit import (
     Outcome,
@@ -328,6 +332,33 @@ class TestHybridInference:
         assert archetype == WorkUnitArchetype.MINIMAL
         assert method == "fallback"
 
+    def test_returns_fallback_when_ambiguous(self, mock_embedding_service: MagicMock) -> None:
+        """Should return minimal when semantic scores are too similar (low distinctiveness)."""
+        # All archetypes score nearly the same - no clear winner
+        mock_embedding_service.similarity.return_value = 0.85  # High but uniform
+
+        data = {
+            "title": "Did some general work on the project",
+            "problem": {"statement": "There was something to do"},
+            "actions": ["Worked on it"],
+            "outcome": {"result": "It was completed"},
+            "tags": [],
+        }
+
+        archetype, confidence, method = infer_archetype_hybrid(
+            data,
+            mock_embedding_service,
+            regex_threshold=0.5,
+            semantic_threshold=0.3,
+            distinctiveness_gap=0.02,  # 2% gap required
+        )
+
+        # Should return minimal because all scores are identical (zero gap)
+        assert archetype == WorkUnitArchetype.MINIMAL
+        assert method == "fallback"
+        # Confidence should be low due to ambiguity
+        assert confidence < 0.5
+
 
 class TestInferArchetypeFunction:
     """Tests for main infer_archetype function."""
@@ -374,12 +405,14 @@ class TestInferArchetypeFunction:
 
     def test_infers_greenfield_from_build_keywords(self, mock_embedding_service: MagicMock) -> None:
         """Should infer GREENFIELD from new system keywords."""
+        # Strong signals: "from scratch" (3.0), "built new" (2.5), "architected" (2.0),
+        # "pioneered" (2.5), "launched" (2.0), "stood up" (2.0)
         data = {
-            "title": "Built new real-time analytics pipeline from scratch",
-            "problem": {"statement": "No analytics capability existed in the org"},
-            "actions": ["Designed architecture from ground-up", "Built data pipeline"],
-            "outcome": {"result": "Launched new analytics platform"},
-            "tags": ["new-system"],
+            "title": "Architected and built new real-time analytics pipeline from scratch",
+            "problem": {"statement": "No analytics capability existed - pioneered first solution"},
+            "actions": ["Designed architecture from scratch", "Stood up new data pipeline"],
+            "outcome": {"result": "Launched new analytics platform successfully"},
+            "tags": ["new-system", "greenfield"],
         }
         archetype, confidence, method = infer_archetype(data, mock_embedding_service)
         assert archetype == WorkUnitArchetype.GREENFIELD
@@ -511,3 +544,79 @@ class TestArchetypeDescriptions:
         """Descriptions should be meaningful length (>50 chars)."""
         for archetype, description in ARCHETYPE_DESCRIPTIONS.items():
             assert len(description) > 50, f"{archetype} description too short"
+
+
+class TestAccuracyWithRealEmbeddings:
+    """End-to-end accuracy tests using real embedding service.
+
+    These tests verify that the hybrid inference correctly classifies
+    known work unit examples. They use the real embedding model.
+    """
+
+    @pytest.fixture
+    def embedding_service(self) -> EmbeddingService:
+        """Create a real embedding service."""
+        from resume_as_code.services.embedder import EmbeddingService
+
+        return EmbeddingService()
+
+    def test_clear_incident_via_regex(self, embedding_service: EmbeddingService) -> None:
+        """Strong incident keywords should classify via regex."""
+        data = {
+            "title": "Resolved P1 database outage affecting production",
+            "problem": {"statement": "Critical outage detected in production cluster"},
+            "actions": ["Triaged incident", "Mitigated impact", "Resolved root cause"],
+            "outcome": {"result": "Restored service in 30 minutes, reduced MTTR"},
+            "tags": ["incident-response", "on-call"],
+        }
+        archetype, confidence, method = infer_archetype(data, embedding_service)
+        assert archetype == WorkUnitArchetype.INCIDENT
+        assert method == "regex"
+        assert confidence >= 0.5
+
+    def test_clear_migration_via_regex(self, embedding_service: EmbeddingService) -> None:
+        """Strong migration keywords should classify via regex."""
+        data = {
+            "title": "Led cloud migration of legacy monolith to AWS",
+            "problem": {"statement": "Legacy system was unmaintainable"},
+            "actions": ["Migrated database", "Transitioned services", "Completed cutover"],
+            "outcome": {"result": "Cloud migration completed on schedule"},
+            "tags": ["cloud-migration"],
+        }
+        archetype, confidence, method = infer_archetype(data, embedding_service)
+        assert archetype == WorkUnitArchetype.MIGRATION
+        assert method == "regex"
+        assert confidence >= 0.5
+
+    def test_clear_leadership_via_semantic(self, embedding_service: EmbeddingService) -> None:
+        """Leadership-focused work unit should classify via semantic."""
+        data = {
+            "title": "Mentored 5 junior developers into senior roles over 18 months",
+            "problem": {"statement": "Team lacked senior engineers"},
+            "actions": [
+                "Provided weekly 1:1 coaching sessions",
+                "Created career development plans",
+                "Facilitated stretch assignments",
+            ],
+            "outcome": {"result": "All 5 engineers promoted to senior level"},
+            "tags": ["people-development", "engineering-culture"],
+        }
+        archetype, confidence, method = infer_archetype(data, embedding_service)
+        # Should be leadership (not minimal) via semantic
+        assert archetype == WorkUnitArchetype.LEADERSHIP
+        assert method == "semantic"
+
+    def test_vague_content_returns_minimal(self, embedding_service: EmbeddingService) -> None:
+        """Vague/ambiguous content should return minimal."""
+        data = {
+            "title": "Did some work on the project",
+            "problem": {"statement": "There was something to do"},
+            "actions": ["Worked on it"],
+            "outcome": {"result": "It was completed"},
+            "tags": [],
+        }
+        archetype, confidence, method = infer_archetype(data, embedding_service)
+        # Vague content should return minimal (ambiguous scores)
+        assert archetype == WorkUnitArchetype.MINIMAL
+        assert method == "fallback"
+        assert confidence < 0.5

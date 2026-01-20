@@ -168,6 +168,11 @@ ARCHETYPE_DESCRIPTIONS: dict[WorkUnitArchetype, str] = {
 MIN_CONFIDENCE_THRESHOLD = 0.5
 SEMANTIC_CONFIDENCE_THRESHOLD = 0.3  # Lower for embeddings (similarity scores differ)
 
+# Distinctiveness: minimum gap between best and second-best semantic scores
+# If gap is smaller than this, the result is ambiguous and we return minimal
+# Based on testing: real work units have 0.5-3% gaps, truly vague content has ~0% gap
+MIN_DISTINCTIVENESS_GAP = 0.005  # 0.5% minimum gap required
+
 InferenceMethod = Literal["regex", "semantic", "fallback"]
 
 
@@ -280,17 +285,19 @@ def infer_archetype_hybrid(
     embedding_service: EmbeddingService,
     regex_threshold: float = MIN_CONFIDENCE_THRESHOLD,
     semantic_threshold: float = SEMANTIC_CONFIDENCE_THRESHOLD,
+    distinctiveness_gap: float = MIN_DISTINCTIVENESS_GAP,
 ) -> tuple[WorkUnitArchetype, float, InferenceMethod]:
     """Infer archetype using hybrid regex + semantic approach.
 
     First attempts weighted regex matching. If confidence is below threshold,
-    falls back to semantic embedding comparison.
+    falls back to semantic embedding comparison with distinctiveness check.
 
     Args:
         work_unit: WorkUnit object or raw dict from YAML.
         embedding_service: Service for semantic similarity.
         regex_threshold: Minimum regex confidence to skip semantic.
         semantic_threshold: Minimum semantic confidence to return non-minimal.
+        distinctiveness_gap: Minimum gap between best and second-best scores.
 
     Returns:
         Tuple of (archetype, confidence, method) where method indicates
@@ -311,21 +318,38 @@ def infer_archetype_hybrid(
     if best_regex_score >= regex_threshold:
         return (best_regex, best_regex_score, "regex")
 
-    # Phase 2: Fall back to semantic matching
+    # Phase 2: Fall back to semantic matching with distinctiveness check
     semantic_scores: dict[WorkUnitArchetype, float] = {}
     for archetype in WorkUnitArchetype:
         if archetype == WorkUnitArchetype.MINIMAL:
             continue
         semantic_scores[archetype] = score_semantic(text, archetype, embedding_service)
 
-    best_semantic = max(semantic_scores, key=lambda k: semantic_scores[k])
-    best_semantic_score = semantic_scores[best_semantic]
+    # Sort scores to get best and second-best
+    sorted_scores = sorted(semantic_scores.items(), key=lambda x: x[1], reverse=True)
+    best_archetype, best_score = sorted_scores[0]
+    _second_archetype, second_score = sorted_scores[1]
 
-    if best_semantic_score >= semantic_threshold:
-        return (best_semantic, best_semantic_score, "semantic")
+    # Calculate gap between best and second-best
+    gap = best_score - second_score
+
+    # Check distinctiveness: if gap is too small, result is ambiguous
+    if gap < distinctiveness_gap:
+        # Ambiguous result - return minimal with low confidence
+        # Confidence reflects how ambiguous: smaller gap = lower confidence
+        ambiguous_confidence = gap / distinctiveness_gap * 0.5  # Scale to 0-0.5
+        return (WorkUnitArchetype.MINIMAL, ambiguous_confidence, "fallback")
+
+    # Distinctive result - check absolute threshold
+    if best_score >= semantic_threshold:
+        # Confidence combines absolute score and distinctiveness
+        # Normalize: use gap as confidence indicator (capped at 1.0)
+        # A 1.5% gap gives ~0.5 confidence, 3% gap gives ~1.0
+        distinctiveness_confidence = min(gap / 0.03, 1.0)
+        return (best_archetype, distinctiveness_confidence, "semantic")
 
     # Neither method confident enough
-    return (WorkUnitArchetype.MINIMAL, max(best_regex_score, best_semantic_score), "fallback")
+    return (WorkUnitArchetype.MINIMAL, max(best_regex_score, best_score), "fallback")
 
 
 def infer_archetype(
