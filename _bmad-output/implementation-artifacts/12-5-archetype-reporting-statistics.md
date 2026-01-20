@@ -1,6 +1,6 @@
 # Story 12.5: Archetype Reporting & Statistics
 
-## Status: Review
+## Status: Done
 
 ---
 
@@ -388,9 +388,10 @@ Total: 20 work units
 
 | File | Change |
 |------|--------|
-| `src/resume_as_code/commands/list_cmd.py` | Added archetype filter, column, stats flag, stats function, JSON archetype field |
+| `src/resume_as_code/commands/list_cmd.py` | Added archetype filter, column, stats flag, stats function, JSON archetype field; CR: Added missing Total line to stats output |
 | `tests/unit/test_list_filtering.py` | Added TestFilterByArchetype (6 tests) and TestArchetypeStats (5 tests) |
-| `tests/integration/test_list_command.py` | Fixed 3 tests for table wrapping with new column |
+| `tests/integration/test_list_command.py` | Fixed 3 tests for table wrapping with new column; CR: Added 6 new tests for archetype filter, stats, and JSON output |
+| `CLAUDE.md` | CR: Updated List Command Options with --stats flag and archetype filter documentation |
 
 ---
 
@@ -399,3 +400,4 @@ Total: 20 work units
 | Date | Change |
 |------|--------|
 | 2026-01-19 | Implemented Story 12.5: Archetype Reporting & Statistics - AC1-AC5 complete |
+| 2026-01-19 | Code Review: Fixed missing Total line in stats output, added 6 integration tests, updated CLAUDE.md documentation |

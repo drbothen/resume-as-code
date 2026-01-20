@@ -369,3 +369,174 @@ class TestListCommandSorting:
         new_pos = result.output.find("New Project")
         old_pos = result.output.find("Old Project")
         assert old_pos < new_pos
+
+
+def _create_work_unit_with_archetype(
+    path: Path,
+    wu_id: str,
+    title: str,
+    archetype: str = "minimal",
+    tags: list[str] | None = None,
+    confidence: str = "high",
+) -> None:
+    """Helper to create a Work Unit file with specific archetype."""
+    tags = tags or []
+    tags_yaml = "\n".join([f'  - "{t}"' for t in tags]) if tags else ""
+    tags_section = f"tags:\n{tags_yaml}" if tags else "tags: []"
+
+    content = f"""\
+schema_version: "4.0.0"
+archetype: {archetype}
+id: "{wu_id}"
+title: "{title}"
+problem:
+  statement: "Test problem statement that is long enough"
+actions:
+  - "Test action that is long enough"
+outcome:
+  result: "Test result that is long enough"
+{tags_section}
+confidence: {confidence}
+"""
+    path.write_text(content)
+
+
+class TestListCommandArchetypeFilter:
+    """Tests for archetype filtering (Story 12.5 AC1, AC5)."""
+
+    def test_list_filter_by_archetype(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should filter by archetype (AC1)."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit_with_archetype(
+            work_units / "wu-a.yaml", "wu-2026-01-01-a", "Incident Response", archetype="incident"
+        )
+        _create_work_unit_with_archetype(
+            work_units / "wu-b.yaml", "wu-2026-01-02-b", "New Feature", archetype="greenfield"
+        )
+
+        result = cli_runner.invoke(main, ["list", "--filter", "archetype:incident"])
+
+        assert result.exit_code == 0
+        assert "Incident" in result.output
+        assert "New Feature" not in result.output
+        assert "1 Work Unit(s)" in result.output
+
+    def test_list_filter_by_archetype_case_insensitive(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should filter by archetype case-insensitively (AC5)."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit_with_archetype(
+            work_units / "wu-a.yaml", "wu-2026-01-01-a", "Incident Response", archetype="incident"
+        )
+
+        # Test uppercase filter
+        result = cli_runner.invoke(main, ["list", "--filter", "archetype:INCIDENT"])
+
+        assert result.exit_code == 0
+        assert "Incident" in result.output
+        assert "1 Work Unit(s)" in result.output
+
+
+class TestListCommandArchetypeStats:
+    """Tests for archetype statistics (Story 12.5 AC3)."""
+
+    def test_list_stats_shows_archetype_distribution(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should show archetype distribution with --stats flag (AC3)."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit_with_archetype(
+            work_units / "wu-a.yaml", "wu-2026-01-01-a", "Incident 1", archetype="incident"
+        )
+        _create_work_unit_with_archetype(
+            work_units / "wu-b.yaml", "wu-2026-01-02-b", "Incident 2", archetype="incident"
+        )
+        _create_work_unit_with_archetype(
+            work_units / "wu-c.yaml", "wu-2026-01-03-c", "New Feature", archetype="greenfield"
+        )
+
+        result = cli_runner.invoke(main, ["list", "--stats"])
+
+        assert result.exit_code == 0
+        assert "Archetype Distribution" in result.output
+        assert "incident" in result.output
+        assert "greenfield" in result.output
+        assert "Total: 3 work units" in result.output
+
+    def test_list_stats_json_includes_archetype_stats(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """JSON output with --stats should include archetype_stats field."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit_with_archetype(
+            work_units / "wu-a.yaml", "wu-2026-01-01-a", "Incident", archetype="incident"
+        )
+        _create_work_unit_with_archetype(
+            work_units / "wu-b.yaml", "wu-2026-01-02-b", "Feature", archetype="greenfield"
+        )
+
+        result = cli_runner.invoke(main, ["--json", "list", "--stats"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "archetype_stats" in data["data"]
+        assert data["data"]["archetype_stats"]["incident"] == 1
+        assert data["data"]["archetype_stats"]["greenfield"] == 1
+
+
+class TestListCommandArchetypeInOutput:
+    """Tests for archetype in output (Story 12.5 AC2, AC4)."""
+
+    def test_list_table_shows_archetype_column(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Table output should include Archetype column (AC2)."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit_with_archetype(
+            work_units / "wu-a.yaml", "wu-2026-01-01-a", "Test Project", archetype="incident"
+        )
+
+        result = cli_runner.invoke(main, ["list"])
+
+        assert result.exit_code == 0
+        assert "Archetype" in result.output
+        assert "incident" in result.output
+
+    def test_list_json_includes_archetype_field(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """JSON output should include archetype field for each work unit (AC4)."""
+        monkeypatch.chdir(tmp_path)
+
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        _create_work_unit_with_archetype(
+            work_units / "wu-a.yaml", "wu-2026-01-01-a", "Test Project", archetype="incident"
+        )
+
+        result = cli_runner.invoke(main, ["--json", "list"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert len(data["data"]["work_units"]) == 1
+        wu = data["data"]["work_units"][0]
+        assert "archetype" in wu
+        assert wu["archetype"] == "incident"

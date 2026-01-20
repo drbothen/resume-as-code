@@ -870,6 +870,8 @@ def _output_archetype_stats(work_units: list[dict[str, Any]]) -> None:
         bar = "█" * int(pct / 5)  # 20 chars max for 100%
         console.print(f"  {archetype:<14} {count:>3} ({pct:5.1f}%) {bar}")
 
+    console.print(f"\n[dim]Total: {len(work_units)} work units[/dim]")
+
 
 def _truncate(text: str, max_len: int) -> str:
     """Truncate text with ellipsis."""

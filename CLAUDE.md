@@ -328,9 +328,10 @@ The migrate command detects legacy configs (no `schema_version` field) as v1.0.0
 
 | Flag | Description |
 |------|-------------|
-| `-f, --filter TEXT` | Filter Work Units (tag:value, confidence:value, or free text) |
+| `-f, --filter TEXT` | Filter Work Units (tag:value, confidence:value, archetype:value, or free text) |
 | `-s, --sort [date\|title\|confidence]` | Sort field (default: date) |
 | `-r, --reverse` | Reverse sort order (ascending) |
+| `--stats` | Show archetype distribution statistics |
 | `-v, --verbose` | Show source file paths (for directory mode resources) |
 
 ### Global Flags
