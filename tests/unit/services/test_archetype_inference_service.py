@@ -853,3 +853,243 @@ class TestAccuracyWithRealEmbeddings:
         # The system may classify it as cultural, leadership, or minimal
         # Key assertion: confidence should be below auto-apply threshold
         assert confidence < 0.5
+
+    def test_aggregate_accuracy_threshold(self, embedding_service: EmbeddingService) -> None:
+        """Aggregate accuracy must be >= 90% across all test cases.
+
+        This test runs all archetype inference cases and validates:
+        1. Overall accuracy meets minimum threshold (90%)
+        2. Reports per-archetype breakdown for debugging
+        """
+        # Test cases: (data, expected_archetype, description)
+        # For ambiguous cases, expected is None (any result OK if low confidence)
+        test_cases: list[tuple[dict, WorkUnitArchetype | None, str]] = [
+            # Incident cases
+            (
+                {
+                    "title": "Resolved P1 database outage affecting production",
+                    "problem": {"statement": "Critical outage detected"},
+                    "actions": ["Triaged incident", "Mitigated impact"],
+                    "outcome": {"result": "Restored service, reduced MTTR"},
+                    "tags": ["incident-response"],
+                },
+                WorkUnitArchetype.INCIDENT,
+                "P1 outage",
+            ),
+            (
+                {
+                    "title": "Responded to security breach",
+                    "problem": {"statement": "Unauthorized access detected"},
+                    "actions": ["Led war room", "Mitigated breach"],
+                    "outcome": {"result": "Contained breach"},
+                    "tags": ["security-incident"],
+                },
+                WorkUnitArchetype.INCIDENT,
+                "Security breach",
+            ),
+            # Greenfield cases
+            (
+                {
+                    "title": "Achieved first-attempt ATO authorization",
+                    "problem": {"statement": "Required Authority to Operate"},
+                    "actions": ["Developed security docs", "Implemented RMF controls"],
+                    "outcome": {"result": "Obtained ATO on first submission"},
+                    "tags": ["compliance", "rmf"],
+                },
+                WorkUnitArchetype.GREENFIELD,
+                "ATO authorization",
+            ),
+            (
+                {
+                    "title": "Built new portal from scratch",
+                    "problem": {"statement": "No self-service capability"},
+                    "actions": ["Architected from ground-up", "Launched MVP"],
+                    "outcome": {"result": "Portal adopted by 50K customers"},
+                    "tags": ["greenfield"],
+                },
+                WorkUnitArchetype.GREENFIELD,
+                "New product",
+            ),
+            # Migration cases
+            (
+                {
+                    "title": "Migrated to AWS cloud",
+                    "problem": {"statement": "Aging data center"},
+                    "actions": ["Executed migration", "Decommissioned legacy"],
+                    "outcome": {"result": "Migrated 200 servers"},
+                    "tags": ["cloud-migration"],
+                },
+                WorkUnitArchetype.MIGRATION,
+                "Cloud migration",
+            ),
+            (
+                {
+                    "title": "Migrated from Oracle to PostgreSQL",
+                    "problem": {"statement": "High licensing costs"},
+                    "actions": ["Transitioned database", "Executed cutover"],
+                    "outcome": {"result": "Completed migration"},
+                    "tags": ["migration"],
+                },
+                WorkUnitArchetype.MIGRATION,
+                "Database migration",
+            ),
+            # Optimization cases
+            (
+                {
+                    "title": "Optimized API latency by 75%",
+                    "problem": {"statement": "Slow API responses"},
+                    "actions": ["Profiled bottlenecks", "Implemented caching"],
+                    "outcome": {"result": "75% improvement"},
+                    "tags": ["optimization"],
+                },
+                WorkUnitArchetype.OPTIMIZATION,
+                "Latency optimization",
+            ),
+            (
+                {
+                    "title": "Reduced cloud costs by $500K",
+                    "problem": {"statement": "High AWS spend"},
+                    "actions": ["Rightsizing", "Reserved instances"],
+                    "outcome": {"result": "35% cost reduction"},
+                    "tags": ["cost-reduction"],
+                },
+                WorkUnitArchetype.OPTIMIZATION,
+                "Cost optimization",
+            ),
+            # Leadership cases
+            (
+                {
+                    "title": "Built team from 0 to 12",
+                    "problem": {"statement": "No platform team"},
+                    "actions": ["Hired engineers", "Mentored with 1:1s"],
+                    "outcome": {"result": "Grew team to 12"},
+                    "tags": ["leadership", "hiring"],
+                },
+                WorkUnitArchetype.LEADERSHIP,
+                "Team building",
+            ),
+            (
+                {
+                    "title": "Led cross-functional initiative",
+                    "problem": {"statement": "Siloed teams"},
+                    "actions": ["Aligned stakeholders", "Mentored leads"],
+                    "outcome": {"result": "Unified 4 teams"},
+                    "tags": ["leadership"],
+                },
+                WorkUnitArchetype.LEADERSHIP,
+                "Cross-functional",
+            ),
+            # Strategic case
+            (
+                {
+                    "title": "Developed 3-year technology roadmap",
+                    "problem": {"statement": "No unified vision"},
+                    "actions": ["Competitive analysis", "Created business case"],
+                    "outcome": {"result": "Roadmap approved by board"},
+                    "tags": ["strategy", "roadmap"],
+                },
+                WorkUnitArchetype.STRATEGIC,
+                "Strategic roadmap",
+            ),
+            # Transformation case
+            (
+                {
+                    "title": "Led enterprise-wide digital transformation",
+                    "problem": {"statement": "Manual processes"},
+                    "actions": ["Drove organizational change", "Global rollout"],
+                    "outcome": {"result": "80% reduction in manual work"},
+                    "tags": ["transformation"],
+                },
+                WorkUnitArchetype.TRANSFORMATION,
+                "Digital transformation",
+            ),
+            # Cultural case
+            (
+                {
+                    "title": "Improved culture, reduced attrition 40%",
+                    "problem": {"statement": "High turnover"},
+                    "actions": ["DEI initiatives", "Retention programs"],
+                    "outcome": {"result": "Attrition down to 21%"},
+                    "tags": ["culture", "dei"],
+                },
+                WorkUnitArchetype.CULTURAL,
+                "Culture/DEI",
+            ),
+            # Ambiguous cases (expected=None means any archetype OK if low confidence)
+            (
+                {
+                    "title": "Did some work",
+                    "problem": {"statement": "Something to do"},
+                    "actions": ["Worked on it"],
+                    "outcome": {"result": "Completed"},
+                    "tags": [],
+                },
+                None,  # Ambiguous - just check low confidence
+                "Vague content",
+            ),
+            (
+                {
+                    "title": "Improved reliability while growing team",
+                    "problem": {"statement": "Issues and understaffed"},
+                    "actions": ["Made improvements", "Worked on hiring"],
+                    "outcome": {"result": "Things improved"},
+                    "tags": [],
+                },
+                None,  # Ambiguous - just check low confidence
+                "Mixed signals",
+            ),
+        ]
+
+        # Run inference on all cases
+        results: list[tuple[str, WorkUnitArchetype | None, WorkUnitArchetype, float, bool]] = []
+        correct = 0
+        total_actionable = 0  # Cases with expected archetype (not ambiguous)
+
+        per_archetype: dict[str, dict[str, int]] = {}
+
+        for data, expected, description in test_cases:
+            archetype, confidence, _method = infer_archetype(data, embedding_service)
+
+            if expected is not None:
+                # Definite case - check if correct
+                total_actionable += 1
+                is_correct = archetype == expected and confidence >= 0.5
+                if is_correct:
+                    correct += 1
+
+                # Track per-archetype stats
+                key = expected.value
+                if key not in per_archetype:
+                    per_archetype[key] = {"correct": 0, "total": 0}
+                per_archetype[key]["total"] += 1
+                if is_correct:
+                    per_archetype[key]["correct"] += 1
+            else:
+                # Ambiguous case - correct if low confidence
+                is_correct = confidence < 0.5
+
+            results.append((description, expected, archetype, confidence, is_correct))
+
+        # Calculate accuracy
+        accuracy = correct / total_actionable if total_actionable > 0 else 0
+
+        # Build failure message with breakdown
+        breakdown = "\n".join(
+            f"  {arch}: {stats['correct']}/{stats['total']} "
+            f"({100 * stats['correct'] / stats['total']:.0f}%)"
+            for arch, stats in sorted(per_archetype.items())
+        )
+
+        failures = [
+            f"  {desc}: expected {exp}, got {got} ({conf:.0%})"
+            for desc, exp, got, conf, ok in results
+            if not ok and exp is not None
+        ]
+        failure_details = "\n".join(failures) if failures else "  (none)"
+
+        # Assert minimum accuracy threshold
+        assert accuracy >= 0.90, (
+            f"Accuracy {accuracy:.1%} below 90% threshold\n\n"
+            f"Per-archetype breakdown:\n{breakdown}\n\n"
+            f"Failed cases:\n{failure_details}"
+        )
