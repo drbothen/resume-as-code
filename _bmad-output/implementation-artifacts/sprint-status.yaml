@@ -235,6 +235,7 @@ development_status:
   # Epic 13: Output Format Enhancements
   # Goal: Enhance resume output formats to support branded, template-based generation for all output types
   # Feature Request: January 2026 - DOCX template system to match PDF branded templates
-  # Total Points: 8 (1 story)
+  # Total Points: 11 (2 stories)
   epic-13: in-progress
   13-1-docx-template-system: ready-for-dev  # P2, 8 pts - Template-based DOCX generation with docxtpl
+  13-2-work-history-duration-filter: ready-for-dev  # P2, 3 pts - --years CLI option to limit work history
