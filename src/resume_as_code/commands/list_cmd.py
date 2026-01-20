@@ -29,7 +29,7 @@ SortField = Literal["date", "title", "confidence"]
     "-f",
     "filter_strs",
     multiple=True,
-    help="Filter Work Units (tag:value, confidence:value, or free text). Repeatable.",
+    help="Filter (tag:, confidence:, archetype: prefix or free text). Repeatable.",
 )
 @click.option(
     "--sort",
@@ -44,6 +44,11 @@ SortField = Literal["date", "title", "confidence"]
     is_flag=True,
     help="Reverse sort order (ascending)",
 )
+@click.option(
+    "--stats",
+    is_flag=True,
+    help="Show archetype distribution statistics",
+)
 @click.pass_context
 @handle_errors
 def list_command(
@@ -51,6 +56,7 @@ def list_command(
     filter_strs: tuple[str, ...],
     sort: SortField,
     reverse: bool,
+    stats: bool,
 ) -> None:
     """List resources (work-units by default, or use subcommands).
 
@@ -60,13 +66,14 @@ def list_command(
     Filter syntax for work units:
       tag:<value>        - Filter by tag
       confidence:<value> - Filter by confidence level
+      archetype:<value>  - Filter by archetype (e.g., incident, greenfield)
       <text>             - Free text search in ID, title, date
 
     Multiple --filter options use AND logic (all must match).
     """
     # If no subcommand was invoked, list work units (backward compatible)
     if ctx.invoked_subcommand is None:
-        _list_work_units(ctx, filter_strs, sort, reverse)
+        _list_work_units(ctx, filter_strs, sort, reverse, stats)
 
 
 def _list_work_units(
@@ -74,6 +81,7 @@ def _list_work_units(
     filter_strs: tuple[str, ...],
     sort: SortField,
     reverse: bool,
+    stats: bool = False,
 ) -> None:
     """List work units with filtering and sorting."""
     config = get_config()
@@ -103,9 +111,11 @@ def _list_work_units(
 
     # Output
     if ctx.obj.json_output:
-        _output_json(work_units)
+        _output_json(work_units, show_stats=stats)
     else:
         _output_table(work_units)
+        if stats:
+            _output_archetype_stats(work_units)
 
 
 @list_command.command("positions")
@@ -709,6 +719,12 @@ def _apply_filter(work_units: list[dict[str, Any]], filter_str: str) -> list[dic
             if wu_conf is not None and str(wu_conf).lower() == conf_value:
                 filtered.append(wu)
 
+        elif filter_str.lower().startswith("archetype:"):
+            archetype_value = filter_str[10:].strip().lower()
+            wu_archetype = wu.get("archetype")
+            if wu_archetype is not None and str(wu_archetype).lower() == archetype_value:
+                filtered.append(wu)
+
         else:
             # Free text search
             search_text = filter_str.lower()
@@ -784,23 +800,33 @@ def _apply_sort(
     return sorted(work_units, key=key_func, reverse=actual_reverse)
 
 
-def _output_json(work_units: list[dict[str, Any]]) -> None:
+def _output_json(work_units: list[dict[str, Any]], show_stats: bool = False) -> None:
     """Output Work Units as JSON."""
+    from collections import Counter
+
     summaries = [
         {
             "id": wu.get("id"),
             "title": wu.get("title"),
             "date": _extract_date(wu),
+            "archetype": wu.get("archetype"),
             "confidence": wu.get("confidence"),
             "tags": wu.get("tags", []),
         }
         for wu in work_units
     ]
 
+    data: dict[str, Any] = {"work_units": summaries, "count": len(summaries)}
+
+    # Add archetype stats if requested
+    if show_stats:
+        archetype_counts = Counter(wu.get("archetype") or "unknown" for wu in work_units)
+        data["archetype_stats"] = dict(sorted(archetype_counts.items(), key=lambda x: -x[1]))
+
     response = JSONResponse(
         status="success",
         command="list",
-        data={"work_units": summaries, "count": len(summaries)},
+        data=data,
     )
     json_output(response.to_json())
 
@@ -812,6 +838,7 @@ def _output_table(work_units: list[dict[str, Any]]) -> None:
     table.add_column("ID", style="cyan", no_wrap=True)
     table.add_column("Title", style="white")
     table.add_column("Date", style="green")
+    table.add_column("Archetype", style="magenta")
     table.add_column("Confidence", style="yellow")
     table.add_column("Tags", style="blue")
 
@@ -820,12 +847,28 @@ def _output_table(work_units: list[dict[str, Any]]) -> None:
             _truncate(str(wu.get("id", "")), 30),
             _truncate(str(wu.get("title", "")), 40),
             _extract_date(wu),
+            str(wu.get("archetype") or "-"),
             str(wu.get("confidence") or "-"),
             _format_tags(wu.get("tags", [])),
         )
 
     console.print(table)
     console.print(f"\n[dim]{len(work_units)} Work Unit(s)[/dim]")
+
+
+def _output_archetype_stats(work_units: list[dict[str, Any]]) -> None:
+    """Display archetype distribution statistics."""
+    from collections import Counter
+
+    archetype_counts = Counter(wu.get("archetype") or "unknown" for wu in work_units)
+
+    console.print("\n[bold]Archetype Distribution[/bold]\n")
+
+    # Sort by count descending
+    for archetype, count in sorted(archetype_counts.items(), key=lambda x: -x[1]):
+        pct = count / len(work_units) * 100 if work_units else 0
+        bar = "█" * int(pct / 5)  # 20 chars max for 100%
+        console.print(f"  {archetype:<14} {count:>3} ({pct:5.1f}%) {bar}")
 
 
 def _truncate(text: str, max_len: int) -> str:

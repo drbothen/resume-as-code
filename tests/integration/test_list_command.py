@@ -81,10 +81,13 @@ class TestListCommandTableOutput:
 
         assert result.exit_code == 0
         # Check column headers or data presence
-        assert "Test Project" in result.output
+        # Note: Title may wrap across lines, so check for key parts
+        assert "Test" in result.output
+        assert "Project" in result.output
         assert "2026-01-01" in result.output
         assert "high" in result.output
         assert "python" in result.output
+        assert "Archetype" in result.output  # Story 12.5: AC2 - Archetype column
 
 
 class TestListCommandJsonOutput:
@@ -154,8 +157,9 @@ class TestListCommandFiltering:
         result = cli_runner.invoke(main, ["list", "--filter", "tag:python"])
 
         assert result.exit_code == 0
-        assert "Python Project" in result.output
-        assert "Java Project" not in result.output
+        # Note: Title may wrap across lines, so check for key parts
+        assert "Python" in result.output
+        assert "Java" not in result.output
         assert "1 Work Unit(s)" in result.output
 
     def test_list_filter_by_confidence(
@@ -182,8 +186,10 @@ class TestListCommandFiltering:
         result = cli_runner.invoke(main, ["list", "--filter", "confidence:high"])
 
         assert result.exit_code == 0
-        assert "High Confidence" in result.output
-        assert "Low Confidence" not in result.output
+        # Note: Title may wrap across lines, so check unique identifier
+        assert "High" in result.output
+        assert "Low" not in result.output
+        assert "1 Work Unit(s)" in result.output
 
     def test_list_filter_free_text_in_date(
         self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
