@@ -1,6 +1,13 @@
-"""Tests for archetype inference service."""
+"""Tests for archetype inference service.
+
+Story 12.6: Updated for hybrid regex + semantic inference.
+"""
 
 from __future__ import annotations
+
+from unittest.mock import MagicMock
+
+import pytest
 
 from resume_as_code.models.work_unit import (
     Outcome,
@@ -9,10 +16,15 @@ from resume_as_code.models.work_unit import (
     WorkUnitArchetype,
 )
 from resume_as_code.services.archetype_inference_service import (
+    ARCHETYPE_DESCRIPTIONS,
+    ARCHETYPE_PATTERNS_WEIGHTED,
     MIN_CONFIDENCE_THRESHOLD,
+    SEMANTIC_CONFIDENCE_THRESHOLD,
     extract_text_content,
     infer_archetype,
-    score_archetype,
+    infer_archetype_hybrid,
+    score_semantic,
+    score_weighted_regex,
 )
 
 
@@ -124,74 +136,229 @@ class TestExtractTextContent:
         assert "improved customer satisfaction" in text
 
 
-class TestScoreArchetype:
-    """Tests for archetype scoring."""
+class TestWeightedRegexScoring:
+    """Tests for weighted pattern scoring."""
+
+    def test_strong_signal_scores_higher(self) -> None:
+        """P1 (weight 3.0) should contribute more than detected (weight 1.0)."""
+        text_p1 = "resolved p1 issue"
+        text_detected = "detected an issue"
+
+        score_p1 = score_weighted_regex(text_p1, WorkUnitArchetype.INCIDENT)
+        score_detected = score_weighted_regex(text_detected, WorkUnitArchetype.INCIDENT)
+
+        assert score_p1 > score_detected
+
+    def test_multiple_strong_signals_accumulate(self) -> None:
+        """Multiple high-weight matches should score higher."""
+        text = "resolved p1 outage, triaged and mitigated incident"
+        score = score_weighted_regex(text, WorkUnitArchetype.INCIDENT)
+        assert score > 0.4
 
     def test_incident_keywords_score_high(self) -> None:
         """Incident keywords should score high for INCIDENT archetype."""
         text = "resolved p1 outage, detected, triaged, mitigated incident"
-        score = score_archetype(text, WorkUnitArchetype.INCIDENT)
+        score = score_weighted_regex(text, WorkUnitArchetype.INCIDENT)
         assert score > 0.3
 
     def test_migration_keywords_score_high(self) -> None:
         """Migration keywords should score high for MIGRATION archetype."""
         text = "migrated legacy database to cloud migration"
-        score = score_archetype(text, WorkUnitArchetype.MIGRATION)
+        score = score_weighted_regex(text, WorkUnitArchetype.MIGRATION)
         assert score > 0.2
 
     def test_greenfield_keywords_score_high(self) -> None:
         """Greenfield keywords should score high for GREENFIELD archetype."""
         text = "built new system from scratch, designed and implemented"
-        score = score_archetype(text, WorkUnitArchetype.GREENFIELD)
+        score = score_weighted_regex(text, WorkUnitArchetype.GREENFIELD)
         assert score > 0.2
 
     def test_optimization_keywords_score_high(self) -> None:
         """Optimization keywords should score high for OPTIMIZATION archetype."""
         text = "optimized performance, reduced latency and cost reduction"
-        score = score_archetype(text, WorkUnitArchetype.OPTIMIZATION)
+        score = score_weighted_regex(text, WorkUnitArchetype.OPTIMIZATION)
         assert score > 0.2
 
     def test_leadership_keywords_score_high(self) -> None:
         """Leadership keywords should score high for LEADERSHIP archetype."""
         text = "mentored team members, coached engineers, aligned stakeholders"
-        score = score_archetype(text, WorkUnitArchetype.LEADERSHIP)
+        score = score_weighted_regex(text, WorkUnitArchetype.LEADERSHIP)
         assert score > 0.2
 
     def test_strategic_keywords_score_high(self) -> None:
         """Strategic keywords should score high for STRATEGIC archetype."""
         text = "developed strategy, market analysis, competitive positioning"
-        score = score_archetype(text, WorkUnitArchetype.STRATEGIC)
+        score = score_weighted_regex(text, WorkUnitArchetype.STRATEGIC)
         assert score > 0.2
 
     def test_transformation_keywords_score_high(self) -> None:
         """Transformation keywords should score high for TRANSFORMATION archetype."""
         text = "led digital transformation, enterprise-wide organizational change"
-        score = score_archetype(text, WorkUnitArchetype.TRANSFORMATION)
+        score = score_weighted_regex(text, WorkUnitArchetype.TRANSFORMATION)
         assert score > 0.2
 
     def test_cultural_keywords_score_high(self) -> None:
         """Cultural keywords should score high for CULTURAL archetype."""
         text = "improved culture, talent development, employee engagement"
-        score = score_archetype(text, WorkUnitArchetype.CULTURAL)
+        score = score_weighted_regex(text, WorkUnitArchetype.CULTURAL)
         assert score > 0.2
 
     def test_minimal_returns_zero(self) -> None:
         """MINIMAL archetype should return 0 score (no patterns)."""
         text = "some generic work was done"
-        score = score_archetype(text, WorkUnitArchetype.MINIMAL)
+        score = score_weighted_regex(text, WorkUnitArchetype.MINIMAL)
         assert score == 0.0
 
     def test_no_match_returns_zero(self) -> None:
         """No pattern match should return 0."""
         text = "completely unrelated content about cooking recipes"
-        score = score_archetype(text, WorkUnitArchetype.INCIDENT)
+        score = score_weighted_regex(text, WorkUnitArchetype.INCIDENT)
         assert score == 0.0
 
 
-class TestInferArchetype:
-    """Tests for archetype inference."""
+class TestSemanticScoring:
+    """Tests for semantic embedding scoring."""
 
-    def test_infers_incident_from_p1_keywords(self) -> None:
+    @pytest.fixture
+    def mock_embedding_service(self) -> MagicMock:
+        """Create a mock embedding service."""
+        mock = MagicMock()
+        # Default similarity returns 0.5
+        mock.similarity.return_value = 0.5
+        return mock
+
+    def test_calls_embedding_service_similarity(self, mock_embedding_service: MagicMock) -> None:
+        """Should call embedding_service.similarity()."""
+        text = "some work unit text"
+        archetype = WorkUnitArchetype.GREENFIELD
+
+        score_semantic(text, archetype, mock_embedding_service)
+
+        mock_embedding_service.similarity.assert_called_once()
+        call_args = mock_embedding_service.similarity.call_args
+        assert call_args[0][0] == text
+        assert call_args[0][1] == ARCHETYPE_DESCRIPTIONS[archetype]
+
+    def test_returns_similarity_score(self, mock_embedding_service: MagicMock) -> None:
+        """Should return the similarity score from embedding service."""
+        mock_embedding_service.similarity.return_value = 0.75
+        score = score_semantic("test text", WorkUnitArchetype.INCIDENT, mock_embedding_service)
+        assert score == 0.75
+
+    def test_returns_zero_for_minimal(self, mock_embedding_service: MagicMock) -> None:
+        """Should return 0 for MINIMAL (no description)."""
+        score = score_semantic("test text", WorkUnitArchetype.MINIMAL, mock_embedding_service)
+        assert score == 0.0
+        mock_embedding_service.similarity.assert_not_called()
+
+
+class TestHybridInference:
+    """Tests for hybrid inference."""
+
+    @pytest.fixture
+    def mock_embedding_service(self) -> MagicMock:
+        """Create a mock embedding service."""
+        mock = MagicMock()
+        # Default: all semantic scores return 0.4 (above semantic threshold)
+        mock.similarity.return_value = 0.4
+        return mock
+
+    def test_uses_regex_when_confident(self, mock_embedding_service: MagicMock) -> None:
+        """Should use regex result when confidence is high."""
+        data = {
+            "title": "Resolved P1 database outage affecting production",
+            "problem": {"statement": "Critical outage detected"},
+            "actions": ["Triaged", "Mitigated", "Resolved"],
+            "outcome": {"result": "Restored in 30 min"},
+            "tags": ["incident-response"],
+        }
+
+        archetype, confidence, method = infer_archetype_hybrid(data, mock_embedding_service)
+
+        assert archetype == WorkUnitArchetype.INCIDENT
+        assert method == "regex"
+        # Embedding service should not be called when regex is confident
+        mock_embedding_service.similarity.assert_not_called()
+
+    def test_falls_back_to_semantic(self, mock_embedding_service: MagicMock) -> None:
+        """Should use semantic when regex confidence is low."""
+
+        # Make semantic return high score for greenfield
+        def side_effect(text: str, description: str) -> float:
+            if "greenfield" in description.lower() or "built new" in description.lower():
+                return 0.7
+            return 0.2
+
+        mock_embedding_service.similarity.side_effect = side_effect
+
+        data = {
+            "title": "Achieved first-attempt ATO for submarine base",
+            "problem": {"statement": "Required security authorization"},
+            "actions": ["Developed security documentation", "Conducted assessments"],
+            "outcome": {"result": "Obtained Authority to Operate"},
+            "tags": ["compliance", "cybersecurity"],
+        }
+
+        archetype, confidence, method = infer_archetype_hybrid(data, mock_embedding_service)
+
+        # Should use semantic method
+        assert method == "semantic"
+        # Embedding service should be called for semantic scoring
+        assert mock_embedding_service.similarity.call_count > 0
+
+    def test_returns_fallback_when_uncertain(self, mock_embedding_service: MagicMock) -> None:
+        """Should return minimal with fallback method when both approaches fail."""
+        mock_embedding_service.similarity.return_value = 0.1  # Low semantic score
+
+        data = {
+            "title": "Did some work",
+            "problem": {"statement": "Had a task"},
+            "actions": ["Worked on it"],
+            "outcome": {"result": "Completed"},
+            "tags": [],
+        }
+
+        archetype, confidence, method = infer_archetype_hybrid(
+            data,
+            mock_embedding_service,
+            regex_threshold=0.5,
+            semantic_threshold=0.5,
+        )
+
+        assert archetype == WorkUnitArchetype.MINIMAL
+        assert method == "fallback"
+
+
+class TestInferArchetypeFunction:
+    """Tests for main infer_archetype function."""
+
+    @pytest.fixture
+    def mock_embedding_service(self) -> MagicMock:
+        """Create a mock embedding service."""
+        mock = MagicMock()
+        mock.similarity.return_value = 0.4
+        return mock
+
+    def test_returns_three_tuple(self, mock_embedding_service: MagicMock) -> None:
+        """infer_archetype() should return (archetype, confidence, method)."""
+        # Strong migration signals to ensure regex confidence
+        data = {
+            "title": "Migrated legacy database to cloud migration",
+            "problem": {"statement": "Legacy system needed cloud migration"},
+            "actions": ["Transitioned to AWS", "Executed database migration cutover"],
+            "outcome": {"result": "Completed cloud migration successfully"},
+            "tags": ["migration"],
+        }
+
+        result = infer_archetype(data, mock_embedding_service)
+
+        assert len(result) == 3
+        archetype, confidence, method = result
+        assert archetype == WorkUnitArchetype.MIGRATION
+        assert isinstance(confidence, float)
+        assert method in ("regex", "semantic", "fallback")
+
+    def test_infers_incident_from_p1_keywords(self, mock_embedding_service: MagicMock) -> None:
         """Should infer INCIDENT from P1/outage keywords."""
         data = {
             "title": "Resolved P1 database outage affecting 10K users",
@@ -200,11 +367,12 @@ class TestInferArchetype:
             "outcome": {"result": "Restored service in 45 minutes"},
             "tags": ["incident-response"],
         }
-        archetype, confidence = infer_archetype(data)
+        archetype, confidence, method = infer_archetype(data, mock_embedding_service)
         assert archetype == WorkUnitArchetype.INCIDENT
         assert confidence >= 0.5
+        assert method == "regex"
 
-    def test_infers_greenfield_from_build_keywords(self) -> None:
+    def test_infers_greenfield_from_build_keywords(self, mock_embedding_service: MagicMock) -> None:
         """Should infer GREENFIELD from new system keywords."""
         data = {
             "title": "Built new real-time analytics pipeline from scratch",
@@ -213,11 +381,11 @@ class TestInferArchetype:
             "outcome": {"result": "Launched new analytics platform"},
             "tags": ["new-system"],
         }
-        archetype, confidence = infer_archetype(data)
+        archetype, confidence, method = infer_archetype(data, mock_embedding_service)
         assert archetype == WorkUnitArchetype.GREENFIELD
         assert confidence >= 0.3
 
-    def test_infers_migration_from_keywords(self) -> None:
+    def test_infers_migration_from_keywords(self, mock_embedding_service: MagicMock) -> None:
         """Should infer MIGRATION from migration keywords."""
         data = {
             "title": "Migrated legacy monolith to cloud microservices",
@@ -226,25 +394,28 @@ class TestInferArchetype:
             "outcome": {"result": "Completed cloud migration on schedule"},
             "tags": ["cloud-migration"],
         }
-        archetype, confidence = infer_archetype(data)
+        archetype, confidence, method = infer_archetype(data, mock_embedding_service)
         assert archetype == WorkUnitArchetype.MIGRATION
         assert confidence >= 0.3
 
-    def test_infers_optimization_from_keywords(self) -> None:
+    def test_infers_optimization_from_keywords(self, mock_embedding_service: MagicMock) -> None:
         """Should infer OPTIMIZATION from performance keywords."""
+        # Strong signals: "optimized" (3.0), "reduced latency" (2.5), "cost reduction" (2.5)
         data = {
-            "title": "Optimized API performance for high-traffic endpoint",
-            "problem": {"statement": "API latency was too high for users"},
-            "actions": ["Profiled code", "Reduced latency by caching"],
-            "outcome": {"result": "Improved performance by 60%"},
-            "tags": ["performance"],
+            "title": "Optimized API performance achieving 60% reduction",
+            "problem": {"statement": "High latency causing poor performance"},
+            "actions": ["Profiled bottleneck code", "Reduced latency by caching"],
+            "outcome": {"result": "Achieved cost reduction and latency reduction"},
+            "tags": ["optimization", "performance"],
         }
-        archetype, confidence = infer_archetype(data)
+        archetype, confidence, method = infer_archetype(data, mock_embedding_service)
         assert archetype == WorkUnitArchetype.OPTIMIZATION
         assert confidence >= 0.3
 
-    def test_returns_minimal_for_ambiguous_content(self) -> None:
+    def test_returns_minimal_for_ambiguous_content(self, mock_embedding_service: MagicMock) -> None:
         """Should return MINIMAL when content is ambiguous."""
+        mock_embedding_service.similarity.return_value = 0.1  # Low semantic score
+
         data = {
             "title": "Did some work on the project",
             "problem": {"statement": "There was a problem to solve"},
@@ -252,12 +423,14 @@ class TestInferArchetype:
             "outcome": {"result": "It worked out fine"},
             "tags": [],
         }
-        archetype, confidence = infer_archetype(data)
+        archetype, confidence, method = infer_archetype(data, mock_embedding_service)
         assert archetype == WorkUnitArchetype.MINIMAL
         assert confidence < 0.5
 
-    def test_custom_threshold_affects_result(self) -> None:
+    def test_custom_threshold_affects_result(self, mock_embedding_service: MagicMock) -> None:
         """Should use custom threshold when provided."""
+        mock_embedding_service.similarity.return_value = 0.2
+
         data = {
             "title": "Some migration work",
             "problem": {"statement": "Old system needed updating"},
@@ -266,15 +439,20 @@ class TestInferArchetype:
             "tags": [],
         }
         # With high threshold, should return minimal
-        archetype_high, confidence_high = infer_archetype(data, threshold=0.9)
+        archetype_high, confidence_high, _ = infer_archetype(
+            data, mock_embedding_service, threshold=0.9
+        )
         assert archetype_high == WorkUnitArchetype.MINIMAL
 
         # With low threshold, may return specific archetype
-        archetype_low, confidence_low = infer_archetype(data, threshold=0.1)
+        archetype_low, confidence_low, _ = infer_archetype(
+            data, mock_embedding_service, threshold=0.1
+        )
         assert archetype_low in list(WorkUnitArchetype)
-        assert confidence_low == confidence_high  # Confidence unchanged
 
-    def test_confidence_always_between_zero_and_one(self) -> None:
+    def test_confidence_always_between_zero_and_one(
+        self, mock_embedding_service: MagicMock
+    ) -> None:
         """Confidence should always be in [0.0, 1.0] range."""
         data = {
             "title": "P1 P2 outage incident detected triaged mitigated resolved",
@@ -283,7 +461,7 @@ class TestInferArchetype:
             "outcome": {"result": "Everything was resolved and mitigated"},
             "tags": ["incident-response", "p1"],
         }
-        archetype, confidence = infer_archetype(data)
+        archetype, confidence, method = infer_archetype(data, mock_embedding_service)
         assert 0.0 <= confidence <= 1.0
 
 
@@ -293,3 +471,43 @@ class TestMinConfidenceThreshold:
     def test_default_threshold_is_half(self) -> None:
         """Default threshold should be 0.5."""
         assert MIN_CONFIDENCE_THRESHOLD == 0.5
+
+    def test_semantic_threshold_is_lower(self) -> None:
+        """Semantic threshold should be lower than regex threshold."""
+        assert SEMANTIC_CONFIDENCE_THRESHOLD < MIN_CONFIDENCE_THRESHOLD
+        assert SEMANTIC_CONFIDENCE_THRESHOLD == 0.3
+
+
+class TestArchetypePatterns:
+    """Tests for archetype pattern constants."""
+
+    def test_all_archetypes_have_weighted_patterns(self) -> None:
+        """All non-MINIMAL archetypes should have weighted patterns."""
+        for archetype in WorkUnitArchetype:
+            if archetype == WorkUnitArchetype.MINIMAL:
+                continue
+            assert archetype in ARCHETYPE_PATTERNS_WEIGHTED
+            assert len(ARCHETYPE_PATTERNS_WEIGHTED[archetype]) > 0
+
+    def test_all_patterns_have_positive_weights(self) -> None:
+        """All pattern weights should be positive."""
+        for archetype, patterns in ARCHETYPE_PATTERNS_WEIGHTED.items():
+            for pattern, weight in patterns:
+                assert weight > 0, f"{archetype}: {pattern} has non-positive weight"
+
+
+class TestArchetypeDescriptions:
+    """Tests for archetype description constants."""
+
+    def test_all_archetypes_have_descriptions(self) -> None:
+        """All non-MINIMAL archetypes should have descriptions."""
+        for archetype in WorkUnitArchetype:
+            if archetype == WorkUnitArchetype.MINIMAL:
+                continue
+            assert archetype in ARCHETYPE_DESCRIPTIONS
+            assert len(ARCHETYPE_DESCRIPTIONS[archetype]) > 0
+
+    def test_descriptions_are_meaningful_length(self) -> None:
+        """Descriptions should be meaningful length (>50 chars)."""
+        for archetype, description in ARCHETYPE_DESCRIPTIONS.items():
+            assert len(description) > 50, f"{archetype} description too short"

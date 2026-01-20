@@ -1,8 +1,9 @@
 """Infer archetypes for work units.
 
-Story 12.3: Archetype Inference Service
+Story 12.6: Enhanced Archetype Inference with Semantic Embeddings
 
-Provides CLI command for batch inference of work unit archetypes.
+Provides CLI command for batch inference of work unit archetypes
+using a hybrid weighted-regex + semantic embedding approach.
 Dry-run by default; use --apply to update files.
 """
 
@@ -19,6 +20,7 @@ from resume_as_code.services.archetype_inference_service import (
     MIN_CONFIDENCE_THRESHOLD,
     infer_archetype,
 )
+from resume_as_code.services.embedder import EmbeddingService
 from resume_as_code.utils.console import console, info, warning
 from resume_as_code.utils.errors import handle_errors
 
@@ -49,7 +51,10 @@ def infer_archetypes_command(
     min_confidence: float,
     include_assigned: bool,
 ) -> None:
-    """Infer archetypes for work units based on content analysis.
+    """Infer archetypes for work units using hybrid regex + semantic analysis.
+
+    Uses weighted regex patterns first (strong signals like "P1" score higher).
+    Falls back to semantic embedding comparison when regex confidence is low.
 
     By default, shows suggestions without modifying files.
     Use --apply to update work unit files with inferred archetypes.
@@ -94,6 +99,9 @@ def infer_archetypes_command(
     yaml = YAML()
     yaml.preserve_quotes = True
 
+    # Initialize embedding service (always needed for hybrid approach)
+    embedding_service = EmbeddingService()
+
     results: list[dict[str, str | float | bool | None]] = []
 
     for yaml_file in sorted(work_units_dir.glob("*.yaml")):
@@ -109,7 +117,7 @@ def infer_archetypes_command(
         if existing_archetype and not include_assigned:
             continue
 
-        archetype, confidence = infer_archetype(data, min_confidence)
+        archetype, confidence, method = infer_archetype(data, embedding_service, min_confidence)
 
         result: dict[str, str | float | bool | None] = {
             "file": yaml_file.name,
@@ -118,6 +126,7 @@ def infer_archetypes_command(
             "confidence": round(confidence, 2),
             "existing": existing_archetype,
             "applied": False,
+            "method": method,
         }
         results.append(result)
 
@@ -156,8 +165,10 @@ def infer_archetypes_command(
                 conf_color = "yellow"
             else:
                 conf_color = "red"
+            method_str = f"[dim]({r['method']})[/dim]"
             console.print(
-                f"  {r['file']}: [{conf_color}]{r['inferred']}[/{conf_color}] ({conf:.0%}) {status}"
+                f"  {r['file']}: [{conf_color}]{r['inferred']}[/{conf_color}] "
+                f"({conf:.0%}) {method_str} {status}"
             )
 
         console.print(f"\n[dim]Total: {len(results)} | Min confidence: {min_confidence}[/dim]")

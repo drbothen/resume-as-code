@@ -849,6 +849,7 @@ tags: []
     ) -> None:
         """Test that --min-confidence threshold affects results."""
         import json
+        from unittest.mock import patch
 
         work_units_dir = tmp_path / "work-units"
         work_units_dir.mkdir()
@@ -867,34 +868,43 @@ tags: []
         (work_units_dir / "test.yaml").write_text(work_unit_content)
         monkeypatch.chdir(tmp_path)
 
-        # With high threshold, should return minimal
-        result = cli_runner.invoke(main, ["--json", "infer-archetypes", "--min-confidence", "0.8"])
-        data = json.loads(result.output)
-        assert data["data"]["results"][0]["inferred"] == "minimal"
+        # Mock embedding service to return low similarity scores
+        # This ensures semantic fallback doesn't exceed thresholds
+        with patch(
+            "resume_as_code.services.embedder.EmbeddingService.similarity",
+            return_value=0.1,
+        ):
+            # With high threshold, should return minimal (low regex + low semantic)
+            result = cli_runner.invoke(
+                main, ["--json", "infer-archetypes", "--min-confidence", "0.8"]
+            )
+            data = json.loads(result.output)
+            assert data["data"]["results"][0]["inferred"] == "minimal"
 
-        # With low threshold, may return specific archetype
-        result_low = cli_runner.invoke(
-            main, ["--json", "infer-archetypes", "--min-confidence", "0.1"]
-        )
-        data_low = json.loads(result_low.output)
-        # Either minimal or specific archetype depending on content
-        assert data_low["data"]["results"][0]["inferred"] in [
-            "minimal",
-            "greenfield",
-            "migration",
-            "optimization",
-            "incident",
-            "leadership",
-            "strategic",
-            "transformation",
-            "cultural",
-        ]
+            # With low threshold, may return specific archetype
+            result_low = cli_runner.invoke(
+                main, ["--json", "infer-archetypes", "--min-confidence", "0.1"]
+            )
+            data_low = json.loads(result_low.output)
+            # Either minimal or specific archetype depending on content
+            assert data_low["data"]["results"][0]["inferred"] in [
+                "minimal",
+                "greenfield",
+                "migration",
+                "optimization",
+                "incident",
+                "leadership",
+                "strategic",
+                "transformation",
+                "cultural",
+            ]
 
     def test_infer_archetypes_apply_skips_low_confidence(
         self, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test that --apply does NOT update files when confidence is below threshold."""
         import json
+        from unittest.mock import patch
 
         work_units_dir = tmp_path / "work-units"
         work_units_dir.mkdir()
@@ -914,19 +924,25 @@ tags: []
         (work_units_dir / "test.yaml").write_text(work_unit_content)
         monkeypatch.chdir(tmp_path)
 
-        # Apply with high threshold - should NOT modify file
-        result = cli_runner.invoke(
-            main, ["--json", "infer-archetypes", "--apply", "--min-confidence", "0.9"]
-        )
+        # Mock embedding service to return low similarity scores
+        # This ensures semantic fallback doesn't exceed thresholds
+        with patch(
+            "resume_as_code.services.embedder.EmbeddingService.similarity",
+            return_value=0.1,
+        ):
+            # Apply with high threshold - should NOT modify file
+            result = cli_runner.invoke(
+                main, ["--json", "infer-archetypes", "--apply", "--min-confidence", "0.9"]
+            )
 
-        assert result.exit_code == 0
-        data = json.loads(result.output)
+            assert result.exit_code == 0
+            data = json.loads(result.output)
 
-        # Verify inferred archetype is minimal (low confidence)
-        assert data["data"]["results"][0]["inferred"] == "minimal"
-        # Verify it was NOT applied (confidence below threshold)
-        assert data["data"]["results"][0]["applied"] is False
+            # Verify inferred archetype is minimal (low confidence)
+            assert data["data"]["results"][0]["inferred"] == "minimal"
+            # Verify it was NOT applied (confidence below threshold)
+            assert data["data"]["results"][0]["applied"] is False
 
-        # Verify the file was NOT modified
-        content = (work_units_dir / "test.yaml").read_text()
-        assert "archetype:" not in content
+            # Verify the file was NOT modified
+            content = (work_units_dir / "test.yaml").read_text()
+            assert "archetype:" not in content

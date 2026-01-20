@@ -304,6 +304,29 @@ class EmbeddingService:
 
         return hasher.hexdigest()[:16]
 
+    def similarity(self, text1: str, text2: str) -> float:
+        """Compute cosine similarity between two texts.
+
+        Args:
+            text1: First text to compare.
+            text2: Second text to compare.
+
+        Returns:
+            Cosine similarity score from 0.0 to 1.0.
+        """
+        emb1 = self.embed(text1)
+        emb2 = self.embed(text2)
+
+        # Compute cosine similarity
+        dot_product = float(np.dot(emb1, emb2))
+        norm1 = float(np.linalg.norm(emb1))
+        norm2 = float(np.linalg.norm(emb2))
+
+        if norm1 == 0.0 or norm2 == 0.0:
+            return 0.0
+
+        return dot_product / (norm1 * norm2)
+
     def _sanitize_model_name(self) -> str:
         """Convert model name to safe directory name."""
         return self.model_name.replace("/", "_").replace("\\", "_")

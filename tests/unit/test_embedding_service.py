@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import numpy as np
+import pytest
 
 
 class TestEmbeddingServiceInit:
@@ -391,6 +392,121 @@ class TestEmbeddingServiceEmbedBatch:
         call_args = mock_model.encode.call_args
         texts = call_args[0][0]
         assert all(t.startswith("query: ") for t in texts)
+
+
+class TestEmbeddingServiceSimilarity:
+    """Tests for similarity computation."""
+
+    @patch("sentence_transformers.SentenceTransformer")
+    def test_similarity_returns_float(self, mock_st: MagicMock, tmp_path: Path) -> None:
+        """similarity() should return a float between 0 and 1."""
+        from resume_as_code.services.embedder import EmbeddingService
+
+        mock_model = MagicMock()
+        mock_state_dict = {
+            "layer1.weight": MagicMock(
+                cpu=MagicMock(
+                    return_value=MagicMock(
+                        numpy=MagicMock(return_value=np.zeros((10, 10), dtype=np.float32))
+                    )
+                )
+            ),
+        }
+        mock_model._first_module.return_value.auto_model.state_dict.return_value = mock_state_dict
+        # Return normalized vectors for predictable similarity
+        mock_model.encode.side_effect = [
+            np.array([1.0, 0.0, 0.0], dtype=np.float32),
+            np.array([1.0, 0.0, 0.0], dtype=np.float32),
+        ]
+        mock_st.return_value = mock_model
+
+        service = EmbeddingService(cache_dir=tmp_path)
+        result = service.similarity("text1", "text2")
+
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+
+    @patch("sentence_transformers.SentenceTransformer")
+    def test_similarity_identical_texts(self, mock_st: MagicMock, tmp_path: Path) -> None:
+        """Identical texts should have similarity close to 1.0."""
+        from resume_as_code.services.embedder import EmbeddingService
+
+        mock_model = MagicMock()
+        mock_state_dict = {
+            "layer1.weight": MagicMock(
+                cpu=MagicMock(
+                    return_value=MagicMock(
+                        numpy=MagicMock(return_value=np.zeros((10, 10), dtype=np.float32))
+                    )
+                )
+            ),
+        }
+        mock_model._first_module.return_value.auto_model.state_dict.return_value = mock_state_dict
+        # Same embedding for same text
+        vec = np.array([0.5, 0.5, 0.5, 0.5], dtype=np.float32)
+        mock_model.encode.return_value = vec
+        mock_st.return_value = mock_model
+
+        service = EmbeddingService(cache_dir=tmp_path)
+        result = service.similarity("same text", "same text")
+
+        assert result == pytest.approx(1.0, abs=0.01)
+
+    @patch("sentence_transformers.SentenceTransformer")
+    def test_similarity_orthogonal_texts(self, mock_st: MagicMock, tmp_path: Path) -> None:
+        """Orthogonal vectors should have similarity of 0."""
+        from resume_as_code.services.embedder import EmbeddingService
+
+        mock_model = MagicMock()
+        mock_state_dict = {
+            "layer1.weight": MagicMock(
+                cpu=MagicMock(
+                    return_value=MagicMock(
+                        numpy=MagicMock(return_value=np.zeros((10, 10), dtype=np.float32))
+                    )
+                )
+            ),
+        }
+        mock_model._first_module.return_value.auto_model.state_dict.return_value = mock_state_dict
+        # Orthogonal vectors
+        mock_model.encode.side_effect = [
+            np.array([1.0, 0.0, 0.0], dtype=np.float32),
+            np.array([0.0, 1.0, 0.0], dtype=np.float32),
+        ]
+        mock_st.return_value = mock_model
+
+        service = EmbeddingService(cache_dir=tmp_path)
+        result = service.similarity("text1", "text2")
+
+        assert result == pytest.approx(0.0, abs=0.01)
+
+    @patch("sentence_transformers.SentenceTransformer")
+    def test_similarity_handles_zero_vector(self, mock_st: MagicMock, tmp_path: Path) -> None:
+        """Should return 0 if either vector is zero."""
+        from resume_as_code.services.embedder import EmbeddingService
+
+        mock_model = MagicMock()
+        mock_state_dict = {
+            "layer1.weight": MagicMock(
+                cpu=MagicMock(
+                    return_value=MagicMock(
+                        numpy=MagicMock(return_value=np.zeros((10, 10), dtype=np.float32))
+                    )
+                )
+            ),
+        }
+        mock_model._first_module.return_value.auto_model.state_dict.return_value = mock_state_dict
+        # Zero vector
+        mock_model.encode.side_effect = [
+            np.array([0.0, 0.0, 0.0], dtype=np.float32),
+            np.array([1.0, 0.0, 0.0], dtype=np.float32),
+        ]
+        mock_st.return_value = mock_model
+
+        service = EmbeddingService(cache_dir=tmp_path)
+        result = service.similarity("", "text")
+
+        assert result == 0.0
 
 
 class TestEmbeddingServiceEdgeCases:

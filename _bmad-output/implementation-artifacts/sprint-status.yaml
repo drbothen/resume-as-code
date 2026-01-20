@@ -224,13 +224,13 @@ development_status:
   # Goal: Add persistent archetype tracking to work units for categorization analysis, PAR validation, and improved resume generation
   # Feature Request: January 2026 - based on jmagady-resume analysis identifying need for archetype metadata
   # Total Points: TBD (5 stories)
-  epic-12: in-progress
+  epic-12: done
   12-1-archetype-field-model: done  # P1, 3 pts - Add WorkUnitArchetype enum + field to model
   12-2-persist-archetype-creation: done  # P1, 3 pts - Save archetype when using --archetype flag
   12-3-archetype-inference-service: done  # P2, 8 pts - Infer archetypes from existing work units
   12-4-par-structure-validation: done  # P2, 5 pts - Validate PAR structure matches archetype
   12-5-archetype-reporting-statistics: done  # P3, 3 pts - Add --by-archetype to list command
-  12-6-hybrid-archetype-inference: ready-for-dev  # P2, 5 pts - Hybrid regex + semantic inference
+  12-6-hybrid-archetype-inference: done  # P2, 5 pts - Hybrid regex + semantic inference
 
   # Epic 13: Output Format Enhancements
   # Goal: Enhance resume output formats to support branded, template-based generation for all output types

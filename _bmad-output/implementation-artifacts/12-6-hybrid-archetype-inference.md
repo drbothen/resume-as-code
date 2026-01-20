@@ -1,6 +1,6 @@
 # Story 12.6: Enhanced Archetype Inference with Semantic Embeddings
 
-## Status: Ready for Dev
+## Status: Done
 
 ---
 
@@ -581,24 +581,24 @@ class TestInferArchetypeFunction:
 
 ## Implementation Checklist
 
-- [ ] Add weighted patterns dict `ARCHETYPE_PATTERNS_WEIGHTED`
-- [ ] Add semantic descriptions dict `ARCHETYPE_DESCRIPTIONS`
-- [ ] Implement `score_weighted_regex()` function
-- [ ] Implement `score_semantic()` function
-- [ ] Implement `infer_archetype_hybrid()` function
-- [ ] Update `infer_archetype()` to use hybrid approach (breaking change to signature)
-- [ ] Update CLI command to use embedding service
-- [ ] Add `method` field to JSON output
-- [ ] Update human-readable output to show method
-- [ ] Update existing tests for new function signature
-- [ ] Add unit tests for weighted scoring
-- [ ] Add unit tests for semantic scoring
-- [ ] Add unit tests for hybrid inference
-- [ ] Update CLI integration tests for new output format
-- [ ] Run `ruff check src tests --fix`
-- [ ] Run `ruff format src tests`
-- [ ] Run `mypy src --strict`
-- [ ] Run `pytest -v`
+- [x] Add weighted patterns dict `ARCHETYPE_PATTERNS_WEIGHTED`
+- [x] Add semantic descriptions dict `ARCHETYPE_DESCRIPTIONS`
+- [x] Implement `score_weighted_regex()` function
+- [x] Implement `score_semantic()` function
+- [x] Implement `infer_archetype_hybrid()` function
+- [x] Update `infer_archetype()` to use hybrid approach (breaking change to signature)
+- [x] Update CLI command to use embedding service
+- [x] Add `method` field to JSON output
+- [x] Update human-readable output to show method
+- [x] Update existing tests for new function signature
+- [x] Add unit tests for weighted scoring
+- [x] Add unit tests for semantic scoring
+- [x] Add unit tests for hybrid inference
+- [x] Update CLI integration tests for new output format
+- [x] Run `ruff check src tests --fix`
+- [x] Run `ruff format src tests`
+- [x] Run `mypy src --strict`
+- [x] Run `pytest -v`
 
 ---
 
@@ -689,10 +689,28 @@ The `method` indicator shows which algorithm produced the result:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+- Implemented hybrid regex + semantic embedding approach for archetype inference
+- Added `similarity()` method to `EmbeddingService` for cosine similarity between texts
+- Weighted regex patterns with signal strengths (1.0-3.0) for each archetype
+- Rich semantic descriptions for each archetype for embedding comparison
+- Updated `infer_archetype()` to return 3-tuple: (archetype, confidence, method)
+- CLI shows method used for each inference: regex, semantic, or fallback
+- Fixed CLI integration tests by mocking EmbeddingService for controlled behavior
+- All 2787 tests pass, ruff and mypy clean
+
 ### File List
+
+- `src/resume_as_code/services/archetype_inference_service.py` - Complete rewrite with hybrid approach
+- `src/resume_as_code/services/embedder.py` - Added `similarity()` method
+- `src/resume_as_code/commands/infer.py` - Updated for new API and method display
+- `tests/unit/services/test_archetype_inference_service.py` - Complete rewrite with new tests
+- `tests/unit/test_embedding_service.py` - Added `TestEmbeddingServiceSimilarity` class
+- `tests/test_cli.py` - Fixed CLI integration tests with EmbeddingService mocking
