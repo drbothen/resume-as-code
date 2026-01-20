@@ -955,3 +955,275 @@ If PDF output looks different from screen:
 1. Use `@page` rules for PDF margins
 2. Add `@media print` styles for print-specific formatting
 3. Test with `resume build --format pdf` directly
+
+---
+
+## DOCX Templates (Story 13.1)
+
+Resume as Code supports template-based DOCX generation using [docxtpl](https://docxtpl.readthedocs.io/), which embeds Jinja2 templating directly in Word documents.
+
+### Creating a DOCX Template
+
+1. **Create a Word document** with your desired formatting and layout
+2. **Insert Jinja2 placeholders** where dynamic content should appear
+3. **Save as `.docx`** in your templates directory
+
+### Directory Structure
+
+```
+my-templates/
+├── branded.html      # PDF template
+├── branded.css
+└── docx/
+    └── branded.docx  # DOCX template (in docx/ subdirectory)
+```
+
+**Important:** DOCX templates must be in a `docx/` subdirectory.
+
+### Template Resolution
+
+DOCX templates are resolved in order:
+
+1. `{templates_dir}/docx/{template_name}.docx` (custom)
+2. Built-in `templates/docx/{template_name}.docx`
+3. Fallback to programmatic generation (if no template found)
+
+### Configuration
+
+Set DOCX-specific template in `.resume.yaml`:
+
+```yaml
+# DOCX-specific template (independent of PDF template)
+docx:
+  template: branded  # Uses templates/docx/branded.docx
+
+# Or use same template name for both PDF and DOCX
+default_template: executive
+```
+
+Priority: CLI `--template` > `docx.template` > `default_template` > programmatic.
+
+### Available Template Variables
+
+DOCX templates have access to the same variables as HTML templates, structured for docxtpl:
+
+#### Contact Information
+
+```
+{{ contact.name }}
+{{ contact.title }}
+{{ contact.email }}
+{{ contact.phone }}
+{{ contact.location }}
+{{ contact.linkedin }}
+{{ contact.github }}
+{{ contact.website }}
+```
+
+#### Summary
+
+```
+{{ summary }}
+```
+
+#### Experience Sections
+
+```jinja2
+{% for section in sections %}
+{{ section.title }}
+{% for item in section.items %}
+{{ item.title }}
+{{ item.organization }}
+{{ item.location }}
+{{ item.start_date }} - {{ item.end_date }}
+{{ item.scope_line }}
+{% for bullet in item.bullets %}
+• {{ bullet }}
+{% endfor %}
+{% endfor %}
+{% endfor %}
+```
+
+#### Employer Groups (for grouped position rendering)
+
+```jinja2
+{% for group in employer_groups %}
+{{ group.employer }}
+{{ group.location }}
+{{ group.date_range }}
+{% if group.is_multi_position %}
+{# Multiple positions at same employer #}
+{% for pos in group.positions %}
+{{ pos.title }}
+{{ pos.start_date }} - {{ pos.end_date }}
+{{ pos.scope_line }}
+{% for bullet in pos.bullets %}
+• {{ bullet }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+```
+
+#### Skills
+
+```jinja2
+{% for skill in skills %}{{ skill }}{% if not loop.last %}, {% endif %}{% endfor %}
+```
+
+#### Certifications
+
+```jinja2
+{% for cert in certifications %}
+{{ cert.name }} - {{ cert.issuer }} ({{ cert.year }}){% if cert.expires %}, expires {{ cert.expires[:4] }}{% endif %}
+{% endfor %}
+```
+
+#### Education
+
+```jinja2
+{% for edu in education %}
+{{ edu.degree }}, {{ edu.institution }}{% if edu.graduation_year %} ({{ edu.graduation_year }}){% endif %}{% if edu.honors %} - {{ edu.honors }}{% endif %}
+{% endfor %}
+```
+
+#### Career Highlights
+
+```jinja2
+{% for highlight in highlights %}
+• {{ highlight }}
+{% endfor %}
+```
+
+#### Board Roles
+
+```jinja2
+{% for role in board_roles %}
+{{ role.organization }} - {{ role.role }} ({{ role.type }})
+{{ role.start_date }} - {{ role.end_date }}
+{% if role.focus %}Focus: {{ role.focus }}{% endif %}
+{% endfor %}
+```
+
+#### Publications
+
+```jinja2
+{% for pub in publications %}
+{{ pub.title }}, {{ pub.venue }} ({{ pub.date }})
+{% endfor %}
+```
+
+#### Tailored Notice (Story 7.19)
+
+```jinja2
+{% if tailored_notice_text %}
+{{ tailored_notice_text }}
+{% endif %}
+```
+
+### Example DOCX Template
+
+Create a Word document with this structure:
+
+```
+┌─────────────────────────────────────────────────┐
+│                 {{ contact.name }}               │
+│              {{ contact.title }}                 │
+│ {{ contact.email }} | {{ contact.phone }}        │
+│             {{ contact.location }}               │
+├─────────────────────────────────────────────────┤
+│ PROFESSIONAL SUMMARY                             │
+│ {{ summary }}                                    │
+├─────────────────────────────────────────────────┤
+│ PROFESSIONAL EXPERIENCE                          │
+│ {% for group in employer_groups %}               │
+│ {{ group.employer }} | {{ group.location }}      │
+│ {{ group.date_range }}                           │
+│ {% for pos in group.positions %}                 │
+│   {{ pos.title }}                                │
+│   {{ pos.start_date }} - {{ pos.end_date }}      │
+│   {% for bullet in pos.bullets %}                │
+│   • {{ bullet }}                                 │
+│   {% endfor %}                                   │
+│ {% endfor %}                                     │
+│ {% endfor %}                                     │
+├─────────────────────────────────────────────────┤
+│ SKILLS                                           │
+│ {{ skills|join(", ") }}                          │
+├─────────────────────────────────────────────────┤
+│ CERTIFICATIONS                                   │
+│ {% for cert in certifications %}                 │
+│ • {{ cert.name }} - {{ cert.issuer }}            │
+│ {% endfor %}                                     │
+└─────────────────────────────────────────────────┘
+```
+
+### Styling in DOCX Templates
+
+Unlike HTML/CSS, DOCX styling is embedded in the Word document:
+
+1. **Format text directly** - Use Word's formatting tools (bold, italic, fonts, sizes)
+2. **Use Word styles** - Apply Heading 1, Heading 2, etc. for section titles
+3. **Set colors** - Apply colors using Word's font color picker
+4. **Insert logo** - Add images directly in the template (they're preserved during rendering)
+
+### Built-in DOCX Templates
+
+| Template | Description |
+|----------|-------------|
+| `modern` | Clean, minimal design |
+| `executive` | Executive-level with scope indicators |
+| `executive-classic` | Traditional executive styling |
+| `ats-safe` | ATS-optimized, minimal formatting |
+| `cto` | CTO-specific format |
+| `cto-results` | CTO with results metrics emphasis |
+| `branded` | Brand-colored template with logo |
+
+### Testing DOCX Templates
+
+```bash
+# Build with your template
+resume build --jd job.txt --format docx --template branded
+
+# Open in Word to verify
+open dist/resume.docx
+```
+
+### Troubleshooting DOCX Templates
+
+#### Template Not Found
+
+```
+DOCX template 'mytemplate' not found, using programmatic generation
+```
+
+Check:
+- File is in `docx/` subdirectory: `my-templates/docx/mytemplate.docx`
+- File has `.docx` extension
+- `templates_dir` is configured correctly
+
+#### Placeholder Not Rendering
+
+If `{{ variable }}` appears literally in output:
+
+1. Verify placeholder syntax is exact (no extra spaces)
+2. Check variable name matches available variables
+3. Ensure docxtpl can read the placeholder (some Word formatting can break it)
+
+**Tip:** Type placeholders in a plain text editor first, then paste into Word.
+
+#### Conditional Sections Not Working
+
+For `{% if %}` and `{% for %}` tags in Word:
+
+1. Each tag must be in its own paragraph or table cell
+2. Don't split tags across formatting boundaries
+3. Use Word's "Show/Hide ¶" to verify paragraph structure
+
+#### Logo Not Appearing
+
+If your logo disappears:
+
+1. Insert the logo directly in the template (not as a linked image)
+2. Use PNG or JPEG format (not SVG)
+3. Embed the image (Insert → Pictures → This Device)

@@ -1,6 +1,6 @@
 # Story 13.1: DOCX Template System
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -23,72 +23,72 @@ so that I have consistent branding across all output formats.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Update DOCXProvider constructor (AC: 1, 2, 3)
-  - [ ] 1.1: Add `template_name: str | None = None` parameter
-  - [ ] 1.2: Add `templates_dir: Path | None = None` parameter
-  - [ ] 1.3: Implement `_resolve_template()` method with multi-directory search
-  - [ ] 1.4: Add fallback logic: template found → docxtpl render, not found → programmatic
-  - [ ] 1.5: Log warning when falling back to programmatic generation
+- [x] Task 1: Update DOCXProvider constructor (AC: 1, 2, 3)
+  - [x] 1.1: Add `template_name: str | None = None` parameter
+  - [x] 1.2: Add `templates_dir: Path | None = None` parameter
+  - [x] 1.3: Implement `_resolve_template()` method with multi-directory search
+  - [x] 1.4: Add fallback logic: template found → docxtpl render, not found → programmatic
+  - [x] 1.5: Log warning when falling back to programmatic generation
 
-- [ ] Task 2: Implement docxtpl integration (AC: 6, 7, 8)
-  - [ ] 2.1: Create `_render_from_template()` method using docxtpl
-  - [ ] 2.2: Build template context dict from ResumeData model
-  - [ ] 2.3: Handle employer grouping for positions (match PDF template structure)
-  - [ ] 2.4: Handle optional sections (certifications, publications, etc.)
-  - [ ] 2.5: Test with existing branded.docx template
+- [x] Task 2: Implement docxtpl integration (AC: 6, 7, 8)
+  - [x] 2.1: Create `_render_from_template()` method using docxtpl
+  - [x] 2.2: Build template context dict from ResumeData model
+  - [x] 2.3: Handle employer grouping for positions (match PDF template structure)
+  - [x] 2.4: Handle optional sections (certifications, publications, etc.)
+  - [x] 2.5: Test with existing branded.docx template
 
-- [ ] Task 3: Create branded DOCX template (AC: 6, 7, 8)
-  - [ ] 3.1: Create `templates/docx/` directory
-  - [ ] 3.2: Design branded.docx in Word with Jinja2 placeholders:
+- [x] Task 3: Create branded DOCX template (AC: 6, 7, 8)
+  - [x] 3.1: Create `templates/docx/` directory
+  - [x] 3.2: Design branded.docx in Word with Jinja2 placeholders:
     - Header with triple chevron logo
     - Brand colors: Navy (#1d3557), Red (#e63946), Steel (#457b9d)
     - Professional typography (Calibri)
     - Section headings with colored underlines
-  - [ ] 3.3: Add all Jinja2 placeholders matching ResumeData structure:
+  - [x] 3.3: Add all Jinja2 placeholders matching ResumeData structure:
     - `{{ contact.name }}`, `{{ contact.title }}`, `{{ contact.email }}`, etc.
     - `{{ summary }}`
     - `{% for section in sections %}` loop structure
     - `{% for item in section.items %}` nested loop
     - `{% for bullet in item.bullets %}` bullet loop
     - `{% if certifications %}` conditional sections
-  - [ ] 3.4: Validate template renders with docxtpl
+  - [x] 3.4: Validate template renders with docxtpl
 
-- [ ] Task 4: Update build command (AC: 4, 5)
-  - [ ] 4.1: Pass `template_name` to DOCXProvider in build.py
-  - [ ] 4.2: Pass `templates_dir` to DOCXProvider (from config or --templates-dir flag)
-  - [ ] 4.3: Read `docx.template` from config if no --template flag provided
-  - [ ] 4.4: Ensure --template applies to both PDF and DOCX when format is "all"
+- [x] Task 4: Update build command (AC: 4, 5)
+  - [x] 4.1: Pass `template_name` to DOCXProvider in build.py
+  - [x] 4.2: Pass `templates_dir` to DOCXProvider (from config or --templates-dir flag)
+  - [x] 4.3: Read `docx.template` from config if no --template flag provided
+  - [x] 4.4: Ensure --template applies to both PDF and DOCX when format is "all"
 
-- [ ] Task 5: Update config model (AC: 4)
-  - [ ] 5.1: Add `DocxConfig` class to models/config.py:
+- [x] Task 5: Update config model (AC: 4)
+  - [x] 5.1: Add `DocxConfig` class to models/config.py:
     ```python
     class DocxConfig(BaseModel):
         template: str | None = None
     ```
-  - [ ] 5.2: Add `docx: DocxConfig | None = None` field to main Config
-  - [ ] 5.3: Update schemas/config.schema.json with docx section
+  - [x] 5.2: Add `docx: DocxConfig | None = None` field to main Config
+  - [x] 5.3: Update schemas/config.schema.json with docx section
 
-- [ ] Task 6: Write unit tests (AC: 9)
-  - [ ] 6.1: Test DOCXProvider with template_name finds correct template
-  - [ ] 6.2: Test template resolution order (custom dir → built-in)
-  - [ ] 6.3: Test fallback to programmatic when no template exists
-  - [ ] 6.4: Test docxtpl context dict contains all required fields
-  - [ ] 6.5: Test config parsing with docx.template option
+- [x] Task 6: Write unit tests (AC: 9)
+  - [x] 6.1: Test DOCXProvider with template_name finds correct template
+  - [x] 6.2: Test template resolution order (custom dir → built-in)
+  - [x] 6.3: Test fallback to programmatic when no template exists
+  - [x] 6.4: Test docxtpl context dict contains all required fields
+  - [x] 6.5: Test config parsing with docx.template option
 
-- [ ] Task 7: Write integration test (AC: 10)
-  - [ ] 7.1: Build DOCX with branded template
-  - [ ] 7.2: Verify sections present: contact, summary, experience, skills
-  - [ ] 7.3: Verify employer grouping matches PDF output structure
+- [x] Task 7: Write integration test (AC: 10)
+  - [x] 7.1: Build DOCX with branded template
+  - [x] 7.2: Verify sections present: contact, summary, experience, skills
+  - [x] 7.3: Verify employer grouping matches PDF output structure
 
-- [ ] Task 8: Run quality checks (AC: all)
-  - [ ] 8.1: Run `uv run ruff check src tests --fix`
-  - [ ] 8.2: Run `uv run ruff format src tests`
-  - [ ] 8.3: Run `uv run mypy src --strict`
-  - [ ] 8.4: Run `uv run pytest`
+- [x] Task 8: Run quality checks (AC: all)
+  - [x] 8.1: Run `uv run ruff check src tests --fix`
+  - [x] 8.2: Run `uv run ruff format src tests`
+  - [x] 8.3: Run `uv run mypy src --strict`
+  - [x] 8.4: Run `uv run pytest`
 
-- [ ] Task 9: Update documentation
-  - [ ] 9.1: Update CLAUDE.md with docx.template config option
-  - [ ] 9.2: Add DOCX template section to template-authoring.md
+- [x] Task 9: Update documentation
+  - [x] 9.1: Update CLAUDE.md with docx.template config option
+  - [x] 9.2: Add DOCX template section to template-authoring.md
 
 ## Dev Notes
 
@@ -365,16 +365,45 @@ def test_docx_template_context_has_required_fields(sample_resume):
 
 ### Agent Model Used
 
-(To be filled during implementation)
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
-(To be filled during implementation)
+- Commit: 67af13fdc1e16e043ed545dbfb2f80acd9ed1dc9
+- Test run: 91 tests passed (45 unit + 46 integration)
 
 ### Completion Notes List
 
-(To be filled during implementation)
+1. **docxtpl Integration**: Used docxtpl library for Jinja2-based template rendering in Word docs. Template context built from ResumeData model with all fields matching PDF template structure.
+
+2. **7 DOCX Templates Created**: modern, executive, executive-classic, ats-safe, cto, cto-results, branded - matching PDF template variants for consistent branding across formats.
+
+3. **Employer Grouping**: `_build_employer_groups()` method groups multiple positions at same employer, matching PDF template's grouped position rendering.
+
+4. **Template Resolution**: Custom templates_dir checked first, then built-in templates. Falls back to programmatic generation with warning if no template found.
+
+5. **Config Priority**: CLI --template > config.docx.template > config.default_template > programmatic
+
+6. **AC7/AC8 Note**: Logo and brand colors embedded in .docx template binary files. Manual verification required to confirm visual styling matches PDF templates.
 
 ### File List
 
-(To be filled during implementation)
+| File | Change |
+|------|--------|
+| `src/resume_as_code/providers/docx.py` | Added template_name, templates_dir params; _resolve_template(), _render_from_template(), _build_template_context(), _build_employer_groups() methods |
+| `src/resume_as_code/models/config.py` | Added DocxConfig class with template field |
+| `src/resume_as_code/commands/build.py` | Pass template params to DOCXProvider; resolve docx.template from config |
+| `src/resume_as_code/schemas/config.schema.json` | Added DocxConfig definition and docx field to ResumeConfig |
+| `src/resume_as_code/templates/docx/branded.docx` | Created - branded template with Jinja2 placeholders |
+| `src/resume_as_code/templates/docx/modern.docx` | Created - modern template |
+| `src/resume_as_code/templates/docx/executive.docx` | Created - executive template |
+| `src/resume_as_code/templates/docx/executive-classic.docx` | Created - classic executive template |
+| `src/resume_as_code/templates/docx/ats-safe.docx` | Created - ATS-optimized template |
+| `src/resume_as_code/templates/docx/cto.docx` | Created - CTO template |
+| `src/resume_as_code/templates/docx/cto-results.docx` | Created - CTO results-focused template |
+| `tests/unit/test_docx_provider.py` | Added template resolution tests, fallback tests |
+| `tests/unit/test_build_command.py` | Added DOCX template integration tests |
+| `tests/integration/test_template_rendering.py` | Added TestDOCXTemplateIntegration class (9 tests) |
+| `CLAUDE.md` | Added docx.template config documentation |
+| `docs/template-authoring.md` | Added DOCX template authoring section |
+| `tests/unit/test_config_models.py` | Added TestDocxConfig and TestResumeConfigDocx test classes (7 tests) |

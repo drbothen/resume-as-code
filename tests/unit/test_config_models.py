@@ -9,6 +9,7 @@ import pytest
 from resume_as_code.models.config import (
     ConfigSource,
     CurationConfig,
+    DocxConfig,
     ONetConfig,
     ResumeConfig,
     ScoringWeights,
@@ -764,3 +765,50 @@ class TestResumeConfigHistoryYears:
         for years in [5, 10, 15, 20]:
             config = ResumeConfig(history_years=years)
             assert config.history_years == years
+
+
+class TestDocxConfig:
+    """Test DocxConfig model for DOCX-specific configuration (Story 13.1)."""
+
+    def test_default_template_is_none(self) -> None:
+        """Default template should be None (falls back to default_template)."""
+        config = DocxConfig()
+        assert config.template is None
+
+    def test_custom_template(self) -> None:
+        """DocxConfig should accept custom template name."""
+        config = DocxConfig(template="branded")
+        assert config.template == "branded"
+
+    def test_template_without_extension(self) -> None:
+        """Template name should be stored without .docx extension."""
+        config = DocxConfig(template="executive")
+        assert config.template == "executive"
+        assert ".docx" not in config.template
+
+    def test_various_template_names(self) -> None:
+        """DocxConfig should accept various valid template names."""
+        for template_name in ["modern", "executive", "ats-safe", "branded", "minimal"]:
+            config = DocxConfig(template=template_name)
+            assert config.template == template_name
+
+
+class TestResumeConfigDocx:
+    """Test docx field in ResumeConfig (Story 13.1)."""
+
+    def test_default_docx_is_none(self) -> None:
+        """ResumeConfig should have docx as None by default."""
+        config = ResumeConfig()
+        assert config.docx is None
+
+    def test_custom_docx_config(self) -> None:
+        """ResumeConfig should accept custom docx configuration."""
+        config = ResumeConfig(docx=DocxConfig(template="branded"))
+        assert config.docx is not None
+        assert config.docx.template == "branded"
+
+    def test_docx_config_from_dict(self) -> None:
+        """ResumeConfig should accept docx as dict (YAML parsing)."""
+        config = ResumeConfig(docx={"template": "executive"})
+        assert config.docx is not None
+        assert config.docx.template == "executive"
