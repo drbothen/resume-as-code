@@ -236,6 +236,6 @@ development_status:
   # Goal: Enhance resume output formats to support branded, template-based generation for all output types
   # Feature Request: January 2026 - DOCX template system to match PDF branded templates
   # Total Points: 11 (2 stories)
-  epic-13: in-progress
-  13-1-docx-template-system: review  # P2, 8 pts - Template-based DOCX generation with docxtpl
-  13-2-work-history-duration-filter: review  # P2, 3 pts - --years CLI option to limit work history
+  epic-13: done
+  13-1-docx-template-system: done  # P2, 8 pts - Template-based DOCX generation with docxtpl
+  13-2-work-history-duration-filter: done  # P2, 3 pts - --years CLI option to limit work history

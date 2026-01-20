@@ -1,6 +1,6 @@
 # Story 13.2: Work History Duration Filter
 
-**Status:** completed
+**Status:** done
 **Story Points:** 3
 **Priority:** P2
 
@@ -186,3 +186,41 @@ history_years: 10  # Default years of history (null = unlimited)
 - Plan Command: `src/resume_as_code/commands/plan.py`
 - Build Command: `src/resume_as_code/commands/build.py`
 - Config Model: `src/resume_as_code/models/config.py`
+
+---
+
+## Dev Agent Record
+
+### Agent Model Used
+Claude Opus 4.5 (claude-opus-4-5-20251101)
+
+### Debug Log References
+- Commit: d61bed796ac3b241d4b952a60dbd3b648fe5a15d
+- Test run: 45 tests passed (38 unit + 5 integration for years filter + 2 build command)
+
+### Completion Notes List
+
+1. **Position Filtering Logic**: Used YYYY-MM string comparison for date filtering since position dates are stored in this format. Current positions (end_date=None) always included.
+
+2. **Config Priority Pattern**: Followed established pattern `CLI --years > config.history_years > None (unlimited)` consistent with other CLI options.
+
+3. **Work Unit Filtering**: Work units referencing filtered-out positions are automatically excluded. Work units without position_id are always included (date-based filtering not applied to orphan WUs).
+
+4. **Employment Continuity Integration**: Positions filtered BEFORE continuity service is called, so gap warnings only consider positions within the year filter.
+
+5. **Test Coverage**: 8 unit tests for `filter_by_years()` covering boundary conditions, empty lists, positions spanning cutoff, and mixed scenarios.
+
+### File List
+
+| File | Change |
+|------|--------|
+| `src/resume_as_code/models/config.py` | Added `history_years: int \| None` field to ResumeConfig |
+| `src/resume_as_code/services/position_service.py` | Added `filter_by_years()` static method |
+| `src/resume_as_code/commands/plan.py` | Added `--years` option, position/WU filtering logic |
+| `src/resume_as_code/commands/build.py` | Added `--years` option, position/WU filtering logic |
+| `src/resume_as_code/schemas/config.schema.json` | Added history_years field definition |
+| `tests/unit/test_position_service.py` | Added TestPositionServiceFilterByYears (8 tests) |
+| `tests/unit/test_build_command.py` | Added TestBuildCommandYearsFlag (2 tests) |
+| `tests/unit/test_config_models.py` | Added TestResumeConfigHistoryYears (6 tests) |
+| `tests/integration/test_plan_command.py` | Added TestPlanCommandYearsFilter (5 tests) |
+| `CLAUDE.md` | Added --years flag and history_years config documentation |
