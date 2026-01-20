@@ -871,3 +871,121 @@ class TestValidateHelpText:
         assert "board-roles" in result.output
         assert "highlights" in result.output
         assert "config" in result.output
+
+
+# Story 12.4 work unit fixtures for archetype validation
+INCIDENT_ALIGNED_WORK_UNIT = """\
+schema_version: "4.0.0"
+id: "wu-2026-01-10-incident-response"
+archetype: incident
+title: "Resolved production database outage"
+
+problem:
+  statement: "Production database outage affecting 10K users during peak hours"
+  context: "Critical P1 incident requiring immediate response"
+
+actions:
+  - "Detected via monitoring alerts and triaged impact"
+  - "Mitigated by failing over to replica"
+  - "Resolved root cause in connection pool configuration"
+  - "Communicated status to stakeholders throughout"
+
+outcome:
+  result: "Restored service in 45 minutes"
+  quantified_impact: "Prevented $50K impact with MTTR under SLA"
+"""
+
+MISALIGNED_ARCHETYPE_WORK_UNIT = """\
+schema_version: "4.0.0"
+id: "wu-2026-01-10-wrong-archetype"
+archetype: incident
+title: "Built new analytics platform from scratch"
+
+problem:
+  statement: "Team needed real-time analytics capability for business"
+  context: "Gap in observability for customer behavior"
+
+actions:
+  - "Designed event-driven architecture"
+  - "Built streaming data pipeline"
+  - "Deployed to production with CI/CD"
+
+outcome:
+  result: "Delivered analytics platform serving 1M events/day"
+  quantified_impact: "Enabled product team to make data-driven decisions"
+"""
+
+
+class TestValidateArchetypeAlignment:
+    """Tests for --check-archetype flag (Story 12.4)."""
+
+    def test_check_archetype_aligned_passes(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should pass when PAR structure matches archetype (AC1, AC2)."""
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-test.yaml").write_text(INCIDENT_ALIGNED_WORK_UNIT)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate", "work-units", "--check-archetype"])
+
+        # Aligned work unit should not have archetype warnings
+        assert result.exit_code == 0
+        assert "ARCHETYPE_MISALIGNMENT" not in result.output
+
+    def test_check_archetype_misaligned_warns(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should warn when PAR structure doesn't match archetype (AC6)."""
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-test.yaml").write_text(MISALIGNED_ARCHETYPE_WORK_UNIT)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate", "work-units", "--check-archetype"])
+
+        # Misaligned work unit should have warnings but still pass (warnings not errors)
+        assert result.exit_code == 0  # AC6: warnings don't fail validation
+        assert "ARCHETYPE_MISALIGNMENT" in result.output
+        assert "incident" in result.output.lower()
+
+    def test_check_archetype_json_output(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should include archetype warnings in JSON output."""
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-test.yaml").write_text(MISALIGNED_ARCHETYPE_WORK_UNIT)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["--json", "validate", "work-units", "--check-archetype"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "archetype_warnings" in data["data"]
+        assert len(data["data"]["archetype_warnings"]) > 0
+        assert data["data"]["archetype_warnings"][0]["code"] == "ARCHETYPE_MISALIGNMENT"
+
+    def test_check_archetype_minimal_no_validation(
+        self, tmp_path: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Minimal archetype should pass without validation (AC4)."""
+        work_units = tmp_path / "work-units"
+        work_units.mkdir()
+        (work_units / "wu-test.yaml").write_text(VALID_WORK_UNIT)
+
+        monkeypatch.chdir(tmp_path)
+        result = cli_runner.invoke(main, ["validate", "work-units", "--check-archetype"])
+
+        # Minimal archetype should pass without archetype warnings
+        assert result.exit_code == 0
+        assert "ARCHETYPE_MISALIGNMENT" not in result.output
+
+    def test_check_archetype_help_text(self, cli_runner: CliRunner) -> None:
+        """Should show --check-archetype in help (AC5)."""
+        result = cli_runner.invoke(main, ["validate", "work-units", "--help"])
+
+        assert result.exit_code == 0
+        assert "--check-archetype" in result.output
+        assert "PAR structure" in result.output or "archetype" in result.output

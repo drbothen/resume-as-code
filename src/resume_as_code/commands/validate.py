@@ -200,6 +200,11 @@ def _output_all_json(result: AggregatedValidationResult) -> None:
     is_flag=True,
     help="Validate position_id references exist in positions.yaml.",
 )
+@click.option(
+    "--check-archetype",
+    is_flag=True,
+    help="Validate PAR structure matches archetype expectations.",
+)
 @click.pass_context
 @handle_errors
 def validate_work_units(
@@ -208,13 +213,16 @@ def validate_work_units(
     content_quality: bool,
     content_density: bool,
     check_positions: bool,
+    check_archetype: bool,
 ) -> None:
     """Validate Work Units against schema and content guidelines.
 
     PATH can be a single YAML file or a directory containing Work Units.
     Defaults to work-units/ directory if not specified.
     """
-    _validate_work_units_impl(ctx, path, content_quality, content_density, check_positions)
+    _validate_work_units_impl(
+        ctx, path, content_quality, content_density, check_positions, check_archetype
+    )
 
 
 def _validate_work_units_impl(
@@ -223,6 +231,7 @@ def _validate_work_units_impl(
     content_quality: bool,
     content_density: bool,
     check_positions: bool,
+    check_archetype: bool,
 ) -> None:
     """Implementation for work unit validation."""
     from resume_as_code.services.validator import validate_path
@@ -268,7 +277,8 @@ def _validate_work_units_impl(
     # Collect content warnings for valid files
     all_warnings: list[ContentWarning] = []
     position_errors: list[ContentWarning] = []
-    if content_quality or content_density or check_positions:
+    archetype_warnings: list[ContentWarning] = []
+    if content_quality or content_density or check_positions or check_archetype:
         for result in summary.results:
             if result.valid:
                 data = _load_yaml(result.file_path)
@@ -287,14 +297,18 @@ def _validate_work_units_impl(
                                 position_errors.append(pw)
                             else:
                                 all_warnings.append(pw)
+                    if check_archetype:
+                        archetype_warnings.extend(_validate_archetype(data, str(result.file_path)))
 
     # Output results and handle exit code
     if ctx.obj.json_output:
-        _output_work_units_json(summary, all_warnings, position_errors)
+        _output_work_units_json(summary, all_warnings, position_errors, archetype_warnings)
     else:
         _output_work_units_rich(summary)
         if position_errors:
             _output_position_errors_rich(position_errors)
+        if archetype_warnings:
+            _output_archetype_warnings_rich(archetype_warnings)
         if all_warnings:
             _output_warnings_rich(all_warnings)
 
@@ -493,6 +507,7 @@ def _output_work_units_json(
     summary: Any,
     warnings: list[ContentWarning] | None = None,
     position_errors: list[ContentWarning] | None = None,
+    archetype_warnings: list[ContentWarning] | None = None,
 ) -> None:
     """Output work unit validation results as JSON."""
     # Count position errors as validation failures
@@ -530,6 +545,17 @@ def _output_work_units_json(
                 "suggestion": e.suggestion,
             }
             for e in position_errors
+        ]
+    if archetype_warnings:
+        data["archetype_warnings"] = [
+            {
+                "code": w.code,
+                "message": w.message,
+                "path": w.path,
+                "suggestion": w.suggestion,
+                "severity": w.severity,
+            }
+            for w in archetype_warnings
         ]
     has_errors = summary.invalid_count > 0 or position_error_count > 0
     response = JSONResponse(
@@ -651,3 +677,59 @@ def _load_position_ids() -> set[str]:
         # Log warning about malformed positions.yaml
         console.print(f"[yellow]⚠ Warning: Could not load positions.yaml: {e}[/yellow]")
         return set()
+
+
+def _validate_archetype(work_unit: dict[str, Any], file_path: str) -> list[ContentWarning]:
+    """Validate work unit PAR structure against archetype expectations.
+
+    Args:
+        work_unit: Work unit data dictionary.
+        file_path: Path to the work unit file.
+
+    Returns:
+        List of ContentWarning objects for archetype misalignment (warnings only).
+    """
+    from resume_as_code.services.archetype_validation_service import (
+        validate_archetype_alignment,
+    )
+
+    warnings: list[ContentWarning] = []
+
+    result = validate_archetype_alignment(work_unit)
+
+    # Convert archetype validation result to ContentWarning format
+    for warning in result.warnings:
+        warnings.append(
+            ContentWarning(
+                code="ARCHETYPE_MISALIGNMENT",
+                message=warning,
+                path=file_path,
+                suggestion=result.suggestions[0] if result.suggestions else "",
+                severity="warning",
+            )
+        )
+
+    return warnings
+
+
+def _output_archetype_warnings_rich(warnings: list[ContentWarning]) -> None:
+    """Output archetype alignment warnings with Rich formatting."""
+    console.print()
+    console.print("[yellow]Archetype Alignment Suggestions[/yellow]")
+    console.print()
+
+    # Group warnings by file
+    warnings_by_file: dict[str, list[ContentWarning]] = {}
+    for w in warnings:
+        file_path = w.path.split(":")[0]
+        if file_path not in warnings_by_file:
+            warnings_by_file[file_path] = []
+        warnings_by_file[file_path].append(w)
+
+    for file_path, file_warnings in warnings_by_file.items():
+        tree = Tree(f"[yellow]⚠[/yellow] {file_path}")
+        for w in file_warnings:
+            warning_node = tree.add(f"[yellow]{w.code}[/yellow]: {w.message}")
+            if w.suggestion:
+                warning_node.add(f"[dim]💡 {w.suggestion}[/dim]")
+        console.print(tree)
