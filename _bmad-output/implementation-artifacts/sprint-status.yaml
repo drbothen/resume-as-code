@@ -208,6 +208,31 @@ development_status:
 #   - Fallback to all certs when no JD
 #   Related: Story 8.2 (publication curation) uses same pattern
 #   Trigger: Consider when user has 15+ certifications or requests filtering
+#
+# [2026-01-20] Manifest-Based Resume Rebuild (TD-009)
+#   Current: BuildManifest stores minimal metadata (work unit IDs, JD hash, template, ranker version)
+#   Problem: Cannot rebuild identical resume from manifest alone - missing all actual content
+#   Use case: Reproducibility, auditing, regenerating with same selections but different template
+#   Missing data for rebuild:
+#   - Full work unit content (only stores id/title/score)
+#   - JD content (only stores hash, not text)
+#   - Profile data (contact info, summary)
+#   - Certifications and curated selections
+#   - Education entries
+#   - Career highlights and curated selections
+#   - Publications and curated selections
+#   - Board roles
+#   - Position data (employers, titles, dates, scope)
+#   - Skill curation results
+#   - Employment continuity mode/decisions
+#   Implementation ideas:
+#   - Option A: Embed all content in manifest (self-contained but large)
+#   - Option B: Store content hashes + require original files present
+#   - Option C: Hybrid - embed curated/selected content, hash for source files
+#   - New command: `resume rebuild --from-manifest <path>` to regenerate resume
+#   - Version manifest format for forward compatibility
+#   Related: src/resume_as_code/models/manifest.py, src/resume_as_code/providers/manifest.py
+#   Priority: P3 (nice-to-have for audit trails and reproducibility)
 
   # Epic 11: Technical Debt & Platform Enhancements
   # Goal: Address accumulated technical debt to improve platform quality, extensibility, and user experience
