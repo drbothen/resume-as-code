@@ -233,6 +233,32 @@ development_status:
 #   - Version manifest format for forward compatibility
 #   Related: src/resume_as_code/models/manifest.py, src/resume_as_code/providers/manifest.py
 #   Priority: P3 (nice-to-have for audit trails and reproducibility)
+#
+# [2026-01-20] Full Resume Generation Without JD (TD-010)
+#   Current: `resume build` requires --jd flag for job description to tailor content
+#   Problem: Cannot generate comprehensive resume with ALL work units, certs, publications, etc.
+#   Use cases:
+#   - Master resume for personal records
+#   - Networking events where role is unknown
+#   - LinkedIn profile sync (show everything)
+#   - Starting point before tailoring
+#   - Portfolio/archive purposes
+#   Implementation ideas:
+#   - New flag: `resume build --full` or `resume build --no-jd`
+#   - Skip ranking/scoring when no JD provided
+#   - Include all work units (optionally sorted by date or archetype)
+#   - Include all certifications, publications, education, board roles
+#   - Include all career highlights
+#   - Optional: `--max-pages N` to limit output length
+#   - Optional: `--max-work-units N` to cap work unit count
+#   - Config option: `full_resume.sort_by: date|archetype|position`
+#   - Config option: `full_resume.max_work_units: 20`
+#   Considerations:
+#   - May produce very long resumes (5+ pages for senior professionals)
+#   - Should warn user about length implications
+#   - Employment continuity still applies (all positions shown)
+#   Related: src/resume_as_code/commands/build.py, src/resume_as_code/commands/plan.py
+#   Priority: P2 (common user request, straightforward implementation)
 
   # Epic 11: Technical Debt & Platform Enhancements
   # Goal: Address accumulated technical debt to improve platform quality, extensibility, and user experience
