@@ -251,6 +251,26 @@ def build_command(
                 f"{len(pub_curation.excluded)} excluded by JD relevance[/dim]"
             )
 
+    # Curate career highlights for JD relevance (Bug fix: highlights curation)
+    curated_highlights = list(career_highlights)  # Default: all highlights
+    if jd_for_scoring and career_highlights:
+        from resume_as_code.services.content_curator import ContentCurator
+        from resume_as_code.services.embedder import EmbeddingService
+
+        embedder = EmbeddingService()
+        curator = ContentCurator(embedder=embedder, config=config.curation)
+
+        highlights_curation = curator.curate_highlights(
+            highlights=list(career_highlights),
+            jd=jd_for_scoring,
+        )
+        curated_highlights = highlights_curation.selected
+        if not ctx.obj.quiet and highlights_curation.excluded:
+            console.print(
+                f"[dim]Highlights: {len(highlights_curation.selected)} selected, "
+                f"{len(highlights_curation.excluded)} excluded by JD relevance[/dim]"
+            )
+
     # Add config data to ResumeData (Story 6.2, 6.6, 6.13, 6.14, 6.15, 7.19, 8.2)
     # Set publications_curated=True when JD was used for curation (Story 8.2 Task 6)
     publications_were_curated = bool(jd_for_scoring and publications)
@@ -261,7 +281,7 @@ def build_command(
         skills=resume.skills,
         education=list(education),
         certifications=list(certifications),
-        career_highlights=list(career_highlights),
+        career_highlights=curated_highlights,
         board_roles=list(board_roles),
         publications=curated_publications,
         publications_curated=publications_were_curated,

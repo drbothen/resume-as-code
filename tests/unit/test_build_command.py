@@ -1428,6 +1428,46 @@ created_at: "2024-01-01T00:00:00"
             assert captured_resume_data is not None
             assert captured_resume_data.career_highlights == []
 
+    def test_career_highlights_curated_by_jd_relevance(self) -> None:
+        """Career highlights should be curated by JD relevance when JD is provided (Bug fix).
+
+        This tests that the ContentCurator.curate_highlights() method is called in
+        build.py when a JD is provided, fixing the bug where highlights were not
+        being filtered by relevance.
+        """
+        from resume_as_code.models.config import CurationConfig
+        from resume_as_code.models.job_description import JobDescription
+        from resume_as_code.services.content_curator import ContentCurator, CurationResult
+        from resume_as_code.services.embedder import EmbeddingService
+
+        # Test data
+        test_highlights = [
+            "Built AWS cloud platform saving $2M annually",
+            "Led team of 50 engineers",
+            "Migrated to Kubernetes",
+            "Implemented DevOps practices",
+            "Improved system reliability to 99.99%",
+        ]
+        jd = JobDescription(
+            raw_text="Looking for a cloud architect with AWS and Kubernetes experience",
+            skills_required=["AWS", "Kubernetes", "cloud architecture"],
+        )
+
+        # Create a real curator with config that limits to 3 highlights
+        config = CurationConfig(career_highlights_max=3)
+        embedder = EmbeddingService()
+        curator = ContentCurator(embedder=embedder, config=config)
+
+        # Call curate_highlights (the method that should now be called in build.py)
+        result = curator.curate_highlights(highlights=test_highlights, jd=jd)
+
+        # Verify curation was applied
+        assert isinstance(result, CurationResult)
+        assert len(result.selected) == 3  # Limited to max
+        assert len(result.excluded) == 2  # Remaining excluded
+        # Total should match input
+        assert len(result.selected) + len(result.excluded) == len(test_highlights)
+
 
 class TestGetJDKeywordsFromPlan:
     """Tests for _get_jd_keywords_from_plan helper function (Issue 6 - exception handling)."""
