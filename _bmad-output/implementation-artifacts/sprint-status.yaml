@@ -259,6 +259,34 @@ development_status:
 #   - Employment continuity still applies (all positions shown)
 #   Related: src/resume_as_code/commands/build.py, src/resume_as_code/commands/plan.py
 #   Priority: P2 (common user request, straightforward implementation)
+#
+# [2026-01-23] Custom Skills Registry File (TD-011)
+#   Current: SkillRegistry uses built-in skills.yaml with hardcoded path
+#   Problem: Users cannot define their own skill aliases, categories, or domain-specific skills
+#   Use cases:
+#   - Industry-specific terminology (healthcare, finance, legal)
+#   - Company-specific tool names and aliases
+#   - Emerging technologies not yet in default registry
+#   - Personal skill categorization preferences
+#   Implementation ideas:
+#   - CLI flag: `--skills-file PATH` for plan/build commands
+#   - Config option: `skills_file: ./my-skills.yaml` in .resume.yaml
+#   - Merge behavior: custom file extends/overrides default registry
+#   - Schema validation for custom skills.yaml
+#   - Document skills.yaml schema for user authoring
+#   Config priority: CLI flag > .resume.yaml > built-in default
+#   File structure:
+#   ```yaml
+#   skills:
+#     - canonical: "Amazon Web Services"
+#       aliases: ["AWS", "Amazon AWS", "aws"]
+#       category: cloud
+#     - canonical: "My Custom Tool"
+#       aliases: ["MCT", "custom-tool"]
+#       category: internal
+#   ```
+#   Related: src/resume_as_code/services/skill_registry.py
+#   Priority: P2 (enables customization for domain-specific resumes)
 
   # Epic 11: Technical Debt & Platform Enhancements
   # Goal: Address accumulated technical debt to improve platform quality, extensibility, and user experience
