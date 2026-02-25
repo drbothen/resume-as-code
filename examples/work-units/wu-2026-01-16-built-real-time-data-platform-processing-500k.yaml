@@ -1,6 +1,7 @@
 id: wu-2026-01-16-built-real-time-data-platform-processing-500k
 title: Built real-time data platform processing 500K events per second
 schema_version: 1.0.0
+archetype: greenfield
 position_id: pos-datascale-systems-vp-of-engineering
 problem:
   statement: Batch processing jobs took 8 hours, business needed real-time 

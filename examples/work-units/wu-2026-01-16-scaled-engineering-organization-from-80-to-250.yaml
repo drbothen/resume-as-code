@@ -1,6 +1,7 @@
 id: wu-2026-01-16-scaled-engineering-organization-from-80-to-250
 title: Scaled engineering organization from 80 to 250 engineers
 schema_version: 1.0.0
+archetype: leadership
 position_id: pos-techventures-global-chief-technology-off
 problem:
   statement: Engineering team couldn't keep pace with product demands, delivery 

@@ -1,6 +1,7 @@
 id: wu-2026-01-16-led-cloud-migration-reducing-infrastructure-costs
 title: Led cloud migration reducing infrastructure costs by $12M annually
 schema_version: 1.0.0
+archetype: migration
 position_id: pos-datascale-systems-vp-of-engineering
 problem:
   statement: On-premise infrastructure costs were unsustainable at $18M/year 

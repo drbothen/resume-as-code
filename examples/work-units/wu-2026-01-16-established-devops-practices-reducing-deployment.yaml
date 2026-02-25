@@ -1,6 +1,7 @@
 id: wu-2026-01-16-established-devops-practices-reducing-deployment
 title: Established DevOps practices reducing deployment time by 75%
 schema_version: 1.0.0
+archetype: transformation
 position_id: pos-datascale-systems-vp-of-engineering
 problem:
   statement: Manual deployments took 4 hours with frequent failures and 

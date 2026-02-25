@@ -1,0 +1,16 @@
+  - organization: CyberShield Ventures
+    role: Technical Advisory Board Member
+    type: advisory
+    start_date: 2022-03
+    focus: Cybersecurity strategy, AI/ML threat detection, due diligence
+  - organization: TechFounders Alliance
+    role: Board of Directors
+    type: director
+    start_date: 2020-06
+    focus: Technology governance, digital transformation strategy
+  - organization: StartupAccelerator Labs
+    role: Technology Mentor & Advisor
+    type: advisory
+    start_date: 2019-01
+    end_date: 2021-12
+    focus: Early-stage technical guidance, architecture review

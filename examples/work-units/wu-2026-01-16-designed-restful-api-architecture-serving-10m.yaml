@@ -1,6 +1,7 @@
 id: wu-2026-01-16-designed-restful-api-architecture-serving-10m
 title: Designed RESTful API architecture serving 10M daily requests
 schema_version: 1.0.0
+archetype: greenfield
 position_id: pos-innosoft-corp-senior-software-engi
 problem:
   statement: Legacy SOAP APIs were slow and difficult to integrate
