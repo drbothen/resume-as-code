@@ -147,6 +147,7 @@ positions.yaml   # Single file with all positions
   scope:
     revenue: "$500M"
     team_size: 150
+    team_label: "engineers"    # Optional, defaults to "team members"
     direct_reports: 8
     budget: "$50M"
     pl_responsibility: "$200M"

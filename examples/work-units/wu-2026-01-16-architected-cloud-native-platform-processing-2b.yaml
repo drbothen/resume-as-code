@@ -1,6 +1,7 @@
 id: wu-2026-01-16-architected-cloud-native-platform-processing-2b
 title: Architected cloud-native platform processing 2B+ daily transactions
 schema_version: 1.0.0
+archetype: greenfield
 position_id: pos-techventures-global-chief-technology-off
 problem:
   statement: Legacy monolith couldn't scale beyond 100M transactions, causing 

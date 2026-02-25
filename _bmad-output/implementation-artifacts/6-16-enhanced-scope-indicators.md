@@ -35,7 +35,7 @@ So that **my leadership scale is immediately visible for each position**.
    **When** the executive or CTO template renders
    **Then** scope appears as a prominent line below the position title:
    ```
-   $500M revenue | 200+ engineers | $50M technology budget | Global (15 countries)
+   $500M revenue | 200+ team members | $50M technology budget | Global (15 countries)
    ```
 
 3. **Given** a position has `pl_responsibility` field
@@ -81,7 +81,7 @@ So that **my leadership scale is immediately visible for each position**.
 
 - [x] Task 1: Create PositionScope model (AC: #1)
   - [x] 1.1: Create `PositionScope` Pydantic model in `models/position.py`
-  - [x] 1.2: Add fields: revenue, team_size, direct_reports, budget, pl_responsibility, geography, customers
+  - [x] 1.2: Add fields: revenue, team_size, team_label, direct_reports, budget, pl_responsibility, geography, customers
   - [x] 1.3: All fields optional (str | None or int | None)
   - [x] 1.4: Add scope field to Position model: `scope: PositionScope | None = None`
 
@@ -155,6 +155,7 @@ class PositionScope(BaseModel):
 
     revenue: str | None = None  # e.g., "$500M"
     team_size: int | None = None  # Total engineers/team members
+    team_label: str | None = None  # Custom label for team_size (default: "team members")
     direct_reports: int | None = None  # Direct reports count
     budget: str | None = None  # e.g., "$50M technology budget"
     pl_responsibility: str | None = None  # P&L amount
@@ -185,7 +186,8 @@ def format_scope_line(position: Position) -> str | None:
     if position.scope.revenue:
         parts.append(f"{position.scope.revenue} revenue")
     if position.scope.team_size:
-        parts.append(f"{position.scope.team_size}+ engineers")
+        label = position.scope.team_label or "team members"
+        parts.append(f"{position.scope.team_size}+ {label}")
     if position.scope.budget:
         parts.append(f"{position.scope.budget} budget")
     if position.scope.geography:

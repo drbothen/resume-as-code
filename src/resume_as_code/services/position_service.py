@@ -29,7 +29,7 @@ def format_scope_line(position: Position) -> str | None:
         position: Position with optional scope data.
 
     Returns:
-        Formatted scope line (e.g., "$100M P&L | $500M revenue | 200+ engineers")
+        Formatted scope line (e.g., "$100M P&L | $500M revenue | 200+ team members")
         or None if no scope data populated.
     """
     if not position.scope:
@@ -44,7 +44,8 @@ def format_scope_line(position: Position) -> str | None:
     if scope.revenue:
         parts.append(f"{scope.revenue} revenue")
     if scope.team_size:
-        parts.append(f"{scope.team_size}+ engineers")
+        label = scope.team_label or "team members"
+        parts.append(f"{scope.team_size}+ {label}")
     if scope.direct_reports:
         parts.append(f"{scope.direct_reports} direct reports")
     if scope.budget:

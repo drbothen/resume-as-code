@@ -1,6 +1,7 @@
 id: wu-2026-01-16-built-platform-engineering-team-supporting-200
 title: Built platform engineering team supporting 200+ developers
 schema_version: 1.0.0
+archetype: greenfield
 position_id: pos-cloudfirst-technolog-director-of-platform
 problem:
   statement: Developers spent 30% of time on infrastructure tasks instead of 

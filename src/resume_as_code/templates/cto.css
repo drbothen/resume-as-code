@@ -31,7 +31,7 @@
 }
 
 /* Larger scope indicators for CTO positions (AC #3)
- * Format: "$500M revenue | 200+ engineers | $50M technology budget | Global"
+ * Format: "$500M revenue | 200+ team members | $50M technology budget | Global"
  * Note: Simple selector ensures consistent styling regardless of section presence
  */
 section.experience .scope-line {

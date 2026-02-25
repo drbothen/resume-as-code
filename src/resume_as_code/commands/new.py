@@ -693,6 +693,10 @@ def _prompt_title_interactive(ctx: click.Context) -> str:
 # Scope indicators for executive positions (AC #6, #7)
 @click.option("--scope-revenue", help="Revenue impact (e.g., '$500M')")
 @click.option("--scope-team-size", type=int, help="Team size (number)")
+@click.option(
+    "--scope-team-label",
+    help="Label for team size (e.g., 'engineers', 'tellers')",
+)
 @click.option("--scope-direct-reports", type=int, help="Direct reports count")
 @click.option("--scope-budget", help="Budget managed (e.g., '$50M')")
 @click.option("--scope-pl", help="P&L responsibility (e.g., '$100M')")
@@ -712,6 +716,7 @@ def new_position(
     promoted_from: str | None,
     scope_revenue: str | None,
     scope_team_size: int | None,
+    scope_team_label: str | None,
     scope_direct_reports: int | None,
     scope_budget: str | None,
     scope_pl: str | None,
@@ -780,6 +785,7 @@ def new_position(
             pl=scope_pl,
             geography=scope_geography,
             customers=scope_customers,
+            team_label=scope_team_label,
         )
 
         # Create position
@@ -868,6 +874,9 @@ def new_position(
             scope_pl_input: str = click.prompt("P&L responsibility (e.g., $100M)", default="")
             scope_revenue_input: str = click.prompt("Revenue impact (e.g., $500M)", default="")
             scope_team_input: str = click.prompt("Team size (number)", default="")
+            scope_team_label_input: str = click.prompt(
+                "Team label (e.g., engineers, tellers, default: team members)", default=""
+            )
             scope_direct_input: str = click.prompt("Direct reports (number)", default="")
             scope_budget_input: str = click.prompt("Budget managed (e.g., $50M)", default="")
             scope_geo_input: str = click.prompt("Geography (e.g., Global, EMEA)", default="")
@@ -883,6 +892,7 @@ def new_position(
                 pl=scope_pl_input or None,
                 geography=scope_geo_input or None,
                 customers=scope_customers_input or None,
+                team_label=scope_team_label_input or None,
             )
 
         # Generate unique ID
@@ -1070,17 +1080,19 @@ def _build_position_scope(
     pl: str | None,
     geography: str | None,
     customers: str | None = None,
+    team_label: str | None = None,
 ) -> PositionScope | None:
     """Build PositionScope from individual scope flags.
 
     Returns None if no scope fields are populated.
     """
-    if not any([revenue, team_size, direct_reports, budget, pl, geography, customers]):
+    if not any([revenue, team_size, team_label, direct_reports, budget, pl, geography, customers]):
         return None
 
     return PositionScope(
         revenue=revenue,
         team_size=team_size,
+        team_label=team_label,
         direct_reports=direct_reports,
         budget=budget,
         pl_responsibility=pl,

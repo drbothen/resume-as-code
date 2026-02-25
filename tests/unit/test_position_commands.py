@@ -465,13 +465,14 @@ class TestPositionScopeFlags:
         # 9. P&L: $500M (prompted first per AC #3)
         # 10. Revenue: $1B
         # 11. Team size: 500
-        # 12. Direct reports: 10
-        # 13. Budget: $200M
-        # 14. Geography: Global
-        # 15. Customers: 10M users
+        # 12. Team label: (empty - defaults to "team members")
+        # 13. Direct reports: 10
+        # 14. Budget: $200M
+        # 15. Geography: Global
+        # 16. Customers: 10M users
         input_data = (
             "Executive Corp\nCEO\n\n2019-01\ny\n1\nn\n"
-            "y\n$500M\n$1B\n500\n10\n$200M\nGlobal\n10M users\n"
+            "y\n$500M\n$1B\n500\n\n10\n$200M\nGlobal\n10M users\n"
         )
 
         result = runner.invoke(main, ["new", "position"], input=input_data)

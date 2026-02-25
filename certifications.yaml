@@ -1,0 +1,12 @@
+  - name: AWS Solutions Architect Professional
+    issuer: Amazon Web Services
+    date: 2023-06
+    expires: 2026-06
+  - name: CISSP
+    issuer: ISC2
+    date: 2019-03
+    expires: 2028-03
+  - name: Certified Kubernetes Administrator
+    issuer: CNCF
+    date: 2022-11
+    expires: 2025-11

@@ -39,7 +39,7 @@ So that **my resume follows research-validated best practices for CTO candidates
    **When** the CTO template renders
    **Then** scope indicators appear prominently under each position:
    ```
-   $500M revenue | 200+ engineers | $50M technology budget | Global
+   $500M revenue | 200+ team members | $50M technology budget | Global
    ```
 
 4. **Given** career highlights exist

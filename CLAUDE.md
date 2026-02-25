@@ -532,6 +532,7 @@ For executive-level positions with leadership scale indicators:
 |------|-------------|
 | `--scope-revenue` | Revenue impact (e.g., "$500M") |
 | `--scope-team-size` | Team size (number) |
+| `--scope-team-label` | Label for team size (e.g., 'engineers', 'tellers') |
 | `--scope-direct-reports` | Direct reports count |
 | `--scope-budget` | Budget managed (e.g., "$50M") |
 | `--scope-pl` | P&L responsibility (e.g., "$100M") |
@@ -547,6 +548,7 @@ resume new position \
   --scope-pl "$100M" \
   --scope-revenue "$500M" \
   --scope-team-size 200 \
+  --scope-team-label "engineers" \
   --scope-budget "$50M" \
   --scope-geography "Global"
 ```

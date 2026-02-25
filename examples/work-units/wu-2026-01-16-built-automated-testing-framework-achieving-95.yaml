@@ -1,6 +1,7 @@
 id: wu-2026-01-16-built-automated-testing-framework-achieving-95
 title: Built automated testing framework achieving 95% code coverage
 schema_version: 1.0.0
+archetype: greenfield
 position_id: pos-innosoft-corp-senior-software-engi
 problem:
   statement: Manual testing cycles took 2 weeks and missed critical bugs

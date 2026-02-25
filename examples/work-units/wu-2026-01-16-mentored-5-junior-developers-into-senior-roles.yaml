@@ -1,6 +1,7 @@
 id: wu-2026-01-16-mentored-5-junior-developers-into-senior-roles
 title: Mentored 5 junior developers into senior roles within 18 months
 schema_version: 1.0.0
+archetype: leadership
 position_id: pos-innosoft-corp-senior-software-engi
 problem:
   statement: Team lacked senior-level skills and career growth paths

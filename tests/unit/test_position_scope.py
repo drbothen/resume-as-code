@@ -42,6 +42,7 @@ class TestUnifiedScopeModel:
         scope = Scope()
         assert scope.revenue is None
         assert scope.team_size is None
+        assert scope.team_label is None
         assert scope.direct_reports is None
         assert scope.budget is None
         assert scope.pl_responsibility is None
@@ -58,6 +59,17 @@ class TestUnifiedScopeModel:
         assert scope.team_size == 50
         assert scope.budget is None
         assert scope.geography is None
+
+    def test_team_label_field(self) -> None:
+        """Test scope accepts team_label field."""
+        scope = Scope(team_size=200, team_label="engineers")
+        assert scope.team_label == "engineers"
+        assert scope.team_size == 200
+
+    def test_team_label_defaults_to_none(self) -> None:
+        """Test team_label defaults to None."""
+        scope = Scope(team_size=50)
+        assert scope.team_label is None
 
 
 class TestPositionWithScope:
@@ -128,7 +140,7 @@ class TestFormatScopeLine:
         assert result is not None
         assert result.startswith("$100M P&L")
         assert "$500M revenue" in result
-        assert "200+ engineers" in result
+        assert "200+ team members" in result
         assert "$50M budget" in result
         assert "Global (15 countries)" in result
         # Pipe-separated (AC: #4)
@@ -164,7 +176,7 @@ class TestFormatScopeLine:
         )
         result = format_scope_line(position)
         assert result is not None
-        assert "50+ engineers" in result
+        assert "50+ team members" in result
         assert "EMEA" in result
         # Should NOT contain fields that weren't set
         assert "P&L" not in result
@@ -204,7 +216,7 @@ class TestFormatScopeLine:
             scope=Scope(team_size=30),
         )
         result = format_scope_line(position)
-        assert result == "30+ engineers"
+        assert result == "30+ team members"
         assert " | " not in result
 
     def test_format_scope_line_direct_reports(self) -> None:
@@ -233,6 +245,61 @@ class TestFormatScopeLine:
         assert result is not None
         assert "500K users" in result
 
+    def test_format_scope_line_default_team_label(self) -> None:
+        """Test team_size renders with 'team members' when no team_label set."""
+        position = Position(
+            id="pos-test",
+            employer="Example Bank",
+            title="Lead Teller Supervisor",
+            start_date="2020-01",
+            scope=Scope(team_size=4),
+        )
+        result = format_scope_line(position)
+        assert result == "4+ team members"
+
+    def test_format_scope_line_custom_team_label(self) -> None:
+        """Test team_size renders with custom team_label."""
+        position = Position(
+            id="pos-test",
+            employer="TechCorp",
+            title="CTO",
+            start_date="2020-01",
+            scope=Scope(team_size=200, team_label="engineers"),
+        )
+        result = format_scope_line(position)
+        assert result == "200+ engineers"
+
+    def test_format_scope_line_custom_team_label_with_other_fields(self) -> None:
+        """Test custom team_label integrates with other scope fields."""
+        position = Position(
+            id="pos-test",
+            employer="Retail Co",
+            title="Store Manager",
+            start_date="2020-01",
+            scope=Scope(
+                team_size=25,
+                team_label="associates",
+                revenue="$5M",
+            ),
+        )
+        result = format_scope_line(position)
+        assert result is not None
+        assert "25+ associates" in result
+        assert "$5M revenue" in result
+
+    def test_format_scope_line_team_label_without_team_size_ignored(self) -> None:
+        """F2 remediation: team_label without team_size is silently ignored."""
+        position = Position(
+            id="pos-test",
+            employer="Test Corp",
+            title="Manager",
+            start_date="2020-01",
+            scope=Scope(team_label="analysts", revenue="$10M"),
+        )
+        result = format_scope_line(position)
+        assert result == "$10M revenue"
+        assert "analysts" not in result
+
 
 class TestResumeItemScopeLine:
     """Tests for scope_line in ResumeItem (AC: #2, #5)."""
@@ -244,9 +311,9 @@ class TestResumeItemScopeLine:
         item = ResumeItem(
             title="CTO",
             organization="Acme Corp",
-            scope_line="$100M P&L | $500M revenue | 200+ engineers",
+            scope_line="$100M P&L | $500M revenue | 200+ team members",
         )
-        assert item.scope_line == "$100M P&L | $500M revenue | 200+ engineers"
+        assert item.scope_line == "$100M P&L | $500M revenue | 200+ team members"
 
     def test_resume_item_scope_line_optional(self) -> None:
         """Test scope_line is optional."""
@@ -284,7 +351,7 @@ class TestBuildItemFromPosition:
         assert item.scope_line is not None
         assert "$100M P&L" in item.scope_line
         assert "$500M revenue" in item.scope_line
-        assert "200+ engineers" in item.scope_line
+        assert "200+ team members" in item.scope_line
 
     def test_build_item_position_scope_only(self) -> None:
         """Test position scope is used exclusively (Story 7.2 - unified model).
@@ -318,7 +385,7 @@ class TestBuildItemFromPosition:
 
         # Only position scope is used (Story 7.2 AC #1, #4)
         assert item.scope_line is not None
-        assert "200+ engineers" in item.scope_line
+        assert "200+ team members" in item.scope_line
         assert "$500M revenue" in item.scope_line
         # Work unit scope values are NOT captured - unified model means position only
 
@@ -400,6 +467,41 @@ class TestPositionCommandScope:
 
         assert scope is None
 
+    def test_build_position_scope_with_team_label(self) -> None:
+        """Test _build_position_scope passes team_label through."""
+        from resume_as_code.commands.new import _build_position_scope
+
+        scope = _build_position_scope(
+            revenue=None,
+            team_size=50,
+            direct_reports=None,
+            budget=None,
+            pl=None,
+            geography=None,
+            team_label="analysts",
+        )
+
+        assert scope is not None
+        assert scope.team_size == 50
+        assert scope.team_label == "analysts"
+
+    def test_build_position_scope_existing_callers_unbroken(self) -> None:
+        """F5/F8 remediation: existing callers without team_label still work."""
+        from resume_as_code.commands.new import _build_position_scope
+
+        scope = _build_position_scope(
+            revenue="$500M",
+            team_size=200,
+            direct_reports=15,
+            budget="$50M",
+            pl="$100M",
+            geography="Global",
+        )
+
+        assert scope is not None
+        assert scope.team_label is None
+        assert scope.team_size == 200
+
 
 class TestTemplateRendering:
     """Tests for scope_line template rendering (AC: #2)."""
@@ -431,7 +533,7 @@ class TestTemplateRendering:
                             title="CTO",
                             organization="Acme Corp",
                             start_date="2020",
-                            scope_line="$100M P&L | $500M revenue | 200+ engineers",
+                            scope_line="$100M P&L | $500M revenue | 200+ team members",
                         )
                     ],
                 )
@@ -442,7 +544,7 @@ class TestTemplateRendering:
 
         assert "$100M P&L" in html
         assert "$500M revenue" in html
-        assert "200+ engineers" in html
+        assert "200+ team members" in html
         assert 'class="scope-line"' in html
 
     def test_template_graceful_without_scope_line(self) -> None:
@@ -544,7 +646,7 @@ class TestUnifiedScopeIntegration:
         assert item.scope_line is not None
         assert "$100M P&L" in item.scope_line
         assert "$500M revenue" in item.scope_line
-        assert "200+ engineers" in item.scope_line
+        assert "200+ team members" in item.scope_line
         assert "$50M budget" in item.scope_line
         assert "Global" in item.scope_line
 
@@ -584,7 +686,7 @@ class TestUnifiedScopeIntegration:
 
         # Position scope is used
         assert item.scope_line is not None
-        assert "50+ engineers" in item.scope_line
+        assert "50+ team members" in item.scope_line
         assert "EMEA" in item.scope_line
         # Work unit scope is NOT used
         assert "999" not in item.scope_line

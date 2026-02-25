@@ -396,7 +396,7 @@ positions:
 **When** the executive or CTO template renders
 **Then** scope appears as a prominent line below the position title:
 ```
-$500M revenue | 200+ engineers | $50M technology budget | Global (15 countries)
+$500M revenue | 200+ team members | $50M technology budget | Global (15 countries)
 ```
 
 **Given** a position has `pl_responsibility` field
@@ -444,6 +444,7 @@ resume new position \
   class PositionScope(BaseModel):
       revenue: str | None = None  # e.g., "$500M"
       team_size: int | None = None  # Total engineers/team members
+      team_label: str | None = None  # Custom label for team_size (default: "team members")
       direct_reports: int | None = None  # Direct reports count
       budget: str | None = None  # e.g., "$50M technology budget"
       pl_responsibility: str | None = None  # P&L amount
@@ -465,7 +466,8 @@ resume new position \
       if position.scope.revenue:
           parts.append(f"{position.scope.revenue} revenue")
       if position.scope.team_size:
-          parts.append(f"{position.scope.team_size}+ engineers")
+          label = position.scope.team_label or "team members"
+          parts.append(f"{position.scope.team_size}+ {label}")
       if position.scope.budget:
           parts.append(f"{position.scope.budget} budget")
       if position.scope.geography:
@@ -521,7 +523,7 @@ So that **my resume follows research-validated best practices for CTO candidates
 **When** the CTO template renders
 **Then** scope indicators appear prominently under each position:
 ```
-$500M revenue | 200+ engineers | $50M technology budget | Global
+$500M revenue | 200+ team members | $50M technology budget | Global
 ```
 
 **Given** career highlights exist
