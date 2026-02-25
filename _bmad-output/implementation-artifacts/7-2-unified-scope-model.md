@@ -103,6 +103,7 @@ class Scope(BaseModel):
 
     revenue: str | None = Field(default=None, description="Revenue impact, e.g., '$500M'")
     team_size: int | None = Field(default=None, ge=0, description="Total team/org size")
+    team_label: str | None = Field(default=None, description="Custom label for team_size display, defaults to 'team members'")
     direct_reports: int | None = Field(default=None, ge=0, description="Direct reports count")
     budget: str | None = Field(default=None, description="Budget managed, e.g., '$50M'")
     pl_responsibility: str | None = Field(default=None, description="P&L responsibility")

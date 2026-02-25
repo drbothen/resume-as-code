@@ -33,6 +33,10 @@ class Scope(BaseModel):
         ge=0,
         description="Total team/org size",
     )
+    team_label: str | None = Field(
+        default=None,
+        description="Label for team_size (e.g., 'engineers'). Defaults to 'team members'.",
+    )
     direct_reports: int | None = Field(
         default=None,
         ge=0,

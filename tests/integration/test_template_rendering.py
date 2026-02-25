@@ -123,7 +123,7 @@ class TestEndToEndWorkUnitToHTML:
                             title="VP of Engineering",
                             organization="Enterprise Corp",
                             start_date="2021",
-                            scope_line="$50M ARR revenue | 80+ engineers | $10M budget",
+                            scope_line="$50M ARR revenue | 80+ team members | $10M budget",
                             bullets=[
                                 ResumeBullet(
                                     text="Scaled engineering organization",
@@ -142,7 +142,7 @@ class TestEndToEndWorkUnitToHTML:
 
         # Verify scope_line is rendered
         assert "$10M budget" in html
-        assert "80+ engineers" in html
+        assert "80+ team members" in html
         assert "$50M ARR revenue" in html
 
     def test_work_units_to_html_ats_safe_template(self) -> None:
@@ -302,7 +302,7 @@ class TestExecutiveTemplateIntegration:
                         ResumeItem(
                             title="VP of Engineering",
                             organization="Enterprise Corp",
-                            scope_line="$100M ARR revenue | 25+ engineers | $5M budget",
+                            scope_line="$100M ARR revenue | 25+ team members | $5M budget",
                             bullets=[
                                 ResumeBullet(text="Led digital transformation"),
                             ],
@@ -316,7 +316,7 @@ class TestExecutiveTemplateIntegration:
 
         # Verify scope_line is rendered
         assert "$5M budget" in html
-        assert "25+ engineers" in html
+        assert "25+ team members" in html
         assert "$100M ARR revenue" in html
 
     def test_executive_template_executive_summary_section(self) -> None:
@@ -878,7 +878,7 @@ class TestEmployerGroupingIntegration:
                             title="VP of Engineering",
                             organization="Enterprise Corp",
                             start_date="2022",
-                            scope_line="$10M budget | 50+ engineers",
+                            scope_line="$10M budget | 50+ team members",
                             bullets=[
                                 ResumeBullet(text="Scaled engineering org"),
                             ],
@@ -888,7 +888,7 @@ class TestEmployerGroupingIntegration:
                             organization="Enterprise Corp",
                             start_date="2020",
                             end_date="2022",
-                            scope_line="$5M budget | 25 engineers",
+                            scope_line="$5M budget | 25 team members",
                             bullets=[
                                 ResumeBullet(text="Built platform team"),
                             ],
@@ -1019,7 +1019,7 @@ class TestDOCXTemplateIntegration:
                             organization="TechCorp Industries",
                             start_date="2022",
                             end_date=None,
-                            scope_line="$50M budget | 100+ engineers",
+                            scope_line="$50M budget | 100+ team members",
                             bullets=[
                                 ResumeBullet(text="Scaled engineering organization"),
                                 ResumeBullet(text="Led digital transformation"),
@@ -1239,7 +1239,7 @@ class TestDOCXTemplateIntegration:
                             title="Chief Technology Officer",
                             organization="Enterprise Corp",
                             start_date="2020",
-                            scope_line="$100M ARR | 200 engineers | $25M budget",
+                            scope_line="$100M ARR | 200 team members | $25M budget",
                             bullets=[
                                 ResumeBullet(
                                     text="Led company-wide digital transformation",

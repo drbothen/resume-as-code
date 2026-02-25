@@ -34,7 +34,7 @@ So that **my resume meets industry standards for leadership roles**.
 3. **Given** work units have scope data (budget_managed, team_size)
    **When** the executive template renders
    **Then** scope indicators appear prominently:
-     "Led team of 15 engineers | $2M budget | Global scope"
+     "Led team of 15 team members | $2M budget | Global scope"
 
 4. **Given** the resume content exceeds 1 page
    **When** the PDF is generated

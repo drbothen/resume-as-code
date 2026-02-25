@@ -31,6 +31,19 @@
           "description": "Total team/org size",
           "title": "Team Size"
         },
+        "team_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Label for team_size (e.g., 'engineers'). Defaults to 'team members'.",
+          "title": "Team Label"
+        },
         "direct_reports": {
           "anyOf": [
             {

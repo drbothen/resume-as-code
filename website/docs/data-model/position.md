@@ -22,6 +22,7 @@ end_date: string    # End date (YYYY-MM) or null for current
 scope:              # Executive scope indicators
   revenue: string   # Revenue impact
   team_size: int    # Team size
+  team_label: string  # Custom label for team size (default: "team members")
   direct_reports: int
   budget: string    # Budget managed
   pl: string        # P&L responsibility
@@ -57,6 +58,7 @@ scope:              # Executive scope indicators
   scope:
     revenue: "$500M"
     team_size: 200
+    team_label: "engineers"
     direct_reports: 8
     budget: "$50M"
     pl: "$100M"
@@ -98,6 +100,7 @@ For executive and senior roles, scope indicators quantify impact:
 |-------|-------------|---------|
 | `revenue` | Revenue responsibility | "$500M ARR" |
 | `team_size` | Total team managed | 200 |
+| `team_label` | Custom label for team size | "engineers" |
 | `direct_reports` | Direct reports | 8 |
 | `budget` | Budget managed | "$50M" |
 | `pl` | P&L responsibility | "$100M" |
